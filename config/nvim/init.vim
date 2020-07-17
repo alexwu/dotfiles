@@ -1,10 +1,8 @@
-let plug_install = 0
-let autoload_plug_path = stdpath('config') . '/autoload/plug.vim'
+let autoload_plug_path = stdpath('data') . '/site/autoload/plug.vim'
 if !filereadable(autoload_plug_path)
-    silent exe '!curl -fL --create-dirs -o ' . autoload_plug_path .
-        \ ' https://raw.github.com/junegunn/vim-plug/master/plug.vim'
-    execute 'source ' . fnameescape(autoload_plug_path)
-    let plug_install = 1
+  silent execute '!curl -fLo ' . autoload_plug_path . '  --create-dirs
+      \ "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"'
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 unlet autoload_plug_path
 
@@ -35,7 +33,6 @@ Plug 'junegunn/vim-easy-align'
 Plug 'Yggdroot/indentLine'
 
 " Syntax Highlighting
-" Plug 'styled-components/vim-styled-components', { 'branch': 'main' }
 Plug 'HerringtonDarkholme/yats.vim'
 Plug 'sheerun/vim-polyglot'           " Extra syntax features for various languages
 
@@ -351,6 +348,13 @@ let g:ale_lint_delay = 400
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
 \}
+let g:ale_linters= {
+\   'ruby': [],
+\   'javascript': [],
+\   'javascriptreact': [],
+\   'typescript': [],
+\   'typescriptreact': [],
+\}
 
 let g:lightline#ale#indicator_errors= '✘'
 let g:lightline#ale#indicator_warnings = '♦'
@@ -360,6 +364,8 @@ let g:ale_fix_on_save = 1
 let g:ale_sign_error = '✘'
 let g:ale_sign_warning = '>>'
 let g:ale_sign_info= '--'
+let g:ale_linters_explicit = 1
+
 highlight ALEErrorSign ctermbg=NONE ctermfg=red
 highlight ALEError ctermbg=NONE ctermfg=red cterm=underline
 highlight ALEWarning ctermbg=NONE ctermfg=yellow cterm=underline
@@ -385,8 +391,6 @@ let g:netrw_banner = 0
 let g:netrw_winsize = 25
 
 """""""""""""""" LIGHTLINE
-" Add diagnostic info for https://github.com/itchyny/lightline.vim
-
 function! CocCurrentFunction()
   return get(b:, 'coc_current_function', '')
 endfunction

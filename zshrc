@@ -60,6 +60,7 @@ export SSH_KEY_PATH="~/.ssh/rsa_id"
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
 # For a full list of active aliases, run `alias`.
+alias vim="nvim"
 alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 alias python=/usr/local/bin/python3

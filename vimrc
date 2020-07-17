@@ -451,5 +451,4 @@ let g:netrw_banner = 0
 let g:netrw_winsize = 25
 
 """""""""""""""" NETRW
-" vim-surround config for vim-sandwich
 runtime macros/sandwich/keymap/surround.vim
