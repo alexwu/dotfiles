@@ -149,6 +149,8 @@ xmap ga <Plug>(EasyAlign)
 " Start interactive EasyAlign for a motion/text object (e.g. gaip)
 nmap ga <Plug>(EasyAlign)
 
+vnoremap <Leader>c "*y
+
 " COMMAND MODE KEY MAPPINGS
 "
 " Map :W to :w so vim stops complaining about W
