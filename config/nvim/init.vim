@@ -26,15 +26,14 @@ Plug 'tpope/vim-projectionist'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-vinegar'
 Plug 'janko/vim-test'
-Plug 'mhinz/vim-startify'
 
 " Formatting
 Plug 'junegunn/vim-easy-align'
 Plug 'Yggdroot/indentLine'
 
 " Syntax Highlighting
-Plug 'HerringtonDarkholme/yats.vim'
-Plug 'sheerun/vim-polyglot'           " Extra syntax features for various languages
+" Plug 'sheerun/vim-polyglot'
+Plug 'nvim-treesitter/nvim-treesitter'
 
 " Ale
 Plug 'w0rp/ale'
@@ -44,6 +43,8 @@ Plug 'maximbaz/lightline-ale'
 Plug 'connorholyday/vim-snazzy'       " Snazzy theme for Vim
 
 call plug#end()
+
+:lua require("treesitter")
 
 " SETTINGS
 "
@@ -84,8 +85,6 @@ set noshowmode                  " Show the current mode
 set timeoutlen=250              " Short map keys timeout keeps the ui feeling snappy
 set tags=./TAGS,TAGS            " Use Emacs tagfile naming convention
 set modelines=1
-" Insert only one space when joining lines that contain sentence-terminating
-" punctuation like `.`.
 set nojoinspaces
 
 set grepprg=grep\ -nH\ $*
@@ -128,10 +127,6 @@ nnoremap <C-Down> <C-W><C-J>
 nnoremap <C-Up> <C-W><C-K>
 nnoremap <C-Right> <C-W><C-L>
 nnoremap <C-Left> <C-W><C-H>
-
-"Allows remapping of Ctrl-j because of latex-suite
-nnoremap <SID>I_won’t_ever_type_this <Plug>IMAP_JumpForward
-inoremap <SID>I_won’t_ever_type_this <Plug>IMAP_JumpForward
 
 inoremap <c-j> <Down>
 inoremap <c-k> <Up>
@@ -245,7 +240,6 @@ nmap <leader>rn <Plug>(coc-rename)
 command! -nargs=0 Prettier :CocCommand prettier.formatFile
 xmap <leader>f  <Plug>(coc-format-selected)
 nmap <leader>f  <Plug>(coc-format-selected)
-nmap <leader>y :Prettier<CR>
 
 augroup mygroup
   autocmd!
@@ -282,6 +276,7 @@ xmap <silent> <C-s> <Plug>(coc-range-select)
 
 " Use `:Format` to format current buffer
 command! -nargs=0 Format :call CocAction('format')
+nmap <leader>y :Format<CR>
 
 " Use `:Fold` to fold current buffer
 command! -nargs=? Fold :call     CocAction('fold', <f-args>)
@@ -313,36 +308,6 @@ nnoremap <silent> <space>i  :<C-u>CocInfo<CR>
 let g:coc_status_error_sign = '✘'
 
 """""""""""""""" FZF
-" Disable preview menu for FZF
-let g:fzf_preview_window = ''
-
-" You can set up fzf window using a Vim command (Neovim or latest Vim 8 required)
-let g:fzf_layout = { 'window': 'enew' }
-let g:fzf_layout = { 'window': '-tabnew' }
-let g:fzf_layout = { 'window': '10new' }
-
-" Customize fzf colors to match your color scheme
-let g:fzf_colors =
-\ { 'fg':      ['fg', 'Normal'],
-  \ 'bg':      ['bg', 'Normal'],
-  \ 'hl':      ['fg', 'Comment'],
-  \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
-  \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
-  \ 'hl+':     ['fg', 'Statement'],
-  \ 'info':    ['fg', 'PreProc'],
-  \ 'border':  ['fg', 'Ignore'],
-  \ 'prompt':  ['fg', 'Conditional'],
-  \ 'pointer': ['fg', 'Exception'],
-  \ 'marker':  ['fg', 'Keyword'],
-  \ 'spinner': ['fg', 'Label'],
-  \ 'header':  ['fg', 'Comment'] }
-
-" Enable per-command history.
-" CTRL-N and CTRL-P will be automatically bound to next-history and
-" previous-history instead of down and up. If you don't like the change,
-" explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
-let g:fzf_history_dir = '~/.local/share/fzf-history'
-
 nnoremap <silent> <C-p> :Files<CR>
 
 """""""""""""""" ALE
