@@ -1,3 +1,8 @@
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 export PATH="$HOME/.bin:$PATH"
 # x86_64 Homebrew paths
 export PATH="/usr/local/bin:$PATH"
@@ -26,10 +31,6 @@ alias vim="nvim"
 alias zshconfig="$EDITOR ~/.zshrc"
 alias nvimrc="$EDITOR ~/.config/nvim/init.vim"
 alias ls="exa"
-
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
 
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.zinit/bin/zinit.zsh ]]; then
@@ -71,24 +72,30 @@ zinit wait lucid for \
   OMZL::history.zsh \
   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
+
 zinit wait blockf lucid for \
-  zsh-users/zsh-completions \
   OMZP::bundler \
-  as"snippet" OMZP::heroku \
+  OMZP::heroku \
   OMZP::iterm2 \
   OMZP::gem \
-  OMZP::fzf
+  OMZP::fzf \
+  atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions
 
 zinit wait lucid for \
   Aloxaf/fzf-tab
-
 
 zinit wait lucid as"snippet" for \
   https://github.com/asdf-vm/asdf/blob/master/completions/_asdf \
   https://github.com/sharkdp/fd/blob/master/contrib/completion/_fd \
   https://github.com/ggreer/the_silver_searcher/blob/master/_the_silver_searcher
 
-eval "$(zoxide init zsh)"
+eval "$(zoxide init zsh --no-aliases)"
+function z() {
+    __zoxide_z "$@"
+}
+
+# ASDF plugin setup
+. $HOME/.asdf/asdf.sh
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
