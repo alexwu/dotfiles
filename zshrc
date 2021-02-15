@@ -7,13 +7,6 @@ export PATH="$HOME/.bin:$PATH"
 # x86_64 Homebrew paths
 export PATH="/usr/local/bin:$PATH"
 
-if type brew &>/dev/null; then
-  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
-
-  autoload -Uz compinit
-  compinit
-fi
-
 autoload -U colors && colors
 
 export SSH_AUTH_SOCK=/Users/jamesbombeelu/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
