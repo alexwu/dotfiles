@@ -1,0 +1,25 @@
+format = """
+$username\
+$hostname\
+$shlvl\
+$directory\
+$git_branch\
+$git_commit\
+$git_state\
+$git_status\
+$hg_branch\
+$package\
+$memory_usage\
+$env_var\
+$custom\
+$cmd_duration\
+$jobs\
+$battery\
+$status\
+$character"""
+
+[character]
+success_symbol = "[❯](bold purple)"
+
+[git_status]
+format = '([\[$conflicted$deleted$renamed$modified$staged$untracked$ahead_behind\]]($style) )'

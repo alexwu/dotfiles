@@ -6,113 +6,110 @@ if !filereadable(autoload_plug_path)
 endif
 unlet autoload_plug_path
 
-call plug#begin('~/.config/nvim/plugins')
+let g:ale_set_balloons = 1
 
-" Coc
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+let pluginsPath = stdpath('data') . '/plugged'
+call plug#begin(pluginsPath)
 
-" FZF
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }                   " Fuzzy finding functionality
+" Essentials
+"
+Plug 'connorholyday/vim-snazzy'
+Plug 'janko/vim-test'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
+Plug 'neoclide/coc.nvim', {'branch': 'master', 'do': 'yarn install --frozen-lockfile'}
+Plug 'tpope/vim-commentary'
+Plug 'voldikss/vim-floaterm'
 
+
+Plug 'w0rp/ale'
 Plug 'itchyny/lightline.vim'
-Plug 'tpope/vim-rails'                                                " Ruby on Rails functionality
-Plug 'tpope/vim-bundler'                                              " Bundler usable from Vim
-Plug 'tpope/vim-commentary'                                              " Bundler usable from Vim
-Plug 'tpope/vim-dispatch'
-Plug 'tpope/vim-eunuch'
-Plug 'tpope/vim-fugitive'                                             " Git functionality in Vim
-Plug 'tpope/vim-projectionist'
+Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-vinegar'
-Plug 'janko/vim-test'
+Plug 'tpope/vim-projectionist'
+Plug 'tpope/vim-abolish'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
-" Formatting
-Plug 'junegunn/vim-easy-align'
+Plug 'tpope/vim-bundler'
+Plug 'tpope/vim-dispatch'
+Plug 'tpope/vim-eunuch'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-rails'
 Plug 'Yggdroot/indentLine'
-
-" Syntax Highlighting
-" Plug 'sheerun/vim-polyglot'
-Plug 'nvim-treesitter/nvim-treesitter'
-
-" Ale
-Plug 'w0rp/ale'
 Plug 'maximbaz/lightline-ale'
-
-" Theming
-Plug 'connorholyday/vim-snazzy'       " Snazzy theme for Vim
+Plug 'chaoren/vim-wordmotion'
 
 call plug#end()
+unlet pluginsPath
 
 :lua require("treesitter")
 
 " SETTINGS
 "
 set autoindent
-set backspace=indent,eol,start  " backspace over everything
+set backspace=indent,eol,start
+set ch=2
+set cmdheight=1
 set confirm
 set cursorline
+set directory=~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp
 set encoding=utf-8
 set expandtab
+set hidden
+set history=50
+set hlsearch
 set ignorecase
+set incsearch
+set laststatus=2
+set lazyredraw
 set linebreak
 set listchars=tab:▶\ ,eol:¬
 set loadplugins
+set modelines=1
+set nobackup
+set nojoinspaces
+set noshowmode
 set nowrap
 set number
+set numberwidth=5
+set ruler
+set scrolloff=5
 set shell=/bin/zsh
+set shiftwidth=2
+set shortmess+=c
+set showcmd
+set signcolumn=yes
 set smartcase
 set smarttab
 set softtabstop=2
-set shiftwidth=2
 set tabstop=2
+set tags=./TAGS,TAGS
 set textwidth=0
-set wildignore=*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE
-
-set hidden                      " Be more liberal about hidden buffers
-set numberwidth=5               " Sets the gutter width for line numbers
-set nobackup                    " do not keep a backup file, use an SCM instead
-set history=50                  " keep 50 lines of command line history
-set ruler                       " show the cursor position all the time
-set incsearch                   " do incremental searching
-set hlsearch                    " Highlight all search matches
-set lazyredraw                  " Don't update the display while executing macros
-set ch=2                        " Make command line two lines high
-set laststatus=2                " Always show the status line
-set showcmd                     " Show the current command in the lower right corner
-set cmdheight=2
-set noshowmode                  " Show the current mode
-set timeoutlen=250              " Short map keys timeout keeps the ui feeling snappy
-set tags=./TAGS,TAGS            " Use Emacs tagfile naming convention
-set modelines=1
-set nojoinspaces
-
-set grepprg=grep\ -nH\ $*
-
-" Keep more context when scrolling off the end of a buffer
-set scrolloff=10
-
-" Store temporary files in a central spot
-set directory=~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp
+set timeoutlen=250
+set updatetime=300
+set wildignore=*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store
 
 syntax on
+set termguicolors
+colorscheme snazzy
 
 " Slower but more accurate syntax highlighting for javascript/typescript files
 autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
 autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
 
-if has("gui_running")
+if executable("ag")
+  set grepprg=ag\ --nogroup\ --nocolor
 else
-  colorscheme snazzy
+  set grepprg=grep\ -nH\ $*
 endif
 
-" In many terminal emulators the mouse works just fine, thus enable it.
-if has('mouse')
+if has("mouse")
   set mouse=a
 endif
 
 "Allows remapping of Ctrl-j
-let g:BASH_Ctrl_j = 'off'
+let g:BASH_Ctrl_j = "off"
 
 " Move up and down over screen lines instead of file lines
 nnoremap j gj
@@ -121,12 +118,6 @@ nnoremap <c-j> 5gj
 nnoremap <c-k> 5gk
 nnoremap <c-h> 5h
 nnoremap <c-l> 5l
-
-" Move between splits with CTRL+Arrow Keys
-nnoremap <C-Down> <C-W><C-J>
-nnoremap <C-Up> <C-W><C-K>
-nnoremap <C-Right> <C-W><C-L>
-nnoremap <C-Left> <C-W><C-H>
 
 inoremap <c-j> <Down>
 inoremap <c-k> <Up>
@@ -138,17 +129,6 @@ vnoremap <c-k> 5gk
 vnoremap <c-h> 5h
 vnoremap <c-l> 5l
 
-" Start interactive EasyAlign in visual mode (e.g. vipga)
-xmap ga <Plug>(EasyAlign)
-
-" Start interactive EasyAlign for a motion/text object (e.g. gaip)
-nmap ga <Plug>(EasyAlign)
-
-vnoremap <Leader>c "*y
-
-" COMMAND MODE KEY MAPPINGS
-"
-" Map :W to :w so vim stops complaining about W
 command! W :w
 command! Q :q
 command! QW :wq
@@ -156,39 +136,12 @@ command! Qw :wq
 command! WQ :wq
 command! Wq :wq
 
-"Use 24-bit (true-color) mode in Vim/Neovim when outside tmux.
-"If you're using tmux version 2.2 or later, you can remove the outermost $TMUX check and use tmux's 24-bit color support
-"(see < http://sunaku.github.io/tmux-24bit-color.html#usage > for more information.)
+map <space> <leader>
 
-if exists('+termguicolors')
-  let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
-  let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
-  set termguicolors
-endif
-if (empty($TMUX))
-  if (has("nvim"))
-    "For Neovim 0.1.3 and 0.1.4 < https://github.com/neovim/neovim/pull/2198 >
-    let $NVIM_TUI_ENABLE_TRUE_COLOR=1
-  endif
-  "For Neovim > 0.1.5 and Vim > patch 7.4.1799 < https://github.com/vim/vim/commit/61be73bb0f965a895bfb064ea3e55476ac175162 >
-  "Based on Vim patch 7.4.1770 (`guicolors` option) < https://github.com/vim/vim/commit/8a633e3427b47286869aa4b96f2bfc1fe65b25cd >
-  " < https://github.com/neovim/neovim/wiki/Following-HEAD#20160511 >
-endif
-
-
-" coc settings
-" Smaller updatetime for CursorHold & CursorHoldI
-set updatetime=300
-
-" don't give |ins-completion-menu| messages.
-set shortmess+=c
-
-" always show signcolumns
-set signcolumn=yes
+"""""""""""""""" COC
 
 " Use tab for trigger completion with characters ahead and navigate.
 " Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.pumvisible() ? "\" : "\\
-
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? "\<C-n>" :
       \ <SID>check_back_space() ? "\<TAB>" :
@@ -200,52 +153,43 @@ function! s:check_back_space() abort
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
 
-" Use <c-space> to trigger completion.
+"Use <c-space> to trigger completion.
 inoremap <silent><expr> <c-space> coc#refresh()
 
-" Use <cr> to confirm completion, `<C-g>u` means break undo chain at current position.
-" Coc only does snippet and additional edit on confirm.
-inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+" Make <CR> auto-select the first completion item and notify coc.nvim to
+" format on enter, <cr> could be remapped by other vim plugin
+inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
-" Use `[c` and `]c` to navigate diagnostics
-nmap <silent> [c <Plug>(coc-diagnostic-prev)
-nmap <silent> ]c <Plug>(coc-diagnostic-next)
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
 
-" Remap keys for gotos
 nmap <silent> gd <Plug>(coc-definition)
 nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> gi <Plug>(coc-implementation)
 nmap <silent> gr <Plug>(coc-references)
 
-
-" Use K to show documentation in preview window.
 nnoremap <silent> K :call <SID>show_documentation()<CR>
 
 function! s:show_documentation()
   if (index(['vim','help'], &filetype) >= 0)
     execute 'h '.expand('<cword>')
+  elseif (coc#rpc#ready())
+    call CocActionAsync('doHover')
   else
-    call CocAction('doHover')
+    execute '!' . &keywordprg . " " . expand('<cword>')
   endif
 endfunction
 
 " Highlight symbol under cursor on CursorHold
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
-map <space> <leader>
-" Remap for rename current word
 nmap <leader>rn <Plug>(coc-rename)
-
-" Remap for format selected region
-command! -nargs=0 Prettier :CocCommand prettier.formatFile
-xmap <leader>f  <Plug>(coc-format-selected)
-nmap <leader>f  <Plug>(coc-format-selected)
 
 augroup mygroup
   autocmd!
-  " Setup formatexpr specified filetype(s).
-  autocmd FileType typescript,typescriptreact,javascript,javascriptreact,json setl formatexpr=CocAction('formatSelected')
-  " Update signature help on jump placeholder
+  " Setup :gq for to use coc
+  autocmd FileType typescript,typescriptreact,javascript,javascriptreact,json setl indentexpr=CocAction('formatSelected')
   autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
 augroup end
 
@@ -259,7 +203,6 @@ nmap <leader>ac  <Plug>(coc-codeaction)
 nmap <leader>qf  <Plug>(coc-fix-current)
 
 " Map function and class text objects
-" NOTE: Requires 'textDocument.documentSymbol' support from the language server.
 xmap if <Plug>(coc-funcobj-i)
 omap if <Plug>(coc-funcobj-i)
 xmap af <Plug>(coc-funcobj-a)
@@ -269,111 +212,86 @@ omap ic <Plug>(coc-classobj-i)
 xmap ac <Plug>(coc-classobj-a)
 omap ac <Plug>(coc-classobj-a)
 
+" Remap <C-f> and <C-b> for scroll float windows/popups.
+if has('nvim-0.4.0') || has('patch-8.2.0750')
+  nnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+  nnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+  inoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+  inoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+  vnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+  vnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+endif
+
 " Use CTRL-S for selections ranges.
-" Requires 'textDocument/selectionRange' support of LS, ex: coc-tsserver
 nmap <silent> <C-s> <Plug>(coc-range-select)
 xmap <silent> <C-s> <Plug>(coc-range-select)
 
-" Use `:Format` to format current buffer
 command! -nargs=0 Format :call CocAction('format')
-nmap <leader>y :Format<CR>
-
-" Use `:Fold` to fold current buffer
-command! -nargs=? Fold :call     CocAction('fold', <f-args>)
-
-" Add `:OR` command for organize imports of the current buffer.
+command! -nargs=? Fold :call CocAction('fold', <f-args>)
 command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport')
 
-"""""""""""""""" COC
-" Using CocList
-" Show all diagnostics
-nnoremap <silent> <space>a  :<C-u>CocList diagnostics<cr>
-" Manage extensions
-nnoremap <silent> <space>e  :<C-u>CocList extensions<cr>
-" Show commands
-nnoremap <silent> <space>c  :<C-u>CocList commands<cr>
-" Find symbol of current document
-nnoremap <silent> <space>o  :<C-u>CocList outline<cr>
-" Search workspace symbols
-nnoremap <silent> <space>s  :<C-u>CocList -I symbols<cr>
-" Do default action for next item.
-nnoremap <silent> <space>j  :<C-u>CocNext<CR>
-" Do default action for previous item.
-nnoremap <silent> <space>k  :<C-u>CocPrev<CR>
-" Resume latest coc list
-nnoremap <silent> <space>p  :<C-u>CocListResume<CR>
-
-nnoremap <silent> <space>i  :<C-u>CocInfo<CR>
+nmap <leader>y :Format<CR>
+command! -nargs=0 Prettier :CocCommand prettier.formatFile
+command! -nargs=0 EslintFix :CocCommand eslint.executeAutofix
+nmap <leader>f :EslintFix<CR>
 
 let g:coc_status_error_sign = '✘'
 
-"""""""""""""""" FZF
+" Enable per-command history.
+" CTRL-N and CTRL-P will be automatically bound to next-history and
+" previous-history instead of down and up. If you don't like the change,
+" explicitly bind the keys to down and up in your $FZF_DEFAULT_OPTS.
+let g:fzf_history_dir = '~/.local/share/fzf-history'
+
 nnoremap <silent> <C-p> :Files<CR>
+" nnoremap <silent> <Bslash>[ :GFiles<CR>
+" nnoremap <silent> <Bslash>] :Ag<CR>
+" nnoremap <silent> <Bslash>o :Ag<CR>
 
 """""""""""""""" ALE
-let g:ale_lint_delay = 400
-let g:ale_fixers = {
-\   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\}
-let g:ale_linters= {
-\   'ruby': [],
-\   'javascript': [],
-\   'javascriptreact': [],
-\   'typescript': [],
-\   'typescriptreact': [],
-\}
-
-let g:lightline#ale#indicator_errors= '✘'
-let g:lightline#ale#indicator_warnings = '♦'
-
 let g:ale_enabled = 1
 let g:ale_fix_on_save = 1
+let g:ale_fixers = { '*': ['remove_trailing_lines', 'trim_whitespace'] }
+let g:ale_lint_delay = 300
+let g:ale_linters_explicit = 1
+let g:ale_set_highlights = 1
 let g:ale_sign_error = '✘'
 let g:ale_sign_warning = '>>'
-let g:ale_sign_info= '--'
-let g:ale_linters_explicit = 1
-
-highlight ALEErrorSign ctermbg=NONE ctermfg=red
-highlight ALEError ctermbg=NONE ctermfg=red cterm=underline
-highlight ALEWarning ctermbg=NONE ctermfg=yellow cterm=underline
-highlight ALEInfo ctermbg=NONE ctermfg=blue cterm=underline
+let g:ale_sign_info= '♦'
+let g:ale_use_global_executables = 0
 
 """""""""""""""" COMMENTARY
 xmap <C-_> <Plug>Commentary
 omap <C-_> <Plug>Commentary
-nmap <C-_> <Plug>Commentary
-nmap <C-_><C-_> <Plug>CommentaryLine
+nmap <C-_> <Plug>CommentaryLine
 
 """""""""""""""" TEST
-nmap <silent> <Leader>s :TestNearest<CR>
+nmap <silent> <Leader>n :TestNearest<CR>
 nmap <silent> <Leader>t :TestFile<CR>
 nmap <silent> <Leader>s :TestSuite<CR>
-nmap <silent> <Leader>l :TestLast<CR>
-nmap <silent> <Leader>a :TestVisit<CR>
 
-let test#strategy = "neovim"
+let test#strategy = "floaterm"
+let test#ruby#rspec#executable = 'bundle exec rspec'
+let g:test#javascript#jest#executable = 'yarn run jest --coverage=true'
+let g:test#ruby#rspec#options = {
+      \ 'file':    '--format documentation',
+      \ 'suite':   '--format documentation',
+      \ 'nearest': '--format documentation',
+      \}
 
 """""""""""""""" NETRW
 let g:netrw_banner = 0
 let g:netrw_winsize = 25
+let g:netrw_list_hide= '*.DS_Store'
 
 """""""""""""""" LIGHTLINE
-function! CocCurrentFunction()
-  return get(b:, 'coc_current_function', '')
-endfunction
-
-function! CocGitBlame () abort
-  let blame = get(b:, 'coc_git_blame', '')
-  return winwidth(0) > 120 ? blame : ''
-endfunction
-
 let g:lightline = {
       \ 'colorscheme': 'snazzy',
       \ 'active': {
       \   'left': [
       \     [ 'mode', 'paste' ],
-      \     [ 'git', 'diagnostic', 'readonly', 'filename', 'modified' ],
-      \     ['gitbranch', 'cocstatus', 'currentfunction'],
+      \     [ 'git', 'filename', 'diagnostic', 'readonly', 'modified' ],
+      \     ['gitbranch', 'cocstatus'],
       \
       \   ],
       \   'right': [
@@ -383,10 +301,9 @@ let g:lightline = {
       \   ],
       \ },
       \  'component_function': {
-      \     'cocstatus': 'coc#status',
-      \     'blame': 'CocGitBlame',
       \     'gitbranch': 'fugitive#head',
-      \     'currentfunction': 'CocCurrentFunction',
+      \     'cocstatus': 'coc#status',
+      \     'filename': 'LightlineFilename',
       \  },
       \}
 let g:lightline.component_expand = {
@@ -404,5 +321,40 @@ let g:lightline.component_type = {
       \  'linter_ok': 'left',
       \ }
 
+function! LightlineFilename()
+  let root = fnamemodify(get(b:, 'git_dir'), ':h')
+  let path = expand('%:p')
+  if path[:len(root)-1] ==# root
+    return path[len(root)+1:]
+  endif
+  return expand('%')
+endfunction
+
+let g:lightline#ale#indicator_errors= '✘'
+let g:lightline#ale#indicator_warnings = '♦'
+
 """""""""""""""" BUFFERS
 nmap <space><space> <C-^>
+
+"""""""""""""""" FLOATERM
+let g:floaterm_keymap_new    = '<F7>'
+let g:floaterm_keymap_prev   = '<F8>'
+let g:floaterm_keymap_next   = '<F9>'
+let g:floaterm_keymap_toggle = '<F10>'
+
+"""""""""""""""" TESTING
+silent! helptags ALL
+
+" Remap terminal normal mode to C-d
+tnoremap <C-d> <C-\><C-n>
+
+nmap <c-s><c-a> :w<cr>
+imap <c-s><c-a> <esc>:w<cr>
+" DEBUG COC
+" let g:node_client_debug = 1
+" :call coc#client#open_log()
+"
+" PROFILE VIM
+" :profile start profile.log
+" :profile func *
+" :profile file *
