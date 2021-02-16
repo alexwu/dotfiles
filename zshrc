@@ -9,12 +9,13 @@ export PATH="/usr/local/bin:$PATH"
 
 autoload -U colors && colors
 
-export SSH_AUTH_SOCK=/Users/jamesbombeelu/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 export FZF_BASE=$(brew --prefix)/bin/fzf
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
-if [[ -n $SSH_CONNECTION ]]; then
+if ! command -v COMMAND &> /dev/null
+then
   export EDITOR='vim'
 else
   export EDITOR='nvim'
