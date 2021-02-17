@@ -1,3 +1,5 @@
+set nocompatible
+
 let autoload_plug_path = stdpath('data') . '/site/autoload/plug.vim'
 if !filereadable(autoload_plug_path)
   silent execute '!curl -fLo ' . autoload_plug_path . '  --create-dirs
@@ -10,6 +12,8 @@ let g:ale_set_balloons = 1
 
 let pluginsPath = stdpath('data') . '/plugged'
 call plug#begin(pluginsPath)
+
+let g:polyglot_disabled = ['javascript.plugin', 'typescript.plugin']
 
 " Essentials
 "
