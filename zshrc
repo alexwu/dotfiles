@@ -13,6 +13,7 @@ export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretiv
 export FZF_BASE=$(brew --prefix)/bin/fzf
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export BUNDLED_COMMANDS=(srb)
 
 if ! command -v COMMAND &> /dev/null
 then
