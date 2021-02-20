@@ -13,7 +13,7 @@ let g:ale_set_balloons = 1
 let pluginsPath = stdpath('data') . '/plugged'
 call plug#begin(pluginsPath)
 
-let g:polyglot_disabled = ['javascript.plugin', 'typescript.plugin']
+let g:polyglot_disabled = ['javascript.plugin', 'typescript.plugin', 'graphql']
 
 " Essentials
 "
@@ -21,10 +21,10 @@ Plug 'connorholyday/vim-snazzy'
 Plug 'janko/vim-test'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-Plug 'neoclide/coc.nvim', {'branch': 'master', 'do': 'yarn install --frozen-lockfile'}
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'tpope/vim-commentary'
 Plug 'voldikss/vim-floaterm'
-
+Plug 'sheerun/vim-polyglot'
 
 Plug 'w0rp/ale'
 Plug 'itchyny/lightline.vim'
@@ -43,6 +43,7 @@ Plug 'tpope/vim-rails'
 Plug 'Yggdroot/indentLine'
 Plug 'maximbaz/lightline-ale'
 Plug 'chaoren/vim-wordmotion'
+Plug 'jparise/vim-graphql'
 
 call plug#end()
 unlet pluginsPath
@@ -157,8 +158,12 @@ function! s:check_back_space() abort
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
 
-"Use <c-space> to trigger completion.
-inoremap <silent><expr> <c-space> coc#refresh()
+" Use <c-space> to trigger completion.
+if has('nvim')
+  inoremap <silent><expr> <c-space> coc#refresh()
+else
+  inoremap <silent><expr> <c-@> coc#refresh()
+endif
 
 " Make <CR> auto-select the first completion item and notify coc.nvim to
 " format on enter, <cr> could be remapped by other vim plugin
@@ -186,7 +191,9 @@ function! s:show_documentation()
 endfunction
 
 " Highlight symbol under cursor on CursorHold
-autocmd CursorHold * silent call CocActionAsync('highlight')
+" Coc seems to not like graphql files for this
+let blacklist = ['graphql']
+autocmd CursorHold * if index(blacklist, &ft) < 0 | silent call CocActionAsync('highlight')
 
 nmap <leader>rn <Plug>(coc-rename)
 
@@ -345,6 +352,7 @@ let g:floaterm_keymap_new    = '<F7>'
 let g:floaterm_keymap_prev   = '<F8>'
 let g:floaterm_keymap_next   = '<F9>'
 let g:floaterm_keymap_toggle = '<F10>'
+let g:floaterm_borderchars = "─│─│╭╮╯╰"
 
 """""""""""""""" TESTING
 silent! helptags ALL
