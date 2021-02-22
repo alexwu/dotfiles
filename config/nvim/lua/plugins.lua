@@ -14,6 +14,7 @@ return require('packer').startup({ function()
   use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
   use {'junegunn/fzf'}
   use {'junegunn/fzf.vim'}
+  use {'glepnir/zephyr-nvim'}
   use {
     'glepnir/lspsaga.nvim',
     requires = {'neovim/nvim-lspconfig'}

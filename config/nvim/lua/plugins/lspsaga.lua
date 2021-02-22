@@ -1,4 +1,6 @@
-local saga = require 'lspsaga'
+local saga = require('lspsaga')
+local utils = require('utils')
+local map = utils.map
 
 -- add your config value here
 -- default value
@@ -36,11 +38,27 @@ local saga = require 'lspsaga'
 -- server_filetype_map = {}
 
 saga.init_lsp_saga {
+  use_saga_diagnostic_sign = true,
   error_sign = '✘',
   warn_sign = '>>',
-  infor_sign = '--',
+  infor_sign = '♦',
   border_style = 2,
   finder_action_keys = {
     open = '<CR>', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
   },
+  code_action_keys = {
+    quit = '<Esc>',exec = '<CR>'
+  },
+  rename_action_keys = {
+    quit = '<Esc>',exec = '<CR>'  -- quit can be a table
+  },
 }
+
+-- saga.init_lsp_saga()
+
+map("n", "K", "<cmd>lua require('lspsaga.hover').render_hover_doc()<CR>", { silent = true })
+map("n", "<leader>aa", "<cmd>lua require('lspsaga.codeaction').code_action()<CR>", { silent = true })
+map("v", "<leader>a", "<cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>", { silent = true })
+map("n", "gd", "<cmd>lua require('lspsaga.provider').lsp_finder()<CR>", { silent = true })
+map("n", "<leader>n", "<cmd>lua require('lspsaga.rename').rename()<CR>", { silent = true })
+

@@ -7,5 +7,7 @@ local lspconfig = require'lspconfig'
 -- }
 
 lspconfig.tsserver.setup{}
-lspconfig.sorbet.setup{}
+lspconfig.sorbet.setup{
+  cmd = { "/Users/jamesbombeelu/.bin/sorbet", "--lsp" }
+}
 lspconfig.vimls.setup{}
