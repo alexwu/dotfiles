@@ -1,8 +1,9 @@
 require('plugins')
 require('plugins/compe')
+require('plugins/gitsigns')
 require('plugins/lspconfig')
 require('plugins/lspsaga')
-require('plugins/telescope')
+require('plugins/fzf')
 require('plugins/treesitter')
 
 require('colorscheme')
@@ -20,7 +21,7 @@ local map = utils.map
 local buffer = {o, bo}
 local window = {o, wo}
 
-opt('autoindent', true)
+opt('autoindent', true, buffer)
 opt('backspace', 'indent,eol,start')
 opt('ch', 2)
 opt('cmdheight', 1)
@@ -50,21 +51,21 @@ opt('numberwidth', 5, window)
 opt('ruler', true)
 opt('scrolloff', 5)
 opt('shell', '/bin/zsh')
-opt('shiftwidth', 2)
+opt('shiftwidth', 2, buffer)
 opt('shortmess', o.shortmess .. 'c')
 opt('showcmd', true)
 opt('signcolumn', 'yes')
 opt('smartcase', true)
 opt('smarttab', true)
-opt('softtabstop', 2)
-opt('tabstop', 2)
+opt('softtabstop', 2, buffer)
+opt('tabstop', 2, buffer)
 opt('tags', './TAGS,TAGS')
 opt('textwidth', 0)
 opt('timeoutlen', 250)
 opt('updatetime', 300)
 opt('wildignore', '*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store')
 opt('termguicolors', true)
-
+        
 -- Slower but more accurate syntax highlighting for javascript/typescript files
 -- autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
 -- autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
