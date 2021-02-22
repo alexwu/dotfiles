@@ -65,7 +65,12 @@ opt('timeoutlen', 250)
 opt('updatetime', 300)
 opt('wildignore', '*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store')
 opt('termguicolors', true)
-        
+
+autocmd('highlight_yank',
+  'TextYankPost * silent! lua require"vim.highlight".on_yank{ higroup="IncSearch", timeout=200 }',
+  true
+)
+
 -- Slower but more accurate syntax highlighting for javascript/typescript files
 -- autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
 -- autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
