@@ -25,6 +25,7 @@ return require('packer').startup({ function()
     }
   }
   use { 'Yggdroot/indentLine' }
+  use { 'b3nj5m1n/kommentary' }
   use { 'chaoren/vim-wordmotion' }
   use { 'connorholyday/vim-snazzy' }
   use { 'f-person/git-blame.nvim' }
@@ -32,6 +33,7 @@ return require('packer').startup({ function()
   use { 'tpope/vim-abolish' }
   use { 'tpope/vim-commentary' }
   use { 'tpope/vim-eunuch' }
+  use { 'tpope/vim-fugitive' }
   use { 'tpope/vim-projectionist' }
   use { 'tpope/vim-surround' }
   use { 'tpope/vim-vinegar' }
