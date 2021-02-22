@@ -40,7 +40,7 @@ opt('shell', '/bin/zsh')
 opt('shiftwidth', 2, buffer)
 opt('shortmess', o.shortmess .. 'c')
 opt('showcmd', true)
-opt('signcolumn', 'yes')
+opt('signcolumn', 'yes', window)
 opt('smartcase', true)
 opt('smarttab', true)
 opt('softtabstop', 2, buffer)
@@ -54,7 +54,7 @@ opt('termguicolors', true)
 o.completeopt = 'menuone,noselect'
 
 autocmd('highlight_yank',
-  'TextYankPost * silent! lua require"vim.highlight".on_yank{ higroup="IncSearch", timeout=200 }',
+  'TextYankPost * silent! lua require"vim.highlight".on_yank{ timeout=200 }',
   true
 )
 
