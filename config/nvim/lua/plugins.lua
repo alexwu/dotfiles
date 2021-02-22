@@ -34,6 +34,7 @@ return require('packer').startup({ function()
   use { 'tpope/vim-eunuch' }
   use { 'tpope/vim-projectionist' }
   use { 'tpope/vim-surround' }
+  use { 'tpope/vim-vinegar' }
   use { 'voldikss/vim-floaterm' }
 end,
   config = {
