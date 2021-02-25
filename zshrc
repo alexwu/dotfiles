@@ -24,6 +24,11 @@ else
   alias vim="nvim"
 fi
 
+if [[ $TERM = "xterm-kitty" ]]
+then
+  alias ssh="kitty +kitten ssh"
+fi
+
 alias zshconfig="$EDITOR ~/.zshrc"
 alias nvimrc="$EDITOR ~/.config/nvim/init.lua"
 alias ls="exa"
@@ -87,7 +92,7 @@ zinit wait lucid as"snippet" for \
 
 eval "$(zoxide init zsh --no-aliases)"
 function z() {
-    __zoxide_z "$@"
+  __zoxide_z "$@"
 }
 
 # ASDF plugin setup
