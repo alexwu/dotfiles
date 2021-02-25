@@ -1,1 +1,1 @@
-vim.cmd 'colorscheme zephyr'
+require("snazzy")

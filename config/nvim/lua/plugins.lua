@@ -10,11 +10,13 @@ end
 cmd [[packadd packer.nvim]]
 
 return require('packer').startup({ function()
-  use { 'wbthomason/packer.nvim', opt = true }
-  use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
+  use {'wbthomason/packer.nvim', opt = true}
+  use {'nvim-treesitter/nvim-treesitter', run = ':TSUpdate'}
+  use {'nvim-treesitter/playground'}
   use {'junegunn/fzf'}
   use {'junegunn/fzf.vim'}
-  use {'glepnir/zephyr-nvim'}
+  use {'bfredl/nvim-luadev'}
+  use {'/Users/jamesbombeelu/Code/snazzy.nvim'}
   use {
     'glepnir/lspsaga.nvim',
     requires = {'neovim/nvim-lspconfig'}
@@ -25,11 +27,15 @@ return require('packer').startup({ function()
       'nvim-lua/plenary.nvim'
     }
   }
+  use { 'f-person/git-blame.nvim' }
+  use { 'mhartington/formatter.nvim' }
+  -- use { 'prettier/vim-prettier' }
+  use { 'vim-test/vim-test' }
+
   use { 'Yggdroot/indentLine' }
   use { 'b3nj5m1n/kommentary' }
   use { 'chaoren/vim-wordmotion' }
   use { 'connorholyday/vim-snazzy' }
-  use { 'f-person/git-blame.nvim' }
   use { 'hrsh7th/nvim-compe' }
   use { 'tpope/vim-abolish' }
   use { 'tpope/vim-commentary' }
@@ -42,5 +48,5 @@ return require('packer').startup({ function()
 end,
   config = {
     compile_path = fn.stdpath('data')..'packer/packer_compiled.vim',
-  } 
+  }
 })
