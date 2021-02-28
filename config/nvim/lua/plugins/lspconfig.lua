@@ -16,12 +16,12 @@ saga.init_lsp_saga {
     split = "i",
     quit = "q",
     scroll_down = "<C-f>",
-    scroll_up = "<C-b>" -- quit can be a table
+    scroll_up = "<C-b>"
   },
   code_action_keys = {quit = "<Esc>", exec = "<CR>"},
   rename_action_keys = {
     quit = "<Esc>",
-    exec = "<CR>" -- quit can be a table
+    exec = "<CR>"
   }
 }
 
@@ -86,18 +86,9 @@ require"lspconfig".sumneko_lua.setup {
   cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
   settings = {
     Lua = {
-      runtime = {
-        -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
-        version = "LuaJIT",
-        -- Setup your lua path
-        path = vim.split(package.path, ";")
-      },
-      diagnostics = {
-        -- Get the language server to recognize the `vim` global
-        globals = {"vim", "use"}
-      },
+      runtime = {version = "LuaJIT", path = vim.split(package.path, ";")},
+      diagnostics = {globals = {"vim", "use"}},
       workspace = {
-        -- Make the server aware of Neovim runtime files
         library = {
           [vim.fn.expand("$VIMRUNTIME/lua")] = true,
           [vim.fn.expand("$VIMRUNTIME/lua/vim/lsp")] = true

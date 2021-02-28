@@ -26,5 +26,3 @@ map("i", "<C-l>", "<Right>")
 map("n", "<Space><Space>", "<C-^>")
 map("n", "<c-s><c-a>", "<Cmd>w<cr>")
 map("i", "<c-s><c-a>", "<esc><cmd>w<cr>")
-
-map("n", "<Leader>y", ":PrettierAsync<cr>")

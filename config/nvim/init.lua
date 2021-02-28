@@ -2,12 +2,14 @@ require("maps")
 require("options")
 
 require("plugins")
+require("colorscheme")
+
 require("plugins/compe")
 require("plugins/formatter_config")
+require("plugins/floaterm")
 require("plugins/fzf")
 require("plugins/gitsigns")
 require("plugins/kommentary")
 require("plugins/lspconfig")
+require("plugins/telescope")
 require("plugins/treesitter")
-
-require("colorscheme")

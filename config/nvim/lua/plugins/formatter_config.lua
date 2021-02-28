@@ -43,3 +43,5 @@ require"formatter".setup({
     python = {black}
   }
 })
+
+vim.api.nvim_set_keymap("n", "<Leader>y", ":Format<CR>", {noremap = true})
