@@ -25,7 +25,6 @@ Plug 'neoclide/coc.nvim', {'branch': 'master', 'do': 'yarn install --frozen-lock
 Plug 'tpope/vim-commentary'
 Plug 'voldikss/vim-floaterm'
 
-
 Plug 'w0rp/ale'
 Plug 'itchyny/lightline.vim'
 Plug 'tpope/vim-repeat'
@@ -44,10 +43,17 @@ Plug 'Yggdroot/indentLine'
 Plug 'maximbaz/lightline-ale'
 Plug 'chaoren/vim-wordmotion'
 
+Plug 'nvim-lua/plenary.nvim'
+Plug 'lewis6991/gitsigns.nvim'
+Plug 'f-person/git-blame.nvim'
+Plug 'windwp/nvim-autopairs'
+
 call plug#end()
 unlet pluginsPath
 
 :lua require("treesitter")
+:lua require("nvim-autopairs").setup()
+:lua require("gitsigns").setup()
 
 " SETTINGS
 "
@@ -186,7 +192,7 @@ function! s:show_documentation()
 endfunction
 
 " Highlight symbol under cursor on CursorHold
-autocmd CursorHold * silent call CocActionAsync('highlight')
+" autocmd CursorHold * silent call CocActionAsync('highlight')
 
 nmap <leader>rn <Plug>(coc-rename)
 
