@@ -25,6 +25,7 @@ return require("packer").startup({
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
     use {"f-person/git-blame.nvim"}
+    use {"kosayoda/nvim-lightbulb"}
     use {"mhartington/formatter.nvim"}
     use {
       "nvim-telescope/telescope.nvim",
@@ -43,12 +44,6 @@ return require("packer").startup({
       requires = {"kyazdani42/nvim-web-devicons", opt = true}
     }
     use {"antoinemadec/FixCursorHold.nvim"}
-    use {
-      "justinmk/vim-dirvish",
-      requires = {
-        "roginfarrer/vim-dirvish-dovish", "kristijanhusak/vim-dirvish-git"
-      }
-    }
 
     use {"Yggdroot/indentLine"}
     use {"chaoren/vim-wordmotion"}
