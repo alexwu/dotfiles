@@ -20,8 +20,9 @@ return require("packer").startup({
       "neovim/nvim-lspconfig",
       config = function() require"colorizer".setup() end
     }
+    use {"windwp/nvim-autopairs"}
     use {"norcalli/nvim-colorizer.lua"}
-    use {"glepnir/lspsaga.nvim"}
+    use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
     use {"f-person/git-blame.nvim"}
     use {"mhartington/formatter.nvim"}
@@ -31,10 +32,16 @@ return require("packer").startup({
         {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
         {"nvim-telescope/telescope-fzf-writer.nvim"},
         {"nvim-telescope/telescope-fzy-native.nvim"},
-        {"kyazdani42/nvim-web-devicons"},
+        {"kyazdani42/nvim-web-devicons"}
       }
     }
-
+    use {"hrsh7th/nvim-compe"}
+    use {
+      "glepnir/galaxyline.nvim",
+      branch = "main",
+      config = function() require "statusline" end,
+      requires = {"kyazdani42/nvim-web-devicons", opt = true}
+    }
     use {"antoinemadec/FixCursorHold.nvim"}
     use {
       "justinmk/vim-dirvish",
@@ -42,9 +49,10 @@ return require("packer").startup({
         "roginfarrer/vim-dirvish-dovish", "kristijanhusak/vim-dirvish-git"
       }
     }
+
     use {"Yggdroot/indentLine"}
     use {"chaoren/vim-wordmotion"}
-    use {"hrsh7th/nvim-compe"}
+    use {"easymotion/vim-easymotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"machakann/vim-highlightedyank"}
     use {"tpope/vim-abolish"}
@@ -52,6 +60,7 @@ return require("packer").startup({
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-fugitive"}
     use {"tpope/vim-projectionist"}
+    use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}

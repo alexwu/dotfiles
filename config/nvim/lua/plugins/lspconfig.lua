@@ -1,51 +1,55 @@
 local lspconfig = require "lspconfig"
-local saga = require("lspsaga")
 
-saga.init_lsp_saga {
-  use_saga_diagnostic_sign = true,
-  error_sign = "✘",
-  warn_sign = ">>",
-  infor_sign = "♦",
-  border_style = 2,
-  hint_sign = "♦",
-  dianostic_header_icon = "   ",
-  code_action_icon = " ",
-  finder_action_keys = {
-    open = "<CR>",
-    vsplit = "s",
-    split = "i",
-    quit = "q",
-    scroll_down = "<C-f>",
-    scroll_up = "<C-b>"
-  },
-  code_action_keys = {quit = "<Esc>", exec = "<CR>"},
-  rename_action_keys = {
-    quit = "<Esc>",
-    exec = "<CR>"
-  }
-}
+vim.lsp.handlers["textDocument/codeAction"] =
+  require"lsputil.codeAction".code_action_handler
+vim.lsp.handlers["textDocument/references"] =
+  require"lsputil.locations".references_handler
+vim.lsp.handlers["textDocument/definition"] =
+  require"lsputil.locations".definition_handler
+vim.lsp.handlers["textDocument/declaration"] =
+  require"lsputil.locations".declaration_handler
+vim.lsp.handlers["textDocument/typeDefinition"] =
+  require"lsputil.locations".typeDefinition_handler
+vim.lsp.handlers["textDocument/implementation"] =
+  require"lsputil.locations".implementation_handler
+vim.lsp.handlers["textDocument/documentSymbol"] =
+  require"lsputil.symbols".document_handler
+vim.lsp.handlers["workspace/symbol"] =
+  require"lsputil.symbols".workspace_handler
+vim.lsp.handlers["textDocument/publishDiagnostics"] =
+  vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
+               {virtual_text = false, underline = true, signs = true})
 
 local on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
 
-  buf_set_option("omnifunc", "v:lua.vim.lsp.omnifunc")
+  -- buf_set_option("omnifunc", "v:lua.vim.lsp.omnifunc")
 
   -- Mappings.
   local opts = {noremap = true, silent = true}
-  buf_set_keymap("n", "K",
-                 "<cmd>lua require('lspsaga.hover').render_hover_doc()<CR>",
+  buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
+  buf_set_keymap("n", "gd", "<Cmd>lua vim.lsp.buf.definition()<CR>", opts)
+  buf_set_keymap("n", "K", "<Cmd>lua vim.lsp.buf.hover()<CR>", opts)
+  buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
+  buf_set_keymap("n", "H", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
+  buf_set_keymap("n", "<space>wa",
+                 "<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>", opts)
+  buf_set_keymap("n", "<space>wr",
+                 "<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>", opts)
+  buf_set_keymap("n", "<space>wl",
+                 "<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>",
                  opts)
-  buf_set_keymap("n", "<leader>aa",
-                 "<cmd>lua require('lspsaga.codeaction').code_action()<CR>",
+  buf_set_keymap("n", "<space>D", "<cmd>lua vim.lsp.buf.type_definition()<CR>",
                  opts)
-  buf_set_keymap("v", "<leader>a",
-                 "<cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>",
-                 opts)
-  buf_set_keymap("n", "gd",
-                 "<cmd>lua require('lspsaga.provider').lsp_finder()<CR>", opts)
-  buf_set_keymap("n", "<leader>n",
-                 "<cmd>lua require('lspsaga.rename').rename()<CR>", opts)
+  buf_set_keymap("n", "<space>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
+  buf_set_keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)
+  buf_set_keymap("n", "<space>e",
+                 "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>", opts)
+  buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
+  buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
+  buf_set_keymap("n", "<space>q",
+                 "<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>", opts)
 
   -- Set some keybinds conditional on server capabilities
   if client.resolved_capabilities.document_formatting then
@@ -59,22 +63,20 @@ local on_attach = function(client, bufnr)
   -- Set autocommands conditional on server_capabilities
   if client.resolved_capabilities.document_highlight then
     vim.api.nvim_exec([[
-    hi LspReferenceRead cterm=bold ctermbg=red guibg=Gray
-    hi LspReferenceText cterm=bold ctermbg=red guibg=Gray
-    hi LspReferenceWrite cterm=bold ctermbg=red guibg=Gray
-    augroup lsp_document_highlight
-    autocmd! * <buffer>
-    autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
-    autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
-    augroup END
-      ]], false)
+      hi LspReferenceRead cterm=bold ctermbg=red guibg=Gray
+      hi LspReferenceText cterm=bold ctermbg=red guibg=Gray
+      hi LspReferenceWrite cterm=bold ctermbg=red guibg=Gray
+      augroup lsp_document_highlight
+      autocmd! * <buffer>
+      autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
+      autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
+      augroup END
+    ]], false)
   end
 
-  vim.lsp.handlers["textDocument/publishDiagnostics"] =
-    vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
-                 {virtual_text = false, underline = true, signs = true})
-  vim.cmd [[autocmd CursorHold * lua require'lspsaga.diagnostic'.show_line_diagnostics()]]
-  vim.cmd [[autocmd CursorHoldI * silent! lua require('lspsaga.signaturehelp').signature_help()]]
+  vim.api.nvim_exec([[
+    autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics()
+  ]], false)
 end
 
 local system_name = "macOS"
@@ -82,7 +84,7 @@ local sumneko_root_path = "/Users/jamesbombeelu/Code/lua-language-server"
 local sumneko_binary = sumneko_root_path .. "/bin/" .. system_name ..
                          "/lua-language-server"
 
-require"lspconfig".sumneko_lua.setup {
+lspconfig.sumneko_lua.setup {
   cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
   settings = {
     Lua = {
@@ -96,6 +98,34 @@ require"lspconfig".sumneko_lua.setup {
       }
     }
   }
+}
+
+local eslint = {
+  lintCommand = "eslint_d -f unix --stdin --stdin-filename ${INPUT}",
+  lintStdin = true,
+  lintFormats = {"%f:%l:%c: %m"},
+  lintIgnoreExitCode = true,
+  formatCommand = "eslint_d --fix-to-stdout --stdin --stdin-filename=${INPUT}",
+  formatStdin = true
+}
+
+lspconfig.efm.setup {
+  init_options = {documentFormatting = true, hover = true},
+  filetypes = {"javascript", "javascriptreact", "typescript", "typescriptreact"},
+  root_dir = function(fname)
+    return lspconfig.util.root_pattern("tsconfig.json")(fname) or
+             lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname);
+  end,
+  settings = {
+    rootMarkers = {".eslintrc.js", ".git/"},
+    languages = {
+      javascript = {eslint},
+      typescript = {eslint},
+      javascriptreact = {eslint},
+      typescriptreact = {eslint}
+    }
+  },
+  on_attach = on_attach
 }
 
 lspconfig.tsserver.setup {on_attach = on_attach}

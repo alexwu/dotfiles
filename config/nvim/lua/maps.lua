@@ -23,6 +23,6 @@ map("i", "<C-k>", "<Up>")
 map("i", "<C-h>", "<Left>")
 map("i", "<C-l>", "<Right>")
 
-map("n", "<Space><Space>", "<C-^>")
+map("n", "<Bslash><Bslash>", "<C-^>")
 map("n", "<c-s><c-a>", "<Cmd>w<cr>")
 map("i", "<c-s><c-a>", "<esc><cmd>w<cr>")

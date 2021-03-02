@@ -4,6 +4,7 @@ require("options")
 require("plugins")
 require("colorscheme")
 
+require("plugins/autopairs")
 require("plugins/compe")
 require("plugins/formatter_config")
 require("plugins/floaterm")
