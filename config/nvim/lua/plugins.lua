@@ -37,6 +37,7 @@ return require("packer").startup({
       }
     }
     use {"hrsh7th/nvim-compe"}
+    use {"antoinemadec/FixCursorHold.nvim"}
     use {
       "glepnir/galaxyline.nvim",
       branch = "main",
