@@ -30,4 +30,6 @@ require"compe".setup {
   }
 }
 
+vim.o.completeopt = "menuone,noselect"
+
 map("i", "<CR>", "compe#confirm(\"<CR>\")", {expr = true, silent = true})

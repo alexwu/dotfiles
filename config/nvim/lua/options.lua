@@ -1,7 +1,6 @@
 local o, wo, bo = vim.o, vim.wo, vim.bo
 local utils = require("utils")
 local opt = utils.opt
-local autocmd = utils.autocmd
 
 local buffer = {o, bo}
 local window = {o, wo}
@@ -51,11 +50,7 @@ opt("updatetime", 300)
 opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
 opt("termguicolors", true)
-o.completeopt = "menuone,noselect"
 
--- autocmd("highlight_yank",
---         "TextYankPost * silent! lua require\"vim.highlight\".on_yank{ timeout=200 }",
---         true)
 vim.g.highlightedyank_highlight_duration = 200
 vim.g.cursorhold_updatetime = 100
 
