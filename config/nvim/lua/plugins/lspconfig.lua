@@ -20,6 +20,13 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] =
   vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
                {virtual_text = false, underline = true, signs = true})
 
+vim.api.nvim_exec([[
+  sign define LspDiagnosticsSignError text=✘ texthl=LspDiagnosticsSignError linehl= numhl=
+  sign define LspDiagnosticsSignWarning text=W texthl=LspDiagnosticsSignWarning linehl= numhl=
+  sign define LspDiagnosticsSignInformation text=♦ texthl=LspDiagnosticsSignInformation linehl= numhl=
+  sign define LspDiagnosticsSignHint text=♦ texthl=LspDiagnosticsSignHint linehl= numhl=
+]], false)
+
 local on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
@@ -30,6 +37,11 @@ local on_attach = function(client, bufnr)
   local opts = {noremap = true, silent = true}
   buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
   buf_set_keymap("n", "gd", "<Cmd>lua vim.lsp.buf.definition()<CR>", opts)
+  buf_set_keymap("n", "<leader>a", "<cmd>lua vim.lsp.buf.code_action()<CR>",
+                 opts)
+  buf_set_keymap("v", "<leader>a",
+                 "<cmd>'<,'>lua require(lua vim.lsp.buf.range_code_action()<CR>",
+                 opts)
   buf_set_keymap("n", "K", "<Cmd>lua vim.lsp.buf.hover()<CR>", opts)
   buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
   buf_set_keymap("n", "H", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
@@ -74,10 +86,35 @@ local on_attach = function(client, bufnr)
     ]], false)
   end
 
-  vim.api.nvim_exec([[
-    autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics()
-  ]], false)
+  vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics() ]]
 end
+
+local eslint = {
+  lintCommand = "eslint_d -f unix --stdin --stdin-filename ${INPUT}",
+  lintStdin = true,
+  lintFormats = {"%f:%l:%c: %m"},
+  lintIgnoreExitCode = true,
+  formatCommand = "eslint_d --fix-to-stdout --stdin --stdin-filename=${INPUT}",
+  formatStdin = true
+}
+
+lspconfig.efm.setup {
+  init_options = {documentFormatting = true, hover = true, codeAction = true},
+  filetypes = {"javascript", "typescript", "javascriptreact", "typescriptreact"},
+  root_dir = function(fname)
+    return lspconfig.util.root_pattern("tsconfig.json")(fname) or
+             lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname);
+  end,
+  settings = {
+    rootMarkers = {".eslintrc.js", ".git/"},
+    languages = {
+      javascript = {eslint},
+      typescript = {eslint},
+      javascriptreact = {eslint},
+      typescriptreact = {eslint}
+    }
+  }
+}
 
 local system_name = "macOS"
 local sumneko_root_path = "/Users/jamesbombeelu/Code/lua-language-server"
@@ -97,7 +134,8 @@ lspconfig.sumneko_lua.setup {
         }
       }
     }
-  }
+  },
+  on_attach = on_attach
 }
 
 local eslint = {
@@ -109,20 +147,33 @@ local eslint = {
   formatStdin = true
 }
 
+local rubocop = {
+  lintCommand = "bundle exec rubocop --format emacs --force-exclusion --stdin ${INPUT}",
+  lintStdin = true,
+  lintFormats = {"%f:%l:%c: %m"},
+  lintIgnoreExitCode = true,
+  formatCommand = "bundle exec rubocop --fix ${INPUT}",
+  formatStdin = true
+}
+
 lspconfig.efm.setup {
   init_options = {documentFormatting = true, hover = true},
-  filetypes = {"javascript", "javascriptreact", "typescript", "typescriptreact"},
+  filetypes = {
+    "javascript", "javascriptreact", "typescript", "typescriptreact", "ruby",
+    "eruby"
+  },
   root_dir = function(fname)
     return lspconfig.util.root_pattern("tsconfig.json")(fname) or
              lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname);
   end,
   settings = {
-    rootMarkers = {".eslintrc.js", ".git/"},
+    rootMarkers = {".eslintrc.js", ".git/", "Gemfile"},
     languages = {
       javascript = {eslint},
       typescript = {eslint},
       javascriptreact = {eslint},
-      typescriptreact = {eslint}
+      typescriptreact = {eslint},
+      ruby = {rubocop}
     }
   },
   on_attach = on_attach
@@ -131,6 +182,6 @@ lspconfig.efm.setup {
 lspconfig.tsserver.setup {on_attach = on_attach}
 lspconfig.sorbet.setup {
   on_attach = on_attach,
-  cmd = {"/Users/jamesbombeelu/.bin/sorbet", "--lsp"}
+  cmd = {"/Users/jamesbombeelu/.bin/srb", "--lsp"}
 }
 lspconfig.vimls.setup {on_attach = on_attach}

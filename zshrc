@@ -29,8 +29,8 @@ then
   alias ssh="kitty +kitten ssh"
 fi
 
-alias zshconfig="$EDITOR ~/.zshrc"
-alias nvimrc="$EDITOR ~/.config/nvim/init.lua"
+alias zshconfig="$EDITOR ~/.dotfiles/zshrc"
+alias nvimrc="$EDITOR ~/.dotfiles/config/nvim"
 alias ls="exa"
 
 ### Added by Zinit's installer
