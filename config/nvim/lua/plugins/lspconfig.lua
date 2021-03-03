@@ -89,33 +89,6 @@ local on_attach = function(client, bufnr)
   vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics() ]]
 end
 
-local eslint = {
-  lintCommand = "eslint_d -f unix --stdin --stdin-filename ${INPUT}",
-  lintStdin = true,
-  lintFormats = {"%f:%l:%c: %m"},
-  lintIgnoreExitCode = true,
-  formatCommand = "eslint_d --fix-to-stdout --stdin --stdin-filename=${INPUT}",
-  formatStdin = true
-}
-
-lspconfig.efm.setup {
-  init_options = {documentFormatting = true, hover = true, codeAction = true},
-  filetypes = {"javascript", "typescript", "javascriptreact", "typescriptreact"},
-  root_dir = function(fname)
-    return lspconfig.util.root_pattern("tsconfig.json")(fname) or
-             lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname);
-  end,
-  settings = {
-    rootMarkers = {".eslintrc.js", ".git/"},
-    languages = {
-      javascript = {eslint},
-      typescript = {eslint},
-      javascriptreact = {eslint},
-      typescriptreact = {eslint}
-    }
-  }
-}
-
 local system_name = "macOS"
 local sumneko_root_path = "/Users/jamesbombeelu/Code/lua-language-server"
 local sumneko_binary = sumneko_root_path .. "/bin/" .. system_name ..
