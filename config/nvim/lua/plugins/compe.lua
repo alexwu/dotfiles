@@ -30,6 +30,8 @@ require"compe".setup {
   }
 }
 
+require("lspkind").init()
+
 vim.o.completeopt = "menuone,noselect"
 
 map("i", "<CR>", "compe#confirm(\"<CR>\")", {expr = true, silent = true})

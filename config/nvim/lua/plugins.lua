@@ -46,11 +46,11 @@ return require("packer").startup({
     }
     use {"antoinemadec/FixCursorHold.nvim"}
 
-    use {"Yggdroot/indentLine"}
+    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"chaoren/vim-wordmotion"}
     use {"easymotion/vim-easymotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
-    use {"machakann/vim-highlightedyank"}
+    -- use {"machakann/vim-highlightedyank"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-commentary"}
     use {"tpope/vim-eunuch"}
