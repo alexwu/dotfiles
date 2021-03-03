@@ -1,7 +1,7 @@
 local function prettier()
   return {
-    exe = "yarn",
-    args = {"prettier", "--stdin-filepath", vim.api.nvim_buf_get_name(0)},
+    exe = "prettier",
+    args = {"--stdin-filepath", vim.api.nvim_buf_get_name(0)},
     stdin = true
   }
 end
