@@ -36,6 +36,7 @@ return require("packer").startup({
       }
     }
     use {"hrsh7th/nvim-compe"}
+    use {"onsails/lspkind-nvim"}
     use {
       "glepnir/galaxyline.nvim",
       branch = "main",
