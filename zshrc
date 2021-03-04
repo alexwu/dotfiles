@@ -23,8 +23,8 @@ else
 fi
 
 alias vim="nvim"
-alias zshconfig="$EDITOR ~/.zshrc"
-alias nvimrc="$EDITOR ~/.config/nvim/init.vim"
+alias zshconfig="$EDITOR ~/.dotfiles/zshrc"
+alias nvimrc="$EDITOR ~/.dotfiles/config/nvim"
 alias ls="exa"
 
 ### Added by Zinit's installer
