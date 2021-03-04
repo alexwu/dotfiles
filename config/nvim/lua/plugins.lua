@@ -38,12 +38,7 @@ return require("packer").startup({
     }
     use {"hrsh7th/nvim-compe"}
     use {"onsails/lspkind-nvim"}
-    use {
-      "glepnir/galaxyline.nvim",
-      branch = "main",
-      config = function() require "statusline" end,
-      requires = {"kyazdani42/nvim-web-devicons", opt = true}
-    }
+    use {"datwaft/bubbly.nvim", config = function() require("statusline") end}
     use {"antoinemadec/FixCursorHold.nvim"}
 
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
