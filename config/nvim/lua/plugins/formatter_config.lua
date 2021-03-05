@@ -37,7 +37,7 @@ require"formatter".setup({
     ruby = {prettier},
     rust = {rustfmt},
     lua = {luaformatter},
-    python = {black}
+    python = {black},
   }
 })
 

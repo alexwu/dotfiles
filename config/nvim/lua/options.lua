@@ -51,7 +51,7 @@ opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
 opt("termguicolors", true)
 
-vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 50 } ]]
+vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 100 } ]]
 -- vim.g.highlightedyank_highlight_duration = 200
 vim.g.cursorhold_updatetime = 100
 

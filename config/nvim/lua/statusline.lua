@@ -15,7 +15,7 @@ vim.g.bubbly_palette = {
 
 vim.g.bubbly_statusline = {
   "mode", "truncate", "path", "branch", "builtinlsp.diagnostic_count",
-  "builtinlsp.current_function", "divisor", "filetype", "progress"
+  "divisor", "filetype", "progress"
 }
 
 vim.g.bubbly_characters = {
@@ -24,6 +24,15 @@ vim.g.bubbly_characters = {
   right = "",
   -- Close character for the tabline.
   close = "x"
+}
+
+vim.g.bubbly_symbols = {
+  builtinlsp = {
+    diagnostic_count = {
+      error = "✘ %s",
+      warning = "⚠ %s"
+    }
+  }
 }
 
 vim.g.bubbly_colors = {

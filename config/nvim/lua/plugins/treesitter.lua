@@ -1,6 +1,6 @@
 require"nvim-treesitter.configs".setup {
   ensure_installed = "maintained",
-  highlight = {enable = true, disable = {}},
+  highlight = {enable = true, disable = {"ruby"}},
   indent = {enable = true, disable = {"ruby"}},
   incremental_selection = {
     enable = true,
@@ -11,6 +11,7 @@ require"nvim-treesitter.configs".setup {
       node_decremental = "<C-x>"
     }
   },
+  refactor = {highlight_definitions = {enable = true}},
   playground = {
     enable = true,
     disable = {},

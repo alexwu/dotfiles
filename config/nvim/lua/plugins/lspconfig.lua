@@ -22,7 +22,7 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] =
 
 vim.api.nvim_exec([[
   sign define LspDiagnosticsSignError text=✘ texthl=LspDiagnosticsSignError linehl= numhl=
-  sign define LspDiagnosticsSignWarning text=W texthl=LspDiagnosticsSignWarning linehl= numhl=
+  sign define LspDiagnosticsSignWarning text=⚠ texthl=LspDiagnosticsSignWarning linehl= numhl=
   sign define LspDiagnosticsSignInformation text=♦ texthl=LspDiagnosticsSignInformation linehl= numhl=
   sign define LspDiagnosticsSignHint text=♦ texthl=LspDiagnosticsSignHint linehl= numhl=
 ]], false)
@@ -72,17 +72,6 @@ local on_attach = function(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  -- Set autocommands conditional on server_capabilities
-  if client.resolved_capabilities.document_highlight then
-    vim.api.nvim_exec([[
-      augroup lsp_document_highlight
-      autocmd! * <buffer>
-      autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
-      autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
-      augroup END
-    ]], false)
-  end
-
   vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics() ]]
 end
 
@@ -127,7 +116,13 @@ local rubocop = {
 }
 
 lspconfig.efm.setup {
-  init_options = {documentFormatting = true, hover = true},
+  init_options = {
+    documentFormatting = true,
+    codeAction = true,
+    completion = true,
+    hover = true,
+    documentSymbol = true
+  },
   filetypes = {
     "javascript", "javascriptreact", "typescript", "typescriptreact", "ruby",
     "eruby"
@@ -149,9 +144,18 @@ lspconfig.efm.setup {
   on_attach = on_attach
 }
 
+lspconfig.graphql.setup {
+  on_attach = on_attach,
+  cmd = {"graphql-lsp", "server", "-m", "stream"},
+  filetypes = {"graphql"},
+  root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
+}
+
 lspconfig.tsserver.setup {on_attach = on_attach}
 lspconfig.sorbet.setup {
   on_attach = on_attach,
-  cmd = {"/Users/jamesbombeelu/.bin/srb", "--lsp"}
+  cmd = {
+    "/Users/jamesbombeelu/.bin/srb", "--lsp", "--enable-all-beta-lsp-features"
+  }
 }
 lspconfig.vimls.setup {on_attach = on_attach}

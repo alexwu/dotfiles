@@ -5,7 +5,7 @@ require("telescope").setup {
     set_env = {["COLORTERM"] = "truecolor"},
     mappings = {
       i = {
-        ["<esc>"] = actions.close,
+        -- ["<esc>"] = actions.close,
         ["<C-j>"] = actions.move_selection_next,
         ["<C-k>"] = actions.move_selection_previous
       }

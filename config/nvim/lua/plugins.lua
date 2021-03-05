@@ -15,6 +15,7 @@ return require("packer").startup({
     use {"wbthomason/packer.nvim", opt = true}
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
+    use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/playground"}
     use {
       "neovim/nvim-lspconfig",
@@ -45,7 +46,6 @@ return require("packer").startup({
     use {"chaoren/vim-wordmotion"}
     use {"easymotion/vim-easymotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
-    -- use {"machakann/vim-highlightedyank"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-commentary"}
     use {"tpope/vim-eunuch"}
@@ -56,6 +56,7 @@ return require("packer").startup({
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
+    use {"sheerun/vim-polyglot"}
 
     use {"/Users/jamesbombeelu/Code/nvim-snazzy"}
   end,
