@@ -24,7 +24,11 @@ return require("packer").startup({
     use {"windwp/nvim-autopairs"}
     use {"norcalli/nvim-colorizer.lua"}
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
-    use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
+    use {
+      "lewis6991/gitsigns.nvim",
+      requires = {"nvim-lua/plenary.nvim"},
+      config = function() require("gitsigns").setup() end
+    }
     use {"f-person/git-blame.nvim"}
     use {"kosayoda/nvim-lightbulb"}
     use {"mhartington/formatter.nvim"}
@@ -42,21 +46,23 @@ return require("packer").startup({
     use {"datwaft/bubbly.nvim", config = function() require("statusline") end}
     use {"antoinemadec/FixCursorHold.nvim"}
 
-    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"chaoren/vim-wordmotion"}
     use {"easymotion/vim-easymotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
+    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
+    use {"tpope/vim-bundler", ft = {"ruby"}}
     use {"tpope/vim-commentary"}
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-fugitive"}
     use {"tpope/vim-projectionist"}
+    use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
-    use {"sheerun/vim-polyglot"}
 
     use {"/Users/jamesbombeelu/Code/nvim-snazzy"}
   end,
