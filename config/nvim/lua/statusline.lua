@@ -18,21 +18,10 @@ vim.g.bubbly_statusline = {
   "divisor", "filetype", "progress"
 }
 
-vim.g.bubbly_characters = {
-  -- Bubble delimiters.
-  left = "",
-  right = "",
-  -- Close character for the tabline.
-  close = "x"
-}
+vim.g.bubbly_characters = {left = "", right = "", close = "x"}
 
 vim.g.bubbly_symbols = {
-  builtinlsp = {
-    diagnostic_count = {
-      error = "✘ %s",
-      warning = "⚠ %s"
-    }
-  }
+  builtinlsp = {diagnostic_count = {error = "✘ %s", warning = "⚠ %s"}}
 }
 
 vim.g.bubbly_colors = {

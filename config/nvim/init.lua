@@ -5,7 +5,6 @@ require("plugins")
 require("colorscheme")
 require("statusline")
 
-require("plugins/autopairs")
 require("plugins/compe")
 require("plugins/formatter_config")
 require("plugins/floaterm")
@@ -16,5 +15,12 @@ require("plugins/lspconfig")
 require("plugins/telescope")
 require("plugins/treesitter")
 require("plugins/vim-test")
+
+require("colorizer").setup()
+require("gitsigns").setup()
+require("nvim-autopairs").setup({
+  disable_filetype = {"TelescopePrompt"},
+  ignored_next_char = "[%P%S]"
+})
 
 vim.cmd [[ autocmd BufWritePost plugins.lua PackerCompile ]]

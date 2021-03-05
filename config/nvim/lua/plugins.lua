@@ -17,18 +17,11 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/playground"}
-    use {
-      "neovim/nvim-lspconfig",
-      config = function() require"colorizer".setup() end
-    }
+    use {"neovim/nvim-lspconfig"}
     use {"windwp/nvim-autopairs"}
     use {"norcalli/nvim-colorizer.lua"}
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
-    use {
-      "lewis6991/gitsigns.nvim",
-      requires = {"nvim-lua/plenary.nvim"},
-      config = function() require("gitsigns").setup() end
-    }
+    use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
     use {"f-person/git-blame.nvim"}
     use {"kosayoda/nvim-lightbulb"}
     use {"mhartington/formatter.nvim"}
@@ -43,7 +36,7 @@ return require("packer").startup({
     }
     use {"hrsh7th/nvim-compe"}
     use {"onsails/lspkind-nvim"}
-    use {"datwaft/bubbly.nvim", config = function() require("statusline") end}
+    use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
 
     use {"chaoren/vim-wordmotion"}
@@ -51,13 +44,15 @@ return require("packer").startup({
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"sheerun/vim-polyglot"}
+    use {"skywind3000/asyncrun.vim"}
     use {"tpope/vim-abolish"}
-    use {"tpope/vim-bundler", ft = {"ruby"}}
+    use {"tpope/vim-bundler"}
     use {"tpope/vim-commentary"}
+    use {"tpope/vim-dispatch"}
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-fugitive"}
     use {"tpope/vim-projectionist"}
-    use {"tpope/vim-rails", ft = {"ruby"}}
+    use {"tpope/vim-rails"}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}

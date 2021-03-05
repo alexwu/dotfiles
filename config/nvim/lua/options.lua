@@ -52,10 +52,6 @@ opt("wildignore",
 opt("termguicolors", true)
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 100 } ]]
--- vim.g.highlightedyank_highlight_duration = 200
 vim.g.cursorhold_updatetime = 100
 
 vim.api.nvim_set_var("test#strategy", "floaterm")
--- Slower but more accurate syntax highlighting for javascript/typescript files
--- autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
--- autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
