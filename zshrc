@@ -21,7 +21,6 @@ then
   export EDITOR="vim"
 else
   export EDITOR="nvim"
-  alias vim="nvim"
 fi
 
 if [[ $TERM = "xterm-kitty" ]]

@@ -6,7 +6,7 @@ require("colorscheme")
 require("statusline")
 
 require("plugins/compe")
-require("plugins/formatter_config")
+require("plugins/formatter")
 require("plugins/floaterm")
 require("plugins/fzf")
 require("plugins/kommentary")

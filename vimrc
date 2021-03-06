@@ -8,106 +8,105 @@ endif
 
 call plug#begin('~/.vim/plugged')
 
-" Functionality
-Plug 'bkad/CamelCaseMotion'
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }                   " Fuzzy finding functionality
-Plug 'junegunn/fzf.vim'
+let g:ale_set_balloons = 1
+
+" Essentials
+"
+Plug 'connorholyday/vim-snazzy'
 Plug 'itchyny/lightline.vim'
-Plug 'tpope/vim-rails'                                                " Ruby on Rails functionality
-Plug 'tpope/vim-bundler'                                              " Bundler usable from Vim
-Plug 'tpope/vim-dispatch'
-Plug 'tpope/vim-eunuch'
-Plug 'tpope/vim-fugitive'                                             " Git functionality in Vim
-Plug 'tpope/vim-vinegar'                                             " Git functionality in Vim
-Plug 'tpope/vim-projectionist'
-Plug 'machakann/vim-sandwich'
 Plug 'janko/vim-test'
-
-" Formatting
-Plug 'junegunn/vim-easy-align'
-Plug 'tomtom/tcomment_vim'
-Plug 'Yggdroot/indentLine'
-Plug 'prettier/vim-prettier', {
-  \ 'do': 'yarn install',
-  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html', 'ruby'] }
-
-" Syntax Highlighting
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'voldikss/vim-floaterm'
+Plug 'w0rp/ale'
 Plug 'sheerun/vim-polyglot'
 
-" Ale
-Plug 'w0rp/ale'
+
+Plug 'Yggdroot/indentLine'
+Plug 'chaoren/vim-wordmotion'
 Plug 'maximbaz/lightline-ale'
+Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-bundler'
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-dispatch'
+Plug 'tpope/vim-eunuch'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-projectionist'
+Plug 'tpope/vim-rails'
+Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-sensible'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-vinegar'
 
-" Theming
-Plug 'connorholyday/vim-snazzy'
-
-" All of your Plugins must be added before the following line
 call plug#end()
-
-filetype plugin indent on
-
-if v:progname =~? "evim"
-  finish
-endif
-
-if has('path_extra')
-  setglobal tags-=./tags tags-=./tags; tags^=./tags;
-endif
 
 " SETTINGS
 "
-set loadplugins
-set shell=/bin/zsh
+set autoindent
+set backspace=indent,eol,start
+set ch=2
+set cmdheight=1
+set confirm
+set cursorline
+set directory=~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp
 set encoding=utf-8
+set expandtab
+set hidden
+set history=50
+set hlsearch
+set ignorecase
+set incsearch
+set laststatus=2
+set lazyredraw
+set linebreak
+set listchars=tab:▶\ ,eol:¬
+set loadplugins
+set modelines=1
+set nobackup
+set nojoinspaces
+set noshowmode
+set nowrap
+set number
+set numberwidth=5
+set ruler
+set scrolloff=5
+set shell=/bin/zsh
+set shiftwidth=2
+set shortmess+=c
+set showcmd
+set signcolumn=yes
+set smartcase
 set smarttab
 set softtabstop=2
-set shiftwidth=2
-set expandtab
 set tabstop=2
-set ignorecase
-set smartcase
-set nowrap
+set tags=./TAGS,TAGS
 set textwidth=0
-set autoindent
-set linebreak
-set number
-set cursorline
-set listchars=tab:▶\ ,eol:¬
-set wildignore=*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**
-set hidden                      " Be more liberal about hidden buffers
-set backspace=indent,eol,start  " backspace over everything
-set numberwidth=5               " Sets the gutter width for line numbers
-set nobackup                    " do not keep a backup file, use an SCM instead
-set history=50                  " keep 50 lines of command line history
-set ruler                       " show the cursor position all the time
-set incsearch                   " do incremental searching
-set hlsearch                    " Highlight all search matches
-set lazyredraw                  " Don't update the display while executing macros
-set ch=2                        " Make command line two lines high
-set laststatus=2                " Always show the status line
-set showcmd                     " Show the current command in the lower right corner
-set cmdheight=2
-set noshowmode                  " Show the current mode
-set timeoutlen=250              " Short map keys timeout keeps the ui feeling snappy
-set tags=./TAGS,TAGS            " Use Emacs tagfile naming convention
-set modelines=1
-set nojoinspaces
-set grepprg=grep\ -nH\ $*
-set scrolloff=10
-set directory=~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp
-set termguicolors
-set t_Co=256
+set timeoutlen=250
+set updatetime=300
+set wildignore=*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store
 
 syntax on
+set termguicolors
+set t_Co=256
 colorscheme snazzy
 
-if has('mouse')
+" Slower but more accurate syntax highlighting for javascript/typescript files
+autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
+autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
+
+if executable("ag")
+  set grepprg=ag\ --nogroup\ --nocolor
+else
+  set grepprg=grep\ -nH\ $*
+endif
+
+if has("mouse")
   set mouse=a
 endif
 
 "Allows remapping of Ctrl-j
-let g:BASH_Ctrl_j = 'off'
+let g:BASH_Ctrl_j = "off"
 
 " Move up and down over screen lines instead of file lines
 nnoremap j gj
@@ -116,16 +115,6 @@ nnoremap <c-j> 5gj
 nnoremap <c-k> 5gk
 nnoremap <c-h> 5h
 nnoremap <c-l> 5l
-
-" Move between splits with CTRL+Arrow Keys
-nnoremap <C-Down> <C-W><C-J>
-nnoremap <C-Up> <C-W><C-K>
-nnoremap <C-Right> <C-W><C-L>
-nnoremap <C-Left> <C-W><C-H>
-
-"Allows remapping of Ctrl-j because of latex-suite
-nnoremap <SID>I_won’t_ever_type_this <Plug>IMAP_JumpForward
-inoremap <SID>I_won’t_ever_type_this <Plug>IMAP_JumpForward
 
 inoremap <c-j> <Down>
 inoremap <c-k> <Up>
@@ -137,15 +126,6 @@ vnoremap <c-k> 5gk
 vnoremap <c-h> 5h
 vnoremap <c-l> 5l
 
-" Start interactive EasyAlign in visual mode (e.g. vipga)
-xmap ga <Plug>(EasyAlign)
-
-" Start interactive EasyAlign for a motion/text object (e.g. gaip)
-nmap ga <Plug>(EasyAlign)
-
-" COMMAND MODE KEY MAPPINGS
-"
-" Map :W to :w so vim stops complaining about W
 command! W :w
 command! Q :q
 command! QW :wq
@@ -153,14 +133,11 @@ command! Qw :wq
 command! WQ :wq
 command! Wq :wq
 
-""""""""""""" YATS
-set re=2
+map <space> <leader>
 
-" coc settings
-set updatetime=300
-set shortmess+=c
-set signcolumn=yes
-
+"""""""""""""""" COC
+" Use tab for trigger completion with characters ahead and navigate.
+" Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.pumvisible() ? "\" : "\\
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? "\<C-n>" :
       \ <SID>check_back_space() ? "\<TAB>" :
@@ -172,27 +149,22 @@ function! s:check_back_space() abort
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
 
+"Use <c-space> to trigger completion.
 inoremap <silent><expr> <c-space> coc#refresh()
 
-" Use <cr> to confirm completion, `<C-g>u` means break undo chain at current position.
-" Coc only does snippet and additional edit on confirm.
-inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
-
+" Make <CR> auto-select the first completion item and notify coc.nvim to
+" format on enter, <cr> could be remapped by other vim plugin
 inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
                               \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
-" Use `[g` and `]g` to navigate diagnostics
-" Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
 nmap <silent> [g <Plug>(coc-diagnostic-prev)
 nmap <silent> ]g <Plug>(coc-diagnostic-next)
 
-" Remap keys for gotos
 nmap <silent> gd <Plug>(coc-definition)
 nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> gi <Plug>(coc-implementation)
 nmap <silent> gr <Plug>(coc-references)
 
-" Use K to show documentation in preview window
 nnoremap <silent> K :call <SID>show_documentation()<CR>
 
 function! s:show_documentation()
@@ -208,70 +180,100 @@ endfunction
 " Highlight symbol under cursor on CursorHold
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
-map <space> <leader>
 nmap <leader>rn <Plug>(coc-rename)
-
-command! -nargs=0 Prettier :CocCommand prettier.formatFile<CR>
-
-command! -nargs=0 EslintFix :call     CocActionAsync('runCommand', 'editor.action.organizeImport')
-nmap <leader>f :EslintFix<CR>
-let g:coc_status_error_sign = '✘'
 
 augroup mygroup
   autocmd!
-  autocmd FileType typescript,javascript,json setl formatexpr=CocAction('formatSelected')
+  " Setup :gq for to use coc
+  autocmd FileType typescript,typescriptreact,javascript,javascriptreact,json setl indentexpr=CocAction('formatSelected')
   autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
 augroup end
 
 xmap <leader>a  <Plug>(coc-codeaction-selected)
 nmap <leader>a  <Plug>(coc-codeaction-selected)
-
 nmap <leader>ac  <Plug>(coc-codeaction)
 nmap <leader>qf  <Plug>(coc-fix-current)
+
+xmap if <Plug>(coc-funcobj-i)
+omap if <Plug>(coc-funcobj-i)
+xmap af <Plug>(coc-funcobj-a)
+omap af <Plug>(coc-funcobj-a)
+xmap ic <Plug>(coc-classobj-i)
+omap ic <Plug>(coc-classobj-i)
+xmap ac <Plug>(coc-classobj-a)
+omap ac <Plug>(coc-classobj-a)
+
+" Remap <C-f> and <C-b> for scroll float windows/popups.
+if has('nvim-0.4.0') || has('patch-8.2.0750')
+  nnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+  nnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+  inoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+  inoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+  vnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+  vnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+endif
 
 nmap <silent> <C-s> <Plug>(coc-range-select)
 xmap <silent> <C-s> <Plug>(coc-range-select)
 
 command! -nargs=0 Format :call CocAction('format')
-command! -nargs=? Fold :call     CocAction('fold', <f-args>)
+command! -nargs=? Fold :call CocAction('fold', <f-args>)
 command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport')
-nmap <silent> <Leader>y :Format<CR>
-xmap <silent> <Leader>y :Format<CR>
 
-nnoremap <silent> <space>a  :<C-u>CocList diagnostics<cr>
-" Manage extensions
-nnoremap <silent> <space>e  :<C-u>CocList extensions<cr>
-" Show commands
-nnoremap <silent> <space>c  :<C-u>CocList commands<cr>
-" Find symbol of current document
-nnoremap <silent> <space>o  :<C-u>CocList outline<cr>
-" Search workspace symbols
-nnoremap <silent> <space>s  :<C-u>CocList -I symbols<cr>
-" Do default action for next item.
-nnoremap <silent> <space>j  :<C-u>CocNext<CR>
-" Do default action for previous item.
-nnoremap <silent> <space>k  :<C-u>CocPrev<CR>
-" Resume latest coc list
-nnoremap <silent> <space>p  :<C-u>CocListResume<CR>
+nmap <leader>y :Format<CR>
+command! -nargs=0 Prettier :CocCommand prettier.formatFile
+command! -nargs=0 EslintFix :CocCommand eslint.executeAutofix
+nmap <leader>f :EslintFix<CR>
+
+let g:coc_status_error_sign = '✘'
+
+nnoremap <silent> <C-p> :Files<CR>
+
+"""""""""""""""" ALE
+let g:ale_enabled = 1
+let g:ale_fix_on_save = 1
+let g:ale_fixers = { '*': ['remove_trailing_lines', 'trim_whitespace'] }
+let g:ale_lint_delay = 300
+let g:ale_linters_explicit = 1
+let g:ale_set_highlights = 1
+let g:ale_sign_error = '✘'
+let g:ale_sign_warning = '>>'
+let g:ale_sign_info= '♦'
+let g:ale_use_global_executables = 0
+
+"""""""""""""""" COMMENTARY
+xmap <C-_> <Plug>Commentary
+omap <C-_> <Plug>Commentary
+nmap <C-_> <Plug>CommentaryLine
+
+"""""""""""""""" TEST
+nmap <silent> <Leader>n :TestNearest<CR>
+nmap <silent> <Leader>t :TestFile<CR>
+nmap <silent> <Leader>s :TestSuite<CR>
+
+let test#strategy = "floaterm"
+let test#ruby#rspec#executable = 'bundle exec rspec'
+let g:test#javascript#jest#executable = 'yarn run jest --coverage=true'
+let g:test#ruby#rspec#options = {
+      \ 'file':    '--format documentation',
+      \ 'suite':   '--format documentation',
+      \ 'nearest': '--format documentation',
+      \}
+
+"""""""""""""""" NETRW
+let g:netrw_banner = 0
+let g:netrw_winsize = 25
+let g:netrw_list_hide= '*.DS_Store'
 
 """""""""""""""" LIGHTLINE
-function! CocCurrentFunction()
-  return get(b:, 'coc_current_function', '')
-endfunction
-
-function! CocGitBlame () abort
-  let blame = get(b:, 'coc_git_blame', '')
-  return blame
-endfunction
-
-
 let g:lightline = {
       \ 'colorscheme': 'snazzy',
       \ 'active': {
       \   'left': [
       \     [ 'mode', 'paste' ],
-      \     [ 'git', 'diagnostic', 'readonly', 'filename', 'modified' ],
-      \     [ 'gitbranch', 'cocstatus', 'currentfunction' ],
+      \     [ 'git', 'filename', 'diagnostic', 'readonly', 'modified' ],
+      \     ['gitbranch', 'cocstatus'],
+      \
       \   ],
       \   'right': [
       \     [ 'linter_checking', 'linter_errors', 'linter_warnings', 'linter_infos', 'linter_ok' ],
@@ -279,13 +281,12 @@ let g:lightline = {
       \     [ 'blame' ],
       \   ],
       \ },
-      \ 'component_function': {
-      \   'cocstatus': 'coc#status',
-      \   'blame': 'CocGitBlame',
-      \   'gitbranch': 'fugitive#head',
-      \   'currentfunction': 'CocCurrentFunction',
-      \ },
-      \ }
+      \  'component_function': {
+      \     'gitbranch': 'fugitive#head',
+      \     'cocstatus': 'coc#status',
+      \     'filename': 'LightlineFilename',
+      \  },
+      \}
 let g:lightline.component_expand = {
       \  'linter_checking': 'lightline#ale#checking',
       \  'linter_infos': 'lightline#ale#infos',
@@ -294,12 +295,39 @@ let g:lightline.component_expand = {
       \  'linter_ok': 'lightline#ale#ok',
       \ }
 let g:lightline.component_type = {
-      \   'linter_checking': 'left',
-      \    'linter_infos': 'right',
-      \   'linter_warnings': 'warning',
-      \   'linter_errors': 'error',
-      \   'linter_ok': 'left',
+      \  'linter_checking': 'left',
+      \  'linter_infos': 'right',
+      \  'linter_warnings': 'warning',
+      \  'linter_errors': 'error',
+      \  'linter_ok': 'left',
       \ }
+
+function! LightlineFilename()
+  let root = fnamemodify(get(b:, 'git_dir'), ':h')
+  let path = expand('%:p')
+  if path[:len(root)-1] ==# root
+    return path[len(root)+1:]
+  endif
+  return expand('%')
+endfunction
+
+let g:lightline#ale#indicator_errors= '✘'
+let g:lightline#ale#indicator_warnings = '♦'
+
+"""""""""""""""" BUFFERS
+nmap <space><space> <C-^>
+
+"""""""""""""""" FLOATERM
+let g:floaterm_keymap_new    = '<F7>'
+let g:floaterm_keymap_prev   = '<F8>'
+let g:floaterm_keymap_next   = '<F9>'
+let g:floaterm_keymap_toggle = '<F10>'
+
+"""""""""""""""" TESTING
+silent! helptags ALL
+
+nmap <c-s><c-a> :w<cr>
+imap <c-s><c-a> <esc>:w<cr>
 
 """""""""""""""" FZF
 " You can set up fzf window using a Vim command (Neovim or latest Vim 8 required)
@@ -324,51 +352,3 @@ let g:fzf_colors =
   \ 'header':  ['fg', 'Comment'] }
 
 let g:fzf_history_dir = '~/.local/share/fzf-history'
-
-nnoremap <silent> <C-p> :Files<CR>
-
-"""""""""""""""" ALE
-let g:ale_linters_explicit = 1
-let g:ale_lint_delay = 400
-let g:ale_fixers = {
-\   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\}
-
-let g:lightline#ale#indicator_errors= '✘'
-let g:lightline#ale#indicator_warnings = '♦'
-
-let g:ale_enabled = 1
-let g:ale_fix_on_save = 1
-let g:ale_sign_error = '✘'
-let g:ale_sign_warning = '>>'
-let g:ale_sign_info= '--'
-highlight ALEErrorSign ctermbg=NONE ctermfg=red
-highlight ALEError ctermbg=NONE ctermfg=red cterm=underline
-highlight ALEWarning ctermbg=NONE ctermfg=yellow cterm=underline
-highlight ALEInfo ctermbg=NONE ctermfg=blue cterm=underline
-
-"""""""""""""""" PRETTIER
-let g:prettier#config#single_quote = 'false'
-let g:prettier#config#semi = 'always'
-
-"""""""""""""""" COMMENTARY
-xmap <C-_>      :TComment <CR>
-omap <C-_>      :TComment <CR>
-
-"""""""""""""""" TEST
-nmap <silent> <Leader>s :TestNearest<CR>
-nmap <silent> <Leader>t :TestFile<CR>
-nmap <silent> <Leader>s :TestSuite<CR>
-nmap <silent> <Leader>l :TestLast<CR>
-nmap <silent> <Leader>a :TestVisit<CR>
-
-"""""""""""""""" DISPATCH
-let test#strategy = "vimterminal"
-let test#vim#term_position = "below"
-
-
-"""""""""""""""" NETRW
-let g:netrw_banner = 0
-let g:netrw_winsize = 25
-
-runtime macros/sandwich/keymap/surround.vim

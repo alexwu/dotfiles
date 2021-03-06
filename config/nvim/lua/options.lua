@@ -51,7 +51,10 @@ opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
 opt("termguicolors", true)
 
-vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 100 } ]]
-vim.g.cursorhold_updatetime = 100
+vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
+vim.g.cursorhold_updatetime = 200
 
-vim.api.nvim_set_var("test#strategy", "floaterm")
+vim.g.nvim_tree_auto_open = 1
+vim.g.nvim_tree_disable_netrw = 0
+vim.g.nvim_tree_hijack_netrw = 0
+vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
