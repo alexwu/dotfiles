@@ -34,15 +34,19 @@ return require("packer").startup({
         {"kyazdani42/nvim-web-devicons"}
       }
     }
+    use {
+      "kyazdani42/nvim-tree.lua",
+      requires = {{"kyazdani42/nvim-web-devicons"}}
+    }
     use {"hrsh7th/nvim-compe"}
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
+    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
 
     use {"chaoren/vim-wordmotion"}
     use {"easymotion/vim-easymotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
-    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"sheerun/vim-polyglot"}
     use {"skywind3000/asyncrun.vim"}
     use {"tpope/vim-abolish"}

@@ -151,11 +151,14 @@ lspconfig.graphql.setup {
   root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
 }
 
-lspconfig.tsserver.setup {on_attach = on_attach}
 lspconfig.sorbet.setup {
   on_attach = on_attach,
   cmd = {
     "/Users/jamesbombeelu/.bin/srb", "--lsp", "--enable-all-beta-lsp-features"
   }
 }
+lspconfig.gopls.setup {on_attach = on_attach}
+lspconfig.jsonls.setup {on_attach = on_attach}
+lspconfig.tsserver.setup {on_attach = on_attach}
 lspconfig.vimls.setup {on_attach = on_attach}
+lspconfig.rust_analyzer.setup {on_attach = on_attach}
