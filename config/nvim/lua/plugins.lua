@@ -43,6 +43,7 @@ return require("packer").startup({
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    use {"glepnir/lspsaga.nvim"}
 
     use {"chaoren/vim-wordmotion"}
     use {"easymotion/vim-easymotion"}
