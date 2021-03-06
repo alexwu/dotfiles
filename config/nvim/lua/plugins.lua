@@ -38,6 +38,7 @@ return require("packer").startup({
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
+    use {"glepnir/lspsaga.nvim"}
 
     use {"chaoren/vim-wordmotion"}
     use {"easymotion/vim-easymotion"}
