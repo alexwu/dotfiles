@@ -1,4 +1,31 @@
 local lspconfig = require "lspconfig"
+local saga = require "lspsaga"
+
+saga.init_lsp_saga {
+  use_saga_diagnostic_sign = true,
+  error_sign = "✘",
+  warn_sign = "⚠",
+  hint_sign = "♦",
+  infor_sign = "♦",
+  border_style = 2
+  -- dianostic_header_icon = '   ',
+  -- code_action_icon = ' ',
+  -- code_action_keys = { quit = 'q',exec = '<CR>' }
+  -- finder_definition_icon = '  ',
+  -- finder_reference_icon = '  ',
+  -- finder_action_keys = {
+  --   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
+  -- },
+  -- code_action_keys = {
+  --   quit = 'q',exec = '<CR>'
+  -- },
+  -- rename_action_keys = {
+  --   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
+  -- },
+  -- definition_preview_icon = '  '
+  -- rename_prompt_prefix = '➤',
+
+}
 
 vim.lsp.handlers["textDocument/codeAction"] =
   require"lsputil.codeAction".code_action_handler
@@ -20,20 +47,10 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] =
   vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
                {virtual_text = false, underline = true, signs = true})
 
-vim.api.nvim_exec([[
-  sign define LspDiagnosticsSignError text=✘ texthl=LspDiagnosticsSignError linehl= numhl=
-  sign define LspDiagnosticsSignWarning text=⚠ texthl=LspDiagnosticsSignWarning linehl= numhl=
-  sign define LspDiagnosticsSignInformation text=♦ texthl=LspDiagnosticsSignInformation linehl= numhl=
-  sign define LspDiagnosticsSignHint text=♦ texthl=LspDiagnosticsSignHint linehl= numhl=
-]], false)
-
 local on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
 
-  -- buf_set_option("omnifunc", "v:lua.vim.lsp.omnifunc")
-
-  -- Mappings.
   local opts = {noremap = true, silent = true}
   buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
   buf_set_keymap("n", "gd", "<Cmd>lua vim.lsp.buf.definition()<CR>", opts)
@@ -42,7 +59,9 @@ local on_attach = function(client, bufnr)
   buf_set_keymap("v", "<leader>a",
                  "<cmd>'<,'>lua require(lua vim.lsp.buf.range_code_action()<CR>",
                  opts)
-  buf_set_keymap("n", "K", "<Cmd>lua vim.lsp.buf.hover()<CR>", opts)
+  buf_set_keymap("n", "K",
+                 "<Cmd>lua require('lspsaga.hover').render_hover_doc()<CR>",
+                 opts)
   buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
   buf_set_keymap("n", "H", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
   buf_set_keymap("n", "<space>wa",
@@ -72,7 +91,31 @@ local on_attach = function(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
+  -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
+  -- vim.cmd [[ autocmd CursorHold * lua require'lspsaga.diagnostic'.show_line_diagnostics() ]]
+end
+
+local in_range = function(range, pos)
+  local row = pos[1] - 1
+  local col = pos[2]
+
+  if not (row == range["start"].line) or not (row == range["end"].line) then
+    return false
+  else
+    return col >= range["start"].character and col < range["end"].character
+  end
+end
+
+function _G.show_diagnostic_on_hold()
+  local d = vim.lsp.diagnostic.get_line_diagnostics()
+  local pos = vim.api.nvim_win_get_cursor(0)
+  if not vim.tbl_isempty(d) then
+    local range = d[1].range
+    if in_range(range, pos) then
+      require"lspsaga.diagnostic".show_line_diagnostics()
+    end
+  end
 end
 
 local system_name = "macOS"
