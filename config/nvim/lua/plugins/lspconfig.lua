@@ -111,9 +111,11 @@ function _G.show_diagnostic_on_hold()
   local d = vim.lsp.diagnostic.get_line_diagnostics()
   local pos = vim.api.nvim_win_get_cursor(0)
   if not vim.tbl_isempty(d) then
-    local range = d[1].range
-    if in_range(range, pos) then
-      require"lspsaga.diagnostic".show_line_diagnostics()
+    for _, item in ipairs(d) do
+      local range = item.range
+      if in_range(range, pos) then
+        return require"lspsaga.diagnostic".show_line_diagnostics()
+      end
     end
   end
 end
