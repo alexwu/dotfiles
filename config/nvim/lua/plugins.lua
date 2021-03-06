@@ -39,9 +39,9 @@ return require("packer").startup({
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
     use {"glepnir/lspsaga.nvim"}
+    use {"phaazon/hop.nvim"}
 
     use {"chaoren/vim-wordmotion"}
-    use {"easymotion/vim-easymotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"sheerun/vim-polyglot"}

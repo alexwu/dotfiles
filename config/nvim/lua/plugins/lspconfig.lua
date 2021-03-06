@@ -91,9 +91,9 @@ local on_attach = function(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
+  -- vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
   -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  -- vim.cmd [[ autocmd CursorHold * lua require'lspsaga.diagnostic'.show_line_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua require'lspsaga.diagnostic'.show_cursor_diagnostics() ]]
 end
 
 local in_range = function(range, pos)
@@ -114,6 +114,7 @@ function _G.show_diagnostic_on_hold()
     for _, item in ipairs(d) do
       local range = item.range
       if in_range(range, pos) then
+        print(item.message)
         return require"lspsaga.diagnostic".show_line_diagnostics()
       end
     end
