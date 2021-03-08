@@ -1,5 +1,5 @@
 vim.g.bubbly_palette = {
-  background = "#282a36",
+  background = "#3a3d4d",
   foreground = "#eff0eb",
   black = "#282a36",
   red = "#ff5c57",
@@ -10,7 +10,7 @@ vim.g.bubbly_palette = {
   cyan = "#9aedfe",
   white = "#f1f1f0",
   lightgrey = "#b1b1b1",
-  darkgrey = "#23272e"
+  darkgrey = "#3a3d4d"
 }
 
 vim.g.bubbly_statusline = {
