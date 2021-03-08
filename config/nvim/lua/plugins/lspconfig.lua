@@ -93,7 +93,12 @@ local on_attach = function(client, bufnr)
 
   -- vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
   -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  vim.cmd [[ autocmd CursorHold * lua require'lspsaga.diagnostic'.show_cursor_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+end
+
+function _G.async_diagnostics()
+  vim.schedule(
+    function() require"lspsaga.diagnostic".show_cursor_diagnostics() end)
 end
 
 local in_range = function(range, pos)
