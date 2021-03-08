@@ -1,4 +1,4 @@
-require("maps")
+require("mappings")
 require("options")
 
 require("plugins")

@@ -27,3 +27,5 @@ map("n", "<c-s><c-a>", "<Cmd>w<cr>")
 map("i", "<c-s><c-a>", "<esc><cmd>w<cr>")
 
 map("n", "<leader>m", "<cmd>NvimTreeToggle<cr>")
+
+vim.cmd [[command! -nargs=0 Trash :!trash %]]
