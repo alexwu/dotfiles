@@ -8,6 +8,7 @@ endif
 
 call plug#begin('~/.vim/plugged')
 
+let g:SnazzyTransparent = 1
 let g:ale_set_balloons = 1
 
 " Essentials
@@ -150,7 +151,8 @@ function! s:check_back_space() abort
 endfunction
 
 "Use <c-space> to trigger completion.
-inoremap <silent><expr> <c-space> coc#refresh()
+inoremap <silent><expr> <c-@> coc#refresh()
+
 
 " Make <CR> auto-select the first completion item and notify coc.nvim to
 " format on enter, <cr> could be remapped by other vim plugin
