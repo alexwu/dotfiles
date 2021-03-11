@@ -64,7 +64,7 @@ return require("packer").startup({
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
 
-    use {"/Users/jamesbombeelu/Code/nvim-snazzy"}
+    use {"~/Code/nvim-snazzy"}
   end,
   config = {compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim"}
 })

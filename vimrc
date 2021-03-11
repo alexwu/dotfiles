@@ -92,10 +92,6 @@ set termguicolors
 set t_Co=256
 colorscheme snazzy
 
-" Slower but more accurate syntax highlighting for javascript/typescript files
-autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
-autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
-
 if executable("ag")
   set grepprg=ag\ --nogroup\ --nocolor
 else
@@ -354,3 +350,5 @@ let g:fzf_colors =
   \ 'header':  ['fg', 'Comment'] }
 
 let g:fzf_history_dir = '~/.local/share/fzf-history'
+
+let g:SnazzyTransparent = 1
