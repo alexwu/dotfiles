@@ -3,20 +3,35 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+OS="$(uname -s)"
+
+if [ "$OS" = "Darwin" ]; then
+  if [ $(arch) = "arm64" ]; then
+    export PATH="/opt/hombrew/bin:$PATH"
+  elif [ $(arch) = "i386" ]; then
+    export PATH="/usr/local/bin:$PATH"
+  fi
+
+  export FZF_BASE="$(brew --prefix)/bin/fzf"
+  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
+  export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+fi
+
 export PATH="$HOME/.bin:$PATH"
-# x86_64 Homebrew paths
-export PATH="/usr/local/bin:$PATH"
+export NVM_COMPLETION=true
 
 autoload -U colors && colors
 
-export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
-export FZF_BASE=$(brew --prefix)/bin/fzf
+## VI Mode
+bindkey -v
+
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
 export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
-export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,bg+:#282a36,spinner:#5af78e,pointer:#ff6ac1,info:#f3f99d,prompt:#9aedfe'"
+export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,bg+:#3a3d4d,spinner:#5af78e,pointer:#ff6ac1,info:#f3f99d,prompt:#9aedfe,gutter:#3a3d4d'"
 export BUNDLED_COMMANDS=(srb)
 
-bindkey -v
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
 
 if ! command -v nvim &> /dev/null
 then
@@ -77,18 +92,20 @@ zinit wait lucid for \
 
 zinit wait blockf lucid for \
   OMZP::bundler \
+  OMZP::rbenv \
   OMZP::heroku \
   OMZP::iterm2 \
   OMZP::gem \
   OMZP::fzf \
-  atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions
+  atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions \
+  lukechilds/zsh-nvm
 
 zinit wait lucid for \
   Aloxaf/fzf-tab
 
-zinit wait lucid as"snippet" for \
-  https://github.com/asdf-vm/asdf/blob/master/completions/_asdf \
+zinit wait lucid as"completion" for \
   https://github.com/sharkdp/fd/blob/master/contrib/completion/_fd \
+  https://github.com/asdf-vm/asdf/blob/master/completions/_asdf \
   https://github.com/ggreer/the_silver_searcher/blob/master/_the_silver_searcher
 
 eval "$(zoxide init zsh --no-aliases)"
