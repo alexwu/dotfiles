@@ -7,12 +7,12 @@ OS="$(uname -s)"
 
 if [ "$OS" = "Darwin" ]; then
   if [ $(arch) = "arm64" ]; then
-    export PATH="/opt/hombrew/bin:$PATH"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
   elif [ $(arch) = "i386" ]; then
-    export PATH="/usr/local/bin:$PATH"
+    eval "$(/usr/local/bin/brew shellenv)"
   fi
 
-  export FZF_BASE="$(brew --prefix)/bin/fzf"
+  export FZF_BASE=$(brew --prefix)/bin/fzf
   export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
   export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 fi
