@@ -28,4 +28,8 @@ map("i", "<c-s><c-a>", "<esc><cmd>w<cr>")
 
 map("n", "<leader>m", "<cmd>NvimTreeToggle<cr>")
 
+vim.api.nvim_set_keymap("n", "<Bslash>w", "<cmd>lua require'hop'.hint_words()<cr>", {})
+vim.api.nvim_set_keymap("n", "<Bslash>l", "<cmd>lua require'hop'.hint_lines()<cr>", {})
+vim.api.nvim_set_keymap("n", "<Bslash>c", "<cmd>lua require'hop'.hint_char1()<cr>", {})
+
 vim.cmd [[command! -nargs=0 Trash :!trash %]]
