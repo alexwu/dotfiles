@@ -62,6 +62,8 @@ local on_attach = function(client, bufnr)
   buf_set_keymap("n", "K",
                  "<Cmd>lua require('lspsaga.hover').render_hover_doc()<CR>",
                  opts)
+  buf_set_keymap("n", "L",
+                 "<cmd>lua require('lspsaga.diagnostic').show_cursor_diagnostics()<CR>", opts)
   buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
   buf_set_keymap("n", "H", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
   buf_set_keymap("n", "<space>wa",
@@ -75,8 +77,6 @@ local on_attach = function(client, bufnr)
                  opts)
   buf_set_keymap("n", "<space>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
   buf_set_keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)
-  buf_set_keymap("n", "<space>e",
-                 "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>", opts)
   buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
   buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
   buf_set_keymap("n", "<space>q",
@@ -93,7 +93,7 @@ local on_attach = function(client, bufnr)
 
   -- vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
   -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+  -- vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
 end
 
 function _G.async_diagnostics()
@@ -158,12 +158,10 @@ local eslint = {
 }
 
 local rubocop = {
-  lintCommand = "bundle exec rubocop --format emacs --force-exclusion --stdin ${INPUT}",
+  lintCommand = "bundle exec rubocop --safe-auto-correct --stdin ${INPUT}",
   lintStdin = true,
   lintFormats = {"%f:%l:%c: %m"},
   lintIgnoreExitCode = true,
-  formatCommand = "bundle exec rubocop --fix ${INPUT}",
-  formatStdin = true
 }
 
 lspconfig.efm.setup {

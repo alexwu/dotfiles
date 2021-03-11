@@ -11,10 +11,12 @@ autoload -U colors && colors
 
 export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 export FZF_BASE=$(brew --prefix)/bin/fzf
-export FZF_DEFAULT_COMMAND='fd --type f --no-ignore --follow'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
+export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,bg+:#282a36,spinner:#5af78e,pointer:#ff6ac1,info:#f3f99d,prompt:#9aedfe'"
 export BUNDLED_COMMANDS=(srb)
+
+bindkey -v
 
 if ! command -v nvim &> /dev/null
 then
