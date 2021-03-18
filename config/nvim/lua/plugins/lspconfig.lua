@@ -93,7 +93,7 @@ local on_attach = function(client, bufnr)
 
   -- vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
   -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  -- vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
 end
 
 function _G.async_diagnostics()

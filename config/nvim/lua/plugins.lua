@@ -45,7 +45,7 @@ return require("packer").startup({
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
-    use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
+    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
     use {"chaoren/vim-wordmotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
