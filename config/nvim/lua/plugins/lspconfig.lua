@@ -95,7 +95,7 @@ local on_attach = function(client, bufnr)
 
   -- vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
   -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  -- vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
 end
 
 function _G.async_diagnostics()
@@ -138,7 +138,7 @@ lspconfig.sumneko_lua.setup {
   settings = {
     Lua = {
       runtime = {version = "LuaJIT", path = vim.split(package.path, ";")},
-      diagnostics = {globals = {"vim", "use"}},
+      diagnostics = {globals = {"vim", "use", "use_rocks"}},
       workspace = {
         library = {
           [vim.fn.expand("$VIMRUNTIME/lua")] = true,

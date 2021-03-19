@@ -48,7 +48,7 @@ return require("packer").startup({
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
-    use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
+    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
     use {"chaoren/vim-wordmotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
@@ -69,9 +69,8 @@ return require("packer").startup({
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
 
-    use {"/Users/jamesbombeelu/Code/nvim-snazzy"}
-
     use_rocks {"luaformatter", server = "https://luarocks.org/dev"}
+    use {"~/Code/nvim-snazzy"}
   end,
   config = {compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim"}
 })
