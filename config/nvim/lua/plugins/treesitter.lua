@@ -17,5 +17,6 @@ require"nvim-treesitter.configs".setup {
     disable = {},
     updatetime = 25,
     persist_queries = false
-  }
+  },
+  autotag = {enable = true}
 }

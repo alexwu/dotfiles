@@ -54,16 +54,18 @@ local on_attach = function(client, bufnr)
   local opts = {noremap = true, silent = true}
   buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
   buf_set_keymap("n", "gd", "<Cmd>lua vim.lsp.buf.definition()<CR>", opts)
-  buf_set_keymap("n", "<leader>a", "<cmd>lua vim.lsp.buf.code_action()<CR>",
+  buf_set_keymap("n", "<leader>a",
+                 "<cmd>lua require('lspsaga.codeaction').code_action()<CR>",
                  opts)
   buf_set_keymap("v", "<leader>a",
-                 "<cmd>'<,'>lua require(lua vim.lsp.buf.range_code_action()<CR>",
+                 ":<C-U>lua require('lspsaga.codeaction').range_code_action()<CR>",
                  opts)
   buf_set_keymap("n", "K",
                  "<Cmd>lua require('lspsaga.hover').render_hover_doc()<CR>",
                  opts)
   buf_set_keymap("n", "L",
-                 "<cmd>lua require('lspsaga.diagnostic').show_cursor_diagnostics()<CR>", opts)
+                 "<cmd>lua require('lspsaga.diagnostic').show_cursor_diagnostics()<CR>",
+                 opts)
   buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
   buf_set_keymap("n", "H", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
   buf_set_keymap("n", "<space>wa",
@@ -161,7 +163,7 @@ local rubocop = {
   lintCommand = "bundle exec rubocop --safe-auto-correct --stdin ${INPUT}",
   lintStdin = true,
   lintFormats = {"%f:%l:%c: %m"},
-  lintIgnoreExitCode = true,
+  lintIgnoreExitCode = true
 }
 
 lspconfig.efm.setup {

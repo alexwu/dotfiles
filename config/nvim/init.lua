@@ -1,8 +1,7 @@
 require("mappings")
-require("options")
-
 require("plugins")
 require("colorscheme")
+require("options")
 require("statusline")
 
 require("plugins/compe")
@@ -22,5 +21,6 @@ require("nvim-autopairs").setup({
   disable_filetype = {"TelescopePrompt"},
   ignored_next_char = "[%P%S]"
 })
+require("nvim-ts-autotag").setup()
 
 vim.cmd [[ autocmd BufWritePost plugins.lua PackerCompile ]]

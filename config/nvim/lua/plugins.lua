@@ -17,6 +17,8 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/playground"}
+    use {"windwp/nvim-ts-autotag"}
+
     use {"neovim/nvim-lspconfig"}
     use {"windwp/nvim-autopairs"}
     use {"norcalli/nvim-colorizer.lua"}
@@ -39,6 +41,7 @@ return require("packer").startup({
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
     use {"hrsh7th/nvim-compe"}
+    use {"tzachar/compe-tabnine", run = "./install.sh"}
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
@@ -60,12 +63,15 @@ return require("packer").startup({
     use {"tpope/vim-projectionist"}
     use {"tpope/vim-rails"}
     use {"tpope/vim-repeat"}
+    use {"tpope/vim-sensible"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
 
     use {"/Users/jamesbombeelu/Code/nvim-snazzy"}
+
+    use_rocks {"luaformatter", server = "https://luarocks.org/dev"}
   end,
   config = {compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim"}
 })

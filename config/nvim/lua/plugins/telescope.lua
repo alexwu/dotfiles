@@ -3,11 +3,12 @@ local actions = require("telescope.actions")
 require("telescope").setup {
   defaults = {
     set_env = {["COLORTERM"] = "truecolor"},
+    prompt_prefix = "❯ ",
     mappings = {
       i = {
         ["<esc>"] = actions.close,
         ["<C-j>"] = actions.move_selection_next,
-        ["<C-k>"] = actions.move_selection_previous,
+        ["<C-k>"] = actions.move_selection_previous
         -- ["<C-u>"] = vim.api.nvim_del_current_line,
       }
     }

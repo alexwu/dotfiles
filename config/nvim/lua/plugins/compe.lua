@@ -26,10 +26,10 @@ require"compe".setup {
     spell = true,
     tags = true,
     snippets_nvim = true,
-    treesitter = true
+    tabnine = true,
+    treesitter = true,
   }
 }
-
 require("lspkind").init()
 
 vim.o.completeopt = "menuone,noselect"
