@@ -10,6 +10,10 @@ local function rustfmt()
   return {exe = "rustfmt", args = {"--emit=stdout"}, stdin = true}
 end
 
+local function gofmt()
+  return {exe = "gofmt", args = {"-s"}, stdin = true}
+end
+
 local function luaformatter()
   return {
     exe = "lua-format",
@@ -30,14 +34,16 @@ require"formatter".setup({
     typescriptreact = {prettier},
     javascript = {prettier},
     javascriptreact = {prettier},
+    go = {gofmt},
     graphql = {prettier},
     json = {prettier},
+    jsonc = {prettier},
     html = {prettier},
     css = {prettier},
     ruby = {prettier},
     rust = {rustfmt},
     lua = {luaformatter},
-    python = {black},
+    python = {black}
   }
 })
 

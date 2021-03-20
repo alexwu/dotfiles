@@ -7,17 +7,14 @@ saga.init_lsp_saga {
   warn_sign = "⚠",
   hint_sign = "♦",
   infor_sign = "♦",
-  border_style = 2
-  -- dianostic_header_icon = '   ',
-  -- code_action_icon = ' ',
-  -- code_action_keys = { quit = 'q',exec = '<CR>' }
+  border_style = 2,
+  dianostic_header_icon = "   ",
+  code_action_icon = " ",
+  code_action_keys = {quit = "<esc>", exec = "<CR>"}
   -- finder_definition_icon = '  ',
   -- finder_reference_icon = '  ',
   -- finder_action_keys = {
   --   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
-  -- },
-  -- code_action_keys = {
-  --   quit = 'q',exec = '<CR>'
   -- },
   -- rename_action_keys = {
   --   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
@@ -93,9 +90,9 @@ local on_attach = function(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  -- vim.cmd [[ autocmd CursorHold * lua show_diagnostic_on_hold() ]]
+  vim.cmd [[ autocmd CursorHold * lua require"lspsaga.diagnostic".show_cursor_diagnostics() ]]
   -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+  -- vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
 end
 
 function _G.async_diagnostics()
@@ -205,7 +202,7 @@ lspconfig.graphql.setup {
 lspconfig.sorbet.setup {
   on_attach = on_attach,
   cmd = {
-    "/Users/jamesbombeelu/.bin/srb", "--lsp", "--enable-all-beta-lsp-features"
+    "bundle", "exec", "srb", "tc", "--lsp", "--enable-all-beta-lsp-features"
   }
 }
 lspconfig.gopls.setup {on_attach = on_attach}

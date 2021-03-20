@@ -2,7 +2,7 @@ local cmd = vim.cmd
 local execute = vim.api.nvim_command
 local fn = vim.fn
 
-local install_path = fn.stdpath("data") .. "/site/pack/packer/opt/packer.nvim"
+local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
 if fn.empty(fn.glob(install_path)) > 0 then
   execute("!git clone https://github.com/wbthomason/packer.nvim " ..
             install_path)
@@ -12,12 +12,13 @@ cmd [[packadd packer.nvim]]
 
 return require("packer").startup({
   function()
-    use {"wbthomason/packer.nvim", opt = true}
+    use {"wbthomason/packer.nvim"}
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/playground"}
     use {"windwp/nvim-ts-autotag"}
+    use {"p00f/nvim-ts-rainbow"}
 
     use {"neovim/nvim-lspconfig"}
     use {"windwp/nvim-autopairs"}
@@ -25,7 +26,6 @@ return require("packer").startup({
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
     use {"f-person/git-blame.nvim"}
-    use {"kosayoda/nvim-lightbulb"}
     use {"mhartington/formatter.nvim"}
     use {
       "nvim-telescope/telescope.nvim",
@@ -41,19 +41,19 @@ return require("packer").startup({
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
     use {"hrsh7th/nvim-compe"}
-    use {"tzachar/compe-tabnine", run = "./install.sh"}
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
-    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    use {"Yggdroot/indentLine"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
+    use {"monaqa/dial.nvim"}
     -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
     use {"chaoren/vim-wordmotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"sheerun/vim-polyglot"}
-    use {"skywind3000/asyncrun.vim"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
     use {"tpope/vim-commentary"}
@@ -69,7 +69,7 @@ return require("packer").startup({
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
 
-    use_rocks {"luaformatter", server = "https://luarocks.org/dev"}
+    -- use_rocks {"luaformatter", server = "https://luarocks.org/dev"}
     use {"~/Code/nvim-snazzy"}
   end,
   config = {compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim"}

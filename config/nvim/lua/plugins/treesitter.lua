@@ -11,12 +11,13 @@ require"nvim-treesitter.configs".setup {
       node_decremental = "<C-x>"
     }
   },
-  refactor = {highlight_definitions = {enable = true}},
   playground = {
     enable = true,
     disable = {},
     updatetime = 25,
     persist_queries = false
   },
+  rainbow = {enable = true},
+  refactor = {highlight_definitions = {enable = true}},
   autotag = {enable = true}
 }

@@ -18,7 +18,6 @@ opt("incsearch", true)
 opt("laststatus", 2)
 opt("lazyredraw", true)
 opt("linebreak", true)
-opt("listchars", "tab:▶ ,eol:¬")
 opt("modelines", 1)
 opt("mouse", "a")
 opt("backup", false)
@@ -46,12 +45,12 @@ opt("wildignore",
 opt("termguicolors", true)
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
-vim.g.cursorhold_updatetime = 200
+vim.g.cursorhold_updatetime = 100
 
-if vim.fn.has("gui_vimr") == 0 then
+if vim.fn.has("gui_vimr") ~= 1 then
   vim.g.nvim_tree_auto_open = 1
   vim.g.nvim_tree_auto_close = 1
-  vim.g.nvim_tree_quit_on_open = 1
+  vim.g.nvim_tree_quit_on_open = 0
   vim.g.nvim_tree_indent_markers = 1
   vim.g.nvim_tree_disable_netrw = 0
   vim.g.nvim_tree_hijack_netrw = 0
