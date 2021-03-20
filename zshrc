@@ -95,6 +95,9 @@ if [ "$OS" = "Darwin" ]; then
     zinit wait blockf lucid for \
       OMZP::rbenv \
       lukechilds/zsh-nvm
+
+  elif [ $(arch) = "i386" ]; then
+    . $HOME/.asdf/asdf.sh
   fi
 fi
 
