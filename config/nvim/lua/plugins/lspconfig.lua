@@ -126,7 +126,7 @@ function _G.show_diagnostic_on_hold()
 end
 
 local system_name = "macOS"
-local sumneko_root_path = "/Users/jamesbombeelu/Code/lua-language-server"
+local sumneko_root_path = vim.loop.os_homedir() .. "/Code/lua-language-server"
 local sumneko_binary = sumneko_root_path .. "/bin/" .. system_name ..
                          "/lua-language-server"
 
