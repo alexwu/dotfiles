@@ -1,4 +1,5 @@
 require"nvim-treesitter.configs".setup {
+  ensure_installed = "maintained",
   highlight = {enable = true, disable = {"ruby"}},
   indent = {enable = true, disable = {"ruby"}},
   incremental_selection = {

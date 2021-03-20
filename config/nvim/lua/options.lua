@@ -48,10 +48,12 @@ opt("termguicolors", true)
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
 vim.g.cursorhold_updatetime = 200
 
-vim.g.nvim_tree_auto_open = 1
-vim.g.nvim_tree_auto_close = 1
-vim.g.nvim_tree_quit_on_open = 1
-vim.g.nvim_tree_indent_markers = 1
-vim.g.nvim_tree_disable_netrw = 0
-vim.g.nvim_tree_hijack_netrw = 0
-vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
+if vim.fn.has("gui_vimr") == 0 then
+  vim.g.nvim_tree_auto_open = 1
+  vim.g.nvim_tree_auto_close = 1
+  vim.g.nvim_tree_quit_on_open = 1
+  vim.g.nvim_tree_indent_markers = 1
+  vim.g.nvim_tree_disable_netrw = 0
+  vim.g.nvim_tree_hijack_netrw = 0
+  vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
+end
