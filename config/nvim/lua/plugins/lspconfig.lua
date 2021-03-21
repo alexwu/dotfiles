@@ -126,7 +126,7 @@ function _G.show_diagnostic_on_hold()
 end
 
 local system_name = "macOS"
-local sumneko_root_path = "/Users/jamesbombeelu/Code/lua-language-server"
+local sumneko_root_path = vim.loop.os_homedir() .. "/Code/lua-language-server"
 local sumneko_binary = sumneko_root_path .. "/bin/" .. system_name ..
                          "/lua-language-server"
 
@@ -157,7 +157,7 @@ local eslint = {
 }
 
 local rubocop = {
-  lintCommand = "bundle exec rubocop --safe-auto-correct --stdin ${INPUT}",
+  lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",
   lintStdin = true,
   lintFormats = {"%f:%l:%c: %m"},
   lintIgnoreExitCode = true
@@ -203,7 +203,8 @@ lspconfig.sorbet.setup {
   on_attach = on_attach,
   cmd = {
     "bundle", "exec", "srb", "tc", "--lsp", "--enable-all-beta-lsp-features"
-  }
+  },
+  rootMarkers = {".git/", "Gemfile", "sorbet"}
 }
 lspconfig.gopls.setup {on_attach = on_attach}
 lspconfig.jsonls.setup {on_attach = on_attach}
