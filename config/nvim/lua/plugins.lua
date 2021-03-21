@@ -14,12 +14,14 @@ return require("packer").startup({
   function()
     use {"wbthomason/packer.nvim"}
 
+    -- Treesitter
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/playground"}
     use {"windwp/nvim-ts-autotag"}
     use {"p00f/nvim-ts-rainbow"}
 
+    -- NeoVim specific
     use {"neovim/nvim-lspconfig"}
     use {"windwp/nvim-autopairs"}
     use {"norcalli/nvim-colorizer.lua"}
@@ -44,11 +46,11 @@ return require("packer").startup({
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
-    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
-    use {"Yggdroot/indentLine"}
+    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
     use {"monaqa/dial.nvim"}
+    use {"gennaro-tedesco/nvim-jqx"}
     -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
     use {"chaoren/vim-wordmotion"}
