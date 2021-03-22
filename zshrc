@@ -18,12 +18,13 @@ if [ "$OS" = "Darwin" ]; then
 fi
 
 export PATH="$HOME/.bin:$PATH"
+export PATH="$HOME/go/bin:$PATH"
 export NVM_COMPLETION=true
 
 autoload -U colors && colors
 
 ## VI Mode
-bindkey -v
+# bindkey -v
 
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
 export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
@@ -89,19 +90,28 @@ zinit wait lucid for \
   OMZL::history.zsh \
   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
+if [ "$OS" = "Darwin" ]; then
+  if [ $(arch) = "arm64" ]; then
+    zinit wait blockf lucid for \
+      OMZP::rbenv \
+      lukechilds/zsh-nvm
+
+  elif [ $(arch) = "i386" ]; then
+    . $HOME/.asdf/asdf.sh
+  fi
+fi
 
 zinit wait blockf lucid for \
   OMZP::bundler \
-  OMZP::rbenv \
   OMZP::heroku \
   OMZP::iterm2 \
   OMZP::gem \
   OMZP::fzf \
   atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions \
-  lukechilds/zsh-nvm
 
 zinit wait lucid for \
   Aloxaf/fzf-tab
+#  jeffreytse/zsh-vi-mode
 
 zinit wait lucid as"completion" for \
   https://github.com/sharkdp/fd/blob/master/contrib/completion/_fd \
@@ -112,9 +122,6 @@ eval "$(zoxide init zsh --no-aliases)"
 function z() {
   __zoxide_z "$@"
 }
-
-# ASDF plugin setup
-. $HOME/.asdf/asdf.sh
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
