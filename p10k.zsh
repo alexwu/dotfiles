@@ -38,13 +38,14 @@
   autoload -Uz is-at-least && is-at-least 5.1 || return
 
   # Prompt colors.
-  local grey='242'
-  local red='#FF5C57'
-  local yellow='#F3F99D'
   local blue='#57C7FF'
-  local magenta='#FF6AC1'
   local cyan='#9AEDFE'
+  local green='#5af78e'
+  local grey='#686868'
+  local magenta='#FF6AC1'
+  local red='#FF5C57'
   local white='#F1F1F0'
+  local yellow='#F3F99D'
 
   # Left prompt segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
@@ -114,7 +115,7 @@
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=$yellow
 
   # Grey Git prompt. This makes stale prompts indistinguishable from up-to-date ones.
-  typeset -g POWERLEVEL9K_VCS_FOREGROUND=$grey
+  # typeset -g POWERLEVEL9K_VCS_FOREGROUND=$grey
 
   # Disable async loading indicator to make directories that aren't Git repositories
   # indistinguishable from large Git repositories without known state.
@@ -129,9 +130,9 @@
   # Don't show remote branch, current tag or stashes.
   typeset -g POWERLEVEL9K_VCS_GIT_HOOKS=(vcs-detect-changes git-untracked git-aheadbehind)
   # Show the branch icon.
-  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON='\uF126 '
+  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=''
   # When in detached HEAD state, show @commit where branch normally goes.
-  typeset -g POWERLEVEL9K_VCS_COMMIT_ICON='@'
+  typeset -g POWERLEVEL9K_VCS_COMMIT_ICON=''
   # Don't show staged, unstaged, indicators.
   typeset -g POWERLEVEL9K_VCS_UNTRACKED_ICON='?'
   typeset -g POWERLEVEL9K_VCS_{STAGED,UNSTAGED}_ICON=
@@ -156,18 +157,18 @@
 
     if (( $1 )); then
       # Styling for up-to-date Git status.
-      local       meta='%f'   # default foreground
-      local      clean='%2F'  # green foreground
-      local   modified='%3F'  # yellow foreground
-      local  untracked='%4F'  # blue foreground
-      local conflicted='%1F'  # red foreground
+      local       meta=$white   # default foreground
+      local      clean=$green  # green foreground
+      local   modified=$yellow # yellow foreground
+      local  untracked=$blue  # blue foreground
+      local conflicted=$red  # red foreground
     else
       # Styling for incomplete and stale Git status.
-      local       meta='%f'  # default foreground
-      local      clean='%f'  # default foreground
-      local   modified='%f'  # default foreground
-      local  untracked='%f'  # default foreground
-      local conflicted='%f'  # default foreground
+      local       meta=$grey  # default foreground
+      local      clean=$grey  # default foreground
+      local   modified=$grey  # default foreground
+      local  untracked=$grey  # default foreground
+      local conflicted=$grey  # default foreground
     fi
 
     local res
@@ -176,28 +177,21 @@
       local branch=${(V)VCS_STATUS_LOCAL_BRANCH}
       # If local branch name is at most 32 characters long, show it in full.
       # Otherwise show the first 12 … the last 12.
-      # Tip: To always show local branch name in full without truncation, delete the next line.
-      (( $#branch > 32 )) && branch[13,-13]="…"  # <-- this line
-      res+="${clean}${(g::)POWERLEVEL9K_VCS_BRANCH_ICON}${branch//\%/%%}"
+      (( $#branch > 32 )) && branch[13,-13]="…"
+      res+="${clean}${branch//\%/%%}"
     fi
 
-    if [[ -n $VCS_STATUS_TAG
-      # Show tag only if not on a branch.
-      # Tip: To always show tag, delete the next line.
-      && -z $VCS_STATUS_LOCAL_BRANCH  # <-- this line
-      ]]; then
+    if [[ -n $VCS_STATUS_TAG && -z $VCS_STATUS_LOCAL_BRANCH ]]; then
       local tag=${(V)VCS_STATUS_TAG}
       # If tag name is at most 32 characters long, show it in full.
       # Otherwise show the first 12 … the last 12.
-      # Tip: To always show tag name in full without truncation, delete the next line.
-      (( $#tag > 32 )) && tag[13,-13]="…"  # <-- this line
+      (( $#tag > 32 )) && tag[13,-13]="…"
       res+="${meta}#${clean}${tag//\%/%%}"
-      fi
+    fi
 
     # Display the current Git commit if there is no branch and no tag.
-    # Tip: To always display the current Git commit, delete the next line.
-    [[ -z $VCS_STATUS_LOCAL_BRANCH && -z $VCS_STATUS_TAG ]] &&  # <-- this line
-      res+="${meta}@${clean}${VCS_STATUS_COMMIT[1,8]}"
+    [[ -z $VCS_STATUS_LOCAL_BRANCH && -z $VCS_STATUS_TAG ]] &&
+      res+="${meta}${clean}${VCS_STATUS_COMMIT[1,8]}"
 
     # Show tracking branch name if it differs from local branch.
     if [[ -n ${VCS_STATUS_REMOTE_BRANCH:#$VCS_STATUS_LOCAL_BRANCH} ]]; then
@@ -226,7 +220,6 @@
     (( VCS_STATUS_NUM_UNSTAGED   )) && res+=" ${modified}!${VCS_STATUS_NUM_UNSTAGED}"
     # ?42 if have untracked files. It's really a question mark, your font isn't broken.
     # See POWERLEVEL9K_VCS_UNTRACKED_ICON above if you want to use a different icon.
-    # Remove the next line if you don't want to see untracked files at all.
     (( VCS_STATUS_NUM_UNTRACKED  )) && res+=" ${untracked}${(g::)POWERLEVEL9K_VCS_UNTRACKED_ICON}${VCS_STATUS_NUM_UNTRACKED}"
     # "─" if the number of unstaged files is unknown. This can happen due to
     # POWERLEVEL9K_VCS_MAX_INDEX_SIZE_DIRTY (see below) being set to a non-negative number lower
