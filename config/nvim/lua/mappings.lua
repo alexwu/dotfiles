@@ -29,9 +29,12 @@ map("n", "<leader>t", "<Cmd>Telescope<cr>")
 map("n", "<C-t>", "<Cmd>tabedit<cr>")
 map("n", "<space><space>", "<C-^>")
 
-vim.api.nvim_set_keymap("n", "<Bslash>w", "<cmd>lua require'hop'.hint_words()<cr>", {})
-vim.api.nvim_set_keymap("n", "<Bslash>l", "<cmd>lua require'hop'.hint_lines()<cr>", {})
-vim.api.nvim_set_keymap("n", "<Bslash>c", "<cmd>lua require'hop'.hint_char1()<cr>", {})
+vim.api.nvim_set_keymap("n", "<Bslash>w",
+                        "<cmd>lua require'hop'.hint_words()<cr>", {})
+vim.api.nvim_set_keymap("n", "<Bslash>l",
+                        "<cmd>lua require'hop'.hint_lines()<cr>", {})
+vim.api.nvim_set_keymap("n", "<Bslash>c",
+                        "<cmd>lua require'hop'.hint_char1()<cr>", {})
 
 vim.api.nvim_set_keymap("n", "<C-a>", "<Plug>(dial-increment)", {})
 vim.api.nvim_set_keymap("n", "<C-x>", "<Plug>(dial-decrement)", {})

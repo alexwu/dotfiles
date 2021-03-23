@@ -125,6 +125,9 @@ function _G.show_diagnostic_on_hold()
   end
 end
 
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+
 local system_name = "macOS"
 local sumneko_root_path = vim.loop.os_homedir() .. "/Code/lua-language-server"
 local sumneko_binary = sumneko_root_path .. "/bin/" .. system_name ..
@@ -144,7 +147,8 @@ lspconfig.sumneko_lua.setup {
       }
     }
   },
-  on_attach = on_attach
+  on_attach = on_attach,
+  capabilities = capabilities
 }
 
 local eslint = {
@@ -189,11 +193,13 @@ lspconfig.efm.setup {
       ruby = {rubocop}
     }
   },
-  on_attach = on_attach
+  on_attach = on_attach,
+  capabilities = capabilities
 }
 
 lspconfig.graphql.setup {
   on_attach = on_attach,
+  capabilities = capabilities,
   cmd = {"graphql-lsp", "server", "-m", "stream"},
   filetypes = {"graphql"},
   root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
@@ -201,13 +207,17 @@ lspconfig.graphql.setup {
 
 lspconfig.sorbet.setup {
   on_attach = on_attach,
+  capabilities = capabilities,
   cmd = {
     "bundle", "exec", "srb", "tc", "--lsp", "--enable-all-beta-lsp-features"
   },
   rootMarkers = {".git/", "Gemfile", "sorbet"}
 }
-lspconfig.gopls.setup {on_attach = on_attach}
-lspconfig.jsonls.setup {on_attach = on_attach}
-lspconfig.tsserver.setup {on_attach = on_attach}
-lspconfig.vimls.setup {on_attach = on_attach}
-lspconfig.rust_analyzer.setup {on_attach = on_attach}
+lspconfig.gopls.setup {on_attach = on_attach, capabilities = capabilities}
+lspconfig.jsonls.setup {on_attach = on_attach, capabilities = capabilities}
+lspconfig.tsserver.setup {on_attach = on_attach, capabilities = capabilities}
+lspconfig.vimls.setup {on_attach = on_attach, capabilities = capabilities}
+lspconfig.rust_analyzer.setup {
+  on_attach = on_attach,
+  capabilities = capabilities
+}
