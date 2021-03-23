@@ -43,6 +43,8 @@ return require("packer").startup({
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
     use {"hrsh7th/nvim-compe"}
+    use {"tzachar/compe-tabnine"}
+
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
     use {"antoinemadec/FixCursorHold.nvim"}
@@ -50,9 +52,10 @@ return require("packer").startup({
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
     use {"monaqa/dial.nvim"}
-    use {"gennaro-tedesco/nvim-jqx"}
     -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
+    use {"hrsh7th/vim-vsnip"}
+    use {"hrsh7th/vim-vsnip-integ"}
     use {"chaoren/vim-wordmotion"}
     use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"sheerun/vim-polyglot"}
