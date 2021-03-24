@@ -17,6 +17,7 @@ return require("packer").startup({
     -- Treesitter
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
+    use {"nvim-treesitter/nvim-treesitter-textobjects"}
     use {"nvim-treesitter/playground"}
     use {"windwp/nvim-ts-autotag"}
     use {"p00f/nvim-ts-rainbow"}
@@ -73,6 +74,7 @@ return require("packer").startup({
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
+    use {"axelf4/vim-strip-trailing-whitespace"}
 
     -- use_rocks {"luaformatter", server = "https://luarocks.org/dev"}
     use {"~/Code/nvim-snazzy"}

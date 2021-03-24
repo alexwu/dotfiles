@@ -17,17 +17,6 @@ saga.init_lsp_saga {
     sign_priority = 20,
     virtual_text = false
   }
-  -- finder_definition_icon = '  ',
-  -- finder_reference_icon = '  ',
-  -- finder_action_keys = {
-  --   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
-  -- },
-  -- rename_action_keys = {
-  --   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
-  -- },
-  -- definition_preview_icon = '  '
-  -- rename_prompt_prefix = '➤',
-
 }
 
 vim.lsp.handlers["textDocument/codeAction"] =
@@ -52,7 +41,6 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] =
 
 local on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
-  local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
 
   local opts = {noremap = true, silent = true}
   buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
@@ -97,8 +85,6 @@ local on_attach = function(client, bufnr)
   end
 
   vim.cmd [[ autocmd CursorHold * lua require"lspsaga.diagnostic".show_cursor_diagnostics() ]]
-  -- vim.cmd [[ autocmd CursorMoved * lua show_diagnostic_on_hold() ]]
-  -- vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
 end
 
 function _G.async_diagnostics()
