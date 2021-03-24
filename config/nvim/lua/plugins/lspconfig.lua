@@ -10,7 +10,13 @@ saga.init_lsp_saga {
   border_style = 2,
   dianostic_header_icon = "   ",
   code_action_icon = " ",
-  code_action_keys = {quit = "<esc>", exec = "<CR>"}
+  code_action_keys = {quit = "<esc>", exec = "<CR>"},
+  code_action_prompt = {
+    enable = true,
+    sign = true,
+    sign_priority = 20,
+    virtual_text = false
+  }
   -- finder_definition_icon = '  ',
   -- finder_reference_icon = '  ',
   -- finder_action_keys = {

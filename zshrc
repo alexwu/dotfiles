@@ -48,7 +48,7 @@ fi
 
 alias zshconfig="$EDITOR ~/.dotfiles/zshrc"
 alias nvimrc="$EDITOR ~/.dotfiles/config/nvim"
-alias ls="exa"
+alias ls="exa --sort type"
 
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.zinit/bin/zinit.zsh ]]; then

@@ -1,5 +1,7 @@
 .git/*
-config/coc/extensions
-node_modules/
-coc-yank-data/
 coc-toml-data/
+coc-yank-data/
+config/coc/extensions
+config/pgcli/history
+config/pgcli/log
+node_modules/
