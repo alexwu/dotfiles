@@ -73,6 +73,7 @@ return require("packer").startup({
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
+    use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
 
