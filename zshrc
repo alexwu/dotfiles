@@ -28,7 +28,7 @@ autoload -U colors && colors
 
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
 export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
-export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,bg+:#3a3d4d,spinner:#5af78e,pointer:#ff6ac1,info:#f3f99d,prompt:#9aedfe,gutter:#3a3d4d'"
+export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'"
 export BUNDLED_COMMANDS=(srb)
 
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
