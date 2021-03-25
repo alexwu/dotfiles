@@ -1,3 +1,5 @@
+vim.g.polyglot_disabled = {"ruby", "typescript", "typescriptreact", "lua"}
+
 require("mappings")
 require("plugins")
 require("colorscheme")
