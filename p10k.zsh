@@ -114,36 +114,36 @@
   # Yellow previous command duration.
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=$yellow
 
-  # Grey Git prompt. This makes stale prompts indistinguishable from up-to-date ones.
-  # typeset -g POWERLEVEL9K_VCS_FOREGROUND=$grey
+  # # Grey Git prompt. This makes stale prompts indistinguishable from up-to-date ones.
+  typeset -g POWERLEVEL9K_VCS_FOREGROUND=$white
 
-  # Disable async loading indicator to make directories that aren't Git repositories
-  # indistinguishable from large Git repositories without known state.
-  typeset -g POWERLEVEL9K_VCS_LOADING_TEXT=
+  # # Disable async loading indicator to make directories that aren't Git repositories
+  # # indistinguishable from large Git repositories without known state.
+  # typeset -g POWERLEVEL9K_VCS_LOADING_TEXT=
 
-  # Don't wait for Git status even for a millisecond, so that prompt always updates
-  # asynchronously when Git state changes.
-  typeset -g POWERLEVEL9K_VCS_MAX_SYNC_LATENCY_SECONDS=0
+  # # Don't wait for Git status even for a millisecond, so that prompt always updates
+  # # asynchronously when Git state changes.
+  # typeset -g POWERLEVEL9K_VCS_MAX_SYNC_LATENCY_SECONDS=0
 
-  # Cyan ahead/behind arrows.
-  typeset -g POWERLEVEL9K_VCS_{INCOMING,OUTGOING}_CHANGESFORMAT_FOREGROUND=$cyan
-  # Don't show remote branch, current tag or stashes.
-  typeset -g POWERLEVEL9K_VCS_GIT_HOOKS=(vcs-detect-changes git-untracked git-aheadbehind)
-  # Show the branch icon.
-  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=''
-  # When in detached HEAD state, show @commit where branch normally goes.
-  typeset -g POWERLEVEL9K_VCS_COMMIT_ICON=''
-  # Don't show staged, unstaged, indicators.
-  typeset -g POWERLEVEL9K_VCS_UNTRACKED_ICON='?'
-  typeset -g POWERLEVEL9K_VCS_{STAGED,UNSTAGED}_ICON=
-  # Show '*' when there are staged, unstaged or untracked files.
-  typeset -g POWERLEVEL9K_VCS_DIRTY_ICON='*'
-  # Show '⇣' if local branch is behind remote.
-  typeset -g POWERLEVEL9K_VCS_INCOMING_CHANGES_ICON=':⇣'
-  # Show '⇡' if local branch is ahead of remote.
-  typeset -g POWERLEVEL9K_VCS_OUTGOING_CHANGES_ICON=':⇡'
-  # Don't show the number of commits next to the ahead/behind arrows.
-  typeset -g POWERLEVEL9K_VCS_{COMMITS_AHEAD,COMMITS_BEHIND}_MAX_NUM=1
+  # # Cyan ahead/behind arrows.
+  # typeset -g POWERLEVEL9K_VCS_{INCOMING,OUTGOING}_CHANGESFORMAT_FOREGROUND=$cyan
+  # # Don't show remote branch, current tag or stashes.
+  # typeset -g POWERLEVEL9K_VCS_GIT_HOOKS=(vcs-detect-changes git-untracked git-aheadbehind)
+  # # Show the branch icon.
+  # typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=''
+  # # When in detached HEAD state, show @commit where branch normally goes.
+  # typeset -g POWERLEVEL9K_VCS_COMMIT_ICON=''
+  # # Don't show staged, unstaged, indicators.
+  # typeset -g POWERLEVEL9K_VCS_UNTRACKED_ICON='?'
+  # typeset -g POWERLEVEL9K_VCS_{STAGED,UNSTAGED}_ICON=
+  # # Show '*' when there are staged, unstaged or untracked files.
+  # typeset -g POWERLEVEL9K_VCS_DIRTY_ICON='*'
+  # # Show '⇣' if local branch is behind remote.
+  # typeset -g POWERLEVEL9K_VCS_INCOMING_CHANGES_ICON=':⇣'
+  # # Show '⇡' if local branch is ahead of remote.
+  # typeset -g POWERLEVEL9K_VCS_OUTGOING_CHANGES_ICON=':⇡'
+  # # Don't show the number of commits next to the ahead/behind arrows.
+  # typeset -g POWERLEVEL9K_VCS_{COMMITS_AHEAD,COMMITS_BEHIND}_MAX_NUM=1
 
   function my_git_formatter() {
     emulate -L zsh
@@ -157,18 +157,20 @@
 
     if (( $1 )); then
       # Styling for up-to-date Git status.
-      local       meta=$white   # default foreground
-      local      clean=$green  # green foreground
-      local   modified=$yellow # yellow foreground
-      local  untracked=$blue  # blue foreground
-      local conflicted=$red  # red foreground
+      local       meta="%f"   # default foreground
+      local      clean="%F{green}"  # green foreground
+      local      coming="%F{magenta}"  # green foreground
+      local   modified="%F{yellow}" # yellow foreground
+      local  untracked="%F{blue}"  # blue foreground
+      local conflicted="%F{red}"  # red foreground
     else
       # Styling for incomplete and stale Git status.
-      local       meta=$grey  # default foreground
-      local      clean=$grey  # default foreground
-      local   modified=$grey  # default foreground
-      local  untracked=$grey  # default foreground
-      local conflicted=$grey  # default foreground
+      local       meta=$white # default foreground
+      local      clean=$white # default foreground
+      local      coming="%F{white}"  # green foreground
+      local   modified=$white # default foreground
+      local  untracked=$white # default foreground
+      local conflicted=$white # default foreground
     fi
 
     local res
@@ -199,15 +201,15 @@
     fi
 
     # ⇣42 if behind the remote.
-    (( VCS_STATUS_COMMITS_BEHIND )) && res+=" ${clean}⇣${VCS_STATUS_COMMITS_BEHIND}"
+    (( VCS_STATUS_COMMITS_BEHIND )) && res+=" ${coming}⇣${VCS_STATUS_COMMITS_BEHIND}"
     # ⇡42 if ahead of the remote; no leading space if also behind the remote: ⇣42⇡42.
     (( VCS_STATUS_COMMITS_AHEAD && !VCS_STATUS_COMMITS_BEHIND )) && res+=" "
-    (( VCS_STATUS_COMMITS_AHEAD  )) && res+="${clean}⇡${VCS_STATUS_COMMITS_AHEAD}"
+    (( VCS_STATUS_COMMITS_AHEAD  )) && res+="${coming}⇡${VCS_STATUS_COMMITS_AHEAD}"
     # ⇠42 if behind the push remote.
-    (( VCS_STATUS_PUSH_COMMITS_BEHIND )) && res+=" ${clean}⇠${VCS_STATUS_PUSH_COMMITS_BEHIND}"
+    (( VCS_STATUS_PUSH_COMMITS_BEHIND )) && res+=" ${coming}⇠${VCS_STATUS_PUSH_COMMITS_BEHIND}"
     (( VCS_STATUS_PUSH_COMMITS_AHEAD && !VCS_STATUS_PUSH_COMMITS_BEHIND )) && res+=" "
     # ⇢42 if ahead of the push remote; no leading space if also behind: ⇠42⇢42.
-    (( VCS_STATUS_PUSH_COMMITS_AHEAD  )) && res+="${clean}⇢${VCS_STATUS_PUSH_COMMITS_AHEAD}"
+    (( VCS_STATUS_PUSH_COMMITS_AHEAD  )) && res+="${magenta}⇢${VCS_STATUS_PUSH_COMMITS_AHEAD}"
     # *42 if have stashes.
     (( VCS_STATUS_STASHES        )) && res+=" ${clean}*${VCS_STATUS_STASHES}"
     # 'merge' if the repo is in an unusual state.
@@ -269,9 +271,9 @@
 
   # These settings are used for repositories other than Git or when gitstatusd fails and
   # Powerlevel10k has to fall back to using vcs_info.
-  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=2
-  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=2
-  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=3
+  # typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=2
+  # typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=2
+  # typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=3
 
   # Grey current time.
   typeset -g POWERLEVEL9K_TIME_FOREGROUND=$grey

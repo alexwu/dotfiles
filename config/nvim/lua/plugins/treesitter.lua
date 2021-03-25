@@ -1,5 +1,9 @@
 require"nvim-treesitter.configs".setup {
-  ensure_installed = "maintained",
+  ensure_installed = {
+    "typescript", "ruby", "json", "jsonc", "rust", "bash", "go", "graphql",
+    "html", "javascript", "lua", "python", "toml", "tsx", "css", "c", "cpp",
+    "vue", "c_sharp", "swift", "yaml"
+  },
   highlight = {enable = true},
   indent = {enable = true},
   incremental_selection = {
@@ -19,5 +23,6 @@ require"nvim-treesitter.configs".setup {
   },
   rainbow = {enable = true},
   refactor = {highlight_definitions = {enable = true}},
-  autotag = {enable = true}
+  autotag = {enable = true},
+  context_commentstring = {enable = true}
 }

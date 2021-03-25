@@ -57,3 +57,9 @@ if vim.fn.has("gui_vimr") ~= 1 then
   vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
   vim.g.nvim_tree_ignore = {".DS_Store"}
 end
+
+-- disable python 2
+vim.g.loaded_python_provider = 0
+
+-- python 3 path
+vim.g.python3_host_prog = "/usr/local/bin/python3"

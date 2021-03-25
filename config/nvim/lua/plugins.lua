@@ -21,6 +21,7 @@ return require("packer").startup({
     use {"nvim-treesitter/playground"}
     use {"windwp/nvim-ts-autotag"}
     use {"p00f/nvim-ts-rainbow"}
+    use {"JoosepAlviste/nvim-ts-context-commentstring"}
 
     -- NeoVim specific
     use {"neovim/nvim-lspconfig"}
