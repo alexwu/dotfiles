@@ -30,7 +30,7 @@ opt("ruler", true)
 opt("scrolloff", 5)
 opt("shell", "/bin/zsh")
 opt("shiftwidth", 2, buffer)
-opt("shortmess", o.shortmess .. "c")
+opt("shortmess", o.shortmess .. "Icq")
 opt("showcmd", true)
 opt("signcolumn", "yes", window)
 opt("smartcase", true)
@@ -62,4 +62,4 @@ end
 vim.g.loaded_python_provider = 0
 
 -- python 3 path
-vim.g.python3_host_prog = "/usr/local/bin/python3"
+vim.g.python3_host_prog = "/opt/homebrew/bin/python3"
