@@ -5,7 +5,7 @@ require"nvim-treesitter.configs".setup {
     "vue", "c_sharp", "swift", "yaml"
   },
   highlight = {enable = true},
-  indent = {enable = true},
+  indent = {enable = true, disable = {"ruby"}},
   incremental_selection = {
     enable = true,
     keymaps = {
@@ -21,8 +21,11 @@ require"nvim-treesitter.configs".setup {
     updatetime = 25,
     persist_queries = false
   },
-  rainbow = {enable = true},
-  refactor = {highlight_definitions = {enable = true}},
+  rainbow = {enable = false},
+  refactor = {
+    highlight_definitions = {enable = true},
+    smart_rename = {enable = true, keymaps = {smart_rename = "grr"}}
+  },
   autotag = {enable = true},
   context_commentstring = {enable = true}
 }

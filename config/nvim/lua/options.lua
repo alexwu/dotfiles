@@ -62,4 +62,4 @@ end
 vim.g.loaded_python_provider = 0
 
 -- python 3 path
-vim.g.python3_host_prog = "/opt/homebrew/bin/python3"
+vim.g.python3_host_prog = "/usr/local/bin/python3"

@@ -39,7 +39,7 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] =
   vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
                {virtual_text = false, underline = true, signs = true})
 
-local on_attach = function(client, bufnr)
+local default_on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
 
   local opts = {noremap = true, silent = true}
@@ -139,7 +139,7 @@ lspconfig.sumneko_lua.setup {
       }
     }
   },
-  on_attach = on_attach,
+  on_attach = default_on_attach,
   capabilities = capabilities
 }
 
@@ -185,12 +185,12 @@ lspconfig.efm.setup {
       ruby = {rubocop}
     }
   },
-  on_attach = on_attach,
+  on_attach = default_on_attach,
   capabilities = capabilities
 }
 
 lspconfig.graphql.setup {
-  on_attach = on_attach,
+  on_attach = default_on_attach,
   capabilities = capabilities,
   cmd = {"graphql-lsp", "server", "-m", "stream"},
   filetypes = {"graphql"},
@@ -198,18 +198,41 @@ lspconfig.graphql.setup {
 }
 
 lspconfig.sorbet.setup {
-  on_attach = on_attach,
+  on_attach = default_on_attach,
   capabilities = capabilities,
   cmd = {
     "bundle", "exec", "srb", "tc", "--lsp", "--enable-all-beta-lsp-features"
   },
   rootMarkers = {".git/", "Gemfile", "sorbet"}
 }
-lspconfig.gopls.setup {on_attach = on_attach, capabilities = capabilities}
-lspconfig.jsonls.setup {on_attach = on_attach, capabilities = capabilities}
-lspconfig.tsserver.setup {on_attach = on_attach, capabilities = capabilities}
-lspconfig.vimls.setup {on_attach = on_attach, capabilities = capabilities}
+lspconfig.gopls.setup {
+  on_attach = default_on_attach,
+  capabilities = capabilities
+}
+lspconfig.jsonls.setup {
+  on_attach = default_on_attach,
+  capabilities = capabilities
+}
+lspconfig.tsserver.setup {
+  on_attach = function(client, bufnr)
+    default_on_attach(client, bufnr)
+
+    require("nvim-lsp-ts-utils").setup {}
+
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>o", ":LspOrganize<CR>",
+                                {silent = true})
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>fc", ":LspFixCurrent<CR>",
+                                {silent = true})
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>ia", ":LspImportAll<CR>",
+                                {silent = true})
+  end,
+  capabilities = capabilities
+}
+lspconfig.vimls.setup {
+  on_attach = default_on_attach,
+  capabilities = capabilities
+}
 lspconfig.rust_analyzer.setup {
-  on_attach = on_attach,
+  on_attach = default_on_attach,
   capabilities = capabilities
 }
