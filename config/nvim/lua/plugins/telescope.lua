@@ -1,4 +1,5 @@
 local actions = require("telescope.actions")
+local clear_line = function() vim.api.nvim_del_current_line() end
 
 require("telescope").setup {
   defaults = {
@@ -8,10 +9,9 @@ require("telescope").setup {
       i = {
         ["<esc>"] = actions.close,
         ["<C-j>"] = actions.move_selection_next,
-        ["<C-k>"] = actions.move_selection_previous
-        -- ["<C-u>"] = vim.api.nvim_del_current_line,
-      },
-      n = {["<esc>"] = false}
+        ["<C-k>"] = actions.move_selection_previous,
+        ["<C-u>"] = clear_line
+      }
     }
   },
   extensions = {
