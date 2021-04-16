@@ -19,23 +19,23 @@ saga.init_lsp_saga {
   }
 }
 
-vim.lsp.handlers["textDocument/codeAction"] =
+local handlers = vim.lsp.handlers
+handlers["textDocument/codeAction"] =
   require"lsputil.codeAction".code_action_handler
-vim.lsp.handlers["textDocument/references"] =
+handlers["textDocument/references"] =
   require"lsputil.locations".references_handler
-vim.lsp.handlers["textDocument/definition"] =
+handlers["textDocument/definition"] =
   require"lsputil.locations".definition_handler
-vim.lsp.handlers["textDocument/declaration"] =
+handlers["textDocument/declaration"] =
   require"lsputil.locations".declaration_handler
-vim.lsp.handlers["textDocument/typeDefinition"] =
+handlers["textDocument/typeDefinition"] =
   require"lsputil.locations".typeDefinition_handler
-vim.lsp.handlers["textDocument/implementation"] =
+handlers["textDocument/implementation"] =
   require"lsputil.locations".implementation_handler
-vim.lsp.handlers["textDocument/documentSymbol"] =
+handlers["textDocument/documentSymbol"] =
   require"lsputil.symbols".document_handler
-vim.lsp.handlers["workspace/symbol"] =
-  require"lsputil.symbols".workspace_handler
-vim.lsp.handlers["textDocument/publishDiagnostics"] =
+handlers["workspace/symbol"] = require"lsputil.symbols".workspace_handler
+handlers["textDocument/publishDiagnostics"] =
   vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
                {virtual_text = false, underline = true, signs = true})
 
@@ -84,7 +84,7 @@ local default_on_attach = function(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  vim.cmd [[ autocmd CursorHold * lua require"lspsaga.diagnostic".show_cursor_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
 end
 
 function _G.async_diagnostics()
@@ -178,10 +178,10 @@ lspconfig.efm.setup {
   settings = {
     rootMarkers = {".eslintrc.js", ".git/", "Gemfile"},
     languages = {
-      javascript = {eslint},
-      typescript = {eslint},
-      javascriptreact = {eslint},
-      typescriptreact = {eslint},
+      javascript = {},
+      typescript = {},
+      javascriptreact = {},
+      typescriptreact = {},
       ruby = {rubocop}
     }
   },
@@ -216,14 +216,23 @@ lspconfig.jsonls.setup {
 lspconfig.tsserver.setup {
   on_attach = function(client, bufnr)
     default_on_attach(client, bufnr)
+    local ts_utils = require("nvim-lsp-ts-utils")
+    vim.lsp.handlers["textDocument/codeAction"] = ts_utils.code_action_handler
 
-    require("nvim-lsp-ts-utils").setup {}
+    ts_utils.setup {
+      disable_commands = false,
+      enable_import_on_completion = false,
+      import_on_completion_timeout = 5000,
+      eslint_bin = "eslint_d",
+      eslint_fix_current = false,
+      eslint_enable_disable_comments = true
+    }
 
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>o", ":LspOrganize<CR>",
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>o", ":TSLspOrganize<CR>",
                                 {silent = true})
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>fc", ":LspFixCurrent<CR>",
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>a", ":TSLspFixCurrent<CR>",
                                 {silent = true})
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>ia", ":LspImportAll<CR>",
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>ia", ":TSLspImportAll<CR>",
                                 {silent = true})
   end,
   capabilities = capabilities
