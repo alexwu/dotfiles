@@ -1,4 +1,3 @@
-local cmd = vim.cmd
 local execute = vim.api.nvim_command
 local fn = vim.fn
 
@@ -6,9 +5,8 @@ local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
 if fn.empty(fn.glob(install_path)) > 0 then
   execute("!git clone https://github.com/wbthomason/packer.nvim " ..
             install_path)
+  execute "packadd packer.nvim"
 end
-
-cmd [[packadd packer.nvim]]
 
 return require("packer").startup({
   function()
@@ -20,7 +18,6 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter-textobjects"}
     use {"nvim-treesitter/playground"}
     use {"windwp/nvim-ts-autotag"}
-    use {"p00f/nvim-ts-rainbow"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"jose-elias-alvarez/nvim-lsp-ts-utils"}
 
@@ -50,12 +47,16 @@ return require("packer").startup({
 
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
-    use {"antoinemadec/FixCursorHold.nvim"}
+    -- use {"antoinemadec/FixCursorHold.nvim"}
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
     use {"monaqa/dial.nvim"}
-    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
+    use "kabouzeid/nvim-lspinstall"
+    use "mfussenegger/nvim-dap"
+    use "theHamsta/nvim-dap-virtual-text"
+    use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
+    use "folke/lsp-colors.nvim"
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -79,7 +80,6 @@ return require("packer").startup({
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
 
-    -- use_rocks {"luaformatter", server = "https://luarocks.org/dev"}
     use {"~/Code/nvim-snazzy"}
   end,
   config = {compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim"}
