@@ -24,6 +24,7 @@ return require("packer").startup({
     -- NeoVim specific
     use {"neovim/nvim-lspconfig"}
     use {"windwp/nvim-autopairs"}
+    use {"andymass/vim-matchup"}
     use {"norcalli/nvim-colorizer.lua"}
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
@@ -44,10 +45,10 @@ return require("packer").startup({
     }
     use {"hrsh7th/nvim-compe"}
     use {"tzachar/compe-tabnine"}
+    use {"gennaro-tedesco/nvim-jqx"}
 
     use {"onsails/lspkind-nvim"}
     use {"datwaft/bubbly.nvim"}
-    -- use {"antoinemadec/FixCursorHold.nvim"}
     use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
@@ -58,6 +59,7 @@ return require("packer").startup({
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use "folke/lsp-colors.nvim"
 
+    use "rafamadriz/friendly-snippets"
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
     use {"chaoren/vim-wordmotion"}

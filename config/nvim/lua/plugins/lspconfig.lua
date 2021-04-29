@@ -4,10 +4,10 @@ local saga = require "lspsaga"
 saga.init_lsp_saga {
   use_saga_diagnostic_sign = true,
   error_sign = "✘",
-  warn_sign = "⚠",
-  hint_sign = "♦",
-  infor_sign = "♦",
-  border_style = 2,
+  warn_sign = "",
+  hint_sign = "",
+  infor_sign = "",
+  border_style = "round",
   dianostic_header_icon = "   ",
   code_action_icon = " ",
   code_action_keys = {quit = "<esc>", exec = "<CR>"},
@@ -221,7 +221,7 @@ lspconfig.tsserver.setup {
 
     ts_utils.setup {
       disable_commands = false,
-      enable_import_on_completion = false,
+      enable_import_on_completion = true,
       import_on_completion_timeout = 5000,
       eslint_bin = "eslint_d",
       eslint_fix_current = false,
@@ -230,7 +230,7 @@ lspconfig.tsserver.setup {
 
     vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>o", ":TSLspOrganize<CR>",
                                 {silent = true})
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>a", ":TSLspFixCurrent<CR>",
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>fa", ":TSLspFixCurrent<CR>",
                                 {silent = true})
     vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>ia", ":TSLspImportAll<CR>",
                                 {silent = true})
