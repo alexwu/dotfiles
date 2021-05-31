@@ -17,20 +17,26 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/nvim-treesitter-textobjects"}
     use {"nvim-treesitter/playground"}
+    use {"windwp/nvim-autopairs"}
     use {"windwp/nvim-ts-autotag"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
-    use {"jose-elias-alvarez/nvim-lsp-ts-utils"}
     use {"lewis6991/spellsitter.nvim"}
-
-    -- NeoVim specific
-    use {"neovim/nvim-lspconfig"}
-    use {"windwp/nvim-autopairs"}
     use {"andymass/vim-matchup"}
-    use {"norcalli/nvim-colorizer.lua"}
+
+    -- NeoVim LSP
+    use {"neovim/nvim-lspconfig"}
+    use {"kabouzeid/nvim-lspinstall"}
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
-    use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
-    use {"f-person/git-blame.nvim"}
-    use {"mhartington/formatter.nvim"}
+    use {"glepnir/lspsaga.nvim"}
+    use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
+    use {"onsails/lspkind-nvim"}
+
+    -- TypeScript LSP Utilities
+    use {"jose-elias-alvarez/nvim-lsp-ts-utils"}
+    -- Rust LSP Utilities
+    use {"simrat39/rust-tools.nvim"}
+
+    -- Nightly Required!
     use {
       "nvim-telescope/telescope.nvim",
       requires = {
@@ -46,23 +52,18 @@ return require("packer").startup({
     }
     use {"hrsh7th/nvim-compe"}
     use {"tzachar/compe-tabnine"}
-    -- use {"gennaro-tedesco/nvim-jqx"}
-    use {"onsails/lspkind-nvim"}
-    use {"Yggdroot/indentLine"}
-    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
-    use {"glepnir/lspsaga.nvim"}
-    use {"phaazon/hop.nvim"}
-    use {"monaqa/dial.nvim"}
-    use "kabouzeid/nvim-lspinstall"
-    -- use "mfussenegger/nvim-dap"
-    -- use "theHamsta/nvim-dap-virtual-text"
-    use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
-    -- use {"folke/lsp-colors.nvim"}
     use {"folke/todo-comments.nvim"}
-    -- use {"pwntester/octo.nvim"}
     use {"folke/which-key.nvim"}
     use {"hoob3rt/lualine.nvim", requires = {"kyazdani42/nvim-web-devicons"}}
-    -- use {"romgrk/barbar.nvim"}
+    use {"norcalli/nvim-colorizer.lua"}
+    use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
+    use {"f-person/git-blame.nvim"}
+    use {"mhartington/formatter.nvim"}
+    use {"phaazon/hop.nvim"}
+    use {"monaqa/dial.nvim"}
+    -- use {"gennaro-tedesco/nvim-jqx"}
+    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -72,7 +73,6 @@ return require("packer").startup({
       run = "yarn install --frozen-lockfile && yarn compile"
     }
     use {"chaoren/vim-wordmotion"}
-    -- use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
@@ -87,11 +87,11 @@ return require("packer").startup({
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
-    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
     use {"camspiers/animate.vim"}
     use {"camspiers/lens.vim"}
+    use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}
   end,
