@@ -4,20 +4,6 @@ local opt = utils.opt
 
 local buffer = {o, bo}
 local window = {o, wo}
-local job = require "plenary.job"
-
-local brew_prefix_job = job:new({
-  command = "brew",
-  args = {"--prefix"},
-  enable_handlers = true,
-  enable_recording = true,
-  on_exit = function(j) return j:result() end
-}):sync()
-
-local homebrew_dir
-for _, value in ipairs(brew_prefix_job) do
-  homebrew_dir = value
-end
 
 opt("autoindent", true, buffer)
 opt("backspace", "indent,eol,start")
@@ -74,6 +60,3 @@ end
 
 -- disable python 2
 vim.g.loaded_python_provider = 0
-
--- python 3 path
-vim.g.python3_host_prog = homebrew_dir .. "/bin/python3"

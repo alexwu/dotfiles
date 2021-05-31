@@ -1,7 +1,7 @@
 local function prettier()
   return {
     exe = "prettier",
-    args = {"--stdin-filepath", vim.api.nvim_buf_get_name(0)},
+    args = {"--stdin", "--stdin-filepath", vim.api.nvim_buf_get_name(0)},
     stdin = true
   }
 end
@@ -10,9 +10,7 @@ local function rustfmt()
   return {exe = "rustfmt", args = {"--emit=stdout"}, stdin = true}
 end
 
-local function gofmt()
-  return {exe = "gofmt", args = {"-s"}, stdin = true}
-end
+local function gofmt() return {exe = "gofmt", args = {"-s"}, stdin = true} end
 
 local function luaformatter()
   return {

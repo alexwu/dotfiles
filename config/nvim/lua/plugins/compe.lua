@@ -23,7 +23,9 @@ require"compe".setup {
     spell = true,
     tags = true,
     snippets_nvim = true,
-    tabnine = true,
+    tabnine = {
+      priority = 1000,
+    },
     treesitter = true
   }
 }

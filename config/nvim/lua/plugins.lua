@@ -20,6 +20,7 @@ return require("packer").startup({
     use {"windwp/nvim-ts-autotag"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"jose-elias-alvarez/nvim-lsp-ts-utils"}
+    use {"lewis6991/spellsitter.nvim"}
 
     -- NeoVim specific
     use {"neovim/nvim-lspconfig"}
@@ -45,25 +46,33 @@ return require("packer").startup({
     }
     use {"hrsh7th/nvim-compe"}
     use {"tzachar/compe-tabnine"}
-    use {"gennaro-tedesco/nvim-jqx"}
-
+    -- use {"gennaro-tedesco/nvim-jqx"}
     use {"onsails/lspkind-nvim"}
-    use {"datwaft/bubbly.nvim"}
-    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    use {"Yggdroot/indentLine"}
+    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     use {"glepnir/lspsaga.nvim"}
     use {"phaazon/hop.nvim"}
     use {"monaqa/dial.nvim"}
     use "kabouzeid/nvim-lspinstall"
-    use "mfussenegger/nvim-dap"
-    use "theHamsta/nvim-dap-virtual-text"
+    -- use "mfussenegger/nvim-dap"
+    -- use "theHamsta/nvim-dap-virtual-text"
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
-    use "folke/lsp-colors.nvim"
+    -- use {"folke/lsp-colors.nvim"}
+    use {"folke/todo-comments.nvim"}
+    -- use {"pwntester/octo.nvim"}
+    use {"folke/which-key.nvim"}
+    use {"hoob3rt/lualine.nvim", requires = {"kyazdani42/nvim-web-devicons"}}
+    -- use {"romgrk/barbar.nvim"}
 
-    use "rafamadriz/friendly-snippets"
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
+    use {"rafamadriz/friendly-snippets"}
+    use {
+      "dsznajder/vscode-es7-javascript-react-snippets",
+      run = "yarn install --frozen-lockfile && yarn compile"
+    }
     use {"chaoren/vim-wordmotion"}
-    use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
+    -- use {"junegunn/fzf.vim", requires = {{"junegunn/fzf"}}}
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
@@ -78,11 +87,17 @@ return require("packer").startup({
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"vim-test/vim-test"}
-    use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
+    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
+    use {"camspiers/animate.vim"}
+    use {"camspiers/lens.vim"}
 
     use {"~/Code/nvim-snazzy"}
   end,
-  config = {compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim"}
+  config = {
+    compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim",
+    opt_default = false,
+    display = {open_fn = require("packer.util").float}
+  }
 })

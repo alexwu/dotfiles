@@ -24,8 +24,12 @@ require"nvim-treesitter.configs".setup {
   rainbow = {enable = false},
   refactor = {
     highlight_definitions = {enable = true},
-    smart_rename = {enable = true, keymaps = {smart_rename = "grr"}}
+    smart_rename = {enable = true, keymaps = {smart_rename = "<leader>rn"}}
   },
   autotag = {enable = true},
-  context_commentstring = {enable = true}
+  context_commentstring = {enable = true},
+  matchup = {enable = true},
+  autopairs = {enable = true}
 }
+require("nvim-ts-autotag").setup()
+require("spellsitter").setup {hl = "SpellBad", captures = {"comment"}}

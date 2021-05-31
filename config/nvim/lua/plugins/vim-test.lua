@@ -1,5 +1,5 @@
 vim.api.nvim_set_var("test#strategy", "floaterm")
-vim.api.nvim_set_var("test#ruby#rspec#executable", "bundle exec rspec")
+vim.api.nvim_set_var("test#ruby#rspec#executable", "arch -x86_64 bundle exec rspec")
 vim.api.nvim_set_var("test#ruby#rspec#patterns", "_spec.rb")
 vim.api.nvim_set_var("test#ruby#rspec#options", {
   file = "--format documentation --force-color",

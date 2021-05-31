@@ -43,4 +43,6 @@ vim.api.nvim_set_keymap("v", "<C-x>", "<Plug>(dial-decrement)", {})
 
 vim.api.nvim_set_keymap("t", "<Esc>", "<C-Bslash><C-n>", {})
 
+vim.api.nvim_set_keymap("n", "<Bslash>t", "<cmd>BufferPick<CR>", {})
+
 vim.cmd [[command! -nargs=0 Trash :!trash %]]

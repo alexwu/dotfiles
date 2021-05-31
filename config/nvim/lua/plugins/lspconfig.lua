@@ -1,15 +1,16 @@
 local lspconfig = require "lspconfig"
 local saga = require "lspsaga"
+require"lspinstall".setup()
 
 saga.init_lsp_saga {
   use_saga_diagnostic_sign = true,
-  error_sign = "✘",
-  warn_sign = "",
-  hint_sign = "",
-  infor_sign = "",
+  error_sign = "❌",
+  warn_sign = "⚠️",
+  hint_sign = "🔍",
+  infor_sign = "ℹ️",
   border_style = "round",
-  dianostic_header_icon = "   ",
-  code_action_icon = " ",
+  dianostic_header_icon = "📎",
+  code_action_icon = "💡",
   code_action_keys = {quit = "<esc>", exec = "<CR>"},
   code_action_prompt = {
     enable = true,
@@ -41,8 +42,9 @@ handlers["textDocument/publishDiagnostics"] =
 
 local default_on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
+  local function show_documentation() end
 
-  local opts = {noremap = true, silent = true}
+  local opts = {noremap = false, silent = true}
   buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
   buf_set_keymap("n", "gd", "<Cmd>lua vim.lsp.buf.definition()<CR>", opts)
   buf_set_keymap("n", "<leader>a",
@@ -68,7 +70,6 @@ local default_on_attach = function(client, bufnr)
                  opts)
   buf_set_keymap("n", "<space>D", "<cmd>lua vim.lsp.buf.type_definition()<CR>",
                  opts)
-  buf_set_keymap("n", "<space>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
   buf_set_keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)
   buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
   buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
@@ -84,7 +85,8 @@ local default_on_attach = function(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+  -- vim.cmd [[ autocmd CursorHold * lua async_diagnostics() ]]
+  vim.cmd [[ autocmd CursorHold * lua require"lspsaga.diagnostic".show_cursor_diagnostics() ]]
 end
 
 function _G.async_diagnostics()
@@ -120,13 +122,7 @@ end
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 
-local system_name = "macOS"
-local sumneko_root_path = vim.loop.os_homedir() .. "/Code/lua-language-server"
-local sumneko_binary = sumneko_root_path .. "/bin/" .. system_name ..
-                         "/lua-language-server"
-
-lspconfig.sumneko_lua.setup {
-  cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"},
+lspconfig.lua.setup {
   settings = {
     Lua = {
       runtime = {version = "LuaJIT", path = vim.split(package.path, ";")},
@@ -167,10 +163,7 @@ lspconfig.efm.setup {
     hover = true,
     documentSymbol = true
   },
-  filetypes = {
-    "javascript", "javascriptreact", "typescript", "typescriptreact", "ruby",
-    "eruby"
-  },
+  filetypes = {"ruby", "eruby"},
   root_dir = function(fname)
     return lspconfig.util.root_pattern("tsconfig.json")(fname) or
              lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname);
@@ -205,15 +198,13 @@ lspconfig.sorbet.setup {
   },
   rootMarkers = {".git/", "Gemfile", "sorbet"}
 }
-lspconfig.gopls.setup {
+lspconfig.go.setup {on_attach = default_on_attach, capabilities = capabilities}
+lspconfig.json.setup {
   on_attach = default_on_attach,
-  capabilities = capabilities
+  capabilities = capabilities,
+  filetypes = {"json"}
 }
-lspconfig.jsonls.setup {
-  on_attach = default_on_attach,
-  capabilities = capabilities
-}
-lspconfig.tsserver.setup {
+lspconfig.typescript.setup {
   on_attach = function(client, bufnr)
     default_on_attach(client, bufnr)
     local ts_utils = require("nvim-lsp-ts-utils")
@@ -224,24 +215,34 @@ lspconfig.tsserver.setup {
       enable_import_on_completion = true,
       import_on_completion_timeout = 5000,
       eslint_bin = "eslint_d",
-      eslint_fix_current = false,
-      eslint_enable_disable_comments = true
+      eslint_enable_diagnostics = true
     }
+
+    ts_utils.setup_client(client)
 
     vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>o", ":TSLspOrganize<CR>",
                                 {silent = true})
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>fa", ":TSLspFixCurrent<CR>",
+    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>a",
+                                "<cmd>lua require'nvim-lsp-ts-utils'.fix_current()<CR>",
                                 {silent = true})
     vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>ia", ":TSLspImportAll<CR>",
                                 {silent = true})
   end,
   capabilities = capabilities
 }
-lspconfig.vimls.setup {
+lspconfig.vim.setup {
   on_attach = default_on_attach,
-  capabilities = capabilities
+  capabilities = capabilities,
+  filetypes = {"vim"}
 }
 lspconfig.rust_analyzer.setup {
   on_attach = default_on_attach,
-  capabilities = capabilities
+  capabilities = capabilities,
+  settings = {
+    ["rust-analyzer"] = {
+      assist = {importGranularity = "module", importPrefix = "by_self"},
+      cargo = {loadOutDirsFromCheck = true},
+      procMacro = {enable = true}
+    }
+  }
 }

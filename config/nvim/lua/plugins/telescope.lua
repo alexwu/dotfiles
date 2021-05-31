@@ -1,4 +1,5 @@
 local actions = require("telescope.actions")
+local trouble = require("trouble.providers.telescope")
 local clear_line = function() vim.api.nvim_del_current_line() end
 
 require("telescope").setup {
@@ -10,8 +11,10 @@ require("telescope").setup {
         ["<esc>"] = actions.close,
         ["<C-j>"] = actions.move_selection_next,
         ["<C-k>"] = actions.move_selection_previous,
-        ["<C-u>"] = clear_line
-      }
+        ["<C-u>"] = clear_line,
+        ["<c-t>"] = trouble.open_with_trouble
+      },
+      n = {["<c-t>"] = trouble.open_with_trouble}
     }
   },
   extensions = {
