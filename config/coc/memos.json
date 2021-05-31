@@ -4,6 +4,7 @@
       "libs": {
         "/Users/jamesbombeelu/Code/editorder/node_modules/eslint/lib/api.js": true
       }
-    }
+    },
+    "eslintAlwaysAllowExecution": true
   }
 }

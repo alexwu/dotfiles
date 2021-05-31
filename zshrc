@@ -23,9 +23,6 @@ export NVM_COMPLETION=true
 
 autoload -U colors && colors
 
-## VI Mode
-# bindkey -v
-
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
 export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'"
@@ -111,7 +108,6 @@ zinit wait blockf lucid for \
 
 zinit wait lucid for \
   Aloxaf/fzf-tab
-#  jeffreytse/zsh-vi-mode
 
 zinit wait lucid as"completion" for \
   https://github.com/sharkdp/fd/blob/master/contrib/completion/_fd \
