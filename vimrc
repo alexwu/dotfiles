@@ -350,5 +350,3 @@ let g:fzf_colors =
   \ 'header':  ['fg', 'Comment'] }
 
 let g:fzf_history_dir = '~/.local/share/fzf-history'
-
-let g:SnazzyTransparent = 1
