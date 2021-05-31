@@ -3,29 +3,49 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+OS="$(uname -s)"
+
+if [ "$OS" = "Darwin" ]; then
+  if [ $(arch) = "arm64" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ $(arch) = "i386" ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+
+  export FZF_BASE=$(brew --prefix)/bin/fzf
+  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
+  export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+fi
+
 export PATH="$HOME/.bin:$PATH"
-# x86_64 Homebrew paths
-export PATH="/usr/local/bin:$PATH"
+export PATH="$HOME/go/bin:$PATH"
+export NVM_COMPLETION=true
 
 autoload -U colors && colors
 
-export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
-export FZF_BASE=$(brew --prefix)/bin/fzf
-export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
+export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
+export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'"
 export BUNDLED_COMMANDS=(srb)
 
-if ! command -v COMMAND &> /dev/null
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+
+if ! command -v nvim &> /dev/null
 then
-  export EDITOR='vim'
+  export EDITOR="vim"
 else
-  export EDITOR='nvim'
+  export EDITOR="nvim"
 fi
 
-alias vim="nvim"
+if [[ $TERM = "xterm-kitty" ]]
+then
+  alias ssh="kitty +kitten ssh"
+fi
+
 alias zshconfig="$EDITOR ~/.dotfiles/zshrc"
 alias nvimrc="$EDITOR ~/.dotfiles/config/nvim"
-alias ls="exa"
+alias ls="exa --sort type"
 
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.zinit/bin/zinit.zsh ]]; then
@@ -67,6 +87,16 @@ zinit wait lucid for \
   OMZL::history.zsh \
   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
+if [ "$OS" = "Darwin" ]; then
+  if [ $(arch) = "arm64" ]; then
+    zinit wait blockf lucid for \
+      OMZP::rbenv \
+      lukechilds/zsh-nvm
+
+  elif [ $(arch) = "i386" ]; then
+    . $HOME/.asdf/asdf.sh
+  fi
+fi
 
 zinit wait blockf lucid for \
   OMZP::bundler \
@@ -74,23 +104,20 @@ zinit wait blockf lucid for \
   OMZP::iterm2 \
   OMZP::gem \
   OMZP::fzf \
-  atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions
+  atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions \
 
 zinit wait lucid for \
   Aloxaf/fzf-tab
 
-zinit wait lucid as"snippet" for \
-  https://github.com/asdf-vm/asdf/blob/master/completions/_asdf \
+zinit wait lucid as"completion" for \
   https://github.com/sharkdp/fd/blob/master/contrib/completion/_fd \
+  https://github.com/asdf-vm/asdf/blob/master/completions/_asdf \
   https://github.com/ggreer/the_silver_searcher/blob/master/_the_silver_searcher
 
 eval "$(zoxide init zsh --no-aliases)"
 function z() {
-    __zoxide_z "$@"
+  __zoxide_z "$@"
 }
-
-# ASDF plugin setup
-. $HOME/.asdf/asdf.sh
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
