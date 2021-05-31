@@ -3,12 +3,9 @@
   "diagnostic.displayByAle": false,
   "codeLens.enable": true,
   "eslint.packageManager": "yarn",
-  "git.addedSign.hlGroup": "GitGutterAdd",
-  "git.changedSign.hlGroup": "GitGutterChange",
-  "git.removedSign.hlGroup": "GitGutterDelete",
-  "git.topRemovedSign.hlGroup": "GitGutterDelete",
-  "git.changeRemovedSign.hlGroup": "GitGutterChangeDelete",
   "tsserver.trace.server": "verbose",
   "typescript.preferences.quoteStyle": "double",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
   "javascript.preferences.quoteStyle": "double"
 }
