@@ -61,6 +61,10 @@ return require("packer").startup({
     use {"mhartington/formatter.nvim"}
     use {"phaazon/hop.nvim"}
     use {"monaqa/dial.nvim"}
+    use {"simrat39/symbols-outline.nvim"}
+    use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
+    use {"sindrets/diffview.nvim"}
+
     -- use {"gennaro-tedesco/nvim-jqx"}
     -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
@@ -89,8 +93,6 @@ return require("packer").startup({
     use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
-    use {"camspiers/animate.vim"}
-    use {"camspiers/lens.vim"}
     use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}

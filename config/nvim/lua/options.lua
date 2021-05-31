@@ -58,5 +58,7 @@ if vim.fn.has("gui_vimr") ~= 1 then
   vim.g.nvim_tree_ignore = {".DS_Store"}
 end
 
+vim.g["lens#disabled_filetypes"] = {"NvimTree", "fzf"}
+
 -- disable python 2
 vim.g.loaded_python_provider = 0
