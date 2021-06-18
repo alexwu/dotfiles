@@ -30,3 +30,13 @@ require("telescope").setup {
 vim.api.nvim_set_keymap("n", "<C-p>",
                         "<cmd>lua require('telescope').extensions.fzf_writer.files()<cr>",
                         {noremap = true})
+
+-- local snap = require "snap"
+-- snap.register.map({"n"}, {"<C-p>"}, function()
+--   snap.run {
+--     producer = snap.get "consumer.fzf"(snap.get "producer.fd.file"),
+--     select = snap.get"select.file".select,
+--     multiselect = snap.get"select.file".multiselect,
+--     views = {snap.get "preview.file"}
+--   }
+-- end)

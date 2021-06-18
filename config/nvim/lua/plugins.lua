@@ -16,6 +16,7 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/nvim-treesitter-textobjects"}
+    use {"RRethy/nvim-treesitter-textsubjects"}
     use {"nvim-treesitter/playground"}
     use {"windwp/nvim-autopairs"}
     use {"windwp/nvim-ts-autotag"}
@@ -30,8 +31,10 @@ return require("packer").startup({
     use {"glepnir/lspsaga.nvim"}
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use {"onsails/lspkind-nvim"}
+    use {"ray-x/lsp_signature.nvim"}
 
     -- TypeScript LSP Utilities
+    use {"jose-elias-alvarez/null-ls.nvim"}
     use {"jose-elias-alvarez/nvim-lsp-ts-utils"}
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim"}
@@ -45,6 +48,12 @@ return require("packer").startup({
         {"nvim-telescope/telescope-fzy-native.nvim"},
         {"kyazdani42/nvim-web-devicons"}
       }
+    }
+    use {"camspiers/snap"}
+    use {
+      "rcarriga/vim-ultest",
+      requires = {"vim-test/vim-test"},
+      run = ":UpdateRemotePlugins"
     }
     use {
       "kyazdani42/nvim-tree.lua",
@@ -60,13 +69,15 @@ return require("packer").startup({
     use {"f-person/git-blame.nvim"}
     use {"mhartington/formatter.nvim"}
     use {"phaazon/hop.nvim"}
+    use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
     use {"simrat39/symbols-outline.nvim"}
     use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
     use {"sindrets/diffview.nvim"}
+    use {"npxbr/glow.nvim", run = ":GlowInstall"}
 
     -- use {"gennaro-tedesco/nvim-jqx"}
-    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
+    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
     -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
 
     use {"hrsh7th/vim-vsnip"}
@@ -85,15 +96,15 @@ return require("packer").startup({
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-fugitive"}
     use {"tpope/vim-projectionist"}
-    use {"tpope/vim-rails"}
+    -- use {"tpope/vim-rails"}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-sensible"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
-    use {"vim-test/vim-test"}
+    -- use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
-    use {"Yggdroot/indentLine"}
+    -- use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}
   end,

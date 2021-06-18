@@ -8,13 +8,13 @@ require("colorscheme")
 require("options")
 require("statusline")
 
+require("plugins/lsp")
 require("plugins/treesitter")
 require("plugins/compe")
 require("plugins/formatter")
 require("plugins/floaterm")
 require("plugins/fzf")
 require("plugins/commenting")
-require("plugins/lspconfig")
 require("plugins/telescope")
 require("plugins/trouble")
 require("plugins/todo-comments")
@@ -30,6 +30,7 @@ require("nvim-autopairs").setup({
   check_ts = true
 })
 require("which-key").setup()
+require("hop").setup {keys = "etovxqpdygfblzhckisuran"}
 
 vim.g.symbols_outline = {
   highlight_hovered_item = true,

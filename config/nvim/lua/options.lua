@@ -33,6 +33,7 @@ opt("shiftwidth", 2, buffer)
 opt("shortmess", o.shortmess .. "Icq")
 opt("showcmd", true)
 opt("signcolumn", "yes", window)
+vim.opt.ignorecase = true
 opt("smartcase", true)
 opt("smarttab", true)
 opt("softtabstop", 2, buffer)
@@ -59,6 +60,7 @@ if vim.fn.has("gui_vimr") ~= 1 then
 end
 
 vim.g["lens#disabled_filetypes"] = {"NvimTree", "fzf"}
+vim.g.indentLine_fileTypeExclude = {"markdown"}
 
 -- disable python 2
 vim.g.loaded_python_provider = 0
