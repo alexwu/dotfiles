@@ -40,7 +40,7 @@ opt("softtabstop", 2, buffer)
 opt("tabstop", 2, buffer)
 opt("tags", "./TAGS,TAGS")
 opt("textwidth", 0)
-opt("updatetime", 300)
+opt("updatetime", 100)
 opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
 opt("termguicolors", true)

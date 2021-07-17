@@ -36,9 +36,9 @@ return require("packer").startup({
     use {"neovim/nvim-lspconfig"}
     use {"kabouzeid/nvim-lspinstall"}
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
-    use {"glepnir/lspsaga.nvim"}
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use {"ray-x/lsp_signature.nvim"}
+    use {"kosayoda/nvim-lightbulb"}
 
     -- TypeScript LSP Utilities
     use {
@@ -47,6 +47,8 @@ return require("packer").startup({
     }
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim"}
+
+    use {"folke/lua-dev.nvim"}
 
     -- Nightly Required!
     use {
@@ -114,8 +116,6 @@ return require("packer").startup({
     use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}
-    -- use "folke/tokyonight.nvim"
-
   end,
   config = {
     opt_default = false,

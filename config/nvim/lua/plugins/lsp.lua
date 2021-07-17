@@ -1,27 +1,8 @@
 local lspconfig = require "lspconfig"
-local saga = require "lspsaga"
 
 local default_on_attach = require("plugins.lsp.utils").default_on_attach
 
 require"lspinstall".setup()
-
--- saga.init_lsp_saga {
---   use_saga_diagnostic_sign = true,
---   error_sign = "✘",
---   warn_sign = "",
---   hint_sign = "🔍",
---   infor_sign = "",
---   border_style = "round",
---   dianostic_header_icon = "📎",
---   code_action_icon = "💡",
---   code_action_keys = {quit = "<esc>", exec = "<CR>"},
---   code_action_prompt = {
---     enable = true,
---     sign = true,
---     sign_priority = 20,
---     virtual_text = false
---   }
--- }
 
 local handlers = vim.lsp.handlers
 -- handlers["textDocument/codeAction"] =
@@ -48,22 +29,39 @@ capabilities.textDocument.completion.completionItem.snippetSupport = true
 
 require("plugins.lsp.typescript").setup(default_on_attach, capabilities)
 
-lspconfig.lua.setup {
-  settings = {
-    Lua = {
-      runtime = {version = "LuaJIT", path = vim.split(package.path, ";")},
-      diagnostics = {globals = {"vim", "use", "use_rocks"}},
-      workspace = {
-        library = {
-          [vim.fn.expand("$VIMRUNTIME/lua")] = true,
-          [vim.fn.expand("$VIMRUNTIME/lua/vim/lsp")] = true
-        }
-      }
-    }
+local luadev = require("lua-dev").setup({
+  library = {
+    vimruntime = true, -- runtime path
+    types = true, -- full signature, docs and completion of vim.api, vim.treesitter, vim.lsp and others
+    plugins = true -- installed opt or start plugins in packpath
+    -- you can also specify the list of plugins to make available as a workspace library
+    -- plugins = { "nvim-treesitter", "plenary.nvim", "telescope.nvim" },
   },
-  on_attach = default_on_attach,
-  capabilities = capabilities
-}
+  -- pass any additional options that will be merged in the final lsp config
+  lspconfig = {
+    -- cmd = {"lua-language-server"},
+    on_attach = default_on_attach,
+    capabilities = capabilities
+  }
+})
+
+lspconfig.lua.setup(luadev)
+-- lspconfig.lua.setup {
+--   settings = {
+--     Lua = {
+--       runtime = {version = "LuaJIT", path = vim.split(package.path, ";")},
+--       diagnostics = {globals = {"vim", "use", "use_rocks"}},
+--       workspace = {
+--         library = {
+--           [vim.fn.expand("$VIMRUNTIME/lua")] = true,
+--           [vim.fn.expand("$VIMRUNTIME/lua/vim/lsp")] = true
+--         }
+--       }
+--     }
+--   },
+--   on_attach = default_on_attach,
+--   capabilities = capabilities
+-- }
 
 local eslint = {
   lintCommand = "eslint_d -f unix --stdin --stdin-filename ${INPUT}",

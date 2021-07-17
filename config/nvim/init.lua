@@ -28,7 +28,6 @@ require("gitsigns").setup({
   current_line_blame_delay = 0
 })
 require("nvim-autopairs").setup({
-  -- disable_filetype = {"TelescopePrompt"},
   ignored_next_char = "[%w]",
   check_ts = true
 })
