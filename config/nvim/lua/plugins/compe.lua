@@ -16,16 +16,14 @@ require"compe".setup {
   source = {
     path = true,
     buffer = true,
-    calc = true,
+    calc = false,
     vsnip = true,
     nvim_lsp = true,
     nvim_lua = true,
-    spell = true,
+    spell = false,
     tags = true,
-    snippets_nvim = true,
-    tabnine = {
-      priority = 1000,
-    },
+    snippets_nvim = false,
+    tabnine = {priority = 900},
     treesitter = true
   }
 }
@@ -70,9 +68,15 @@ _G.s_tab_complete = function()
   end
 end
 
+require("nvim-autopairs.completion.compe").setup(
+  {
+    map_cr = true, --  map <CR> on insert mode
+    map_complete = true -- it will auto insert `(` after select function or method item
+  })
+
 vim.api.nvim_set_keymap("i", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("i", "<CR>", "compe#confirm(\"<CR>\")",
-                        {expr = true, silent = true})
+-- vim.api.nvim_set_keymap("i", "<CR>", "compe#confirm(\"<CR>\")",
+-- {expr = true, silent = true})

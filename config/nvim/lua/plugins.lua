@@ -17,12 +17,20 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/nvim-treesitter-textobjects"}
     use {"RRethy/nvim-treesitter-textsubjects"}
-    use {"nvim-treesitter/playground"}
+    use {
+      "nvim-treesitter/playground",
+      opt = true,
+      cmd = "TSHighlightCapturesUnderCursor"
+    }
     use {"windwp/nvim-autopairs"}
     use {"windwp/nvim-ts-autotag"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"lewis6991/spellsitter.nvim"}
     use {"andymass/vim-matchup"}
+    use {
+      "folke/twilight.nvim",
+      config = function() require("twilight").setup {} end
+    }
 
     -- NeoVim LSP
     use {"neovim/nvim-lspconfig"}
@@ -30,12 +38,13 @@ return require("packer").startup({
     use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"glepnir/lspsaga.nvim"}
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
-    use {"onsails/lspkind-nvim"}
     use {"ray-x/lsp_signature.nvim"}
 
     -- TypeScript LSP Utilities
-    use {"jose-elias-alvarez/null-ls.nvim"}
-    use {"jose-elias-alvarez/nvim-lsp-ts-utils"}
+    use {
+      "jose-elias-alvarez/nvim-lsp-ts-utils",
+      requires = {"jose-elias-alvarez/null-ls.nvim"}
+    }
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim"}
 
@@ -49,36 +58,31 @@ return require("packer").startup({
         {"kyazdani42/nvim-web-devicons"}
       }
     }
-    use {"camspiers/snap"}
     use {
-      "rcarriga/vim-ultest",
-      requires = {"vim-test/vim-test"},
-      run = ":UpdateRemotePlugins"
+      "ibhagwan/fzf-lua",
+      requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"}
     }
+
+    use {"vim-test/vim-test"}
     use {
       "kyazdani42/nvim-tree.lua",
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
-    use {"hrsh7th/nvim-compe"}
+    use {"hrsh7th/nvim-compe", requires = {"onsails/lspkind-nvim"}}
     use {"tzachar/compe-tabnine"}
     use {"folke/todo-comments.nvim"}
     use {"folke/which-key.nvim"}
     use {"hoob3rt/lualine.nvim", requires = {"kyazdani42/nvim-web-devicons"}}
     use {"norcalli/nvim-colorizer.lua"}
     use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
-    use {"f-person/git-blame.nvim"}
     use {"mhartington/formatter.nvim"}
     use {"phaazon/hop.nvim"}
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
-    use {"simrat39/symbols-outline.nvim"}
-    use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
+    -- use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
     use {"sindrets/diffview.nvim"}
-    use {"npxbr/glow.nvim", run = ":GlowInstall"}
 
-    -- use {"gennaro-tedesco/nvim-jqx"}
-    use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
-    -- use {"rcarriga/vim-ultest", run = ":UpdateRemotePlugins"}
+    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -92,24 +96,28 @@ return require("packer").startup({
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
     use {"tpope/vim-commentary"}
-    use {"tpope/vim-dispatch"}
+    use {
+      "tpope/vim-dispatch",
+      opt = true,
+      cmd = {"Dispatch", "Make", "Focus", "Start"}
+    }
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-fugitive"}
     use {"tpope/vim-projectionist"}
-    -- use {"tpope/vim-rails"}
+    use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-sensible"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
-    -- use {"vim-test/vim-test"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
-    -- use {"Yggdroot/indentLine"}
+    use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}
+    -- use "folke/tokyonight.nvim"
+
   end,
   config = {
-    compile_path = fn.stdpath("data") .. "packer/packer_compiled.vim",
     opt_default = false,
     display = {open_fn = require("packer.util").float}
   }

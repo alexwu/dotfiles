@@ -5,46 +5,40 @@ local default_on_attach = require("plugins.lsp.utils").default_on_attach
 
 require"lspinstall".setup()
 
-saga.init_lsp_saga {
-  use_saga_diagnostic_sign = true,
-  -- error_sign = "❌",
-  error_sign = "✘",
-  -- warn_sign = "⚠️",
-  warn_sign = "",
-  -- hint_sign = "🔍",
-  -- hint_sign = "",
-  hint_sign = "",
-  -- infor_sign = "ℹ️",
-  infor_sign = "",
-  border_style = "round",
-  dianostic_header_icon = "📎",
-  -- code_action_icon = "💡",
-  code_action_icon = "",
-  code_action_keys = {quit = "<esc>", exec = "<CR>"},
-  code_action_prompt = {
-    enable = true,
-    sign = true,
-    sign_priority = 20,
-    virtual_text = false
-  }
-}
+-- saga.init_lsp_saga {
+--   use_saga_diagnostic_sign = true,
+--   error_sign = "✘",
+--   warn_sign = "",
+--   hint_sign = "🔍",
+--   infor_sign = "",
+--   border_style = "round",
+--   dianostic_header_icon = "📎",
+--   code_action_icon = "💡",
+--   code_action_keys = {quit = "<esc>", exec = "<CR>"},
+--   code_action_prompt = {
+--     enable = true,
+--     sign = true,
+--     sign_priority = 20,
+--     virtual_text = false
+--   }
+-- }
 
 local handlers = vim.lsp.handlers
-handlers["textDocument/codeAction"] =
-  require"lsputil.codeAction".code_action_handler
-handlers["textDocument/references"] =
-  require"lsputil.locations".references_handler
-handlers["textDocument/definition"] =
-  require"lsputil.locations".definition_handler
-handlers["textDocument/declaration"] =
-  require"lsputil.locations".declaration_handler
-handlers["textDocument/typeDefinition"] =
-  require"lsputil.locations".typeDefinition_handler
-handlers["textDocument/implementation"] =
-  require"lsputil.locations".implementation_handler
-handlers["textDocument/documentSymbol"] =
-  require"lsputil.symbols".document_handler
-handlers["workspace/symbol"] = require"lsputil.symbols".workspace_handler
+-- handlers["textDocument/codeAction"] =
+--   require"lsputil.codeAction".code_action_handler
+-- handlers["textDocument/references"] =
+--   require"lsputil.locations".references_handler
+-- handlers["textDocument/definition"] =
+--   require"lsputil.locations".definition_handler
+-- handlers["textDocument/declaration"] =
+--   require"lsputil.locations".declaration_handler
+-- handlers["textDocument/typeDefinition"] =
+--   require"lsputil.locations".typeDefinition_handler
+-- handlers["textDocument/implementation"] =
+--   require"lsputil.locations".implementation_handler
+-- handlers["textDocument/documentSymbol"] =
+--   require"lsputil.symbols".document_handler
+-- handlers["workspace/symbol"] = require"lsputil.symbols".workspace_handler
 handlers["textDocument/publishDiagnostics"] =
   vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
                {virtual_text = false, underline = true, signs = true})
@@ -95,7 +89,7 @@ lspconfig.efm.setup {
     hover = true,
     documentSymbol = true
   },
-  filetypes = {"ruby", "eruby"},
+  filetypes = {"ruby", "eruby", "typescript", "typescriptreact"},
   root_dir = function(fname)
     return lspconfig.util.root_pattern("tsconfig.json")(fname) or
              lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname);
@@ -103,10 +97,10 @@ lspconfig.efm.setup {
   settings = {
     rootMarkers = {".eslintrc.js", ".git/", "Gemfile"},
     languages = {
-      javascript = {},
-      typescript = {},
-      javascriptreact = {},
-      typescriptreact = {},
+      javascript = {eslint},
+      typescript = {eslint},
+      javascriptreact = {eslint},
+      typescriptreact = {eslint},
       ruby = {rubocop}
     }
   },

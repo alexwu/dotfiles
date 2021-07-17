@@ -5,11 +5,11 @@ local opt = utils.opt
 local buffer = {o, bo}
 local window = {o, wo}
 
-opt("autoindent", true, buffer)
+vim.opt.autoindent = true
 opt("backspace", "indent,eol,start")
-opt("ch", 2)
+vim.opt.ch = 2
 opt("cmdheight", 1)
-opt("confirm", true)
+vim.opt.confirm = true
 opt("cursorline", true, window)
 opt("directory", "~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp")
 opt("expandtab", true, buffer)
@@ -44,6 +44,7 @@ opt("updatetime", 300)
 opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
 opt("termguicolors", true)
+vim.opt.syntax = "0"
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
 vim.g.cursorhold_updatetime = 100
@@ -60,7 +61,6 @@ if vim.fn.has("gui_vimr") ~= 1 then
 end
 
 vim.g["lens#disabled_filetypes"] = {"NvimTree", "fzf"}
-vim.g.indentLine_fileTypeExclude = {"markdown"}
 
 -- disable python 2
 vim.g.loaded_python_provider = 0

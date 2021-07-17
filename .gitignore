@@ -2,6 +2,5 @@
 coc-toml-data/
 coc-yank-data/
 config/coc/extensions
-config/pgcli/history
-config/pgcli/log
+config/pgcli
 node_modules/

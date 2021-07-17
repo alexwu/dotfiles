@@ -1,9 +1,9 @@
 require"nvim-treesitter.configs".setup {
-  ensure_installed = {
-    "typescript", "ruby", "json", "jsonc", "rust", "bash", "go", "graphql",
-    "html", "javascript", "lua", "python", "toml", "tsx", "css", "c", "cpp",
-    "vue", "c_sharp", "swift", "yaml"
-  },
+  -- ensure_installed = {
+  --   "typescript", "ruby", "json", "jsonc", "rust", "bash", "go", "graphql",
+  --   "html", "javascript", "lua", "python", "toml", "tsx", "css", "c", "cpp",
+  --   "vue", "c_sharp", "swift", "yaml"
+  -- },
   highlight = {enable = true},
   indent = {enable = true, disable = {"ruby"}},
   -- incremental_selection = {
@@ -25,7 +25,8 @@ require"nvim-treesitter.configs".setup {
   rainbow = {enable = false},
   refactor = {
     highlight_definitions = {enable = true},
-    smart_rename = {enable = true, keymaps = {smart_rename = "<leader>rn"}}
+    smart_rename = {enable = true, keymaps = {smart_rename = "<leader>rn"}},
+    navigation = {enable = true, keymaps = {goto_definition_lsp_fallback = "gd"}}
   },
   autotag = {enable = true},
   context_commentstring = {enable = true},
