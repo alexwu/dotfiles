@@ -44,10 +44,12 @@ function M.default_on_attach(client, bufnr)
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
-  require"lsp_signature".on_attach()
-
+  require"lsp_signature".on_attach({
+    bind = true,
+    handler_opts = {border = "single"}
+  })
   -- vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false}) ]]
-  vim.cmd [[ autocmd CursorHold * lua require('plenary.async').run(_G.async_show_diagnostics, {border = 'rounded', focusable = false}) ]]
+  -- vim.cmd [[ autocmd CursorHold * lua require('plenary.async').run(_G.async_show_diagnostics, {border = 'rounded', focusable = false}) ]]
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
 end
 
