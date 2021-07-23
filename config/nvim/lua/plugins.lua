@@ -120,7 +120,7 @@ return require("packer").startup({
     use {"tpope/vim-repeat"}
     use {"tpope/vim-sensible"}
     use {"tpope/vim-surround"}
-    use {"tpope/vim-vinegar"}
+    -- use {"tpope/vim-vinegar"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
     use {"Yggdroot/indentLine"}

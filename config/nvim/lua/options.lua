@@ -55,13 +55,11 @@ if vim.fn.has("gui_vimr") ~= 1 then
   vim.g.nvim_tree_auto_close = 1
   vim.g.nvim_tree_quit_on_open = 0
   vim.g.nvim_tree_indent_markers = 1
-  vim.g.nvim_tree_disable_netrw = 0
-  vim.g.nvim_tree_hijack_netrw = 0
+  vim.g.nvim_tree_disable_netrw = 1
+  vim.g.nvim_tree_hijack_netrw = 1
   vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
   vim.g.nvim_tree_ignore = {".DS_Store"}
 end
-
-vim.g["lens#disabled_filetypes"] = {"NvimTree", "fzf"}
 
 -- disable python 2
 vim.g.loaded_python_provider = 0
