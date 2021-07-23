@@ -45,6 +45,7 @@ opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
 opt("termguicolors", true)
 vim.opt.syntax = "0"
+vim.opt.lazyredraw = true
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
 vim.g.cursorhold_updatetime = 100

@@ -2,10 +2,9 @@ local lspconfig = require("lspconfig")
 
 local module = {}
 function module.setup(on_attach, capabilities)
-  lspconfig.typescript.setup {
+  lspconfig.tsserver.setup {
     on_attach = function(client, bufnr)
-      on_attach(client, bufnr)
-      -- client.resolved_capabilities.document_formatting = false
+      -- on_attach(client, bufnr)
 
       -- require("null-ls").setup {}
       local ts_utils = require("nvim-lsp-ts-utils")
@@ -14,7 +13,7 @@ function module.setup(on_attach, capabilities)
       ts_utils.setup {
         disable_commands = false,
         enable_import_on_completion = true,
-        import_on_completion_timeout = 5000,
+        import_on_completion_timeout = 5000
         -- eslint_bin = "eslint_d",
         -- eslint_enable_diagnostics = true,
         -- enable_formatting = true

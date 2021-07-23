@@ -8,6 +8,8 @@ if fn.empty(fn.glob(install_path)) > 0 then
   execute "packadd packer.nvim"
 end
 
+vim.cmd([[autocmd BufWritePost plugins.lua source <afile> | PackerCompile]])
+
 return require("packer").startup({
   function()
     use {"wbthomason/packer.nvim"}
@@ -27,18 +29,19 @@ return require("packer").startup({
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"lewis6991/spellsitter.nvim"}
     use {"andymass/vim-matchup"}
-    use {
-      "folke/twilight.nvim",
-      config = function() require("twilight").setup {} end
-    }
 
     -- NeoVim LSP
     use {"neovim/nvim-lspconfig"}
-    use {"kabouzeid/nvim-lspinstall"}
-    use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
+    -- use {"kabouzeid/nvim-lspinstall"}
+    use {"williamboman/nvim-lsp-installer"}
+    -- use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use {"ray-x/lsp_signature.nvim"}
-    use {"kosayoda/nvim-lightbulb"}
+    -- use {"kosayoda/nvim-lightbulb"}
+    use {
+      "ray-x/navigator.lua",
+      requires = {"ray-x/guihua.lua", run = "cd lua/fzy && make"}
+    }
 
     -- TypeScript LSP Utilities
     use {
@@ -46,11 +49,10 @@ return require("packer").startup({
       requires = {"jose-elias-alvarez/null-ls.nvim"}
     }
     -- Rust LSP Utilities
-    use {"simrat39/rust-tools.nvim"}
+    use {"simrat39/rust-tools.nvim", ft = {"rust"}}
 
     use {"folke/lua-dev.nvim"}
 
-    -- Nightly Required!
     use {
       "nvim-telescope/telescope.nvim",
       requires = {
@@ -76,15 +78,22 @@ return require("packer").startup({
     use {"folke/which-key.nvim"}
     use {"hoob3rt/lualine.nvim", requires = {"kyazdani42/nvim-web-devicons"}}
     use {"norcalli/nvim-colorizer.lua"}
-    use {"lewis6991/gitsigns.nvim", requires = {"nvim-lua/plenary.nvim"}}
+    use {
+      "lewis6991/gitsigns.nvim",
+      requires = {"nvim-lua/plenary.nvim"},
+      config = function()
+        require("gitsigns").setup({
+          current_line_blame = true,
+          current_line_blame_delay = 0
+        })
+      end
+    }
     use {"mhartington/formatter.nvim"}
     use {"phaazon/hop.nvim"}
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
     -- use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
     use {"sindrets/diffview.nvim"}
-
-    -- use {"lukas-reineke/indent-blankline.nvim", branch = "lua"}
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -97,7 +106,8 @@ return require("packer").startup({
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
-    use {"tpope/vim-commentary"}
+    -- use {"tpope/vim-commentary"}
+    use {"b3nj5m1n/kommentary"}
     use {
       "tpope/vim-dispatch",
       opt = true,

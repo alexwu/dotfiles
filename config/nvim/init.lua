@@ -23,16 +23,8 @@ require("plugins/diffview")
 -- require("plugins/navigation")
 
 require("colorizer").setup()
-require("gitsigns").setup({
-  current_line_blame = true,
-  current_line_blame_delay = 0
-})
-require("nvim-autopairs").setup({
-  ignored_next_char = "[%w]",
-  check_ts = true
-})
 require("which-key").setup()
 require("hop").setup {keys = "etovxqpdygfblzhckisuran"}
 
-vim.cmd [[ autocmd BufWritePost plugins.lua PackerCompile ]]
+-- vim.cmd [[ autocmd BufWritePost plugins.lua PackerCompile ]]
 vim.cmd [[ autocmd BufReadPost *.rbs,Steepfile set syntax=ruby ]]

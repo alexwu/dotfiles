@@ -16,6 +16,26 @@ function M.default_on_attach(client, bufnr)
     vim.fn.sign_define(hl, {text = icon, texthl = hl, numhl = ""})
   end
 
+  -- vim.g.lsp_utils_codeaction_opts = {
+  --   list = {
+  --     border_chars = {
+  --       TOP_LEFT = "╭",
+  --       TOP_RIGHT = "╮",
+  --       MID_HORIZONTAL = "─",
+  --       MID_VERTICAL = "│",
+  --       BOTTOM_LEFT = "╰",
+  --       BOTTOM_RIGHT = "╯"
+  --     }
+
+  --   }
+  -- }
+  -- vim.lsp.handlers["textDocument/codeAction"] =
+  --   require"lsputil.codeAction".code_action_handler
+  -- vim.lsp.handlers["textDocument/references"] =
+  --   require"lsputil.locations".references_handler
+  vim.lsp.handlers["textDocument/publishDiagnostics"] =
+    vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
+                 {virtual_text = true, underline = true, signs = true})
   vim.lsp.handlers["textDocument/hover"] =
     vim.lsp
       .with(vim.lsp.handlers.hover, {border = "rounded", focusable = false})
@@ -37,10 +57,10 @@ function M.default_on_attach(client, bufnr)
 
   -- Set some keybinds conditional on server capabilities
   if client.resolved_capabilities.document_formatting then
-    buf_set_keymap("n", "<space>f", "<cmd>lua vim.lsp.buf.formatting()<CR>",
+    buf_set_keymap("n", "<leader>f", "<cmd>lua vim.lsp.buf.formatting()<CR>",
                    opts)
   elseif client.resolved_capabilities.document_range_formatting then
-    buf_set_keymap("n", "<space>f",
+    buf_set_keymap("n", "<leader>f",
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
   end
 
@@ -50,7 +70,7 @@ function M.default_on_attach(client, bufnr)
   })
   -- vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false}) ]]
   -- vim.cmd [[ autocmd CursorHold * lua require('plenary.async').run(_G.async_show_diagnostics, {border = 'rounded', focusable = false}) ]]
-  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
+  -- vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
 end
 
 local to_position = function(position, bufnr)

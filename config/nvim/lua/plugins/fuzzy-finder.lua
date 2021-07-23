@@ -1,51 +1,68 @@
--- local actions = require("telescope.actions")
--- local trouble = require("trouble.providers.telescope")
--- local clear_line = function() vim.api.nvim_del_current_line() end
--- require("telescope").setup {
---   defaults = {
---     set_env = {["COLORTERM"] = "truecolor"},
---     prompt_prefix = "❯ ",
---     mappings = {
---       i = {
---         ["<esc>"] = actions.close,
---         ["<C-j>"] = actions.move_selection_next,
---         ["<C-k>"] = actions.move_selection_previous,
---         ["<C-u>"] = clear_line,
---         ["<c-t>"] = trouble.open_with_trouble
---       },
---       n = {["<c-t>"] = trouble.open_with_trouble}
---     }
---   },
---   extensions = {
---     fzf_writer = {
---       minimum_grep_characters = 2,
---       minimum_files_characters = 2,
---       use_highlighter = true
---     },
---     fzy_native = {override_generic_sorter = true, override_file_sorter = true}
---   }
--- }
+local actions = require("telescope.actions")
+local trouble = require("trouble.providers.telescope")
+local clear_line = function() vim.api.nvim_del_current_line() end
+local close_window = function() vim.api.nvim_win_close(0) end
+
+require("telescope").setup {
+  defaults = {
+    set_env = {["COLORTERM"] = "truecolor"},
+    prompt_prefix = "❯ ",
+    mappings = {
+      i = {
+        ["<esc>"] = actions.close,
+        ["<C-j>"] = actions.move_selection_next,
+        ["<C-k>"] = actions.move_selection_previous,
+        ["<C-u>"] = clear_line,
+        ["<c-t>"] = trouble.open_with_trouble
+      },
+      n = {["<c-t>"] = trouble.open_with_trouble}
+    }
+  },
+  extensions = {
+    fzf_writer = {
+      minimum_grep_characters = 2,
+      minimum_files_characters = 2,
+      use_highlighter = true
+    },
+    fzy_native = {override_generic_sorter = true, override_file_sorter = true}
+  }
+}
+
 require"fzf-lua".setup {
-  win_height = 0.85, -- window height
-  win_width = 0.80, -- window width
-  win_row = 0.30, -- window row position (0=top, 1=bottom)
-  win_col = 0.50, -- window col position (0=left, 1=right)
+  win_height = 0.85,
+  win_width = 0.80,
+  win_row = 0.30,
+  win_col = 0.50,
   win_border = {"╭", "─", "╮", "│", "╯", "─", "╰", "│"},
-  fzf_args = "", -- adv: fzf extra args, empty unless adv
+  fzf_args = "",
   fzf_layout = "default",
-  preview_cmd = "", -- 'head -n $FZF_PREVIEW_LINES',
-  preview_border = "border", -- border|noborder
-  preview_wrap = "nowrap", -- wrap|nowrap
-  preview_opts = "nohidden", -- hidden|nohidden
-  preview_vertical = "down:45%", -- up|down:size
-  preview_horizontal = "right:60%", -- right|left:size
-  preview_layout = "flex", -- horizontal|vertical|flex
-  flip_columns = 120, -- #cols to switch to horizontal on flex
+  preview_cmd = "",
+  preview_border = "border",
+  preview_wrap = "nowrap",
+  preview_opts = "nohidden",
+  preview_vertical = "down:45%",
+  preview_horizontal = "right:60%",
+  preview_layout = "flex",
+  flip_columns = 120,
   bat_theme = "Sublime Snazzy",
-  -- bat_opts = "--style=numbers,changes --color always",
   files = {
-    prompt = "Files❯ ",
-    cmd = "", -- "find . -type f -printf '%P\n'",
+    prompt = "❯ ",
+    cmd = "",
+    git_icons = true,
+    file_icons = true,
+    color_icons = true,
+    -- actions = {
+    --   ["default"] = actions.file_edit,
+    --   ["ctrl-s"] = actions.file_split,
+    --   ["ctrl-v"] = actions.file_vsplit,
+    --   ["ctrl-t"] = actions.file_tabedit,
+    --   ["ctrl-q"] = actions.file_sel_to_qf
+    -- }
+  },
+  grep = {
+    prompt = "Grep ❯ ",
+    input_prompt = "Grep For❯ ",
+    -- cmd               = "rg --vimgrep",
     git_icons = true, -- show git icons?
     file_icons = true, -- show file icons?
     color_icons = true -- colorize file|git icons
@@ -58,22 +75,6 @@ require"fzf-lua".setup {
     --   ["ctrl-y"] = function(selected) print(selected[2]) end
     -- }
   },
-  -- grep = {
-  --   prompt = "Rg❯ ",
-  --   input_prompt = "Grep For❯ ",
-  --   -- cmd               = "rg --vimgrep",
-  --   git_icons = true, -- show git icons?
-  --   file_icons = true, -- show file icons?
-  --   color_icons = true, -- colorize file|git icons
-  --   actions = {
-  --     ["default"] = actions.file_edit,
-  --     ["ctrl-s"] = actions.file_split,
-  --     ["ctrl-v"] = actions.file_vsplit,
-  --     ["ctrl-t"] = actions.file_tabedit,
-  --     ["ctrl-q"] = actions.file_sel_to_qf,
-  --     ["ctrl-y"] = function(selected) print(selected[2]) end
-  --   }
-  -- },
   -- oldfiles = {prompt = "History❯ ", cwd_only = false},
   -- git = {
   --   prompt = "GitFiles❯ ",
@@ -134,10 +135,11 @@ require"fzf-lua".setup {
     "shift-down:preview-page-down", "shift-up:preview-page-up",
     "ctrl-d:half-page-down", "ctrl-u:half-page-up", "ctrl-f:page-down",
     "ctrl-b:page-up", "ctrl-a:toggle-all", "ctrl-u:clear-query"
-  }
-  -- window_on_create = function() -- nvim window options override
-  --   vim.cmd("set winhl=Normal:Normal") -- popup bg match normal windows
-  -- end
+  },
+  window_on_create = function()
+    vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-c>",
+                                {nowait = true, silent = true})
+  end
 }
 
 -- vim.api.nvim_set_keymap("n", "<C-p>",
@@ -150,13 +152,6 @@ require"fzf-lua".setup {
 vim.api.nvim_set_keymap("n", "<C-p>", "<cmd>lua require('fzf-lua').files()<CR>",
                         {noremap = true})
 
--- local snap = require "snap"
--- snap.register.map({"n"}, {"<C-p>"}, function()
---   snap.run {
---     producer = snap.get "consumer.fzf"(snap.get "producer.fd.file"),
---     select = snap.get"select.file".select,
---     multiselect = snap.get"select.file".multiselect,
---     views = {snap.get "preview.file"},
---     prompt = ">"
---   }
--- end)
+vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
+vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]]
+vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR> ]]
