@@ -38,10 +38,6 @@ return require("packer").startup({
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use {"ray-x/lsp_signature.nvim"}
     -- use {"kosayoda/nvim-lightbulb"}
-    use {
-      "ray-x/navigator.lua",
-      requires = {"ray-x/guihua.lua", run = "cd lua/fzy && make"}
-    }
 
     -- TypeScript LSP Utilities
     use {
@@ -51,7 +47,7 @@ return require("packer").startup({
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
 
-    use {"folke/lua-dev.nvim"}
+    use {"folke/lua-dev.nvim", ft = {"lua"}}
 
     use {
       "nvim-telescope/telescope.nvim",
@@ -68,6 +64,7 @@ return require("packer").startup({
     }
 
     use {"vim-test/vim-test"}
+
     use {
       "kyazdani42/nvim-tree.lua",
       requires = {{"kyazdani42/nvim-web-devicons"}}
@@ -92,7 +89,6 @@ return require("packer").startup({
     use {"phaazon/hop.nvim"}
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
-    -- use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
     use {"sindrets/diffview.nvim"}
 
     use {"hrsh7th/vim-vsnip"}
@@ -102,11 +98,11 @@ return require("packer").startup({
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
     }
+
     use {"chaoren/vim-wordmotion"}
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
-    -- use {"tpope/vim-commentary"}
     use {"b3nj5m1n/kommentary"}
     use {
       "tpope/vim-dispatch",
@@ -118,7 +114,6 @@ return require("packer").startup({
     use {"tpope/vim-projectionist"}
     use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
-    use {"tpope/vim-sensible"}
     use {"tpope/vim-surround"}
     -- use {"tpope/vim-vinegar"}
     use {"voldikss/vim-floaterm"}

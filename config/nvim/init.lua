@@ -1,5 +1,6 @@
 vim.g.polyglot_disabled = {
-  "ruby.plugin", "typescript.plugin", "typescriptreact.plugin", "lua.plugin"
+  "ruby.plugin", "typescript.plugin", "typescriptreact.plugin", "lua.plugin",
+  "sensible"
 }
 
 require("mappings")
