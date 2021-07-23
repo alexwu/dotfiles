@@ -16,29 +16,23 @@ function M.default_on_attach(client, bufnr)
     vim.fn.sign_define(hl, {text = icon, texthl = hl, numhl = ""})
   end
 
-  -- vim.g.lsp_utils_codeaction_opts = {
-  --   list = {
-  --     border_chars = {
-  --       TOP_LEFT = "╭",
-  --       TOP_RIGHT = "╮",
-  --       MID_HORIZONTAL = "─",
-  --       MID_VERTICAL = "│",
-  --       BOTTOM_LEFT = "╰",
-  --       BOTTOM_RIGHT = "╯"
-  --     }
-
-  --   }
-  -- }
-  -- vim.lsp.handlers["textDocument/codeAction"] =
-  --   require"lsputil.codeAction".code_action_handler
-  -- vim.lsp.handlers["textDocument/references"] =
-  --   require"lsputil.locations".references_handler
   vim.lsp.handlers["textDocument/publishDiagnostics"] =
     vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics,
                  {virtual_text = true, underline = true, signs = true})
   vim.lsp.handlers["textDocument/hover"] =
     vim.lsp
       .with(vim.lsp.handlers.hover, {border = "rounded", focusable = false})
+
+  local original_set_virtual_text = vim.lsp.diagnostic.set_virtual_text
+  local set_virtual_text_custom = function(diagnostics, bufnr, client_id,
+                                           sign_ns, opts)
+    opts = opts or {}
+    -- show all messages that are Warning and above (Warning, Error)
+    opts.severity_limit = "Warning"
+    original_set_virtual_text(diagnostics, bufnr, client_id, sign_ns, opts)
+  end
+
+  vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
 
   local opts = {noremap = false, silent = true}
   buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
