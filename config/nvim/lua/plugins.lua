@@ -32,12 +32,9 @@ return require("packer").startup({
 
     -- NeoVim LSP
     use {"neovim/nvim-lspconfig"}
-    -- use {"kabouzeid/nvim-lspinstall"}
     use {"williamboman/nvim-lsp-installer"}
-    -- use {"RishabhRD/nvim-lsputils", requires = {"RishabhRD/popfix"}}
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use {"ray-x/lsp_signature.nvim"}
-    -- use {"kosayoda/nvim-lightbulb"}
 
     -- TypeScript LSP Utilities
     use {
@@ -46,8 +43,6 @@ return require("packer").startup({
     }
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
-
-    use {"folke/lua-dev.nvim", ft = {"lua"}}
 
     use {
       "nvim-telescope/telescope.nvim",
@@ -69,12 +64,26 @@ return require("packer").startup({
       "kyazdani42/nvim-tree.lua",
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
-    use {"hrsh7th/nvim-compe", requires = {"onsails/lspkind-nvim"}}
+    use {
+      "hrsh7th/nvim-compe",
+      requires = {"onsails/lspkind-nvim"},
+      config = function() require("plugins/compe") end
+    }
     use {"tzachar/compe-tabnine"}
     use {"folke/todo-comments.nvim"}
-    use {"folke/which-key.nvim"}
-    use {"hoob3rt/lualine.nvim", requires = {"kyazdani42/nvim-web-devicons"}}
-    use {"norcalli/nvim-colorizer.lua"}
+    use {
+      "folke/which-key.nvim",
+      config = function() require("which-key").setup() end
+    }
+    use {
+      "hoob3rt/lualine.nvim",
+      requires = {"kyazdani42/nvim-web-devicons"},
+      config = function() require("statusline") end
+    }
+    use {
+      "norcalli/nvim-colorizer.lua",
+      config = function() require("colorizer").setup() end
+    }
     use {
       "lewis6991/gitsigns.nvim",
       requires = {"nvim-lua/plenary.nvim"},
@@ -85,11 +94,20 @@ return require("packer").startup({
         })
       end
     }
-    use {"mhartington/formatter.nvim"}
-    use {"phaazon/hop.nvim"}
+    use {
+      "mhartington/formatter.nvim",
+      config = function() require("plugins/formatter") end
+    }
+    use {
+      "phaazon/hop.nvim",
+      config = function()
+        require("hop").setup {keys = "etovxqpdygfblzhckisuran"}
+      end
+    }
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
     use {"sindrets/diffview.nvim"}
+    use "lukas-reineke/indent-blankline.nvim"
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -115,15 +133,20 @@ return require("packer").startup({
     use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
-    -- use {"tpope/vim-vinegar"}
+    use {"tpope/vim-vinegar"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
-    use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}
   end,
   config = {
     opt_default = false,
-    display = {open_fn = require("packer.util").float}
+    display = {
+      open_fn = function()
+        return require("packer.util").float({border = "rounded"})
+      end,
+      prompt_border = "rounded"
+
+    }
   }
 })

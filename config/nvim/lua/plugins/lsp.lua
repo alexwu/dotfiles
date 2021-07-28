@@ -6,7 +6,7 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 
 require("plugins.lsp.typescript").setup(on_attach, capabilities)
-
+--[[
 local luadev = require("lua-dev").setup({
   library = {vimruntime = true, types = true, plugins = true},
   lspconfig = {
@@ -15,8 +15,10 @@ local luadev = require("lua-dev").setup({
     capabilities = capabilities
   }
 })
-lspconfig.sumneko_lua.setup(luadev)
-
+--]]
+-- lspconfig.sumneko_lua.setup(luadev)
+require("null-ls").config {}
+require("lspconfig")["null-ls"].setup {}
 -- lspconfig.lua.setup {
 --   settings = {
 --     Lua = {
