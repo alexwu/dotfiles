@@ -64,14 +64,22 @@ return require("packer").startup({
       "kyazdani42/nvim-tree.lua",
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
-    use {"hrsh7th/nvim-compe", requires = {"onsails/lspkind-nvim"}}
+    use {
+      "hrsh7th/nvim-compe",
+      requires = {"onsails/lspkind-nvim"},
+      config = function() require("plugins/compe") end
+    }
     use {"tzachar/compe-tabnine"}
     use {"folke/todo-comments.nvim"}
     use {
       "folke/which-key.nvim",
       config = function() require("which-key").setup() end
     }
-    use {"hoob3rt/lualine.nvim", requires = {"kyazdani42/nvim-web-devicons"}}
+    use {
+      "hoob3rt/lualine.nvim",
+      requires = {"kyazdani42/nvim-web-devicons"},
+      config = function() require("statusline") end
+    }
     use {
       "norcalli/nvim-colorizer.lua",
       config = function() require("colorizer").setup() end
@@ -86,7 +94,10 @@ return require("packer").startup({
         })
       end
     }
-    use {"mhartington/formatter.nvim"}
+    use {
+      "mhartington/formatter.nvim",
+      config = function() require("plugins/formatter") end
+    }
     use {
       "phaazon/hop.nvim",
       config = function()
@@ -96,6 +107,7 @@ return require("packer").startup({
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
     use {"sindrets/diffview.nvim"}
+    use "lukas-reineke/indent-blankline.nvim"
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -124,7 +136,6 @@ return require("packer").startup({
     use {"tpope/vim-vinegar"}
     use {"voldikss/vim-floaterm"}
     use {"axelf4/vim-strip-trailing-whitespace"}
-    use {"Yggdroot/indentLine"}
 
     use {"~/Code/nvim-snazzy"}
   end,
