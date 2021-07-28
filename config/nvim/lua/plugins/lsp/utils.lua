@@ -28,7 +28,7 @@ function M.default_on_attach(client, bufnr)
                                            sign_ns, opts)
     opts = opts or {}
     -- show all messages that are Warning and above (Warning, Error)
-    opts.severity_limit = "Warning"
+    opts.severity_limit = "Error"
     original_set_virtual_text(diagnostics, bufnr, client_id, sign_ns, opts)
   end
 
@@ -43,6 +43,9 @@ function M.default_on_attach(client, bufnr)
   buf_set_keymap("n", "K", "<Cmd>lua vim.lsp.buf.hover()<CR>", opts)
   buf_set_keymap("n", "L",
                  "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
+                 opts)
+  buf_set_keymap("n", "<RightMouse>",
+                 "<LeftMouse><cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
                  opts)
   buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
   buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)

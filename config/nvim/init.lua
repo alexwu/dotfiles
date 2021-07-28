@@ -18,5 +18,6 @@ require("plugins/todo-comments")
 require("plugins/vim-test")
 require("plugins/indent-blankline")
 require("plugins/diffview")
+require("plugins/tree")
 
 vim.cmd [[ autocmd BufReadPost *.rbs,Steepfile set syntax=ruby ]]

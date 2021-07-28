@@ -19,12 +19,18 @@ require("telescope").setup {
     }
   },
   extensions = {
-    fzf_writer = {
+    --[[ fzf_writer = {
       minimum_grep_characters = 2,
       minimum_files_characters = 2,
       use_highlighter = true
-    },
-    fzy_native = {override_generic_sorter = true, override_file_sorter = true}
+    }, ]]
+    fzf = {
+      fuzzy = true,
+      override_generic_sorter = false,
+      override_file_sorter = true,
+      case_mode = "smart_case"
+    }
+    -- fzy_native = {override_generic_sorter = true, override_file_sorter = true}
   }
 }
 
@@ -50,7 +56,7 @@ require"fzf-lua".setup {
     cmd = "",
     git_icons = true,
     file_icons = true,
-    color_icons = true,
+    color_icons = true
     -- actions = {
     --   ["default"] = actions.file_edit,
     --   ["ctrl-s"] = actions.file_split,
@@ -141,6 +147,7 @@ require"fzf-lua".setup {
                                 {nowait = true, silent = true})
   end
 }
+require("telescope").load_extension("fzf")
 
 -- vim.api.nvim_set_keymap("n", "<C-p>",
 --                         "<cmd>lua require('telescope').extensions.fzf_writer.files()<cr>",

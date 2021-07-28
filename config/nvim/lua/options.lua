@@ -1,11 +1,12 @@
-local o, wo, bo = vim.o, vim.wo, vim.bo
+local o = vim.o
 local utils = require("utils")
 local opt = utils.opt
 
-local buffer = {o, bo}
-local window = {o, wo}
-
 vim.cmd [[ syntax off ]]
+
+local disabled_built_ins = {"gzip", "shada_plugin", "zipPlugin", "zip"}
+
+for i = 1, 4 do vim.g["loaded_" .. disabled_built_ins[i]] = 1 end
 
 vim.opt.autoindent = true
 vim.opt.ch = 2
@@ -18,49 +19,37 @@ vim.opt.cursorline = true
 vim.opt.directory = "~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp"
 vim.opt.mouse = "a"
 vim.opt.updatetime = 250
-
-opt("expandtab", true, buffer)
-opt("hlsearch", true)
-opt("incsearch", true)
-opt("laststatus", 2)
-opt("linebreak", true)
-opt("modelines", 1)
-opt("backup", false)
-opt("joinspaces", false)
-opt("showmode", false)
-opt("wrap", false, window)
-opt("number", true, window)
-opt("numberwidth", 5, window)
-opt("ruler", true)
-opt("scrolloff", 5)
-opt("shell", "/bin/zsh")
-opt("shiftwidth", 2, buffer)
+vim.opt.hlsearch = true
+vim.opt.incsearch = true
+vim.opt.expandtab = true
+vim.opt.incsearch = true
+vim.opt.laststatus = 2
+vim.opt.linebreak = true
+vim.opt.modelines = 1
+vim.opt.backup = false
+vim.opt.writebackup = false
+vim.opt.joinspaces = false
+vim.opt.showmode = false
+vim.opt.wrap = false
+vim.opt.number = true
+vim.opt.numberwidth = 5
+vim.opt.ruler = true
+vim.opt.scrolloff = 5
+vim.opt.shiftwidth = 2
+vim.opt.showcmd = true
+vim.opt.signcolumn = "yes"
+vim.opt.smartcase = true
+vim.opt.smarttab = true
+vim.opt.softtabstop = 2
+vim.opt.tabstop = 2
+vim.opt.textwidth = 0
 opt("shortmess", o.shortmess .. "Icq")
-opt("showcmd", true)
-opt("signcolumn", "yes", window)
-opt("smartcase", true)
-opt("smarttab", true)
-opt("softtabstop", 2, buffer)
-opt("tabstop", 2, buffer)
 opt("tags", "./TAGS,TAGS")
-opt("textwidth", 0)
 opt("wildignore",
     "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store")
-opt("termguicolors", true)
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
-vim.g.cursorhold_updatetime = 100
-
-if vim.fn.has("gui_vimr") ~= 1 then
-  vim.g.nvim_tree_auto_open = 1
-  vim.g.nvim_tree_auto_close = 1
-  vim.g.nvim_tree_quit_on_open = 0
-  vim.g.nvim_tree_indent_markers = 1
-  vim.g.nvim_tree_disable_netrw = 0
-  vim.g.nvim_tree_hijack_netrw = 0
-  vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
-  vim.g.nvim_tree_ignore = {".DS_Store"}
-end
+vim.g.cursorhold_updatetime = 250
 
 -- disable python 2
 vim.g.loaded_python_provider = 0

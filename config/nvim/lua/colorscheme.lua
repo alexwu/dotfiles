@@ -1,2 +1,2 @@
-require("snazzy")
--- vim.cmd[[colorscheme tokyonight]]
+require("snazzy").setup("dark")
+-- vim.cmd[[colorscheme sonokai]]

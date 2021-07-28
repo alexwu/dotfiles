@@ -1,6 +1,5 @@
 local execute = vim.api.nvim_command
 local fn = vim.fn
-
 local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
 if fn.empty(fn.glob(install_path)) > 0 then
   execute("!git clone https://github.com/wbthomason/packer.nvim " ..
@@ -30,6 +29,27 @@ return require("packer").startup({
     use {"lewis6991/spellsitter.nvim"}
     use {"andymass/vim-matchup"}
 
+    -- Lua
+    use {
+      "abecodes/tabout.nvim",
+      config = function()
+        require("tabout").setup {
+          tabkey = "<Tab>",
+          act_as_tab = true,
+          completion = true,
+          tabouts = {
+            {open = "'", close = "'"}, {open = "\"", close = "\""},
+            {open = "`", close = "`"}, {open = "(", close = ")"},
+            {open = "[", close = "]"}, {open = "{", close = "}"}
+          },
+          ignore_beginning = true,
+          exclude = {}
+        }
+      end,
+      wants = {"nvim-treesitter"}, -- or require if not used so far
+      after = {"nvim-compe"}
+    }
+
     -- NeoVim LSP
     use {"neovim/nvim-lspconfig"}
     use {"williamboman/nvim-lsp-installer"}
@@ -50,6 +70,7 @@ return require("packer").startup({
         {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
         {"nvim-telescope/telescope-fzf-writer.nvim"},
         {"nvim-telescope/telescope-fzy-native.nvim"},
+        {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
         {"kyazdani42/nvim-web-devicons"}
       }
     }
@@ -64,12 +85,10 @@ return require("packer").startup({
       "kyazdani42/nvim-tree.lua",
       requires = {{"kyazdani42/nvim-web-devicons"}}
     }
-    use {
-      "hrsh7th/nvim-compe",
-      requires = {"onsails/lspkind-nvim"},
+    use {"hrsh7th/nvim-compe", requires = {"onsails/lspkind-nvim"},
       config = function() require("plugins/compe") end
     }
-    use {"tzachar/compe-tabnine"}
+    use {"tzachar/compe-tabnine", after = "nvim-compe", event = "InsertEnter"}
     use {"folke/todo-comments.nvim"}
     use {
       "folke/which-key.nvim",
@@ -116,7 +135,6 @@ return require("packer").startup({
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
     }
-
     use {"chaoren/vim-wordmotion"}
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
