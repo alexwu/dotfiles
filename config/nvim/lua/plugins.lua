@@ -46,7 +46,7 @@ return require("packer").startup({
           exclude = {}
         }
       end,
-      wants = {"nvim-treesitter"}, -- or require if not used so far
+      wants = {"nvim-treesitter"},
       after = {"nvim-compe"}
     }
 
@@ -59,7 +59,11 @@ return require("packer").startup({
     -- TypeScript LSP Utilities
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
-      requires = {"jose-elias-alvarez/null-ls.nvim"}
+      requires = {"jose-elias-alvarez/null-ls.nvim"},
+      ft = {
+        "javascript", "javascriptreact", "typescript", "typescriptreact",
+        "typescript.tsx"
+      }
     }
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
@@ -80,12 +84,20 @@ return require("packer").startup({
     }
 
     use {"vim-test/vim-test"}
+    use {
+      "rcarriga/vim-ultest",
+      requires = {"vim-test/vim-test"},
+      run = ":UpdateRemotePlugins"
+    }
 
     use {
       "kyazdani42/nvim-tree.lua",
-      requires = {{"kyazdani42/nvim-web-devicons"}}
+      requires = {"kyazdani42/nvim-web-devicons"},
+      config = function() require("plugins/tree") end
     }
-    use {"hrsh7th/nvim-compe", requires = {"onsails/lspkind-nvim"},
+    use {
+      "hrsh7th/nvim-compe",
+      requires = {"onsails/lspkind-nvim"},
       config = function() require("plugins/compe") end
     }
     use {"tzachar/compe-tabnine", after = "nvim-compe", event = "InsertEnter"}
@@ -126,7 +138,7 @@ return require("packer").startup({
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
     use {"sindrets/diffview.nvim"}
-    use "lukas-reineke/indent-blankline.nvim"
+    use {"lukas-reineke/indent-blankline.nvim"}
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -139,7 +151,10 @@ return require("packer").startup({
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
-    use {"b3nj5m1n/kommentary"}
+    use {
+      "b3nj5m1n/kommentary",
+      config = function() require("plugins/commenting") end
+    }
     use {
       "tpope/vim-dispatch",
       opt = true,
@@ -152,7 +167,10 @@ return require("packer").startup({
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
-    use {"voldikss/vim-floaterm"}
+    use {
+      "voldikss/vim-floaterm",
+      config = function() require("plugins/floaterm") end
+    }
     use {"axelf4/vim-strip-trailing-whitespace"}
 
     use {"~/Code/nvim-snazzy"}

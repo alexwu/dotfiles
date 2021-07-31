@@ -55,7 +55,7 @@ require("lualine").setup {
     component_separators = {"", ""},
     section_separators = {"", ""}
   },
-  extensions = {"fugitive", "nvim-tree", "quickfix"},
+  extensions = {"fzf", "fugitive", "nvim-tree", "quickfix"},
   sections = {
     lualine_a = {"mode"},
     lualine_b = {"branch"},

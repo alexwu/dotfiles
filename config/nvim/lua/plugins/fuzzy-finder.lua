@@ -1,7 +1,6 @@
 local actions = require("telescope.actions")
 local trouble = require("trouble.providers.telescope")
 local clear_line = function() vim.api.nvim_del_current_line() end
-local close_window = function() vim.api.nvim_win_close(0) end
 
 require("telescope").setup {
   defaults = {
@@ -30,7 +29,6 @@ require("telescope").setup {
       override_file_sorter = true,
       case_mode = "smart_case"
     }
-    -- fzy_native = {override_generic_sorter = true, override_file_sorter = true}
   }
 }
 
@@ -57,13 +55,6 @@ require"fzf-lua".setup {
     git_icons = true,
     file_icons = true,
     color_icons = true
-    -- actions = {
-    --   ["default"] = actions.file_edit,
-    --   ["ctrl-s"] = actions.file_split,
-    --   ["ctrl-v"] = actions.file_vsplit,
-    --   ["ctrl-t"] = actions.file_tabedit,
-    --   ["ctrl-q"] = actions.file_sel_to_qf
-    -- }
   },
   grep = {
     prompt = "Grep ❯ ",
@@ -149,14 +140,10 @@ require"fzf-lua".setup {
 }
 require("telescope").load_extension("fzf")
 
--- vim.api.nvim_set_keymap("n", "<C-p>",
---                         "<cmd>lua require('telescope').extensions.fzf_writer.files()<cr>",
---                         {noremap = true})
-
--- vim.api.nvim_set_keymap("n", "<C-p>",
---                         "<cmd>lua require('telescope.builtin').find_files()<cr>",
---                         {noremap = true})
-vim.api.nvim_set_keymap("n", "<C-p>", "<cmd>lua require('fzf-lua').files()<CR>",
+--[[ vim.api.nvim_set_keymap("n", "<Leader>f",
+                        "<cmd>lua require('telescope.builtin').find_files()<cr>",
+                        {noremap = true}) ]]
+vim.api.nvim_set_keymap("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
                         {noremap = true})
 
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]

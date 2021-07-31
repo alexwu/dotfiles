@@ -4,9 +4,9 @@ local opt = utils.opt
 
 vim.cmd [[ syntax off ]]
 
-local disabled_built_ins = {"gzip", "shada_plugin", "zipPlugin", "zip"}
+-- local disabled_built_ins = {"gzip", "shada_plugin", "zipPlugin", "zip"}
 
-for i = 1, 4 do vim.g["loaded_" .. disabled_built_ins[i]] = 1 end
+-- for i = 1, 4 do vim.g["loaded_" .. disabled_built_ins[i]] = 1 end
 
 vim.opt.autoindent = true
 vim.opt.ch = 2
