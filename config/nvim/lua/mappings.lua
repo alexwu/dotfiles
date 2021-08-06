@@ -23,6 +23,8 @@ map("i", "<C-k>", "<Up>")
 map("i", "<C-h>", "<Left>")
 map("i", "<C-l>", "<Right>")
 
+map("n", "<leader>t", "<Cmd>Telescope<cr>")
+
 map("n", "<space><space>", "<C-^>")
 
 vim.api.nvim_set_keymap("n", "<Bslash>w",

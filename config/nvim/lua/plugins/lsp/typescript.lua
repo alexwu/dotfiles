@@ -6,7 +6,9 @@ function module.setup(on_attach, capabilities)
     on_attach = function(client, bufnr)
       on_attach(client, bufnr)
 
-      require("null-ls").setup {}
+      require("null-ls").config {}
+      require("lspconfig")["null-ls"].setup {}
+
       local ts_utils = require("nvim-lsp-ts-utils")
       vim.lsp.handlers["textDocument/codeAction"] = ts_utils.code_action_handler
 

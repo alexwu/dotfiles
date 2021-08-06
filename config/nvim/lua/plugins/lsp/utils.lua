@@ -28,7 +28,7 @@ function M.default_on_attach(client, bufnr)
                                            sign_ns, opts)
     opts = opts or {}
     -- show all messages that are Warning and above (Warning, Error)
-    opts.severity_limit = "Warning"
+    opts.severity_limit = "Error"
     original_set_virtual_text(diagnostics, bufnr, client_id, sign_ns, opts)
   end
 
@@ -44,19 +44,22 @@ function M.default_on_attach(client, bufnr)
   buf_set_keymap("n", "L",
                  "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
                  opts)
+  buf_set_keymap("n", "<RightMouse>",
+                 "<LeftMouse><cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
+                 opts)
   buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
   buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
   buf_set_keymap("n", "<space>q",
                  "<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>", opts)
 
   -- Set some keybinds conditional on server capabilities
-  if client.resolved_capabilities.document_formatting then
+  --[[ if client.resolved_capabilities.document_formatting then
     buf_set_keymap("n", "<leader>f", "<cmd>lua vim.lsp.buf.formatting()<CR>",
                    opts)
   elseif client.resolved_capabilities.document_range_formatting then
     buf_set_keymap("n", "<leader>f",
                    "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
-  end
+  end ]]
 
   require"lsp_signature".on_attach({
     bind = true,

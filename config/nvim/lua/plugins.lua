@@ -1,6 +1,5 @@
 local execute = vim.api.nvim_command
 local fn = vim.fn
-
 local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
 if fn.empty(fn.glob(install_path)) > 0 then
   execute("!git clone https://github.com/wbthomason/packer.nvim " ..
@@ -30,6 +29,27 @@ return require("packer").startup({
     use {"lewis6991/spellsitter.nvim"}
     use {"andymass/vim-matchup"}
 
+    -- Lua
+    use {
+      "abecodes/tabout.nvim",
+      config = function()
+        require("tabout").setup {
+          tabkey = "<Tab>",
+          act_as_tab = true,
+          completion = true,
+          tabouts = {
+            {open = "'", close = "'"}, {open = "\"", close = "\""},
+            {open = "`", close = "`"}, {open = "(", close = ")"},
+            {open = "[", close = "]"}, {open = "{", close = "}"}
+          },
+          ignore_beginning = true,
+          exclude = {}
+        }
+      end,
+      wants = {"nvim-treesitter"},
+      after = {"nvim-compe"}
+    }
+
     -- NeoVim LSP
     use {"neovim/nvim-lspconfig"}
     use {"williamboman/nvim-lsp-installer"}
@@ -39,7 +59,11 @@ return require("packer").startup({
     -- TypeScript LSP Utilities
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
-      requires = {"jose-elias-alvarez/null-ls.nvim"}
+      requires = {"jose-elias-alvarez/null-ls.nvim"},
+      ft = {
+        "javascript", "javascriptreact", "typescript", "typescriptreact",
+        "typescript.tsx"
+      }
     }
     use {"mfussenegger/nvim-lint"}
 
@@ -52,6 +76,7 @@ return require("packer").startup({
         {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
         {"nvim-telescope/telescope-fzf-writer.nvim"},
         {"nvim-telescope/telescope-fzy-native.nvim"},
+        {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
         {"kyazdani42/nvim-web-devicons"}
       }
     }
@@ -61,17 +86,23 @@ return require("packer").startup({
     }
 
     use {"vim-test/vim-test"}
+    use {
+      "rcarriga/vim-ultest",
+      requires = {"vim-test/vim-test"},
+      run = ":UpdateRemotePlugins"
+    }
 
     use {
       "kyazdani42/nvim-tree.lua",
-      requires = {{"kyazdani42/nvim-web-devicons"}}
+      requires = {"kyazdani42/nvim-web-devicons"},
+      config = function() require("plugins/tree") end
     }
     use {
       "hrsh7th/nvim-compe",
       requires = {"onsails/lspkind-nvim"},
       config = function() require("plugins/compe") end
     }
-    use {"tzachar/compe-tabnine"}
+    use {"tzachar/compe-tabnine", after = "nvim-compe", event = "InsertEnter"}
     use {"folke/todo-comments.nvim"}
     use {
       "folke/which-key.nvim",
@@ -109,7 +140,7 @@ return require("packer").startup({
     use {"ggandor/lightspeed.nvim"}
     use {"monaqa/dial.nvim"}
     use {"sindrets/diffview.nvim"}
-    use "lukas-reineke/indent-blankline.nvim"
+    use {"lukas-reineke/indent-blankline.nvim"}
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -118,12 +149,14 @@ return require("packer").startup({
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
     }
-
     use {"chaoren/vim-wordmotion"}
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
-    use {"b3nj5m1n/kommentary"}
+    use {
+      "b3nj5m1n/kommentary",
+      config = function() require("plugins/commenting") end
+    }
     use {
       "tpope/vim-dispatch",
       opt = true,
@@ -136,7 +169,10 @@ return require("packer").startup({
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
-    use {"voldikss/vim-floaterm"}
+    use {
+      "voldikss/vim-floaterm",
+      config = function() require("plugins/floaterm") end
+    }
     use {"axelf4/vim-strip-trailing-whitespace"}
 
     use {"~/Code/nvim-snazzy"}
