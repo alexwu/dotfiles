@@ -135,12 +135,30 @@ return require("packer").startup({
       "phaazon/hop.nvim",
       config = function()
         require("hop").setup {keys = "etovxqpdygfblzhckisuran"}
+        vim.api.nvim_set_keymap("n", "<Bslash>w",
+                                "<cmd>lua require'hop'.hint_words()<cr>", {})
+        vim.api.nvim_set_keymap("n", "<Bslash>l",
+                                "<cmd>lua require'hop'.hint_lines()<cr>", {})
+        vim.api.nvim_set_keymap("n", "<Bslash>c",
+                                "<cmd>lua require'hop'.hint_char1()<cr>", {})
       end
     }
     use {"ggandor/lightspeed.nvim"}
-    use {"monaqa/dial.nvim"}
+    use {
+      "monaqa/dial.nvim",
+      config = function()
+        vim.api.nvim_set_keymap("n", "<C-a>", "<Plug>(dial-increment)", {})
+        vim.api.nvim_set_keymap("n", "<C-x>", "<Plug>(dial-decrement)", {})
+        vim.api.nvim_set_keymap("v", "<C-a>", "<Plug>(dial-increment)", {})
+        vim.api.nvim_set_keymap("v", "<C-x>", "<Plug>(dial-decrement)", {})
+      end
+    }
     use {"sindrets/diffview.nvim"}
     use {"lukas-reineke/indent-blankline.nvim"}
+    use {
+      "simrat39/symbols-outline.nvim",
+      config = function() vim.g.symbols_outline = {} end
+    }
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}

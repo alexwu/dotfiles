@@ -44,9 +44,9 @@ function M.default_on_attach(client, bufnr)
   buf_set_keymap("n", "L",
                  "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
                  opts)
-  buf_set_keymap("n", "<RightMouse>",
+  --[[ buf_set_keymap("n", "<RightMouse>",
                  "<LeftMouse><cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
-                 opts)
+                 opts) ]]
   buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
   buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
   buf_set_keymap("n", "<space>q",
