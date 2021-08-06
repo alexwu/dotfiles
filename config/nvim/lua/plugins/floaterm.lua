@@ -6,9 +6,9 @@ vim.api.nvim_set_keymap("n", "<F10>", "<cmd>FloatermToggle<CR>",
                         {noremap = true})
 vim.api.nvim_set_keymap("t", "<F10>", "<cmd>FloatermToggle<CR>",
                         {noremap = true})
-vim.api.nvim_set_keymap("n", "<BSlash>t", "<cmd>FloatermToggle<CR>",
+vim.api.nvim_set_keymap("n", "<C-t>", "<cmd>FloatermToggle<CR>",
                         {noremap = true})
-vim.api.nvim_set_keymap("t", "<BSlash>t", "<cmd>FloatermToggle<CR>",
+vim.api.nvim_set_keymap("t", "<C-t>", "<cmd>FloatermToggle<CR>",
                         {noremap = true})
 vim.api.nvim_set_keymap("n", "[t", "<cmd>FloatermPrev<CR>",
                         {noremap = true})

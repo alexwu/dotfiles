@@ -19,6 +19,9 @@ local luadev = require("lua-dev").setup({
 -- lspconfig.sumneko_lua.setup(luadev)
 require("null-ls").config {}
 require("lspconfig")["null-ls"].setup {}
+require("lint").linters_by_ft = {ruby = {"standardrb"}}
+vim.cmd [[au TextChanged *.rb lua require('lint').try_lint()]]
+
 -- lspconfig.lua.setup {
 --   settings = {
 --     Lua = {
@@ -52,7 +55,7 @@ local rubocop = {
   lintIgnoreExitCode = true
 }
 
-lspconfig.efm.setup {
+--[[ lspconfig.efm.setup {
   init_options = {
     documentFormatting = true,
     codeAction = true,
@@ -77,7 +80,7 @@ lspconfig.efm.setup {
   },
   on_attach = on_attach,
   capabilities = capabilities
-}
+} ]]
 
 lspconfig.graphql.setup {
   on_attach = on_attach,

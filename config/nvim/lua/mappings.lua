@@ -23,10 +23,6 @@ map("i", "<C-k>", "<Up>")
 map("i", "<C-h>", "<Left>")
 map("i", "<C-l>", "<Right>")
 
-map("n", "<leader>m", "<cmd>NvimTreeToggle<cr>")
-map("n", "<leader>t", "<Cmd>Telescope<cr>")
-
-map("n", "<C-t>", "<Cmd>tabedit<cr>")
 map("n", "<space><space>", "<C-^>")
 
 vim.api.nvim_set_keymap("n", "<Bslash>w",
@@ -42,7 +38,5 @@ vim.api.nvim_set_keymap("v", "<C-a>", "<Plug>(dial-increment)", {})
 vim.api.nvim_set_keymap("v", "<C-x>", "<Plug>(dial-decrement)", {})
 
 vim.api.nvim_set_keymap("t", "<Esc>", "<C-Bslash><C-n>", {})
-
-vim.api.nvim_set_keymap("n", "<Bslash>t", "<cmd>BufferPick<CR>", {})
 
 vim.cmd [[command! -nargs=0 Trash :!trash %]]

@@ -41,6 +41,8 @@ return require("packer").startup({
       "jose-elias-alvarez/nvim-lsp-ts-utils",
       requires = {"jose-elias-alvarez/null-ls.nvim"}
     }
+    use {"mfussenegger/nvim-lint"}
+
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
 

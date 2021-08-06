@@ -149,7 +149,7 @@ require"fzf-lua".setup {
 -- vim.api.nvim_set_keymap("n", "<C-p>",
 --                         "<cmd>lua require('telescope.builtin').find_files()<cr>",
 --                         {noremap = true})
-vim.api.nvim_set_keymap("n", "<C-p>", "<cmd>lua require('fzf-lua').files()<CR>",
+vim.api.nvim_set_keymap("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
                         {noremap = true})
 
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
