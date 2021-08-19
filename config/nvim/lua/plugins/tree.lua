@@ -9,6 +9,6 @@ if vim.fn.has("gui_vimr") ~= 1 then
   vim.g.nvim_tree_follow = 1
   vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
   vim.g.nvim_tree_ignore = {".DS_Store"}
-  vim.g.nvim_tree_width = "25%"
+  -- vim.g.nvim_tree_width = "0%"
   vim.api.nvim_set_keymap("n", "<leader>m", "<Cmd>NvimTreeToggle<CR>", {})
 end

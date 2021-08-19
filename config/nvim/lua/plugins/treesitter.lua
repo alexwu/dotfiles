@@ -4,9 +4,9 @@ require"nvim-treesitter.configs".setup {
   incremental_selection = {
     enable = true,
     keymaps = {
-      -- init_selection = "<C-s>",
-      -- node_incremental = "<C-s>",
-      -- scope_incremental = "<C-a>",
+      init_selection = "<C-s>",
+      node_incremental = "<C-s>",
+      scope_incremental = "<C-a>",
       node_decremental = "<C-x>"
     }
   },
@@ -22,7 +22,6 @@ require"nvim-treesitter.configs".setup {
       }
     }
   },
-  textsubjects = {enable = true, keymaps = {["<C-s>"] = "textsubjects-smart"}},
   playground = {
     enable = true,
     disable = {},
@@ -43,5 +42,4 @@ require"nvim-treesitter.configs".setup {
   matchup = {enable = true},
   autopairs = {enable = true}
 }
-require("spellsitter").setup {hl = "SpellBad", captures = {"comment"}}
 require("nvim-autopairs").setup({check_ts = true, fast_wrap = {}})

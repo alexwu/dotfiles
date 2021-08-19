@@ -54,75 +54,20 @@ require"fzf-lua".setup {
   grep = {
     prompt = "Grep ❯ ",
     input_prompt = "Grep For❯ ",
-    -- cmd               = "rg --vimgrep",
-    git_icons = true, -- show git icons?
-    file_icons = true, -- show file icons?
-    color_icons = true -- colorize file|git icons
-    -- actions = {
-    --   ["default"] = actions.file_edit,
-    --   ["ctrl-s"] = actions.file_split,
-    --   ["ctrl-v"] = actions.file_vsplit,
-    --   ["ctrl-t"] = actions.file_tabedit,
-    --   ["ctrl-q"] = actions.file_sel_to_qf,
-    --   ["ctrl-y"] = function(selected) print(selected[2]) end
-    -- }
+    git_icons = true,
+    file_icons = true,
+    color_icons = true
   },
-  -- oldfiles = {prompt = "History❯ ", cwd_only = false},
-  -- git = {
-  --   prompt = "GitFiles❯ ",
-  --   cmd = "git ls-files --exclude-standard",
-  --   git_icons = true, -- show git icons?
-  --   file_icons = true, -- show file icons?
-  --   color_icons = true -- colorize file|git icons
-  -- },
-  -- buffers = {
-  --   prompt = "Buffers❯ ",
-  --   file_icons = true, -- show file icons?
-  --   color_icons = true, -- colorize file|git icons
-  --   sort_lastused = true, -- sort buffers() by last used
-  --   actions = {
-  --     ["default"] = actions.buf_edit,
-  --     ["ctrl-s"] = actions.buf_split,
-  --     ["ctrl-v"] = actions.buf_vsplit,
-  --     ["ctrl-t"] = actions.buf_tabedit,
-  --     ["ctrl-x"] = actions.buf_del
-  --   }
-  -- },
-  -- colorschemes = {
-  --   prompt = "Colorschemes❯ ",
-  --   live_preview = true,
-  --   actions = {
-  --     ["default"] = actions.colorscheme,
-  --     ["ctrl-y"] = function(selected) print(selected[2]) end
-  --   },
-  --   winopts = {
-  --     win_height = 0.55,
-  --     win_width = 0.30,
-  --     window_on_create = function() vim.cmd("set winhl=Normal:Normal") end
-  --   },
-  --   post_reset_cb = function() require("feline").reset_highlights() end
-  -- },
-  -- quickfix = {cwd = vim.loop.cwd(), file_icons = true},
-  -- -- placeholders for additional user customizations
-  -- loclist = {},
-  -- helptags = {},
-  -- manpages = {},
-  -- file_icon_colors = { -- override colors for extensions
-  --   ["lua"] = "blue"
-  -- },
-  -- git_icons = { -- override colors for git icons
-  --   ["M"] = "M", -- "★",
-  --   ["D"] = "D", -- "✗",
-  --   ["A"] = "A", -- "+",
-  --   ["?"] = "?"
-  -- },
-  -- git_icon_colors = { -- override colors for git icon colors
-  --   ["M"] = "yellow",
-  --   ["D"] = "red",
-  --   ["A"] = "green",
-  --   ["?"] = "magenta"
-  -- },
-  fzf_binds = { -- fzf '--bind=' options
+  file_icon_colors = { -- override colors for extensions
+    ["lua"] = "blue",
+    ["rb"] = "red",
+    ["gemfile"] = "red",
+    ["js"] = "yellow",
+    ["jsx"] = "cyan",
+    ["ts"] = "blue",
+    ["tsx"] = "cyan"
+  },
+  fzf_binds = {
     "f2:toggle-preview", "f3:toggle-preview-wrap",
     "shift-down:preview-page-down", "shift-up:preview-page-up",
     "ctrl-d:half-page-down", "ctrl-u:half-page-up", "ctrl-f:page-down",
@@ -135,8 +80,18 @@ require"fzf-lua".setup {
 }
 require("telescope").load_extension("fzf")
 
-vim.api.nvim_set_keymap("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
+vim.api.nvim_set_keymap("n", "<Leader>f",
+                        "<cmd>lua require('fzf-lua').files()<CR>",
                         {noremap = true})
+--[[ vim.api.nvim_set_keymap("n", "<Leader>f", "<cmd>lua require('telescope.builtin').find_files()<cr>",
+                        {noremap = true}) ]]
+--[[ local snap = require "snap"
+snap.maps {
+  {"<Leader><Leader>", snap.config.file {producer = "ripgrep.file"}},
+  {"<Leader>fb", snap.config.file {producer = "vim.buffer"}},
+  {"<Leader>fo", snap.config.file {producer = "vim.oldfile"}},
+  {"<Leader>ff", snap.config.vimgrep {}}
+} ]]
 
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
 vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]]

@@ -15,11 +15,12 @@ for _, server in pairs(installed_servers) do
 
   if server.name == "tsserver" then
     opts.on_attach = function(client, bufnr)
+      client.resolved_capabilities.document_formatting = false
       on_attach(client, bufnr)
 
-      require("null-ls").setup {}
+      require("null-ls").config {}
+      require("lspconfig")["null-ls"].setup {}
       local ts_utils = require("nvim-lsp-ts-utils")
-      vim.lsp.handlers["textDocument/codeAction"] = ts_utils.code_action_handler
 
       ts_utils.setup {
         disable_commands = false,
@@ -27,7 +28,9 @@ for _, server in pairs(installed_servers) do
         import_on_completion_timeout = 5000,
         eslint_bin = "eslint_d",
         eslint_enable_diagnostics = true,
-        enable_formatting = true
+        eslint_show_rule_id = true,
+        enable_formatting = true,
+        formatter = "eslint_d"
       }
 
       ts_utils.setup_client(client)
@@ -38,6 +41,8 @@ for _, server in pairs(installed_servers) do
                                   ":TSLspImportAll<CR>", {silent = true})
     end
   end
+  --[[ require("packer").loader("coq_nvim coq.artifacts")
+  server:setup(require("coq")().lsp_ensure_capabilities(opts)) ]]
 
   server:setup(opts)
 end
@@ -45,11 +50,8 @@ end
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 
-require("null-ls").config {}
-require("lspconfig")["null-ls"].setup {}
-
-require("lint").linters_by_ft = {ruby = {"standardrb"}}
-vim.cmd [[au TextChanged *.rb lua require('lint').try_lint()]]
+-- require("lint").linters_by_ft = {ruby = {"standardrb"}}
+-- vim.cmd [[au TextChanged *.rb lua require('lint').try_lint()]]
 
 local eslint = {
   lintCommand = "eslint_d -f unix --stdin --stdin-filename ${INPUT}",
@@ -64,10 +66,12 @@ local rubocop = {
   lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",
   lintStdin = true,
   lintFormats = {"%f:%l:%c: %m"},
-  lintIgnoreExitCode = true
+  lintIgnoreExitCode = true,
+  formatCommand = "bundle exec rubocop -A -f quiet --stderr -s ${INPUT}",
+  formatStdin = true
 }
 
---[[ lspconfig.efm.setup {
+lspconfig.efm.setup {
   init_options = {
     documentFormatting = true,
     codeAction = true,
@@ -92,16 +96,16 @@ local rubocop = {
   },
   on_attach = on_attach,
   capabilities = capabilities
-} ]]
+}
 
-lspconfig.graphql.setup {
+--[[ lspconfig.graphql.setup {
   on_attach = on_attach,
   capabilities = capabilities,
   cmd = {"graphql-lsp", "server", "-m", "stream"},
   filetypes = {"graphql"},
   root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
 }
-
+ ]]
 lspconfig.sorbet.setup {
   on_attach = on_attach,
   capabilities = capabilities,
@@ -110,20 +114,20 @@ lspconfig.sorbet.setup {
   },
   rootMarkers = {".git/", "Gemfile", "sorbet"}
 }
-lspconfig.gopls.setup {on_attach = on_attach, capabilities = capabilities}
+-- lspconfig.gopls.setup {on_attach = on_attach, capabilities = capabilities}
 
-lspconfig.jsonls.setup {
+--[[ lspconfig.jsonls.setup {
   on_attach = on_attach,
   capabilities = capabilities,
   filetypes = {"json"}
-}
+} ]]
 
-lspconfig.vimls.setup {
+--[[ lspconfig.vimls.setup {
   on_attach = on_attach,
   capabilities = capabilities,
   filetypes = {"vim"}
 }
-
+ ]]
 lspconfig.rust_analyzer.setup {
   on_attach = on_attach,
   capabilities = capabilities,

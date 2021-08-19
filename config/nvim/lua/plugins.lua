@@ -17,7 +17,6 @@ return require("packer").startup({
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/nvim-treesitter-textobjects"}
-    use {"RRethy/nvim-treesitter-textsubjects"}
     use {
       "nvim-treesitter/playground",
       opt = true,
@@ -26,11 +25,20 @@ return require("packer").startup({
     use {"windwp/nvim-autopairs"}
     use {"windwp/nvim-ts-autotag"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
-    use {"lewis6991/spellsitter.nvim"}
     use {"andymass/vim-matchup"}
 
-    -- Lua
     use {
+      "kyazdani42/nvim-web-devicons",
+      config = function()
+        require"nvim-web-devicons".setup {
+          override = {ruby = {color = "#ff5c57"}}
+        }
+      end
+    }
+
+    use {"kosayoda/nvim-lightbulb"}
+    -- Lua
+    --[[ use {
       "abecodes/tabout.nvim",
       config = function()
         require("tabout").setup {
@@ -48,10 +56,13 @@ return require("packer").startup({
       end,
       wants = {"nvim-treesitter"},
       after = {"nvim-compe"}
-    }
+    } ]]
 
     -- NeoVim LSP
-    use {"neovim/nvim-lspconfig"}
+    use {
+      "neovim/nvim-lspconfig",
+      config = function() require("plugins/lsp") end
+    }
     use {"williamboman/nvim-lsp-installer"}
     use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
     use {"ray-x/lsp_signature.nvim"}
@@ -67,6 +78,20 @@ return require("packer").startup({
     }
     use {"mfussenegger/nvim-lint"}
 
+    --[[ use {
+      "ms-jpq/coq_nvim",
+      branch = "coq",
+      run = ":COQdeps",
+      config = function()
+        vim.g.coq_settings = {
+          auto_start = true,
+          ["keymap.jump_to_mark"] = "<A-h>",
+          ["clients.tabnine.enabled"] = true
+        }
+      end
+    }
+    use {"ms-jpq/coq.artifacts", branch = "artifacts", after = "coq_nvim"} ]]
+
     -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
 
@@ -74,8 +99,6 @@ return require("packer").startup({
       "nvim-telescope/telescope.nvim",
       requires = {
         {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
-        {"nvim-telescope/telescope-fzf-writer.nvim"},
-        {"nvim-telescope/telescope-fzy-native.nvim"},
         {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
         {"kyazdani42/nvim-web-devicons"}
       }
@@ -115,33 +138,19 @@ return require("packer").startup({
     }
     use {
       "norcalli/nvim-colorizer.lua",
-      config = function() require("colorizer").setup() end
+      config = function() require("colorizer").setup() end,
+      cmd = {"ColorizerToggle"}
     }
     use {
       "lewis6991/gitsigns.nvim",
       requires = {"nvim-lua/plenary.nvim"},
       config = function()
-        require("gitsigns").setup({
-          current_line_blame = true,
-          current_line_blame_delay = 0
-        })
+        require("gitsigns").setup({current_line_blame = false})
       end
     }
     use {
       "mhartington/formatter.nvim",
       config = function() require("plugins/formatter") end
-    }
-    use {
-      "phaazon/hop.nvim",
-      config = function()
-        require("hop").setup {keys = "etovxqpdygfblzhckisuran"}
-        vim.api.nvim_set_keymap("n", "<Bslash>w",
-                                "<cmd>lua require'hop'.hint_words()<cr>", {})
-        vim.api.nvim_set_keymap("n", "<Bslash>l",
-                                "<cmd>lua require'hop'.hint_lines()<cr>", {})
-        vim.api.nvim_set_keymap("n", "<Bslash>c",
-                                "<cmd>lua require'hop'.hint_char1()<cr>", {})
-      end
     }
     use {"ggandor/lightspeed.nvim"}
     use {
@@ -167,7 +176,7 @@ return require("packer").startup({
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
     }
-    use {"chaoren/vim-wordmotion"}
+    -- use {"chaoren/vim-wordmotion"}
     use {"sheerun/vim-polyglot"}
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
@@ -202,7 +211,6 @@ return require("packer").startup({
         return require("packer.util").float({border = "rounded"})
       end,
       prompt_border = "rounded"
-
     }
   }
 })
