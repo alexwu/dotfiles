@@ -28,7 +28,6 @@ require"nvim-treesitter.configs".setup {
     updatetime = 25,
     persist_queries = false
   },
-  rainbow = {enable = false},
   refactor = {
     highlight_definitions = {enable = true},
     smart_rename = {enable = true, keymaps = {smart_rename = "<leader>rn"}},
@@ -37,7 +36,7 @@ require"nvim-treesitter.configs".setup {
       keymaps = {goto_definition_lsp_fallback = "gd"}
     }
   },
-  autotag = {enable = true},
+  autotag = {enable = false},
   context_commentstring = {enable = true},
   matchup = {enable = true},
   autopairs = {enable = true}

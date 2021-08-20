@@ -1,3 +1,4 @@
+local map = vim.api.nvim_set_keymap
 local actions = require("telescope.actions")
 local trouble = require("trouble.providers.telescope")
 local clear_line = function() vim.api.nvim_del_current_line() end
@@ -26,14 +27,15 @@ require("telescope").setup {
     }
   }
 }
+require("telescope").load_extension("fzf")
 
 require"fzf-lua".setup {
-  win_height = 0.85,
-  win_width = 0.80,
+  win_height = 0.5,
+  win_width = 0.4,
   win_row = 0.30,
   win_col = 0.50,
   win_border = {"╭", "─", "╮", "│", "╯", "─", "╰", "│"},
-  fzf_args = "",
+  fzf_args = "--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'",
   fzf_layout = "default",
   preview_cmd = "",
   preview_border = "border",
@@ -49,7 +51,8 @@ require"fzf-lua".setup {
     cmd = "",
     git_icons = true,
     file_icons = true,
-    color_icons = true
+    color_icons = true,
+    preview_opts = "hidden"
   },
   grep = {
     prompt = "Grep ❯ ",
@@ -76,13 +79,13 @@ require"fzf-lua".setup {
   window_on_create = function()
     vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-c>",
                                 {nowait = true, silent = true})
+    vim.api.nvim_buf_set_keymap(0, "t", "<Leader>t", "<C-c>",
+                                {nowait = true, silent = true})
   end
 }
-require("telescope").load_extension("fzf")
 
-vim.api.nvim_set_keymap("n", "<Leader>f",
-                        "<cmd>lua require('fzf-lua').files()<CR>",
-                        {noremap = true})
+map("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
+    {noremap = true})
 --[[ vim.api.nvim_set_keymap("n", "<Leader>f", "<cmd>lua require('telescope.builtin').find_files()<cr>",
                         {noremap = true}) ]]
 --[[ local snap = require "snap"
@@ -93,6 +96,8 @@ snap.maps {
   {"<Leader>ff", snap.config.vimgrep {}}
 } ]]
 
+-- map("n", "<leader>t", "<Cmd>Telescope<cr>")
+map("n", "<leader>t", "<Cmd>FzfLua<cr>", {noremap = true})
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
 vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]]
 vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR> ]]

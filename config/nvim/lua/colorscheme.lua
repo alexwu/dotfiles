@@ -1,1 +1,0 @@
-require("snazzy").setup("dark")

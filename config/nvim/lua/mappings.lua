@@ -20,8 +20,11 @@ map("i", "<C-k>", "<Up>")
 map("i", "<C-h>", "<Left>")
 map("i", "<C-l>", "<Right>")
 
-map("n", "<leader>t", "<Cmd>Telescope<cr>")
+map("n", "<CR>", "<Cmd>noh<CR><CR>", {silent = true})
 map("n", "<space><space>", "<C-^>")
+
+map("n", "<A-o>", "o<esc>")
+map("n", "<A-O>", "O<esc>")
 
 vim.api.nvim_set_keymap("t", "<Esc>", "<C-Bslash><C-n>", {})
 

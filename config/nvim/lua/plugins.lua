@@ -13,7 +13,13 @@ return require("packer").startup({
   function()
     use {"wbthomason/packer.nvim"}
 
-    -- Treesitter
+    use {"~/Code/nvim-snazzy"}
+
+    use {
+      "neovim/nvim-lspconfig",
+      config = function() require("plugins/lsp") end
+    }
+
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
     use {"nvim-treesitter/nvim-treesitter-textobjects"}
@@ -37,8 +43,7 @@ return require("packer").startup({
     }
 
     use {"kosayoda/nvim-lightbulb"}
-    -- Lua
-    --[[ use {
+    use {
       "abecodes/tabout.nvim",
       config = function()
         require("tabout").setup {
@@ -56,18 +61,21 @@ return require("packer").startup({
       end,
       wants = {"nvim-treesitter"},
       after = {"nvim-compe"}
-    } ]]
-
-    -- NeoVim LSP
-    use {
-      "neovim/nvim-lspconfig",
-      config = function() require("plugins/lsp") end
     }
+
+    use {
+      "antoinemadec/FixCursorHold.nvim",
+      run = function() vim.g.curshold_updatime = 250 end
+    }
+
     use {"williamboman/nvim-lsp-installer"}
-    use {"folke/lsp-trouble.nvim", requires = "kyazdani42/nvim-web-devicons"}
+    use {
+      "folke/lsp-trouble.nvim",
+      requires = "kyazdani42/nvim-web-devicons",
+      config = function() require("plugins/trouble") end
+    }
     use {"ray-x/lsp_signature.nvim"}
 
-    -- TypeScript LSP Utilities
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
       requires = {"jose-elias-alvarez/null-ls.nvim"},
@@ -78,8 +86,9 @@ return require("packer").startup({
     }
     use {"mfussenegger/nvim-lint"}
 
-    --[[ use {
+    use {
       "ms-jpq/coq_nvim",
+      disable = true,
       branch = "coq",
       run = ":COQdeps",
       config = function()
@@ -90,9 +99,13 @@ return require("packer").startup({
         }
       end
     }
-    use {"ms-jpq/coq.artifacts", branch = "artifacts", after = "coq_nvim"} ]]
+    use {
+      "ms-jpq/coq.artifacts",
+      disable = true,
+      branch = "artifacts",
+      after = "coq_nvim"
+    }
 
-    -- Rust LSP Utilities
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
 
     use {
@@ -100,12 +113,29 @@ return require("packer").startup({
       requires = {
         {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
         {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
-        {"kyazdani42/nvim-web-devicons"}
+        {"kyazdani42/nvim-web-devicons"},
+        {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
+        {"nvim-telescope/telescope-hop.nvim"}
       }
     }
+
     use {
       "ibhagwan/fzf-lua",
       requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"}
+    }
+
+    use {
+      "NTBBloodbath/rest.nvim",
+      requires = {"nvim-lua/plenary.nvim"},
+      config = function()
+        require("rest-nvim").setup({
+          -- Open request results in a horizontal split
+          result_split_horizontal = false,
+          -- Skip SSL verification, useful for unknown certificates
+          skip_ssl_verification = false
+        })
+        vim.api.nvim_set_keymap("n", "<Leader>re", "<Plug>RestNvim", {})
+      end
     }
 
     use {"vim-test/vim-test"}
@@ -126,7 +156,10 @@ return require("packer").startup({
       config = function() require("plugins/compe") end
     }
     use {"tzachar/compe-tabnine", after = "nvim-compe", event = "InsertEnter"}
-    use {"folke/todo-comments.nvim"}
+    use {
+      "folke/todo-comments.nvim",
+      config = function() require("plugins/todo-comments") end
+    }
     use {
       "folke/which-key.nvim",
       config = function() require("which-key").setup() end
@@ -162,8 +195,14 @@ return require("packer").startup({
         vim.api.nvim_set_keymap("v", "<C-x>", "<Plug>(dial-decrement)", {})
       end
     }
-    use {"sindrets/diffview.nvim"}
-    use {"lukas-reineke/indent-blankline.nvim"}
+    use {
+      "sindrets/diffview.nvim",
+      config = function() require("plugins/diffview") end
+    }
+    use {
+      "lukas-reineke/indent-blankline.nvim",
+      config = function() require("plugins/indent-blankline") end
+    }
     use {
       "simrat39/symbols-outline.nvim",
       config = function() vim.g.symbols_outline = {} end
@@ -176,8 +215,15 @@ return require("packer").startup({
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
     }
-    -- use {"chaoren/vim-wordmotion"}
-    use {"sheerun/vim-polyglot"}
+    use {
+      "sheerun/vim-polyglot",
+      setup = function()
+        vim.g.polyglot_disabled = {
+          "ruby.plugin", "typescript.plugin", "typescriptreact.plugin",
+          "lua.plugin", "sensible"
+        }
+      end
+    }
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
     use {
@@ -202,7 +248,6 @@ return require("packer").startup({
     }
     use {"axelf4/vim-strip-trailing-whitespace"}
 
-    use {"~/Code/nvim-snazzy"}
   end,
   config = {
     opt_default = false,

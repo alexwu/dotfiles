@@ -19,11 +19,11 @@ vim.opt.incsearch = true
 vim.opt.laststatus = 2
 vim.opt.linebreak = true
 vim.opt.modelines = 1
-vim.opt.backup = false
+vim.opt.backup = true
 vim.opt.writebackup = false
 vim.opt.joinspaces = false
 vim.opt.showmode = false
-vim.opt.wrap = false
+vim.opt.wrap = true
 vim.opt.number = true
 vim.opt.numberwidth = 5
 vim.opt.ruler = true
@@ -41,8 +41,6 @@ vim.opt.wildignore = "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/*
 vim.opt.shortmess:append("Icq")
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
-
-vim.g.cursorhold_updatetime = 250
 
 -- disable python 2
 vim.g.loaded_python_provider = 0
