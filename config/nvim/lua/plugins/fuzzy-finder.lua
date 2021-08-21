@@ -1,7 +1,13 @@
 local map = vim.api.nvim_set_keymap
+local nnoremap = require("astronauta.keymap").nnoremap
 local actions = require("telescope.actions")
 local trouble = require("trouble.providers.telescope")
 local clear_line = function() vim.api.nvim_del_current_line() end
+
+R = function(name)
+  require("plenary.reload").reload_module(name)
+  return require(name)
+end
 
 require("telescope").setup {
   defaults = {
@@ -10,12 +16,13 @@ require("telescope").setup {
     mappings = {
       i = {
         ["<esc>"] = actions.close,
+        ["<C-h>"] = R("telescope").extensions.hop.hop,
         ["<C-j>"] = actions.move_selection_next,
         ["<C-k>"] = actions.move_selection_previous,
         ["<C-u>"] = clear_line,
-        ["<c-t>"] = trouble.open_with_trouble
+        ["<C-t>"] = trouble.open_with_trouble
       },
-      n = {["<c-t>"] = trouble.open_with_trouble}
+      n = {["<C-t>"] = trouble.open_with_trouble}
     }
   },
   extensions = {
@@ -24,12 +31,22 @@ require("telescope").setup {
       override_generic_sorter = false,
       override_file_sorter = true,
       case_mode = "smart_case"
+    },
+    hop = {
+      keys = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";"},
+      sign_hl = {"HopNextKey"},
+      line_hl = {"Normal"},
+      clear_selection_hl = false,
+      trace_entry = true,
+      reset_selection = true
     }
   }
 }
 require("telescope").load_extension("fzf")
+require("telescope").load_extension("frecency")
+require("telescope").load_extension("hop")
 
-require"fzf-lua".setup {
+--[[ require"fzf-lua".setup {
   win_height = 0.5,
   win_width = 0.4,
   win_row = 0.30,
@@ -82,22 +99,14 @@ require"fzf-lua".setup {
     vim.api.nvim_buf_set_keymap(0, "t", "<Leader>t", "<C-c>",
                                 {nowait = true, silent = true})
   end
-}
-
-map("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
-    {noremap = true})
---[[ vim.api.nvim_set_keymap("n", "<Leader>f", "<cmd>lua require('telescope.builtin').find_files()<cr>",
-                        {noremap = true}) ]]
---[[ local snap = require "snap"
-snap.maps {
-  {"<Leader><Leader>", snap.config.file {producer = "ripgrep.file"}},
-  {"<Leader>fb", snap.config.file {producer = "vim.buffer"}},
-  {"<Leader>fo", snap.config.file {producer = "vim.oldfile"}},
-  {"<Leader>ff", snap.config.vimgrep {}}
 } ]]
 
--- map("n", "<leader>t", "<Cmd>Telescope<cr>")
-map("n", "<leader>t", "<Cmd>FzfLua<cr>", {noremap = true})
-vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
-vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]]
-vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR> ]]
+--[[ map("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
+    {noremap = true}) ]]
+-- map("n", "<leader>t", "<Cmd>FzfLua<cr>", {noremap = true})
+nnoremap {"<Leader>f", function() require("telescope.builtin").find_files() end}
+nnoremap {"<Leader>t", function() vim.cmd [[Telescope builtin]] end}
+
+--[[ vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
+-- vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]] ]]
+-- vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR> ]]

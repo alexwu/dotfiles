@@ -1,5 +1,5 @@
-require("mappings")
 require("plugins")
+require("mappings")
 require("options")
 
 require("snazzy").setup("dark")

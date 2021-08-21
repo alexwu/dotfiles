@@ -68,6 +68,8 @@ return require("packer").startup({
       run = function() vim.g.curshold_updatime = 250 end
     }
 
+    use {"tjdevries/astronauta.nvim"}
+
     use {"williamboman/nvim-lsp-installer"}
     use {
       "folke/lsp-trouble.nvim",
@@ -121,39 +123,23 @@ return require("packer").startup({
 
     use {
       "ibhagwan/fzf-lua",
-      requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"}
-    }
-
-    use {
-      "NTBBloodbath/rest.nvim",
-      requires = {"nvim-lua/plenary.nvim"},
-      config = function()
-        require("rest-nvim").setup({
-          -- Open request results in a horizontal split
-          result_split_horizontal = false,
-          -- Skip SSL verification, useful for unknown certificates
-          skip_ssl_verification = false
-        })
-        vim.api.nvim_set_keymap("n", "<Leader>re", "<Plug>RestNvim", {})
-      end
+      requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"},
+      opt = true,
+      cmd = {"FzfLua", "Fzf"},
+      disable = true,
     }
 
     use {"vim-test/vim-test"}
-    use {
-      "rcarriga/vim-ultest",
-      requires = {"vim-test/vim-test"},
-      run = ":UpdateRemotePlugins"
-    }
 
     use {
       "kyazdani42/nvim-tree.lua",
       requires = {"kyazdani42/nvim-web-devicons"},
-      config = function() require("plugins/tree") end
+      config = function() require("plugins.tree") end
     }
     use {
       "hrsh7th/nvim-compe",
       requires = {"onsails/lspkind-nvim"},
-      config = function() require("plugins/compe") end
+      config = function() require("plugins.compe") end
     }
     use {"tzachar/compe-tabnine", after = "nvim-compe", event = "InsertEnter"}
     use {
@@ -178,12 +164,12 @@ return require("packer").startup({
       "lewis6991/gitsigns.nvim",
       requires = {"nvim-lua/plenary.nvim"},
       config = function()
-        require("gitsigns").setup({current_line_blame = false})
+        require("gitsigns").setup({current_line_blame = true})
       end
     }
     use {
       "mhartington/formatter.nvim",
-      config = function() require("plugins/formatter") end
+      config = function() require("plugins.formatter") end
     }
     use {"ggandor/lightspeed.nvim"}
     use {
@@ -224,11 +210,19 @@ return require("packer").startup({
         }
       end
     }
+    use {
+      "phaazon/hop.nvim",
+      as = "hop",
+      config = function()
+        require"hop".setup {keys = "etovxqpdygfblzhckisuran"}
+      end
+    }
+
     use {"tpope/vim-abolish"}
     use {"tpope/vim-bundler"}
     use {
       "b3nj5m1n/kommentary",
-      config = function() require("plugins/commenting") end
+      config = function() require("plugins.commenting") end
     }
     use {
       "tpope/vim-dispatch",
