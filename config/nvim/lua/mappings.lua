@@ -1,5 +1,8 @@
+vim.cmd [[runtime plugin/astronauta.vim]]
+
 local utils = require("utils")
 local map = utils.map
+local tnoremap = vim.keymap.tnoremap
 
 vim.g.mapleader = " "
 
@@ -26,6 +29,6 @@ map("n", "<space><space>", "<C-^>")
 map("n", "<A-o>", "o<esc>")
 map("n", "<A-O>", "O<esc>")
 
-vim.api.nvim_set_keymap("t", "<Esc>", "<C-Bslash><C-n>", {})
+tnoremap {"<Esc>", "<Cmd>FloatermToggle<CR>"}
 
 vim.cmd [[command! -nargs=0 Trash :!trash %]]

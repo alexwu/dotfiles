@@ -20,7 +20,7 @@ require"compe".setup {
     vsnip = true,
     nvim_lsp = true,
     nvim_lua = true,
-    spell = false,
+    spell = true,
     tags = true,
     snippets_nvim = false,
     tabnine = {priority = 900},
@@ -67,7 +67,7 @@ _G.s_tab_complete = function()
 end
 
 require("nvim-autopairs.completion.compe").setup(
-  {map_cr = true, map_complete = true})
+  {map_cr = true, map_complete = true, auto_select = false})
 
 vim.api.nvim_set_keymap("i", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})

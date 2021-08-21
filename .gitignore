@@ -4,4 +4,3 @@ coc-yank-data/
 config/coc/extensions
 config/pgcli
 node_modules/
-*~
