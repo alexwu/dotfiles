@@ -141,7 +141,7 @@ return require("packer").startup({
       requires = {"onsails/lspkind-nvim"},
       config = function() require("plugins.compe") end
     }
-    use {"tzachar/compe-tabnine", after = "nvim-compe", event = "InsertEnter"}
+    use {"tzachar/compe-tabnine", run = "./install.sh", after = "nvim-compe", event = "InsertEnter"}
     use {
       "folke/todo-comments.nvim",
       config = function() require("plugins/todo-comments") end
