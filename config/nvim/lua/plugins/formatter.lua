@@ -1,3 +1,5 @@
+local nnoremap = require("astronauta.keymap").nnoremap
+
 local function prettier()
   return {
     exe = "prettier",
@@ -45,4 +47,4 @@ require"formatter".setup({
   }
 })
 
-vim.api.nvim_set_keymap("n", "<Leader>y", ":Format<CR>", {noremap = true})
+nnoremap{"<Leader>y", ":Format<CR>"}

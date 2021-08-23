@@ -1,7 +1,5 @@
-local map = vim.api.nvim_set_keymap
 local nnoremap = require("astronauta.keymap").nnoremap
 local actions = require("telescope.actions")
-local trouble = require("trouble.providers.telescope")
 local clear_line = function() vim.api.nvim_del_current_line() end
 
 R = function(name)
@@ -19,10 +17,8 @@ require("telescope").setup {
         ["<C-h>"] = R("telescope").extensions.hop.hop,
         ["<C-j>"] = actions.move_selection_next,
         ["<C-k>"] = actions.move_selection_previous,
-        ["<C-u>"] = clear_line,
-        ["<C-t>"] = trouble.open_with_trouble
-      },
-      n = {["<C-t>"] = trouble.open_with_trouble}
+        ["<C-u>"] = clear_line
+      }
     }
   },
   extensions = {
@@ -45,6 +41,9 @@ require("telescope").setup {
 require("telescope").load_extension("fzf")
 require("telescope").load_extension("frecency")
 require("telescope").load_extension("hop")
+
+nnoremap {"<Leader>f", function() require("telescope.builtin").find_files() end}
+nnoremap {"<Leader>t", function() vim.cmd [[Telescope builtin]] end}
 
 --[[ require"fzf-lua".setup {
   win_height = 0.5,
@@ -104,9 +103,6 @@ require("telescope").load_extension("hop")
 --[[ map("n", "<Leader>f", "<cmd>lua require('fzf-lua').files()<CR>",
     {noremap = true}) ]]
 -- map("n", "<leader>t", "<Cmd>FzfLua<cr>", {noremap = true})
-nnoremap {"<Leader>f", function() require("telescope.builtin").find_files() end}
-nnoremap {"<Leader>t", function() vim.cmd [[Telescope builtin]] end}
-
 --[[ vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
 -- vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]] ]]
 -- vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR> ]]

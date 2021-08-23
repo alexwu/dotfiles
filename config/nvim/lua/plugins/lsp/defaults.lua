@@ -1,7 +1,8 @@
 local M = {}
 local util = require("vim.lsp.util")
+local nnoremap = require("astronauta.keymap").nnoremap
 
-function M.default_on_attach(client, bufnr)
+function M.on_attach(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
 
   local signs = {
@@ -38,32 +39,35 @@ function M.default_on_attach(client, bufnr)
   vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
 
   local opts = {noremap = false, silent = true}
-  buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
-  buf_set_keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)
-  buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
-  buf_set_keymap("n", "<leader>a", "<cmd>lua vim.lsp.buf.code_action()<CR>",
-                 opts)
-  buf_set_keymap("n", "K", "<Cmd>lua vim.lsp.buf.hover()<CR>", opts)
-  buf_set_keymap("n", "L",
-                 "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
-                 opts)
-  --[[ buf_set_keymap("n", "<RightMouse>",
-                 "<LeftMouse><cmd>lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false})<CR>",
-                 opts) ]]
-  buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
-  buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
-  buf_set_keymap("n", "<space>q",
-                 "<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>", opts)
-  buf_set_keymap("n", "<BSlash>y", "<cmd>lua vim.lsp.buf.formatting()<CR>", opts)
+  nnoremap {"gD", function() vim.lsp.buf.declaration() end, silent = true}
+  nnoremap {"gr", function() vim.lsp.buf.references() end, silent = true}
+  nnoremap {
+    "<Leader>a",
+    function() vim.lsp.buf.code_action() end,
+    silent = true
+  }
+  nnoremap {"K", function() vim.lsp.buf.hover() end, silent = true}
+  nnoremap {
+    "L",
+    function()
+      vim.lsp.diagnostic.show_line_diagnostics(
+        {border = "rounded", focusable = false})
+    end,
+    silent = true
+  }
+  nnoremap {"[d", function() vim.lsp.diagnostic.goto_prev() end, silent = true}
+  nnoremap {"]d", function() vim.lsp.diagnostic.goto_next() end, silent = true}
+  nnoremap {"<BSlash>y", function() vim.lsp.buf.formatting() end, silent = true}
+
   vim.api.nvim_set_keymap("n", "gm", "<cmd>lua Format_range_operator()<CR>",
                           {noremap = true})
 
   require"lsp_signature".on_attach({
     bind = true,
-    handler_opts = {border = "single"}
+    handler_opts = {border = "single"},
+    floating_window = true
   })
-  -- vim.cmd [[ autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics({border = 'rounded', focusable = false}) ]]
-  -- vim.cmd [[ autocmd CursorHold * lua require('plenary.async').run(_G.async_show_diagnostics, {border = 'rounded', focusable = false}) ]]
+
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
 end
 
@@ -72,9 +76,6 @@ local to_position = function(position, bufnr)
 
   return {position.line, util._get_line_byte_from_position(bufnr, position)}
 end
-
-_G.async_show_diagnostics = require("plenary.async").wrap(
-                              vim.lsp.diagnostic.show_line_diagnostics, 1)
 
 function Format_range_operator()
   local old_func = vim.go.operatorfunc

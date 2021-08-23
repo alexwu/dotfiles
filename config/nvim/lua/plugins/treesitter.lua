@@ -39,6 +39,6 @@ require"nvim-treesitter.configs".setup {
   autotag = {enable = false},
   context_commentstring = {enable = true},
   matchup = {enable = true},
-  autopairs = {enable = true}
+  autopairs = {enable = false}
 }
-require("nvim-autopairs").setup({check_ts = true, fast_wrap = {}})
+-- require("nvim-autopairs").setup({check_ts = true, fast_wrap = {}})

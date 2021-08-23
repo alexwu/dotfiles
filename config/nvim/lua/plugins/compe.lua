@@ -1,3 +1,7 @@
+local keymap = require("astronauta.keymap")
+local inoremap = keymap.inoremap
+local snoremap = keymap.snoremap
+
 require"compe".setup {
   enabled = true,
   autocomplete = true,
@@ -66,10 +70,11 @@ _G.s_tab_complete = function()
   end
 end
 
-require("nvim-autopairs.completion.compe").setup(
-  {map_cr = true, map_complete = true, auto_select = false})
+vim.api.nvim_set_keymap("i", "<CR>",
+                        "compe#confirm({ 'keys': '<CR>', 'select': v:false })",
+                        {expr = true})
 
-vim.api.nvim_set_keymap("i", "<Tab>", "v:lua.tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
-vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
+inoremap {"<Tab>", "v:lua.tab_complete()", {expr = true}}
+snoremap {"<Tab>", "v:lua.tab_complete()", {expr = true}}
+inoremap {"<S-Tab>", "v:lua.s_tab_complete()", {expr = true}}
+snoremap {"<S-Tab>", "v:lua.s_tab_complete()", {expr = true}}

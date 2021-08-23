@@ -12,12 +12,12 @@ vim.cmd([[autocmd BufWritePost plugins.lua source <afile> | PackerCompile]])
 return require("packer").startup({
   function()
     use {"wbthomason/packer.nvim"}
-
+    use {"tjdevries/astronauta.nvim"}
     use {"~/Code/nvim-snazzy"}
 
     use {
       "neovim/nvim-lspconfig",
-      config = function() require("plugins/lsp") end
+      config = function() require("plugins.lsp") end
     }
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
@@ -65,16 +65,15 @@ return require("packer").startup({
 
     use {
       "antoinemadec/FixCursorHold.nvim",
-      run = function() vim.g.curshold_updatime = 250 end
+      config = function() vim.g.curshold_updatime = 250 end
     }
-
-    use {"tjdevries/astronauta.nvim"}
 
     use {"williamboman/nvim-lsp-installer"}
     use {
       "folke/lsp-trouble.nvim",
       requires = "kyazdani42/nvim-web-devicons",
-      config = function() require("plugins/trouble") end
+      config = function() require("plugins.trouble") end,
+      cmd = {"Trouble", "TroubleToggle"}
     }
     use {"ray-x/lsp_signature.nvim"}
 
@@ -125,11 +124,13 @@ return require("packer").startup({
       "ibhagwan/fzf-lua",
       requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"},
       opt = true,
-      cmd = {"FzfLua", "Fzf"},
-      disable = true,
+      cmd = {"FzfLua", "Fzf"}
     }
 
-    use {"vim-test/vim-test"}
+    use {
+      "vim-test/vim-test",
+      config = function() require("plugins.vim-test") end
+    }
 
     use {
       "kyazdani42/nvim-tree.lua",
@@ -141,14 +142,15 @@ return require("packer").startup({
       requires = {"onsails/lspkind-nvim"},
       config = function() require("plugins.compe") end
     }
-    use {"tzachar/compe-tabnine", run = "./install.sh", after = "nvim-compe", event = "InsertEnter"}
     use {
-      "folke/todo-comments.nvim",
-      config = function() require("plugins/todo-comments") end
+      "tzachar/compe-tabnine",
+      run = "./install.sh",
+      after = "nvim-compe",
+      event = "InsertEnter"
     }
     use {
-      "folke/which-key.nvim",
-      config = function() require("which-key").setup() end
+      "folke/todo-comments.nvim",
+      config = function() require("plugins.todo-comments") end
     }
     use {
       "hoob3rt/lualine.nvim",
@@ -164,7 +166,7 @@ return require("packer").startup({
       "lewis6991/gitsigns.nvim",
       requires = {"nvim-lua/plenary.nvim"},
       config = function()
-        require("gitsigns").setup({current_line_blame = true})
+        require("plugins.gitsigns")
       end
     }
     use {
@@ -183,15 +185,17 @@ return require("packer").startup({
     }
     use {
       "sindrets/diffview.nvim",
-      config = function() require("plugins/diffview") end
+      config = function() require("plugins.diffview") end,
+      cmd = {"DiffviewOpen"}
     }
     use {
       "lukas-reineke/indent-blankline.nvim",
-      config = function() require("plugins/indent-blankline") end
+      config = function() require("plugins.indent-blankline") end
     }
     use {
       "simrat39/symbols-outline.nvim",
-      config = function() vim.g.symbols_outline = {} end
+      config = function() vim.g.symbols_outline = {} end,
+      cmd = {"SymbolOutline", "SymbolOutlineOpen"}
     }
 
     use {"hrsh7th/vim-vsnip"}
@@ -219,18 +223,13 @@ return require("packer").startup({
     }
 
     use {"tpope/vim-abolish"}
-    use {"tpope/vim-bundler"}
     use {
       "b3nj5m1n/kommentary",
+      setup = function() vim.g.kommentary_create_default_mappings = false end,
       config = function() require("plugins.commenting") end
     }
-    use {
-      "tpope/vim-dispatch",
-      opt = true,
-      cmd = {"Dispatch", "Make", "Focus", "Start"}
-    }
+    use {"tpope/vim-dispatch", cmd = {"Dispatch", "Make", "Focus", "Start"}}
     use {"tpope/vim-eunuch"}
-    use {"tpope/vim-fugitive"}
     use {"tpope/vim-projectionist"}
     use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
@@ -238,7 +237,8 @@ return require("packer").startup({
     use {"tpope/vim-vinegar"}
     use {
       "voldikss/vim-floaterm",
-      config = function() require("plugins/floaterm") end
+      config = function() require("plugins.floaterm") end,
+      cmd = {"FloatermToggle", "FloatermShow", "TestFile", "TestNearest"}
     }
     use {"axelf4/vim-strip-trailing-whitespace"}
 

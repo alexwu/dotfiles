@@ -18,7 +18,7 @@ function module.setup(on_attach, capabilities)
         import_on_completion_timeout = 5000,
         eslint_bin = "eslint_d",
         eslint_enable_diagnostics = true,
-        enable_formatting = true
+        enable_formatting = true,
       }
 
       ts_utils.setup_client(client)

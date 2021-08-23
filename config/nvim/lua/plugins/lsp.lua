@@ -1,12 +1,16 @@
 local lspconfig = require "lspconfig"
 local lsp_installer = require "nvim-lsp-installer"
-local on_attach = require("plugins.lsp.utils").default_on_attach
+local on_attach = require("plugins.lsp.defaults").on_attach
+local sorbet_opts = require("plugins.lsp.sorbet")
 
 local installed_servers = lsp_installer.get_installed_servers()
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
 
 for _, server in pairs(installed_servers) do
-  local opts = {on_attach = on_attach}
+  local opts = {on_attach = on_attach, capabilities = capabilities}
 
+  -- vim.api.tbl_deep_extend({"force"}, opts,)
   if server.name == "sumneko_lua" then
     opts.settings = {
       Lua = {diagnostics = {globals = {"vim", "use", "use_rocks"}}}
@@ -30,7 +34,8 @@ for _, server in pairs(installed_servers) do
         eslint_enable_diagnostics = true,
         eslint_show_rule_id = true,
         enable_formatting = true,
-        formatter = "eslint_d"
+        formatter = "eslint_d",
+        filter_out_diagnostics_by_code = {80001}
       }
 
       ts_utils.setup_client(client)
@@ -46,9 +51,6 @@ for _, server in pairs(installed_servers) do
 
   server:setup(opts)
 end
-
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities.textDocument.completion.completionItem.snippetSupport = true
 
 -- require("lint").linters_by_ft = {ruby = {"standardrb"}}
 -- vim.cmd [[au TextChanged *.rb lua require('lint').try_lint()]]
