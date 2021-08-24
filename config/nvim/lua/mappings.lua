@@ -1,14 +1,17 @@
 local utils = require("utils")
 local map = utils.map
+local keymap = require("astronauta.keymap")
+local nnoremap = keymap.nnoremap
 
 vim.g.mapleader = " "
 
-map("n", "j", "gj")
-map("n", "k", "gk")
-map("n", "<C-j>", "5gj")
-map("n", "<C-k>", "5gk")
-map("n", "<C-h>", "5h")
-map("n", "<C-l>", "5l")
+nnoremap {"j", "gj"}
+nnoremap {"k", "gk"}
+
+nnoremap {"<C-j>", "5gj"}
+nnoremap {"<C-k>", "5gk"}
+nnoremap {"<C-h>", "5h"}
+nnoremap {"<C-l>", "5l"}
 
 map("x", "<C-j>", "5gj")
 map("x", "<C-k>", "5gk")
@@ -27,3 +30,4 @@ map("n", "<A-o>", "o<esc>")
 map("n", "<A-O>", "O<esc>")
 
 vim.cmd [[command! -nargs=0 Trash :!trash %]]
+vim.cmd [[command! -nargs=0 Delete :!trash %]]

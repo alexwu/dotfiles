@@ -43,25 +43,6 @@ return require("packer").startup({
     }
 
     use {"kosayoda/nvim-lightbulb"}
-    use {
-      "abecodes/tabout.nvim",
-      config = function()
-        require("tabout").setup {
-          tabkey = "<Tab>",
-          act_as_tab = true,
-          completion = true,
-          tabouts = {
-            {open = "'", close = "'"}, {open = "\"", close = "\""},
-            {open = "`", close = "`"}, {open = "(", close = ")"},
-            {open = "[", close = "]"}, {open = "{", close = "}"}
-          },
-          ignore_beginning = true,
-          exclude = {}
-        }
-      end,
-      wants = {"nvim-treesitter"},
-      after = {"nvim-compe"}
-    }
 
     use {
       "antoinemadec/FixCursorHold.nvim",
@@ -117,16 +98,40 @@ return require("packer").startup({
         {"kyazdani42/nvim-web-devicons"},
         {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
         {"nvim-telescope/telescope-hop.nvim"}
-      }
+      },
+      config = function() require("plugins.telescope") end
+    }
+
+    use {
+      "sudormrfbin/cheatsheet.nvim",
+      requires = {
+        {"nvim-telescope/telescope.nvim"}, {"nvim-lua/popup.nvim"},
+        {"nvim-lua/plenary.nvim"}
+      },
+      config = function() require("cheatsheet").setup() end
+    }
+
+    use {
+      "beauwilliams/focus.nvim",
+      config = function()
+        local focus = require("focus")
+        focus.enable = true
+
+      end
     }
 
     use {
       "ibhagwan/fzf-lua",
       requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"},
-      opt = true,
-      cmd = {"FzfLua", "Fzf"}
+      cmd = {"FzfLua", "Fzf"},
+      config = function() require("plugins.fzf") end,
+      disable = true
     }
 
+    use {
+      "voldikss/vim-floaterm",
+      config = function() require("plugins.floaterm") end
+    }
     use {
       "vim-test/vim-test",
       config = function() require("plugins.vim-test") end
@@ -165,9 +170,7 @@ return require("packer").startup({
     use {
       "lewis6991/gitsigns.nvim",
       requires = {"nvim-lua/plenary.nvim"},
-      config = function()
-        require("plugins.gitsigns")
-      end
+      config = function() require("plugins.gitsigns") end
     }
     use {
       "mhartington/formatter.nvim",
@@ -235,11 +238,6 @@ return require("packer").startup({
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
-    use {
-      "voldikss/vim-floaterm",
-      config = function() require("plugins.floaterm") end,
-      cmd = {"FloatermToggle", "FloatermShow", "TestFile", "TestNearest"}
-    }
     use {"axelf4/vim-strip-trailing-whitespace"}
 
   end,

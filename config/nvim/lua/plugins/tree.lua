@@ -6,6 +6,7 @@ if vim.fn.has("gui_vimr") ~= 1 then
   vim.g.nvim_tree_disable_netrw = 0
   vim.g.nvim_tree_hijack_netrw = 0
   vim.g.nvim_tree_follow = 1
+  vim.g.nvim_tree_width = 35
   vim.g.nvim_tree_auto_ignore_ft = {"startify", "dashboard", "netrw"}
   vim.g.nvim_tree_ignore = {".DS_Store"}
   vim.g.nvim_tree_show_icons = {
