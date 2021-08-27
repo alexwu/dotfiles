@@ -1,5 +1,6 @@
 local cmd = vim.cmd
 local o_s = vim.o
+local keymap = require("astronauta.keymap")
 
 local function opt(o, v, scopes)
   scopes = scopes or {o_s}
@@ -21,4 +22,4 @@ local function map(mode, lhs, rhs, opts)
   vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
-return {opt = opt, autocmd = autocmd, map = map}
+return {opt = opt, autocmd = autocmd, map = map, keymap = keymap}

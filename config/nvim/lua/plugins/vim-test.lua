@@ -8,12 +8,6 @@ vim.api.nvim_set_var("test#ruby#rspec#options", {
 })
 vim.api.nvim_set_var("test#javascript#jest#options", "--color=always")
 vim.api.nvim_set_var("test#typescript#jest#options", "--color=always")
-vim.g.ultest_use_pty = 1
-vim.g.ultest_unicode_icons = 1
-vim.g.ultest_custom_patterns = {
-  ["ruby#rspec"] = {["test"] = {"^\\s*it\\s+['\"](.+)['\"](,\\s+%{.+})*\\s+do"}, ["namespace"] = {"^describe"}}
-}
--- vim.g.ultest_custom_patterns["ruby#rspec"]["test"] = "^\\s*test\\s+['\"](.+)['\"](,\\s+%{.+})*\\s+do"
 
 vim.api.nvim_set_keymap("n", "t<C-n>", "<cmd>TestNearest<CR>", {noremap = true})
 vim.api.nvim_set_keymap("n", "t<C-f>", "<cmd>TestFile<CR>", {noremap = true})

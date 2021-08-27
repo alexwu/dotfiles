@@ -3,8 +3,6 @@ local util = require("vim.lsp.util")
 local nnoremap = require("astronauta.keymap").nnoremap
 
 function M.on_attach(client, bufnr)
-  local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
-
   local signs = {
     Error = "✘ ",
     Warning = " ",
@@ -38,7 +36,6 @@ function M.on_attach(client, bufnr)
 
   vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
 
-  local opts = {noremap = false, silent = true}
   nnoremap {"gD", function() vim.lsp.buf.declaration() end, silent = true}
   nnoremap {"gr", function() vim.lsp.buf.references() end, silent = true}
   nnoremap {
@@ -71,103 +68,4 @@ function M.on_attach(client, bufnr)
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
 end
 
-local to_position = function(position, bufnr)
-  vim.validate {position = {position, "t"}}
-
-  return {position.line, util._get_line_byte_from_position(bufnr, position)}
-end
-
-function Format_range_operator()
-  local old_func = vim.go.operatorfunc
-  _G.op_func_formatting = function()
-    local start = vim.api.nvim_buf_get_mark(0, "[")
-    local finish = vim.api.nvim_buf_get_mark(0, "]")
-    vim.lsp.buf.range_formatting({}, start, finish)
-    vim.go.operatorfunc = old_func
-    _G.op_func_formatting = nil
-  end
-  vim.go.operatorfunc = "v:lua.op_func_formatting"
-  vim.api.nvim_feedkeys("g@", "n", false)
-end
-
--- @private
---- Helper function to ierate through diagnostic lines and return a position
----
----@return table {row, col}
--- local function _iter_diagnostic_lines_pos(opts, line_diagnostics)
---   opts = opts or {}
-
---   local win_id = opts.win_id or vim.api.nvim_get_current_win()
---   local bufnr = vim.api.nvim_win_get_buf(win_id)
-
---   if line_diagnostics == nil or vim.tbl_isempty(line_diagnostics) then
---     return false
---   end
-
---   local iter_diagnostic = line_diagnostics[1]
---   return to_position(iter_diagnostic.range.start, bufnr)
--- end
-
---- Open a floating window with the diagnostics from {line_nr}
----
---- The floating window can be customized with the following highlight groups:
---- <pre>
---- LspDiagnosticsFloatingError
---- LspDiagnosticsFloatingWarning
---- LspDiagnosticsFloatingInformation
---- LspDiagnosticsFloatingHint
---- </pre>
----@param opts table Configuration table
----     - show_header (boolean, default true): Show "Diagnostics:" header.
----     - Plus all the opts for |vim.lsp.diagnostic.get_line_diagnostics()|
----          and |vim.lsp.util.open_floating_preview()| can be used here.
----@param bufnr number The buffer number
----@param line_nr number The line number
----@param client_id number|nil the client id
----@return table {popup_bufnr, win_id}
--- function module.show_line_diagnostics(opts, bufnr, line_nr, client_id)
---   opts = opts or {}
-
---   local show_header = if_nil(opts.show_header, true)
-
---   bufnr = bufnr or 0
---   line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
-
---   local lines = {}
---   local highlights = {}
---   if show_header then
---     table.insert(lines, "Diagnostics:")
---     table.insert(highlights, {0, "Bold"})
---   end
-
---   local line_diagnostics = M.get_line_diagnostics(bufnr, line_nr, opts,
---                                                   client_id)
---   if vim.tbl_isempty(line_diagnostics) then return end
-
---   for i, diagnostic in ipairs(line_diagnostics) do
---     local prefix = string.format("%d. ", i)
---     local hiname = M._get_floating_severity_highlight_name(diagnostic.severity)
---     assert(hiname, "unknown severity: " .. tostring(diagnostic.severity))
-
---     local message_lines = vim.split(diagnostic.message, "\n", true)
---     table.insert(lines, prefix .. message_lines[1])
---     table.insert(highlights, {#prefix, hiname})
---     for j = 2, #message_lines do
---       table.insert(lines, string.rep(" ", #prefix) .. message_lines[j])
---       table.insert(highlights, {0, hiname})
---     end
---   end
-
---   opts.focus_id = "line_diagnostics"
---   local popup_bufnr, winnr =
---     util.open_floating_preview(lines, "plaintext", opts)
---   for i, hi in ipairs(highlights) do
---     local prefixlen, hiname = unpack(hi)
---     -- Start highlight after the prefix
---     api.nvim_buf_add_highlight(popup_bufnr, -1, hiname, i - 1, prefixlen, -1)
---   end
-
---   return popup_bufnr, winnr
--- end
-
-return M;
+return M

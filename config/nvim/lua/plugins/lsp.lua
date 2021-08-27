@@ -5,6 +5,7 @@ local sorbet_opts = require("plugins.lsp.sorbet")
 
 local installed_servers = lsp_installer.get_installed_servers()
 local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 
 for _, server in pairs(installed_servers) do

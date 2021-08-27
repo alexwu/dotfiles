@@ -19,6 +19,7 @@ return require("packer").startup({
       "neovim/nvim-lspconfig",
       config = function() require("plugins.lsp") end
     }
+    use {"williamboman/nvim-lsp-installer"}
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
@@ -32,14 +33,33 @@ return require("packer").startup({
     use {"windwp/nvim-ts-autotag"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"andymass/vim-matchup"}
+    use {"p00f/nvim-ts-rainbow"}
 
     use {
-      "kyazdani42/nvim-web-devicons",
-      config = function()
-        require"nvim-web-devicons".setup {
-          override = {ruby = {color = "#ff5c57"}}
-        }
-      end
+      "nvim-telescope/telescope.nvim",
+      requires = {
+        {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
+        {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
+        {"kyazdani42/nvim-web-devicons"},
+        {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
+        {"nvim-telescope/telescope-hop.nvim"}
+      },
+      config = function() require("plugins.telescope") end
+    }
+
+    use {
+      "hrsh7th/nvim-cmp",
+      requires = {
+        "onsails/lspkind-nvim", "hrsh7th/cmp-buffer", "hrsh7th/cmp-nvim-lua",
+        "hrsh7th/cmp-path", "hrsh7th/cmp-vsnip", "hrsh7th/cmp-emoji",
+        "hrsh7th/cmp-nvim-lsp"
+      },
+      config = function() require("plugins.cmp") end
+    }
+    use {
+      "tzachar/cmp-tabnine",
+      run = "./install.sh",
+      requires = "hrsh7th/nvim-cmp"
     }
 
     use {"kosayoda/nvim-lightbulb"}
@@ -48,8 +68,6 @@ return require("packer").startup({
       "antoinemadec/FixCursorHold.nvim",
       config = function() vim.g.curshold_updatime = 250 end
     }
-
-    use {"williamboman/nvim-lsp-installer"}
     use {
       "folke/lsp-trouble.nvim",
       requires = "kyazdani42/nvim-web-devicons",
@@ -66,49 +84,22 @@ return require("packer").startup({
         "typescript.tsx"
       }
     }
-    use {"mfussenegger/nvim-lint"}
-
-    use {
-      "ms-jpq/coq_nvim",
-      disable = true,
-      branch = "coq",
-      run = ":COQdeps",
-      config = function()
-        vim.g.coq_settings = {
-          auto_start = true,
-          ["keymap.jump_to_mark"] = "<A-h>",
-          ["clients.tabnine.enabled"] = true
-        }
-      end
-    }
-    use {
-      "ms-jpq/coq.artifacts",
-      disable = true,
-      branch = "artifacts",
-      after = "coq_nvim"
-    }
 
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
-
-    use {
-      "nvim-telescope/telescope.nvim",
-      requires = {
-        {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
-        {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
-        {"kyazdani42/nvim-web-devicons"},
-        {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
-        {"nvim-telescope/telescope-hop.nvim"}
-      },
-      config = function() require("plugins.telescope") end
-    }
-
     use {
       "sudormrfbin/cheatsheet.nvim",
       requires = {
         {"nvim-telescope/telescope.nvim"}, {"nvim-lua/popup.nvim"},
         {"nvim-lua/plenary.nvim"}
       },
-      config = function() require("cheatsheet").setup() end
+      config = function() require("cheatsheet").setup() end,
+      cmd = {"Cheatsheet"}
+    }
+
+    use {
+      "pwntester/octo.nvim",
+      config = function() require"octo".setup() end,
+      cmd = {"Octo"}
     }
 
     use {
@@ -116,8 +107,9 @@ return require("packer").startup({
       config = function()
         local focus = require("focus")
         focus.enable = true
-
-      end
+        focus.treewidth = 35
+      end,
+      cmd = {"FocusEnable", "FocusToggle"}
     }
 
     use {
@@ -138,21 +130,21 @@ return require("packer").startup({
     }
 
     use {
+      "gelguy/wilder.nvim",
+      run = ":UpdateRemotePlugins",
+      config = function()
+        vim.cmd [[ call wilder#setup({'modes': [':', '/', '?']}) ]]
+        vim.cmd [[ call wilder#set_option('renderer', wilder#popupmenu_renderer({ 'highlighter': wilder#basic_highlighter() })) ]]
+      end
+    }
+
+    use {
       "kyazdani42/nvim-tree.lua",
       requires = {"kyazdani42/nvim-web-devicons"},
-      config = function() require("plugins.tree") end
+      setup = function() require("plugins.tree") end,
+      cond = function() return vim.fn.has("gui_vimr") ~= 1 end
     }
-    use {
-      "hrsh7th/nvim-compe",
-      requires = {"onsails/lspkind-nvim"},
-      config = function() require("plugins.compe") end
-    }
-    use {
-      "tzachar/compe-tabnine",
-      run = "./install.sh",
-      after = "nvim-compe",
-      event = "InsertEnter"
-    }
+
     use {
       "folke/todo-comments.nvim",
       config = function() require("plugins.todo-comments") end
@@ -231,6 +223,7 @@ return require("packer").startup({
       setup = function() vim.g.kommentary_create_default_mappings = false end,
       config = function() require("plugins.commenting") end
     }
+
     use {"tpope/vim-dispatch", cmd = {"Dispatch", "Make", "Focus", "Start"}}
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-projectionist"}
@@ -239,6 +232,7 @@ return require("packer").startup({
     use {"tpope/vim-surround"}
     use {"tpope/vim-vinegar"}
     use {"axelf4/vim-strip-trailing-whitespace"}
+    use {"chaoren/vim-wordmotion"}
 
   end,
   config = {

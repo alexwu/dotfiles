@@ -29,5 +29,8 @@ map("n", "<space><space>", "<C-^>")
 map("n", "<A-o>", "o<esc>")
 map("n", "<A-O>", "O<esc>")
 
+nnoremap {"<A-w>", "<Cmd>tabclose<CR>"}
+nnoremap {"<A-t>", "<Cmd>tabnew<CR>"}
+
 vim.cmd [[command! -nargs=0 Trash :!trash %]]
 vim.cmd [[command! -nargs=0 Delete :!trash %]]
