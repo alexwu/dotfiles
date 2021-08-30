@@ -38,11 +38,11 @@ function M.on_attach(client, bufnr)
 
   nnoremap {"gD", function() vim.lsp.buf.declaration() end, silent = true}
   nnoremap {"gr", function() vim.lsp.buf.references() end, silent = true}
-  nnoremap {
-    "<Leader>a",
-    function() vim.lsp.buf.code_action() end,
-    silent = true
-  }
+  -- nnoremap {
+  --   "<Leader>a",
+  --   function() vim.lsp.buf.code_action() end,
+  --   silent = true
+  -- }
   nnoremap {"K", function() vim.lsp.buf.hover() end, silent = true}
   nnoremap {
     "L",

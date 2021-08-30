@@ -1,10 +1,6 @@
 local nnoremap = require("astronauta.keymap").nnoremap
 
 require"fzf-lua".setup {
-  win_height = 0.5,
-  win_width = 0.4,
-  win_row = 0.30,
-  win_col = 0.50,
   win_border = {"╭", "─", "╮", "│", "╯", "─", "╰", "│"},
   fzf_args = "--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'",
   fzf_layout = "default",
@@ -22,8 +18,7 @@ require"fzf-lua".setup {
     cmd = "",
     git_icons = true,
     file_icons = true,
-    color_icons = true,
-    preview_opts = "hidden"
+    color_icons = true
   },
   grep = {
     prompt = "Grep ❯ ",
@@ -56,7 +51,7 @@ require"fzf-lua".setup {
 }
 
 nnoremap {"<Leader>f", function() require("fzf-lua").files() end}
-nnoremap {"<leader>t", "<Cmd>FzfLua<cr>"}
+-- nnoremap {"<leader>t", "<Cmd>FzfLua<cr>"}
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
 vim.cmd [[ command! -nargs=0 References :lua require('fzf-lua').lsp_references()<CR> ]]
 vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR>]]

@@ -13,12 +13,14 @@ return require("packer").startup({
   function()
     use {"wbthomason/packer.nvim"}
     use {"tjdevries/astronauta.nvim"}
+
     use {"~/Code/nvim-snazzy"}
 
     use {
       "neovim/nvim-lspconfig",
       config = function() require("plugins.lsp") end
     }
+
     use {"williamboman/nvim-lsp-installer"}
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
@@ -34,6 +36,12 @@ return require("packer").startup({
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"andymass/vim-matchup"}
     use {"p00f/nvim-ts-rainbow"}
+    use {
+      "lewis6991/spellsitter.nvim",
+      config = function()
+        require("spellsitter").setup({hl = "SpellBad", captures = {"comment"}})
+      end
+    }
 
     use {
       "nvim-telescope/telescope.nvim",
@@ -45,6 +53,11 @@ return require("packer").startup({
         {"nvim-telescope/telescope-hop.nvim"}
       },
       config = function() require("plugins.telescope") end
+    }
+
+    use {
+      "AckslD/nvim-neoclip.lua",
+      config = function() require("neoclip").setup() end
     }
 
     use {
@@ -68,6 +81,12 @@ return require("packer").startup({
       "antoinemadec/FixCursorHold.nvim",
       config = function() vim.g.curshold_updatime = 250 end
     }
+
+    use {
+      "rcarriga/nvim-notify",
+      config = function() vim.notify = require("notify") end
+    }
+
     use {
       "folke/lsp-trouble.nvim",
       requires = "kyazdani42/nvim-web-devicons",
@@ -86,6 +105,7 @@ return require("packer").startup({
     }
 
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
+
     use {
       "sudormrfbin/cheatsheet.nvim",
       requires = {
@@ -115,27 +135,17 @@ return require("packer").startup({
     use {
       "ibhagwan/fzf-lua",
       requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"},
-      cmd = {"FzfLua", "Fzf"},
-      config = function() require("plugins.fzf") end,
-      disable = true
+      config = function() require("plugins.fzf") end
     }
 
     use {
       "voldikss/vim-floaterm",
       config = function() require("plugins.floaterm") end
     }
+
     use {
       "vim-test/vim-test",
       config = function() require("plugins.vim-test") end
-    }
-
-    use {
-      "gelguy/wilder.nvim",
-      run = ":UpdateRemotePlugins",
-      config = function()
-        vim.cmd [[ call wilder#setup({'modes': [':', '/', '?']}) ]]
-        vim.cmd [[ call wilder#set_option('renderer', wilder#popupmenu_renderer({ 'highlighter': wilder#basic_highlighter() })) ]]
-      end
     }
 
     use {
@@ -149,11 +159,13 @@ return require("packer").startup({
       "folke/todo-comments.nvim",
       config = function() require("plugins.todo-comments") end
     }
+
     use {
       "hoob3rt/lualine.nvim",
       requires = {"kyazdani42/nvim-web-devicons"},
       config = function() require("statusline") end
     }
+
     use {
       "norcalli/nvim-colorizer.lua",
       config = function() require("colorizer").setup() end,
@@ -200,6 +212,23 @@ return require("packer").startup({
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
     }
+
+    use {
+      "rmagatti/auto-session",
+      config = function()
+        vim.o.sessionoptions =
+          "blank,buffers,curdir,folds,help,options,tabpages,winsize,resize,winpos,terminal"
+        vim.g.auto_session_pre_save_cmds = {"tabdo NvimTreeClose"}
+        require("auto-session").setup()
+      end
+    }
+
+    use {
+      "rmagatti/session-lens",
+      requires = {"rmagatti/auto-session", "nvim-telescope/telescope.nvim"},
+      config = function() require("session-lens").setup() end
+    }
+
     use {
       "sheerun/vim-polyglot",
       setup = function()
@@ -209,6 +238,7 @@ return require("packer").startup({
         }
       end
     }
+
     use {
       "phaazon/hop.nvim",
       as = "hop",
@@ -217,13 +247,13 @@ return require("packer").startup({
       end
     }
 
-    use {"tpope/vim-abolish"}
     use {
       "b3nj5m1n/kommentary",
       setup = function() vim.g.kommentary_create_default_mappings = false end,
       config = function() require("plugins.commenting") end
     }
 
+    use {"tpope/vim-abolish"}
     use {"tpope/vim-dispatch", cmd = {"Dispatch", "Make", "Focus", "Start"}}
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-projectionist"}

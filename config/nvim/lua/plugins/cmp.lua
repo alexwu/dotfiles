@@ -1,3 +1,4 @@
+local lspkind = require("lspkind")
 local cmp = require("cmp")
 local t = function(str)
   return vim.api.nvim_replace_termcodes(str, true, true, true)
@@ -12,6 +13,7 @@ local shift_tab = function(fallback)
     fallback()
   end
 end
+
 cmp.setup {
   sources = {
     {name = "path"}, {name = "buffer"}, {name = "vsnip"}, {name = "emoji"},
@@ -43,5 +45,14 @@ cmp.setup {
     end,
     ["<S-Tab>"] = shift_tab
   },
-  preselect = cmp.PreselectMode.None
+  preselect = cmp.PreselectMode.None,
+  formatting = {
+    format = function(entry, vim_item)
+      vim_item.kind = lspkind.presets.default[vim_item.kind]
+      return vim_item
+    end
+  }
 }
+
+require("nvim-autopairs.completion.cmp").setup(
+  {map_cr = true, map_complete = true, auto_select = false})
