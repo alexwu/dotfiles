@@ -4,16 +4,6 @@ local t = function(str)
   return vim.api.nvim_replace_termcodes(str, true, true, true)
 end
 
-local shift_tab = function(fallback)
-  if vim.fn.pumvisible() == 1 then
-    return t "<C-p>"
-  elseif vim.fn.call("vsnip#jumpable", {-1}) == 1 then
-    return t "<Plug>(vsnip-jump-prev)"
-  else
-    fallback()
-  end
-end
-
 cmp.setup {
   sources = {
     {name = "path"}, {name = "buffer"}, {name = "vsnip"}, {name = "emoji"},
@@ -43,7 +33,18 @@ cmp.setup {
         fallback()
       end
     end,
-    ["<S-Tab>"] = shift_tab
+    ["<S-Tab>"] = function(fallback)
+      if vim.fn.pumvisible() == 1 then
+        vim.fn.feedkeys(vim.api
+                          .nvim_replace_termcodes("<C-p>", true, true, true),
+                        "n")
+      elseif vim.fn.call("vsnip#jumpable", {-1}) == 1 then
+        vim.fn.feedkeys(vim.api.nvim_replace_termcodes(
+                          "<Plug>(vsnip-jump-prev)", true, true, true), "")
+      else
+        fallback()
+      end
+    end
   },
   preselect = cmp.PreselectMode.None,
   formatting = {

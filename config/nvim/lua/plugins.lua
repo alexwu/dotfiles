@@ -54,7 +54,6 @@ return require("packer").startup({
       },
       config = function() require("plugins.telescope") end
     }
-
     use {
       "AckslD/nvim-neoclip.lua",
       config = function() require("neoclip").setup() end
@@ -74,6 +73,7 @@ return require("packer").startup({
       run = "./install.sh",
       requires = "hrsh7th/nvim-cmp"
     }
+    use {"lewis6991/impatient.nvim"}
 
     use {"kosayoda/nvim-lightbulb"}
 

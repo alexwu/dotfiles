@@ -41,10 +41,10 @@ require("telescope").load_extension("fzf")
 require("telescope").load_extension("frecency")
 require("telescope").load_extension("hop")
 
--- nnoremap {"<Leader>f", function() require("telescope.builtin").find_files() end}
 nnoremap {"<Leader>t", function() vim.cmd [[Telescope builtin]] end}
 nnoremap {
   "<Leader>a", function() require("telescope.builtin").lsp_code_actions() end
 }
+nnoremap {"<Leader>/", function() require("telescope.builtin").current_buffer_fuzzy_find() end}
 
 vim.cmd [[ autocmd FileType TelescopePrompt setlocal nocursorline ]]
