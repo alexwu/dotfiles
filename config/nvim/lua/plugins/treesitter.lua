@@ -38,7 +38,7 @@ require"nvim-treesitter.configs".setup {
   },
   autotag = {enable = true},
   context_commentstring = {enable = true},
-  matchup = {enable = true},
-  autopairs = {enable = true}
+  matchup = {enable = true}
 }
-require("nvim-autopairs").setup({check_ts = true, fast_wrap = {}})
+-- require("nvim-autopairs").setup({check_ts = false, fast_wrap = {}})
+require("neoclip").setup()

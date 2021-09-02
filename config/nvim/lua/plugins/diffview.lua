@@ -2,10 +2,8 @@ local cb = require"diffview.config".diffview_callback
 
 require"diffview".setup {
   diff_binaries = false,
-  file_panel = {
-    width = 35,
-    use_icons = true
-  },
+  use_icons = true,
+  file_panel = {width = 35},
   key_bindings = {
     view = {
       ["<tab>"] = cb("select_next_entry"), -- Open the diff for the next file

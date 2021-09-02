@@ -1,5 +1,6 @@
 vim.cmd [[ syntax off ]]
 
+vim.opt.shell = "/opt/homebrew/bin/zsh"
 vim.opt.autoindent = true
 vim.opt.ch = 2
 vim.opt.confirm = true
@@ -39,6 +40,7 @@ vim.opt.textwidth = 0
 vim.opt.tags = "./TAGS,TAGS"
 vim.opt.wildignore = "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store"
 vim.opt.shortmess:append("Icq")
+vim.opt.termguicolors = true
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
 

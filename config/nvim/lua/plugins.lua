@@ -18,10 +18,9 @@ return require("packer").startup({
 
     use {
       "neovim/nvim-lspconfig",
-      config = function() require("plugins.lsp") end
+      config = function() require("plugins.lsp") end,
+      requires = {"williamboman/nvim-lsp-installer"}
     }
-
-    use {"williamboman/nvim-lsp-installer"}
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
     use {"nvim-treesitter/nvim-treesitter-refactor"}
@@ -31,16 +30,16 @@ return require("packer").startup({
       opt = true,
       cmd = "TSHighlightCapturesUnderCursor"
     }
-    use {"windwp/nvim-autopairs"}
-    use {"windwp/nvim-ts-autotag"}
+    use {"windwp/nvim-autopairs", disable = true}
+    use {"windwp/nvim-ts-autotag", disable = true}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"andymass/vim-matchup"}
-    use {"p00f/nvim-ts-rainbow"}
     use {
       "lewis6991/spellsitter.nvim",
       config = function()
         require("spellsitter").setup({hl = "SpellBad", captures = {"comment"}})
-      end
+      end,
+      after = "nvim-treesitter"
     }
 
     use {
@@ -50,13 +49,9 @@ return require("packer").startup({
         {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
         {"kyazdani42/nvim-web-devicons"},
         {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
-        {"nvim-telescope/telescope-hop.nvim"}
+        {"nvim-telescope/telescope-hop.nvim"}, {"AckslD/nvim-neoclip.lua"}
       },
       config = function() require("plugins.telescope") end
-    }
-    use {
-      "AckslD/nvim-neoclip.lua",
-      config = function() require("neoclip").setup() end
     }
 
     use {
@@ -105,22 +100,10 @@ return require("packer").startup({
     }
 
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
+    use {"gennaro-tedesco/nvim-jqx", ft = "json"}
 
-    use {
-      "sudormrfbin/cheatsheet.nvim",
-      requires = {
-        {"nvim-telescope/telescope.nvim"}, {"nvim-lua/popup.nvim"},
-        {"nvim-lua/plenary.nvim"}
-      },
-      config = function() require("cheatsheet").setup() end,
-      cmd = {"Cheatsheet"}
-    }
-
-    use {
-      "pwntester/octo.nvim",
-      config = function() require"octo".setup() end,
-      cmd = {"Octo"}
-    }
+    use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
+    use {"kevinhwang91/nvim-bqf"}
 
     use {
       "beauwilliams/focus.nvim",
@@ -151,8 +134,12 @@ return require("packer").startup({
     use {
       "kyazdani42/nvim-tree.lua",
       requires = {"kyazdani42/nvim-web-devicons"},
-      setup = function() require("plugins.tree") end,
-      cond = function() return vim.fn.has("gui_vimr") ~= 1 end
+      setup = function() require("plugins.tree") end
+    }
+
+    use {
+      "akinsho/toggleterm.nvim",
+      config = function() require("plugins.terminal") end
     }
 
     use {
@@ -199,11 +186,6 @@ return require("packer").startup({
       "lukas-reineke/indent-blankline.nvim",
       config = function() require("plugins.indent-blankline") end
     }
-    use {
-      "simrat39/symbols-outline.nvim",
-      config = function() vim.g.symbols_outline = {} end,
-      cmd = {"SymbolOutline", "SymbolOutlineOpen"}
-    }
 
     use {"hrsh7th/vim-vsnip"}
     use {"hrsh7th/vim-vsnip-integ"}
@@ -230,6 +212,12 @@ return require("packer").startup({
     }
 
     use {
+      "knubie/vim-kitty-navigator",
+      run = "cp ./*.py ~/.config/kitty/",
+      config = function() require("plugins.kitty") end
+    }
+
+    use {
       "sheerun/vim-polyglot",
       setup = function()
         vim.g.polyglot_disabled = {
@@ -240,23 +228,17 @@ return require("packer").startup({
     }
 
     use {
-      "phaazon/hop.nvim",
-      as = "hop",
-      config = function()
-        require"hop".setup {keys = "etovxqpdygfblzhckisuran"}
-      end
-    }
-
-    use {
       "b3nj5m1n/kommentary",
       setup = function() vim.g.kommentary_create_default_mappings = false end,
       config = function() require("plugins.commenting") end
     }
 
-    use {"tpope/vim-abolish"}
-    use {"tpope/vim-dispatch", cmd = {"Dispatch", "Make", "Focus", "Start"}}
+    use {
+      "tpope/vim-projectionist",
+      cond = "true",
+      requires = {"tpope/vim-dispatch"}
+    }
     use {"tpope/vim-eunuch"}
-    use {"tpope/vim-projectionist"}
     use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
@@ -272,6 +254,8 @@ return require("packer").startup({
         return require("packer.util").float({border = "rounded"})
       end,
       prompt_border = "rounded"
-    }
+    },
+    log = "debug",
+    max_jobs = 9
   }
 })

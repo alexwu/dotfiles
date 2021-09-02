@@ -6,12 +6,7 @@ fi
 OS="$(uname -s)"
 
 if [ "$OS" = "Darwin" ]; then
-  if [ $(arch) = "arm64" ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [ $(arch) = "i386" ]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
-
+  eval "$(/opt/homebrew/bin/brew shellenv)"
   export FZF_BASE=$(brew --prefix)/bin/fzf
   export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
   export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
@@ -23,8 +18,8 @@ export NVM_COMPLETION=true
 
 autoload -U colors && colors
 
-export FZF_DEFAULT_COMMAND='fd --type f --hidden --no-ignore-vcs --follow'
-export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow"
+export FZF_DEFAULT_COMMAND="fd --type f -uu --follow"
+export FZF_CTRL_T_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'"
 export BUNDLED_COMMANDS=(srb)
 
@@ -92,14 +87,7 @@ zinit wait lucid for \
 #   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
 if [ "$OS" = "Darwin" ]; then
-  if [ $(arch) = "arm64" ]; then
-    zinit wait blockf lucid for \
-      OMZP::rbenv \
-      lukechilds/zsh-nvm
-
-  elif [ $(arch) = "i386" ]; then
-    . $HOME/.asdf/asdf.sh
-  fi
+  . $HOME/.asdf/asdf.sh
 fi
 
 zinit wait blockf lucid for \
