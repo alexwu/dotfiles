@@ -1,5 +1,4 @@
 local M = {}
-local util = require("vim.lsp.util")
 local nnoremap = require("astronauta.keymap").nnoremap
 
 function M.on_attach(client, bufnr)
@@ -38,11 +37,12 @@ function M.on_attach(client, bufnr)
 
   nnoremap {"gD", function() vim.lsp.buf.declaration() end, silent = true}
   nnoremap {"gr", function() vim.lsp.buf.references() end, silent = true}
-  -- nnoremap {
-  --   "<Leader>a",
-  --   function() vim.lsp.buf.code_action() end,
-  --   silent = true
-  -- }
+  nnoremap {
+    "<Leader>a",
+    function() vim.lsp.buf.code_action() end,
+    silent = true
+  }
+  vim.cmd [[menu File.Code\ Actions <cmd>lua vim.lsp.buf.code_action()<CR>]]
   nnoremap {"K", function() vim.lsp.buf.hover() end, silent = true}
   nnoremap {
     "L",
@@ -62,7 +62,7 @@ function M.on_attach(client, bufnr)
   require"lsp_signature".on_attach({
     bind = true,
     handler_opts = {border = "single"},
-    floating_window = true
+    floating_window = false
   })
 
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]

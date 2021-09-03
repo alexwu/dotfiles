@@ -4,6 +4,7 @@ local nnoremap = keymap.nnoremap
 require("gitsigns").setup({
   current_line_blame = true,
   preview_config = {border = "rounded"},
+  current_line_blame_formatter_opts = {relative_time = true},
   current_line_blame_formatter = function(name, blame_info, opts)
     if blame_info.author == name then blame_info.author = "You" end
 

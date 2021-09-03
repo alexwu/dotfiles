@@ -19,7 +19,7 @@ return require("packer").startup({
     use {
       "neovim/nvim-lspconfig",
       config = function() require("plugins.lsp") end,
-      requires = {"williamboman/nvim-lsp-installer"}
+      requires = {"williamboman/nvim-lsp-installer", "ray-x/lsp_signature.nvim", "kosayoda/nvim-lightbulb"}
     }
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
@@ -30,7 +30,13 @@ return require("packer").startup({
       opt = true,
       cmd = "TSHighlightCapturesUnderCursor"
     }
-    use {"windwp/nvim-autopairs", disable = true}
+    use {
+      "windwp/nvim-autopairs",
+      config = function()
+        require("nvim-autopairs").setup({map_bs = false, check_ts = false})
+      end,
+      after = "nvim-treesitter"
+    }
     use {"windwp/nvim-ts-autotag", disable = true}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"andymass/vim-matchup"}
@@ -43,15 +49,23 @@ return require("packer").startup({
     }
 
     use {
+      "SmiteshP/nvim-gps",
+      requires = "nvim-treesitter/nvim-treesitter",
+      config = function() require("nvim-gps").setup() end
+    }
+
+    use {
       "nvim-telescope/telescope.nvim",
       requires = {
         {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
         {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
         {"kyazdani42/nvim-web-devicons"},
         {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
-        {"nvim-telescope/telescope-hop.nvim"}, {"AckslD/nvim-neoclip.lua"}
+        {"nvim-telescope/telescope-hop.nvim"}, {"AckslD/nvim-neoclip.lua"},
+        {"nvim-telescope/telescope-github.nvim"}
       },
-      config = function() require("plugins.telescope") end
+      config = function() require("plugins.telescope") end,
+      after = "nvim-treesitter"
     }
 
     use {
@@ -70,7 +84,6 @@ return require("packer").startup({
     }
     use {"lewis6991/impatient.nvim"}
 
-    use {"kosayoda/nvim-lightbulb"}
 
     use {
       "antoinemadec/FixCursorHold.nvim",
@@ -88,7 +101,6 @@ return require("packer").startup({
       config = function() require("plugins.trouble") end,
       cmd = {"Trouble", "TroubleToggle"}
     }
-    use {"ray-x/lsp_signature.nvim"}
 
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
@@ -179,8 +191,7 @@ return require("packer").startup({
     }
     use {
       "sindrets/diffview.nvim",
-      config = function() require("plugins.diffview") end,
-      cmd = {"DiffviewOpen"}
+      config = function() require("plugins.diffview") end
     }
     use {
       "lukas-reineke/indent-blankline.nvim",
@@ -200,15 +211,18 @@ return require("packer").startup({
       config = function()
         vim.o.sessionoptions =
           "blank,buffers,curdir,folds,help,options,tabpages,winsize,resize,winpos,terminal"
-        vim.g.auto_session_pre_save_cmds = {"tabdo NvimTreeClose"}
+        vim.g.auto_session_pre_save_cmds =
+          {"tabdo NvimTreeClose", "tabdo DiffviewClose"}
         require("auto-session").setup()
-      end
+      end,
+      after = "telescope.nvim"
     }
 
     use {
       "rmagatti/session-lens",
       requires = {"rmagatti/auto-session", "nvim-telescope/telescope.nvim"},
-      config = function() require("session-lens").setup() end
+      config = function() require("session-lens").setup() end,
+      after = "auto-session"
     }
 
     use {

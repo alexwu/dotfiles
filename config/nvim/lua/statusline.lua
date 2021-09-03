@@ -1,3 +1,4 @@
+local gps = require("nvim-gps")
 local snazzy = function()
   local colors = {
     background = "#3a3d4d",
@@ -59,7 +60,7 @@ require("lualine").setup {
   sections = {
     lualine_a = {"mode"},
     lualine_b = {"branch"},
-    lualine_c = {"filename"},
+    lualine_c = {"filename", {gps.get_location, condition = gps.is_available}},
     lualine_x = {"encoding", "filetype"},
     lualine_y = {},
     lualine_z = {"location"}

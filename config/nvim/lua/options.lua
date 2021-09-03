@@ -1,6 +1,5 @@
 vim.cmd [[ syntax off ]]
 
-vim.opt.shell = "/opt/homebrew/bin/zsh"
 vim.opt.autoindent = true
 vim.opt.ch = 2
 vim.opt.confirm = true
@@ -10,7 +9,7 @@ vim.opt.backspace = "indent,eol,start"
 vim.opt.cmdheight = 1
 vim.opt.cursorline = true
 vim.opt.directory = "~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp"
-vim.opt.mouse = "a"
+vim.opt.mouse = "ar"
 vim.opt.mousemodel = "popup_setpos"
 vim.opt.updatetime = 250
 vim.opt.hlsearch = true
