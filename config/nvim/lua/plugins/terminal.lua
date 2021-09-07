@@ -6,7 +6,7 @@ require("toggleterm").setup({
       return vim.o.columns * 0.4
     end
   end,
-  open_mapping = [[<C-\>]],
+  open_mapping = [[<C-t>]],
   hide_numbers = true,
   shade_filetypes = {},
   shade_terminals = true,
@@ -24,3 +24,7 @@ require("toggleterm").setup({
     highlights = {border = "Normal", background = "Normal"}
   }
 })
+
+vim.cmd [[autocmd FileType toggleterm nmap <buffer> - +]]
+vim.cmd [[autocmd FileType toggleterm nmap <buffer> <space><space> <cmd>ToggleTerm<CR>]]
+vim.cmd [[autocmd FileType toggleterm tmap <buffer> <esc> <C-\><C-n>]]
