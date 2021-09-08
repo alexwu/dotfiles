@@ -19,7 +19,10 @@ return require("packer").startup({
     use {
       "neovim/nvim-lspconfig",
       config = function() require("plugins.lsp") end,
-      requires = {"williamboman/nvim-lsp-installer", "ray-x/lsp_signature.nvim", "kosayoda/nvim-lightbulb"}
+      requires = {
+        "williamboman/nvim-lsp-installer", "ray-x/lsp_signature.nvim",
+        "kosayoda/nvim-lightbulb"
+      }
     }
 
     use {"nvim-treesitter/nvim-treesitter", run = ":TSUpdate"}
@@ -34,8 +37,7 @@ return require("packer").startup({
       "windwp/nvim-autopairs",
       config = function()
         require("nvim-autopairs").setup({map_bs = false, check_ts = false})
-      end,
-      after = "nvim-treesitter"
+      end
     }
     use {"windwp/nvim-ts-autotag", disable = true}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
@@ -64,8 +66,7 @@ return require("packer").startup({
         {"nvim-telescope/telescope-hop.nvim"}, {"AckslD/nvim-neoclip.lua"},
         {"nvim-telescope/telescope-github.nvim"}
       },
-      config = function() require("plugins.telescope") end,
-      after = "nvim-treesitter"
+      config = function() require("plugins.telescope") end
     }
 
     use {
@@ -83,7 +84,6 @@ return require("packer").startup({
       requires = "hrsh7th/nvim-cmp"
     }
     use {"lewis6991/impatient.nvim"}
-
 
     use {
       "antoinemadec/FixCursorHold.nvim",
@@ -104,11 +104,7 @@ return require("packer").startup({
 
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
-      requires = {"jose-elias-alvarez/null-ls.nvim"},
-      ft = {
-        "javascript", "javascriptreact", "typescript", "typescriptreact",
-        "typescript.tsx"
-      }
+      requires = {"jose-elias-alvarez/null-ls.nvim"}
     }
 
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
@@ -204,25 +200,6 @@ return require("packer").startup({
     use {
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
-    }
-
-    use {
-      "rmagatti/auto-session",
-      config = function()
-        vim.o.sessionoptions =
-          "blank,buffers,curdir,folds,help,options,tabpages,winsize,resize,winpos,terminal"
-        vim.g.auto_session_pre_save_cmds =
-          {"tabdo NvimTreeClose", "tabdo DiffviewClose"}
-        require("auto-session").setup()
-      end,
-      after = "telescope.nvim"
-    }
-
-    use {
-      "rmagatti/session-lens",
-      requires = {"rmagatti/auto-session", "nvim-telescope/telescope.nvim"},
-      config = function() require("session-lens").setup() end,
-      after = "auto-session"
     }
 
     use {

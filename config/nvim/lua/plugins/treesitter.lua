@@ -36,9 +36,9 @@ require"nvim-treesitter.configs".setup {
       keymaps = {goto_definition_lsp_fallback = "gd"}
     }
   },
+  autopairs = {enable = true},
   autotag = {enable = true},
   context_commentstring = {enable = true},
   matchup = {enable = true}
 }
--- require("nvim-autopairs").setup({check_ts = false, fast_wrap = {}})
 require("neoclip").setup()

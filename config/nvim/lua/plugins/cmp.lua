@@ -1,13 +1,10 @@
-local lspkind = require("lspkind")
 local cmp = require("cmp")
-local t = function(str)
-  return vim.api.nvim_replace_termcodes(str, true, true, true)
-end
+local lspkind = require("lspkind")
 
 cmp.setup {
   sources = {
     {name = "path"}, {name = "buffer"}, {name = "vsnip"}, {name = "emoji"},
-    {name = "nvim_lsp"}, {name = "nvim_lua"}
+    {name = "nvim_lsp"}, {name = "nvim_lua"}, {name = "cmp_tabnine"}
   },
   snippet = {expand = function(args) vim.fn["vsnip#anonymous"](args.body) end},
   mapping = {
@@ -49,11 +46,17 @@ cmp.setup {
   preselect = cmp.PreselectMode.None,
   formatting = {
     format = function(entry, vim_item)
-      vim_item.kind = lspkind.presets.default[vim_item.kind]
+      vim_item.kind = lspkind.presets.default[vim_item.kind] .. " " ..
+                        vim_item.kind
+
+      vim_item.menu = ({
+        buffer = "[Buffer]",
+        nvim_lsp = "[LSP]",
+        vsnip = "[Snippet]",
+        nvim_lua = "[Lua]",
+        cmp_tabnine = "[TN]"
+      })[entry.source.name]
       return vim_item
     end
   }
 }
-
--- require("nvim-autopairs.completion.cmp").setup(
---   {map_cr = true, map_complete = true, auto_select = false})

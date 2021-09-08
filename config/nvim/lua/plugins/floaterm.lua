@@ -4,8 +4,8 @@ local nnoremap = keymap.nnoremap
 
 vim.g.floaterm_borderchars = "─│─│╭╮╯╰"
 
-nnoremap {"<F10>", "<Cmd>FloatermToggle<CR>"}
-tnoremap {"<F10>", "<Cmd>FloatermToggle<CR>"}
+-- nnoremap {"<F10>", "<Cmd>FloatermToggle<CR>"}
+-- tnoremap {"<F10>", "<Cmd>FloatermToggle<CR>"}
 -- nnoremap {"<C-t>", "<Cmd>FloatermToggle<CR>"}
 -- tnoremap {"<C-t>", "<Cmd>FloatermToggle<CR>"}
 -- tnoremap {"[t", "<Cmd>FloatermPrev<CR>"}

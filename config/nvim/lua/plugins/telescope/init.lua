@@ -34,6 +34,12 @@ require("telescope").setup {
       clear_selection_hl = false,
       trace_entry = true,
       reset_selection = true
+    },
+    frecency = {
+      workspaces = {
+        ["dotfiles"] = "~/.dotfiles",
+        ["editorder"] = "~/Code/editorder",
+      }
     }
   }
 }
@@ -42,7 +48,15 @@ require("telescope").load_extension("frecency")
 require("telescope").load_extension("hop")
 require("telescope").load_extension("gh")
 
-nnoremap {"<Leader>t", ":Telescope<CR>"}
+nnoremap {"<Leader>f", function() require("telescope.builtin").fd() end}
+
+nnoremap {
+  "<Leader>t",
+  function() require("telescope").extensions.frecency.frecency() end
+}
+
+nnoremap {"<Leader>rg", function() require("telescope.builtin").live_grep() end}
+nnoremap {"<Leader>ag", function() require("telescope.builtin").live_grep() end}
 nnoremap {
   "<Leader>a", function() require("telescope.builtin").lsp_code_actions() end
 }
@@ -53,5 +67,6 @@ nnoremap {
 nnoremap {
   "<Leader>br", function() require("telescope.builtin").git_branches() end
 }
+nnoremap {"<Leader>st", function() require("telescope.builtin").git_stash() end}
 
 vim.cmd [[ autocmd FileType TelescopePrompt setlocal nocursorline ]]

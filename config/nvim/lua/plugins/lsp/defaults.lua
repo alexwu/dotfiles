@@ -16,7 +16,8 @@ function M.on_attach(client, bufnr)
 
   vim.lsp.handlers["textDocument/publishDiagnostics"] =
     vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
-      virtual_text = {spacing = 0, prefix = "🦊"},
+      -- virtual_text = {spacing = 0, prefix = "🦊"},
+      virtual_text = false,
       underline = true,
       signs = true,
       update_in_insert = false
@@ -25,15 +26,15 @@ function M.on_attach(client, bufnr)
     vim.lsp
       .with(vim.lsp.handlers.hover, {border = "rounded", focusable = false})
 
-  local original_set_virtual_text = vim.lsp.diagnostic.set_virtual_text
-  local set_virtual_text_custom = function(diagnostics, bufnr, client_id,
-                                           sign_ns, opts)
-    opts = opts or {}
-    opts.severity_limit = "Error"
-    original_set_virtual_text(diagnostics, bufnr, client_id, sign_ns, opts)
-  end
+  -- local original_set_virtual_text = vim.lsp.diagnostic.set_virtual_text
+  -- local set_virtual_text_custom = function(diagnostics, bufnr, client_id,
+  --                                          sign_ns, opts)
+  --   opts = opts or {}
+  --   opts.severity_limit = "Error"
+  --   original_set_virtual_text(diagnostics, bufnr, client_id, sign_ns, opts)
+  -- end
 
-  vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
+  -- vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
 
   nnoremap {"gD", function() vim.lsp.buf.declaration() end, silent = true}
   nnoremap {"gr", function() vim.lsp.buf.references() end, silent = true}
@@ -42,7 +43,7 @@ function M.on_attach(client, bufnr)
     function() vim.lsp.buf.code_action() end,
     silent = true
   }
-  vim.cmd [[menu File.Code\ Actions <cmd>lua vim.lsp.buf.code_action()<CR>]]
+  -- vim.cmd [[menu File.Code\ Actions <cmd>lua vim.lsp.buf.code_action()<CR>]]
   nnoremap {"K", function() vim.lsp.buf.hover() end, silent = true}
   nnoremap {
     "L",
@@ -61,13 +62,19 @@ function M.on_attach(client, bufnr)
 
   require"lsp_signature".on_attach({
     bind = true,
-    handler_opts = {border = "single"},
+    handler_opts = {border = "rounded"},
     floating_window = false
   })
 
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
-  -- vim.cmd [[ autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_line_diagnostics({focusable=false, border = "rounded"}) ]]
-  vim.cmd [[ autocmd FileType qf nnoremap <buffer> <CR> <CR>:cclose<CR> ]]
+  vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]
+end
+
+function M.capabilities()
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
+  capabilities.textDocument.completion.completionItem.snippetSupport = true
+  return capabilities
 end
 
 return M

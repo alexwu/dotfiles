@@ -45,15 +45,13 @@ require"fzf-lua".setup {
   window_on_create = function()
     vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-c>",
                                 {nowait = true, silent = true})
-    vim.api.nvim_buf_set_keymap(0, "t", "<Leader>t", "<C-c>",
-                                {nowait = true, silent = true})
   end,
   lsp = {async_or_timeout = 3000}
 }
 
-nnoremap {"<Leader>f", function() require("fzf-lua").files() end}
-nnoremap {"<Leader>rg", function() require("fzf-lua").live_grep() end}
-nnoremap {"<Leader>ag", function() require("fzf-lua").live_grep() end}
+-- nnoremap {"<Leader>f", function() require("fzf-lua").files() end}
+-- nnoremap {"<Leader>rg", function() require("fzf-lua").live_grep() end}
+-- nnoremap {"<Leader>ag", function() require("fzf-lua").live_grep() end}
 
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
 
