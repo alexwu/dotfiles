@@ -87,7 +87,7 @@ zinit wait lucid for \
 #   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
 if [ "$OS" = "Darwin" ]; then
-  . $HOME/.asdf/asdf.sh
+  # . $HOME/.asdf/asdf.sh
 fi
 
 zinit wait blockf lucid for \

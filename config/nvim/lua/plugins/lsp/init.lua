@@ -5,8 +5,8 @@ local on_attach = require("plugins.lsp.defaults").on_attach
 local nnoremap = require("astronauta.keymap").nnoremap
 
 local installed_servers = lsp_installer.get_installed_servers()
-local capabilities = vim.lsp.protocol.make_client_capabilities()
 
+local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 
@@ -113,6 +113,10 @@ lspconfig.efm.setup {
   capabilities = capabilities,
   cmd = {"graphql-lsp", "server", "-m", "stream"},
   filetypes = {"graphql"},
+<<<<<<< Updated upstream
+=======
+  root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
+>>>>>>> Stashed changes
 }
  ]]
 lspconfig.sorbet.setup {

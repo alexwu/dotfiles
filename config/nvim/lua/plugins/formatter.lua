@@ -47,4 +47,4 @@ require"formatter".setup({
   }
 })
 
-nnoremap{"<Leader>y", ":Format<CR>"}
+nnoremap {"<Leader>y", ":Format<CR>"}

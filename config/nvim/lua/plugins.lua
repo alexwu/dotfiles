@@ -33,10 +33,15 @@ return require("packer").startup({
       opt = true,
       cmd = "TSHighlightCapturesUnderCursor"
     }
+
     use {
       "windwp/nvim-autopairs",
       config = function()
-        require("nvim-autopairs").setup({map_bs = false, check_ts = false})
+        require("nvim-autopairs").setup({
+          map_bs = false,
+          check_ts = true,
+          ignored_next_char = "[%w%.]"
+        })
       end
     }
     use {"windwp/nvim-ts-autotag", disable = true}
@@ -166,11 +171,13 @@ return require("packer").startup({
       config = function() require("colorizer").setup() end,
       cmd = {"ColorizerToggle"}
     }
+
     use {
       "lewis6991/gitsigns.nvim",
       requires = {"nvim-lua/plenary.nvim"},
       config = function() require("plugins.gitsigns") end
     }
+
     use {
       "mhartington/formatter.nvim",
       config = function() require("plugins.formatter") end
