@@ -44,16 +44,9 @@ return require("packer").startup({
         })
       end
     }
-    use {"windwp/nvim-ts-autotag", disable = true}
+    use {"windwp/nvim-ts-autotag"}
     use {"JoosepAlviste/nvim-ts-context-commentstring"}
     use {"andymass/vim-matchup"}
-    use {
-      "lewis6991/spellsitter.nvim",
-      config = function()
-        require("spellsitter").setup({hl = "SpellBad", captures = {"comment"}})
-      end,
-      after = "nvim-treesitter"
-    }
 
     use {
       "SmiteshP/nvim-gps",
@@ -64,7 +57,7 @@ return require("packer").startup({
     use {
       "nvim-telescope/telescope.nvim",
       requires = {
-        {"nvim-lua/popup.nvim"}, {"nvim-lua/plenary.nvim"},
+        {"nvim-lua/plenary.nvim"},
         {"nvim-telescope/telescope-fzf-native.nvim", run = "make"},
         {"kyazdani42/nvim-web-devicons"},
         {"nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim"},
@@ -79,7 +72,7 @@ return require("packer").startup({
       requires = {
         "onsails/lspkind-nvim", "hrsh7th/cmp-buffer", "hrsh7th/cmp-nvim-lua",
         "hrsh7th/cmp-path", "hrsh7th/cmp-vsnip", "hrsh7th/cmp-emoji",
-        "hrsh7th/cmp-nvim-lsp"
+        "hrsh7th/cmp-nvim-lsp", "ray-x/cmp-treesitter"
       },
       config = function() require("plugins.cmp") end
     }
@@ -240,7 +233,7 @@ return require("packer").startup({
     use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
-    use {"tpope/vim-vinegar"}
+    use {"tpope/vim-vinegar", disable = true}
     use {"axelf4/vim-strip-trailing-whitespace"}
     use {"chaoren/vim-wordmotion"}
 

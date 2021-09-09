@@ -1,1 +1,4 @@
-vim.api.nvim_set_keymap("n", "<leader>m", "<Cmd>NvimTreeToggle<CR>", {})
+local nnoremap = require("astronauta.keymap").nnoremap
+
+nnoremap {"<leader>m", "<Cmd>NvimTreeToggle<CR>"}
+nnoremap {"-", "<Cmd>NvimTreeFindFile<CR>"}
