@@ -4,7 +4,8 @@ local lspkind = require("lspkind")
 cmp.setup {
   sources = {
     {name = "path"}, {name = "buffer"}, {name = "vsnip"}, {name = "emoji"},
-    {name = "nvim_lsp"}, {name = "nvim_lua"}, {name = "cmp_tabnine"}
+    {name = "nvim_lsp"}, {name = "nvim_lua"}, {name = "cmp_tabnine"},
+    {name = "treesitter"}
   },
   snippet = {expand = function(args) vim.fn["vsnip#anonymous"](args.body) end},
   mapping = {
