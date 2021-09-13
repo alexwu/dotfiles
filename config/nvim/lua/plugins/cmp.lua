@@ -1,5 +1,10 @@
 local cmp = require("cmp")
 local lspkind = require("lspkind")
+local luasnip = require("luasnip")
+
+local t = function(str)
+  return vim.api.nvim_replace_termcodes(str, true, true, true)
+end
 
 local has_words_before = function()
   local line, col = unpack(vim.api.nvim_win_get_cursor(0))

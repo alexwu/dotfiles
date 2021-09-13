@@ -16,7 +16,6 @@ function M.on_attach(client, bufnr)
 
   vim.lsp.handlers["textDocument/publishDiagnostics"] =
     vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
-      -- virtual_text = {spacing = 0, prefix = "🦊"},
       virtual_text = false,
       underline = true,
       signs = true,

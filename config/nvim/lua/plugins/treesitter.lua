@@ -29,7 +29,7 @@ require"nvim-treesitter.configs".setup {
     persist_queries = false
   },
   refactor = {
-    highlight_definitions = {enable = true},
+    highlight_definitions = {enable = false},
     smart_rename = {enable = true, keymaps = {smart_rename = "<leader>rn"}},
     navigation = {
       enable = true,

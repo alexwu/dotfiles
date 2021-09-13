@@ -113,10 +113,7 @@ lspconfig.efm.setup {
   capabilities = capabilities,
   cmd = {"graphql-lsp", "server", "-m", "stream"},
   filetypes = {"graphql"},
-<<<<<<< Updated upstream
-=======
   root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
->>>>>>> Stashed changes
 }
  ]]
 lspconfig.sorbet.setup {

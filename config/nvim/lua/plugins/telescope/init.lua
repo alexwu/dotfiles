@@ -57,11 +57,8 @@ nnoremap {
 
 nnoremap {"<Leader>rg", function() require("telescope.builtin").live_grep() end}
 nnoremap {
-  "<Leader>a", function() require("telescope.builtin").lsp_code_actions() end
-}
-nnoremap {
   "<Leader>br", function() require("telescope.builtin").git_branches() end
 }
 nnoremap {"<Leader>st", function() require("telescope.builtin").git_stash() end}
 
-vim.cmd [[ autocmd FileType TelescopePrompt setlocal nocursorline ]]
+vim.cmd [[autocmd FileType TelescopePrompt setlocal nocursorline]]

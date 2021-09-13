@@ -81,6 +81,7 @@ return require("packer").startup({
       run = "./install.sh",
       requires = "hrsh7th/nvim-cmp"
     }
+
     use {"lewis6991/impatient.nvim"}
 
     use {
@@ -100,6 +101,27 @@ return require("packer").startup({
       cmd = {"Trouble", "TroubleToggle"}
     }
 
+    use {
+      "jose-elias-alvarez/null-ls.nvim",
+      config = function()
+        local null_ls = require("null-ls")
+        local on_attach = require("plugins.lsp.defaults").on_attach
+        null_ls.config({
+          sources = {
+            null_ls.builtins.formatting.stylua.with(
+              {
+                condition = function(utils)
+                  return utils.root_has_file("stylua.toml")
+                end
+              })
+          }
+        })
+        require("lspconfig")["null-ls"].setup {
+          on_attach = on_attach,
+          autostart = true
+        }
+      end
+    }
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
       requires = {"jose-elias-alvarez/null-ls.nvim"}
@@ -140,7 +162,11 @@ return require("packer").startup({
     use {
       "kyazdani42/nvim-tree.lua",
       requires = {"kyazdani42/nvim-web-devicons"},
-      setup = function() require("plugins.tree") end
+      setup = function() require("plugins.tree") end,
+      config = function()
+        local tree_cb = require"nvim-tree.config".nvim_tree_callback
+        vim.g.nvim_tree_bindings = {{key = "-", cb = tree_cb("parent_node")}}
+      end
     }
 
     use {
@@ -199,15 +225,15 @@ return require("packer").startup({
     }
 
     use {
-      "dsznajder/vscode-es7-javascript-react-snippets",
-      run = "yarn install --frozen-lockfile && yarn compile"
+      "L3MON4D3/LuaSnip",
+      config = function()
+        require("luasnip.loaders.from_vscode").lazy_load()
+      end,
+      requires = {"nvim-lua/plenary.nvim", "neovim/nvim-lspconfig", "rafamadriz/friendly-snippets"}
     }
     use {
-      "L3MON4D3/LuaSnip",
-      requires = {"rafamadriz/friendly-snippets"},
-      config = function()
-        require("luasnip.loaders.from_vscode").lazy_load {}
-      end
+      "dsznajder/vscode-es7-javascript-react-snippets",
+      run = "yarn install --frozen-lockfile && yarn compile"
     }
 
     use {
@@ -233,16 +259,11 @@ return require("packer").startup({
       config = function() require("plugins.commenting") end
     }
 
-    use {
-      "tpope/vim-projectionist",
-      cond = "true",
-      requires = {"tpope/vim-dispatch"}
-    }
+    use {"tpope/vim-projectionist", requires = {"tpope/vim-dispatch"}}
     use {"tpope/vim-eunuch"}
     use {"tpope/vim-rails", ft = {"ruby"}}
     use {"tpope/vim-repeat"}
     use {"tpope/vim-surround"}
-    use {"tpope/vim-vinegar", disable = true}
     use {"axelf4/vim-strip-trailing-whitespace"}
     use {"chaoren/vim-wordmotion"}
 
