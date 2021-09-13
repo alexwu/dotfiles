@@ -1,6 +1,6 @@
 vim.g.nvim_tree_auto_open = 1
 vim.g.nvim_tree_auto_close = 1
-vim.g.nvim_tree_quit_on_open = 0
+vim.g.nvim_tree_quit_on_open = 1
 vim.g.nvim_tree_indent_markers = 0
 vim.g.nvim_tree_disable_netrw = 1
 vim.g.nvim_tree_hijack_netrw = 1
@@ -13,4 +13,4 @@ vim.g.nvim_tree_show_icons = {
   files = 1,
   folder_arrows = 1
 }
-vim.g.nvim_tree_window_picker_chars = "etovxqpdygfblzhckisuran"
+vim.g.nvim_tree_disable_window_picker = 1

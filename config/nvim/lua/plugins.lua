@@ -71,8 +71,8 @@ return require("packer").startup({
       "hrsh7th/nvim-cmp",
       requires = {
         "onsails/lspkind-nvim", "hrsh7th/cmp-buffer", "hrsh7th/cmp-nvim-lua",
-        "hrsh7th/cmp-path", "hrsh7th/cmp-vsnip", "hrsh7th/cmp-emoji",
-        "hrsh7th/cmp-nvim-lsp", "ray-x/cmp-treesitter"
+        "hrsh7th/cmp-path", "hrsh7th/cmp-emoji", "hrsh7th/cmp-nvim-lsp",
+        "ray-x/cmp-treesitter", "saadparwaiz1/cmp_luasnip"
       },
       config = function() require("plugins.cmp") end
     }
@@ -106,9 +106,8 @@ return require("packer").startup({
     }
 
     use {"simrat39/rust-tools.nvim", ft = {"rust"}}
-    use {"gennaro-tedesco/nvim-jqx", ft = "json"}
+    use {"gennaro-tedesco/nvim-jqx", ft = {"json"}}
 
-    use {"pwntester/octo.nvim", config = function() require"octo".setup() end}
     use {"kevinhwang91/nvim-bqf"}
 
     use {
@@ -124,7 +123,8 @@ return require("packer").startup({
     use {
       "ibhagwan/fzf-lua",
       requires = {"kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf"},
-      config = function() require("plugins.fzf") end
+      config = function() require("plugins.fzf") end,
+      disable = true
     }
 
     use {
@@ -187,19 +187,27 @@ return require("packer").startup({
     }
     use {
       "sindrets/diffview.nvim",
-      config = function() require("plugins.diffview") end
+      config = function() require("plugins.diffview") end,
+      cmd = {
+        "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory",
+        "DiffviewRefresh", "DiffviewFocusFiles", "DiffviewToggleFiles"
+      }
     }
     use {
       "lukas-reineke/indent-blankline.nvim",
       config = function() require("plugins.indent-blankline") end
     }
 
-    use {"hrsh7th/vim-vsnip"}
-    use {"hrsh7th/vim-vsnip-integ"}
-    use {"rafamadriz/friendly-snippets"}
     use {
       "dsznajder/vscode-es7-javascript-react-snippets",
       run = "yarn install --frozen-lockfile && yarn compile"
+    }
+    use {
+      "L3MON4D3/LuaSnip",
+      requires = {"rafamadriz/friendly-snippets"},
+      config = function()
+        require("luasnip.loaders.from_vscode").lazy_load {}
+      end
     }
 
     use {
@@ -215,7 +223,8 @@ return require("packer").startup({
           "ruby.plugin", "typescript.plugin", "typescriptreact.plugin",
           "lua.plugin", "sensible"
         }
-      end
+      end,
+      disable = true
     }
 
     use {

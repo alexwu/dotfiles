@@ -29,7 +29,7 @@ for _, server in pairs(installed_servers) do
       require("null-ls").config {}
       require("lspconfig")["null-ls"].setup {
         root_dir = root_pattern(".eslintrc.js"),
-        autostart = true
+        autostart = false
       }
       local ts_utils = require("nvim-lsp-ts-utils")
 

@@ -23,7 +23,7 @@ require("telescope").setup {
   extensions = {
     fzf = {
       fuzzy = true,
-      override_generic_sorter = false,
+      override_generic_sorter = true,
       override_file_sorter = true,
       case_mode = "smart_case"
     },
@@ -31,14 +31,14 @@ require("telescope").setup {
       keys = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";"},
       sign_hl = {"HopNextKey"},
       line_hl = {"HopNextKey"},
-      clear_selection_hl = false,
+      clear_selection_hl = true,
       trace_entry = true,
       reset_selection = true
     },
     frecency = {
       workspaces = {
         ["dotfiles"] = "~/.dotfiles",
-        ["editorder"] = "~/Code/editorder",
+        ["editorder"] = "~/Code/editorder"
       }
     }
   }
@@ -56,13 +56,8 @@ nnoremap {
 }
 
 nnoremap {"<Leader>rg", function() require("telescope.builtin").live_grep() end}
-nnoremap {"<Leader>ag", function() require("telescope.builtin").live_grep() end}
 nnoremap {
   "<Leader>a", function() require("telescope.builtin").lsp_code_actions() end
-}
-nnoremap {
-  "<Leader>/",
-  function() require("telescope.builtin").current_buffer_fuzzy_find() end
 }
 nnoremap {
   "<Leader>br", function() require("telescope.builtin").git_branches() end
