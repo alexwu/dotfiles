@@ -1,23 +1,16 @@
-local cmp = require("cmp")
-local lspkind = require("lspkind")
-local luasnip = require("luasnip")
-
-local t = function(str)
-  return vim.api.nvim_replace_termcodes(str, true, true, true)
-end
+local cmp = require "cmp"
+local lspkind = require "lspkind"
+local luasnip = require "luasnip"
 
 local has_words_before = function()
   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
   return col ~= 0
-    and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s")
+    and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match "%s"
       == nil
 end
 
-cmp.setup({
+cmp.setup {
   sources = {
-    -- {name = "luasnip"}, {name = "buffer"}, {name = "treesitter"}, {name = "nvim_lsp"},
-    --  {name = "nvim_lua"},
-    -- {name = "cmp_tabnine", opt = {priority = 900}}, {name = "path"}
     { name = "luasnip" },
     { name = "treesitter" },
     { name = "nvim_lsp" },
@@ -27,7 +20,7 @@ cmp.setup({
   },
   snippet = {
     expand = function(args)
-      require("luasnip").lsp_expand(args.body)
+      luasnip.lsp_expand(args.body)
     end,
   },
   mapping = {
@@ -37,14 +30,14 @@ cmp.setup({
     ["<C-f>"] = cmp.mapping.scroll_docs(4),
     ["<C-Space>"] = cmp.mapping.complete(),
     ["<C-e>"] = cmp.mapping.close(),
-    ["<CR>"] = cmp.mapping.confirm({
+    ["<CR>"] = cmp.mapping.confirm {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
-    }),
+    },
     ["<Tab>"] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, true, true), "n", true)
-      elseif has_words_before() and require("luasnip").expand_or_jumpable() then
+      elseif has_words_before() and luasnip.expand_or_jumpable() then
         vim.api.nvim_feedkeys(
           vim.api.nvim_replace_termcodes("<Plug>luasnip-expand-or-jump", true, true, true),
           "",
@@ -60,7 +53,7 @@ cmp.setup({
     ["<S-Tab>"] = cmp.mapping(function()
       if vim.fn.pumvisible() == 1 then
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-p>", true, true, true), "n", true)
-      elseif require("luasnip").jumpable(-1) then
+      elseif luasnip.jumpable(-1) then
         vim.api.nvim_feedkeys(
           vim.api.nvim_replace_termcodes("<Plug>luasnip-jump-prev", true, true, true),
           "",
@@ -98,4 +91,4 @@ cmp.setup({
     end,
   },
   documentation = { border = "rounded" },
-})
+}

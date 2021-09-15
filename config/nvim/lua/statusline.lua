@@ -1,4 +1,4 @@
-local gps = require("nvim-gps")
+local gps = require "nvim-gps"
 local snazzy = function()
   local colors = {
     background = "#3a3d4d",
@@ -12,40 +12,40 @@ local snazzy = function()
     cyan = "#9aedfe",
     white = "#f1f1f0",
     lightgray = "#b1b1b1",
-    darkgray = "#3a3d4d"
+    darkgray = "#3a3d4d",
   }
 
   return {
     normal = {
-      a = {bg = colors.blue, fg = colors.black, gui = "bold"},
-      b = {bg = colors.lightgray, fg = colors.white},
-      c = {bg = colors.darkgray, fg = colors.lightgray}
+      a = { bg = colors.blue, fg = colors.black, gui = "bold" },
+      b = { bg = colors.lightgray, fg = colors.white },
+      c = { bg = colors.darkgray, fg = colors.lightgray },
     },
     insert = {
-      a = {bg = colors.green, fg = colors.black, gui = "bold"},
-      b = {bg = colors.lightgray, fg = colors.white},
-      c = {bg = colors.darkgray, fg = colors.lightgray}
+      a = { bg = colors.green, fg = colors.black, gui = "bold" },
+      b = { bg = colors.lightgray, fg = colors.white },
+      c = { bg = colors.darkgray, fg = colors.lightgray },
     },
     visual = {
-      a = {bg = colors.purple, fg = colors.black, gui = "bold"},
-      b = {bg = colors.lightgray, fg = colors.white},
-      c = {bg = colors.darkgray, fg = colors.lightgray}
+      a = { bg = colors.purple, fg = colors.black, gui = "bold" },
+      b = { bg = colors.lightgray, fg = colors.white },
+      c = { bg = colors.darkgray, fg = colors.lightgray },
     },
     replace = {
-      a = {bg = colors.red, fg = colors.black, gui = "bold"},
-      b = {bg = colors.lightgray, fg = colors.white},
-      c = {bg = colors.darkgray, fg = colors.lightgray}
+      a = { bg = colors.red, fg = colors.black, gui = "bold" },
+      b = { bg = colors.lightgray, fg = colors.white },
+      c = { bg = colors.darkgray, fg = colors.lightgray },
     },
     command = {
-      a = {bg = colors.yellow, fg = colors.black, gui = "bold"},
-      b = {bg = colors.lightgray, fg = colors.white},
-      c = {bg = colors.darkgray, fg = colors.lightgray}
+      a = { bg = colors.yellow, fg = colors.black, gui = "bold" },
+      b = { bg = colors.lightgray, fg = colors.white },
+      c = { bg = colors.darkgray, fg = colors.lightgray },
     },
     inactive = {
-      a = {bg = colors.darkgray, fg = colors.gray, gui = "bold"},
-      b = {bg = colors.lightgray, fg = colors.gray},
-      c = {bg = colors.darkgray, fg = colors.darkgray}
-    }
+      a = { bg = colors.darkgray, fg = colors.gray, gui = "bold" },
+      b = { bg = colors.lightgray, fg = colors.gray },
+      c = { bg = colors.darkgray, fg = colors.darkgray },
+    },
   }
 end
 
@@ -53,24 +53,24 @@ require("lualine").setup {
   options = {
     theme = snazzy(),
     disabled_filetypes = {},
-    component_separators = {"", ""},
-    section_separators = {"", ""}
+    component_separators = { "", "" },
+    section_separators = { "", "" },
   },
-  extensions = {"fzf", "fugitive", "nvim-tree", "quickfix"},
+  extensions = { "fzf", "fugitive", "nvim-tree", "quickfix" },
   sections = {
-    lualine_a = {"mode"},
-    lualine_b = {"branch"},
-    lualine_c = {"filename", {gps.get_location, condition = gps.is_available}},
-    lualine_x = {"encoding", "filetype"},
+    lualine_a = { "mode" },
+    lualine_b = { "branch" },
+    lualine_c = { "filename", { gps.get_location, condition = gps.is_available } },
+    lualine_x = { "encoding", "filetype" },
     lualine_y = {},
-    lualine_z = {"location"}
+    lualine_z = { "location" },
   },
   inactive_sections = {
     lualine_a = {},
     lualine_b = {},
-    lualine_c = {"filename"},
-    lualine_x = {"location"},
+    lualine_c = { "filename" },
+    lualine_x = { "location" },
     lualine_y = {},
-    lualine_z = {}
-  }
+    lualine_z = {},
+  },
 }

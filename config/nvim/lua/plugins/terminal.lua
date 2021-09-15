@@ -1,4 +1,4 @@
-require("toggleterm").setup({
+require("toggleterm").setup {
   size = function(term)
     if term.direction == "horizontal" then
       return 15
@@ -21,9 +21,9 @@ require("toggleterm").setup({
     width = vim.fn.round(0.9 * vim.o.columns),
     height = vim.fn.round(0.9 * vim.o.lines),
     winblend = 0,
-    highlights = {border = "Normal", background = "Normal"}
-  }
-})
+    highlights = { border = "Normal", background = "Normal" },
+  },
+}
 
 vim.cmd [[autocmd FileType toggleterm nmap <buffer> - +]]
 vim.cmd [[autocmd FileType toggleterm nmap <buffer> <space><space> <cmd>ToggleTerm<CR>]]

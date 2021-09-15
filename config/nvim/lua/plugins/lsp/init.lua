@@ -1,6 +1,6 @@
-local lspconfig = require("lspconfig")
+local lspconfig = require "lspconfig"
 local root_pattern = lspconfig.util.root_pattern
-local lsp_installer = require("nvim-lsp-installer")
+local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
 local nnoremap = require("astronauta.keymap").nnoremap
 
@@ -9,14 +9,14 @@ local installed_servers = lsp_installer.get_installed_servers()
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
-local null_ls = require("null-ls")
+local null_ls = require "null-ls"
 
-null_ls.config({
+null_ls.config {
   sources = {
-    null_ls.builtins.formatting.stylua.with({
-      extra_args = { "--config-path", vim.fn.expand("~/.config/stylua.toml") },
-    }),
-    null_ls.builtins.formatting.rubocop.with({
+    null_ls.builtins.formatting.stylua.with {
+      extra_args = { "--config-path", vim.fn.expand "~/.config/stylua.toml" },
+    },
+    null_ls.builtins.formatting.rubocop.with {
       command = "bundle",
       args = {
         "exec",
@@ -28,10 +28,10 @@ null_ls.config({
         "|",
         "awk 'f; /^====================$/{f=1}'",
       },
-    }),
+    },
   },
-})
-lspconfig["null-ls"].setup({ on_attach = on_attach, autostart = true })
+}
+lspconfig["null-ls"].setup { on_attach = on_attach, autostart = true }
 
 for _, server in pairs(installed_servers) do
   local opts = { on_attach = on_attach, capabilities = capabilities }
@@ -49,9 +49,9 @@ for _, server in pairs(installed_servers) do
 
       on_attach(client, bufnr)
 
-      local ts_utils = require("nvim-lsp-ts-utils")
+      local ts_utils = require "nvim-lsp-ts-utils"
 
-      ts_utils.setup({
+      ts_utils.setup {
         disable_commands = false,
         enable_import_on_completion = true,
         import_on_completion_timeout = 5000,
@@ -61,24 +61,24 @@ for _, server in pairs(installed_servers) do
         enable_formatting = true,
         formatter = "eslint_d",
         filter_out_diagnostics_by_code = { 80001 },
-      })
+      }
 
       ts_utils.setup_client(client)
 
-      nnoremap({
+      nnoremap {
         "<Leader>y",
         function()
           vim.lsp.buf.formatting()
         end,
         silent = true,
         buffer = true,
-      })
-      nnoremap({
+      }
+      nnoremap {
         "<Leader>o",
         ts_utils.organize_imports,
         silent = true,
         buffer = true,
-      })
+      }
     end
     opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
   end
@@ -103,7 +103,7 @@ local rubocop = {
   formatStdin = true,
 }
 
-lspconfig.efm.setup({
+lspconfig.efm.setup {
   init_options = {
     documentFormatting = true,
     codeAction = true,
@@ -113,7 +113,7 @@ lspconfig.efm.setup({
   },
   filetypes = { "ruby", "eruby" },
   root_dir = function(fname)
-    return lspconfig.util.root_pattern("tsconfig.json")(fname)
+    return lspconfig.util.root_pattern "tsconfig.json"(fname)
       or lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname)
   end,
   settings = {
@@ -128,7 +128,7 @@ lspconfig.efm.setup({
   },
   on_attach = on_attach,
   capabilities = capabilities,
-})
+}
 
 --[[ lspconfig.graphql.setup {
   on_attach = on_attach,
@@ -138,7 +138,7 @@ lspconfig.efm.setup({
   root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
 }
  ]]
-lspconfig.sorbet.setup({
+lspconfig.sorbet.setup {
   on_attach = on_attach,
   capabilities = capabilities,
   cmd = {
@@ -150,9 +150,9 @@ lspconfig.sorbet.setup({
     "--enable-all-beta-lsp-features",
   },
   rootMarkers = { ".git/", "Gemfile", "sorbet" },
-})
+}
 
-lspconfig.rust_analyzer.setup({
+lspconfig.rust_analyzer.setup {
   on_attach = on_attach,
   capabilities = capabilities,
   settings = {
@@ -162,4 +162,4 @@ lspconfig.rust_analyzer.setup({
       procMacro = { enable = true },
     },
   },
-})
+}

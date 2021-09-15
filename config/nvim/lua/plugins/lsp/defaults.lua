@@ -6,24 +6,27 @@ function M.on_attach(client, bufnr)
     Error = "✘ ",
     Warning = " ",
     Hint = " ",
-    Information = " "
+    Information = " ",
   }
 
   for type, icon in pairs(signs) do
     local hl = "LspDiagnosticsSign" .. type
-    vim.fn.sign_define(hl, {text = icon, texthl = hl, numhl = ""})
+    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
   end
 
-  vim.lsp.handlers["textDocument/publishDiagnostics"] =
-    vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
+  vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+    vim.lsp.diagnostic.on_publish_diagnostics,
+    {
       virtual_text = false,
       underline = true,
       signs = true,
-      update_in_insert = false
-    })
-  vim.lsp.handlers["textDocument/hover"] =
-    vim.lsp
-      .with(vim.lsp.handlers.hover, {border = "rounded", focusable = false})
+      update_in_insert = false,
+    }
+  )
+  vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
+    vim.lsp.handlers.hover,
+    { border = "rounded", focusable = false }
+  )
 
   -- local original_set_virtual_text = vim.lsp.diagnostic.set_virtual_text
   -- local set_virtual_text_custom = function(diagnostics, bufnr, client_id,
@@ -35,36 +38,78 @@ function M.on_attach(client, bufnr)
 
   -- vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
 
-  nnoremap {"gD", function() vim.lsp.buf.declaration() end, silent = true}
-  nnoremap {"gr", function() vim.lsp.buf.references() end, silent = true}
+  nnoremap {
+    "gD",
+    function()
+      vim.lsp.buf.declaration()
+    end,
+    silent = true,
+  }
+  nnoremap {
+    "gr",
+    function()
+      vim.lsp.buf.references()
+    end,
+    silent = true,
+  }
   nnoremap {
     "<Leader>a",
-    function() vim.lsp.buf.code_action() end,
-    silent = true
+    function()
+      vim.lsp.buf.code_action()
+    end,
+    silent = true,
   }
   -- vim.cmd [[menu File.Code\ Actions <cmd>lua vim.lsp.buf.code_action()<CR>]]
-  nnoremap {"K", function() vim.lsp.buf.hover() end, silent = true}
+  nnoremap {
+    "K",
+    function()
+      vim.lsp.buf.hover()
+    end,
+    silent = true,
+  }
   nnoremap {
     "L",
     function()
-      vim.lsp.diagnostic.show_line_diagnostics(
-        {border = "rounded", focusable = false})
+      vim.lsp.diagnostic.show_line_diagnostics { border = "rounded", focusable = false }
     end,
-    silent = true
+    silent = true,
   }
-  nnoremap {"[d", function() vim.lsp.diagnostic.goto_prev() end, silent = true}
-  nnoremap {"]d", function() vim.lsp.diagnostic.goto_next() end, silent = true}
-  nnoremap {"<BSlash>y", function() vim.lsp.buf.formatting() end, silent = true}
-  nnoremap {"<Leader>y", function() vim.lsp.buf.formatting() end, silent = true}
+  nnoremap {
+    "[d",
+    function()
+      vim.lsp.diagnostic.goto_prev()
+    end,
+    silent = true,
+  }
+  nnoremap {
+    "]d",
+    function()
+      vim.lsp.diagnostic.goto_next()
+    end,
+    silent = true,
+  }
+  nnoremap {
+    "<BSlash>y",
+    function()
+      vim.lsp.buf.formatting()
+    end,
+    silent = true,
+  }
+  nnoremap {
+    "<Leader>y",
+    function()
+      vim.lsp.buf.formatting()
+    end,
+    silent = true,
+  }
 
-  vim.api.nvim_set_keymap("n", "gm", "<cmd>lua Format_range_operator()<CR>",
-                          {noremap = true})
+  vim.api.nvim_set_keymap("n", "gm", "<cmd>lua Format_range_operator()<CR>", { noremap = true })
 
-  require"lsp_signature".on_attach({
+  require("lsp_signature").on_attach {
     bind = true,
-    handler_opts = {border = "rounded"},
-    floating_window = false
-  })
+    handler_opts = { border = "rounded" },
+    floating_window = false,
+  }
 
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
   vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]

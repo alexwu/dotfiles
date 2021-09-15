@@ -37,8 +37,9 @@ vim.opt.softtabstop = 2
 vim.opt.tabstop = 2
 vim.opt.textwidth = 0
 vim.opt.tags = "./TAGS,TAGS"
-vim.opt.wildignore = "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store"
-vim.opt.shortmess:append("Icq")
+vim.opt.wildignore =
+  "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store"
+vim.opt.shortmess:append "Icq"
 vim.opt.termguicolors = true
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]

@@ -16,24 +16,11 @@ local function gofmt()
   return { exe = "gofmt", args = { "-s" }, stdin = true }
 end
 
-local function luaformatter()
-  return {
-    exe = "lua-format",
-    args = {
-      "--indent-width=2",
-      "--tab-width=2",
-      "--continuation-indent-width=2",
-      "--single-quote-to-double-quote",
-    },
-    stdin = true,
-  }
-end
-
 local function black()
   return { exe = "black", args = {}, stdin = true }
 end
 
-require("formatter").setup({
+require("formatter").setup {
   logging = false,
   filetype = {
     typescript = { prettier },
@@ -51,6 +38,6 @@ require("formatter").setup({
     lua = {},
     python = { black },
   },
-})
+}
 
 -- nnoremap({ "<Leader>y", ":Format<CR>" })
