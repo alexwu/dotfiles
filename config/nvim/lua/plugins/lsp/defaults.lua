@@ -56,6 +56,7 @@ function M.on_attach(client, bufnr)
   nnoremap {"[d", function() vim.lsp.diagnostic.goto_prev() end, silent = true}
   nnoremap {"]d", function() vim.lsp.diagnostic.goto_next() end, silent = true}
   nnoremap {"<BSlash>y", function() vim.lsp.buf.formatting() end, silent = true}
+  nnoremap {"<Leader>y", function() vim.lsp.buf.formatting() end, silent = true}
 
   vim.api.nvim_set_keymap("n", "gm", "<cmd>lua Format_range_operator()<CR>",
                           {noremap = true})
