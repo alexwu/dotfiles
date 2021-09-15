@@ -50,9 +50,7 @@ require("telescope").load_extension "gh"
 
 nnoremap {
   "<Leader>f",
-  function()
-    require("telescope.builtin").fd()
-  end,
+  require("telescope.builtin").fd,
 }
 
 nnoremap {

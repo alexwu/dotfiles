@@ -17,10 +17,8 @@ null_ls.config {
       extra_args = { "--config-path", vim.fn.expand "~/.config/stylua.toml" },
     },
     null_ls.builtins.formatting.rubocop.with {
-      command = "bundle",
+      command = "rubocop",
       args = {
-        "exec",
-        "rubocop",
         "--auto-correct",
         "--stdin",
         "$FILENAME",
@@ -67,9 +65,7 @@ for _, server in pairs(installed_servers) do
 
       nnoremap {
         "<Leader>y",
-        function()
-          vim.lsp.buf.formatting()
-        end,
+        vim.lsp.buf.formatting,
         silent = true,
         buffer = true,
       }
@@ -113,8 +109,7 @@ lspconfig.efm.setup {
   },
   filetypes = { "ruby", "eruby" },
   root_dir = function(fname)
-    return lspconfig.util.root_pattern "tsconfig.json"(fname)
-      or lspconfig.util.root_pattern(".eslintrc.js", ".git")(fname)
+    return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
   end,
   settings = {
     rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
@@ -130,14 +125,6 @@ lspconfig.efm.setup {
   capabilities = capabilities,
 }
 
---[[ lspconfig.graphql.setup {
-  on_attach = on_attach,
-  capabilities = capabilities,
-  cmd = {"graphql-lsp", "server", "-m", "stream"},
-  filetypes = {"graphql"},
-  root_dir = lspconfig.util.root_pattern(".git", ".graphqlrc")
-}
- ]]
 lspconfig.sorbet.setup {
   on_attach = on_attach,
   capabilities = capabilities,

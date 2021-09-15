@@ -1,8 +1,7 @@
-local utils = require "utils"
-local map = utils.map
 local keymap = require "astronauta.keymap"
 local nnoremap = keymap.nnoremap
 local xnoremap = keymap.xnoremap
+local inoremap = keymap.inoremap
 
 vim.g.mapleader = " "
 
@@ -19,16 +18,16 @@ xnoremap { "<C-k>", "5gk" }
 xnoremap { "<C-h>", "5h" }
 xnoremap { "<C-l>", "5l" }
 
-map("i", "<C-j>", "<Down>")
-map("i", "<C-k>", "<Up>")
-map("i", "<C-h>", "<Left>")
-map("i", "<C-l>", "<Right>")
+inoremap { "<C-j>", "<Down>" }
+inoremap { "<C-k>", "<Up>" }
+inoremap { "<C-h>", "<Left>" }
+inoremap { "<C-l>", "<Right>" }
 
-map("n", "<CR>", "<Cmd>noh<CR><CR>", { silent = true })
-map("n", "<space><space>", "<C-^>")
+nnoremap { "<CR>", "<Cmd>noh<CR><CR>", silent = true }
+nnoremap { "<space><space>", "<C-^>" }
 
-map("n", "<A-o>", "o<esc>")
-map("n", "<A-O>", "O<esc>")
+nnoremap { "<A-o>", "o<esc>" }
+nnoremap { "<A-O>", "O<esc>" }
 
 nnoremap { "<A-w>", "<Cmd>tabclose<CR>" }
 nnoremap { "<A-t>", "<Cmd>tabnew<CR>" }

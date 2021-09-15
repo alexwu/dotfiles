@@ -3,6 +3,8 @@ local tnoremap = keymap.tnoremap
 local nnoremap = keymap.nnoremap
 
 vim.g.floaterm_borderchars = "─│─│╭╮╯╰"
+vim.g.floaterm_width = 0.9
+vim.g.floaterm_height = 0.9
 
 nnoremap { "<F10>", "<Cmd>FloatermToggle<CR>" }
 tnoremap { "<F10>", "<Cmd>FloatermToggle<CR>" }
