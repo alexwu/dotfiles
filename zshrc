@@ -18,8 +18,8 @@ export NVM_COMPLETION=true
 
 autoload -U colors && colors
 
-export FZF_DEFAULT_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage"
-export FZF_CTRL_T_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage"
+export FZF_DEFAULT_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store"
+export FZF_CTRL_T_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'"
 export BUNDLED_COMMANDS=(srb)
 
@@ -87,7 +87,7 @@ zinit wait lucid for \
 #   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
 if [ "$OS" = "Darwin" ]; then
-  # . $HOME/.asdf/asdf.sh
+  . $HOME/.asdf/asdf.sh
 fi
 
 zinit wait blockf lucid for \
