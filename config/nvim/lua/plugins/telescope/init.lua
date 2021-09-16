@@ -1,5 +1,6 @@
 local nnoremap = require("astronauta.keymap").nnoremap
 local actions = require "telescope.actions"
+local path = require "plenary.path"
 
 R = function(name)
   require("plenary.reload").reload_module(name)
@@ -19,6 +20,9 @@ require("telescope").setup {
         ["<C-u>"] = require("plugins.telescope.actions").clear_line,
       },
     },
+  },
+  pickers = {
+    file_browser = {},
   },
   extensions = {
     fzf = {
@@ -79,4 +83,27 @@ nnoremap {
   end,
 }
 
+nnoremap {
+  "<Leader>i",
+  function()
+    require("telescope.builtin").file_browser {
+      cwd = "%:h",
+    }
+  end,
+}
+
+nnoremap {
+  "<Leader>b",
+  function()
+
+    local cwd = path.new("%")
+    print(self)
+    for root, value in ipairs(vim.fn["projectionist#query"] "wrap") do
+      print(root)
+      print(value)
+    end
+  end,
+}
+
 vim.cmd [[autocmd FileType TelescopePrompt setlocal nocursorline]]
+vim.cmd [[autocmd User TelescopePreviewerLoaded setlocal wrap]]
