@@ -150,3 +150,5 @@ lspconfig.rust_analyzer.setup {
     },
   },
 }
+
+vim.cmd [[autocmd FileType LspInfo nmap <buffer> q <cmd>quit<cr>]]

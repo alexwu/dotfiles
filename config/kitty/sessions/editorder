@@ -1,0 +1,6 @@
+new_tab Edit Order
+layout horizontal
+cd ~/Code/editorder
+launch --title "Server" zsh
+launch --title "Editor" nvim
+focus

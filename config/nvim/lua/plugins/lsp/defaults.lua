@@ -59,7 +59,6 @@ function M.on_attach(client, bufnr)
     end,
     silent = true,
   }
-  -- vim.cmd [[menu File.Code\ Actions <cmd>lua vim.lsp.buf.code_action()<CR>]]
   nnoremap {
     "K",
     function()
@@ -103,12 +102,12 @@ function M.on_attach(client, bufnr)
     silent = true,
   }
 
-  vim.api.nvim_set_keymap("n", "gm", "<cmd>lua Format_range_operator()<CR>", { noremap = true })
-
   require("lsp_signature").on_attach {
     bind = true,
     handler_opts = { border = "rounded" },
-    floating_window = false,
+    floating_window = true,
+    hint_enable = false,
+    max_height = 4,
   }
 
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
