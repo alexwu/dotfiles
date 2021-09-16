@@ -44,7 +44,18 @@ return require("packer").startup {
           check_ts = true,
           ignored_next_char = "[%w%.]",
         }
+        require("nvim-autopairs.completion.cmp").setup {
+          map_cr = true,
+          map_complete = true,
+          auto_select = false,
+          insert = false,
+          map_char = {
+            all = "(",
+            tex = "{",
+          },
+        }
       end,
+      requires = { "hrsh7th/nvim-cmp" },
     }
     use { "windwp/nvim-ts-autotag" }
     use { "JoosepAlviste/nvim-ts-context-commentstring" }
