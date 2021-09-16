@@ -10,8 +10,6 @@ nnoremap { "k", "gk" }
 
 nnoremap { "<C-j>", "5gj" }
 nnoremap { "<C-k>", "5gk" }
-nnoremap { "<C-h>", "5h" }
-nnoremap { "<C-l>", "5l" }
 
 xnoremap { "<C-j>", "5gj" }
 xnoremap { "<C-k>", "5gk" }
