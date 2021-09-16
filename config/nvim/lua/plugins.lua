@@ -39,11 +39,14 @@ return require("packer").startup {
     use {
       "windwp/nvim-autopairs",
       config = function()
-        require("nvim-autopairs").setup {
+        local npairs = require "nvim-autopairs"
+        npairs.setup {
           map_bs = false,
           check_ts = true,
           ignored_next_char = "[%w%.]",
         }
+        npairs.add_rules(require "nvim-autopairs.rules.endwise-lua")
+        npairs.add_rules(require "nvim-autopairs.rules.endwise-ruby")
         require("nvim-autopairs.completion.cmp").setup {
           map_cr = true,
           map_complete = true,
