@@ -51,6 +51,7 @@ require("telescope").load_extension "fzf"
 require("telescope").load_extension "frecency"
 require("telescope").load_extension "hop"
 require("telescope").load_extension "gh"
+require("telescope").load_extension "neoclip"
 
 nnoremap {
   "<Leader>f",
@@ -83,21 +84,19 @@ nnoremap {
   end,
 }
 
-nnoremap {
-  "<Leader>i",
-  function()
-    require("telescope.builtin").file_browser {
-      cwd = "%:h",
-    }
-  end,
-}
+-- nnoremap {
+--   "-",
+--   function()
+--     require("telescope.builtin").file_browser {
+--       cwd = "%:h",
+--     }
+--   end,
+-- }
 
 nnoremap {
   "<Leader>b",
   function()
-
-    local cwd = path.new("%")
-    print(self)
+    local cwd = path.new "%"
     for root, value in ipairs(vim.fn["projectionist#query"] "wrap") do
       print(root)
       print(value)

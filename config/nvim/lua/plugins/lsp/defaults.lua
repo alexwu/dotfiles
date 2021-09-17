@@ -28,16 +28,6 @@ function M.on_attach(client, bufnr)
     { border = "rounded", focusable = false }
   )
 
-  -- local original_set_virtual_text = vim.lsp.diagnostic.set_virtual_text
-  -- local set_virtual_text_custom = function(diagnostics, bufnr, client_id,
-  --                                          sign_ns, opts)
-  --   opts = opts or {}
-  --   opts.severity_limit = "Error"
-  --   original_set_virtual_text(diagnostics, bufnr, client_id, sign_ns, opts)
-  -- end
-
-  -- vim.lsp.diagnostic.set_virtual_text = set_virtual_text_custom
-
   nnoremap {
     "gD",
     function()
@@ -94,13 +84,6 @@ function M.on_attach(client, bufnr)
     end,
     silent = true,
   }
-  nnoremap {
-    "<Leader>y",
-    function()
-      vim.lsp.buf.formatting()
-    end,
-    silent = true,
-  }
 
   require("lsp_signature").on_attach {
     bind = true,
@@ -118,7 +101,6 @@ end
 function M.capabilities()
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
-  capabilities.textDocument.completion.completionItem.snippetSupport = true
   return capabilities
 end
 

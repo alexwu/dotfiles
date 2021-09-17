@@ -12,24 +12,9 @@ capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 local null_ls = require "null-ls"
 
 null_ls.config {
-  sources = {
-    null_ls.builtins.formatting.stylua.with {
-      extra_args = { "--config-path", vim.fn.expand "~/.config/stylua.toml" },
-    },
-    null_ls.builtins.formatting.rubocop.with {
-      command = "rubocop",
-      args = {
-        "--auto-correct",
-        "--stdin",
-        "$FILENAME",
-        "2>/dev/null",
-        "|",
-        "awk 'f; /^====================$/{f=1}'",
-      },
-    },
-  },
+  sources = {},
 }
-lspconfig["null-ls"].setup { on_attach = on_attach, autostart = true }
+lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
 
 for _, server in pairs(installed_servers) do
   local opts = { on_attach = on_attach, capabilities = capabilities }
@@ -64,12 +49,6 @@ for _, server in pairs(installed_servers) do
       ts_utils.setup_client(client)
 
       nnoremap {
-        "<Leader>y",
-        vim.lsp.buf.formatting,
-        silent = true,
-        buffer = true,
-      }
-      nnoremap {
         "<Leader>o",
         ts_utils.organize_imports,
         silent = true,
@@ -77,6 +56,9 @@ for _, server in pairs(installed_servers) do
       }
     end
     opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
+    opts.flags = {
+      debounce_text_changes = 500,
+    }
   end
 
   if server.name == "graphql" then

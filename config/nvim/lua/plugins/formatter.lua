@@ -7,6 +7,31 @@ local function prettier()
     stdin = true,
   }
 end
+local function rubocop()
+  return {
+    exe = "bundle exec rubocop",
+    args = {
+      "--auto-correct",
+      "--stdin",
+      "%:p",
+      "2>/dev/null",
+      "|",
+      "awk 'f; /^====================$/{f=1}'",
+    },
+    stdin = true,
+  }
+end
+
+local function stylua()
+  return {
+    exe = "stylua",
+    args = {
+      "--config-path " .. vim.fn.expand "~/.config/stylua.toml",
+      "-",
+    },
+    stdin = true,
+  }
+end
 
 local function rustfmt()
   return { exe = "rustfmt", args = { "--emit=stdout" }, stdin = true }
@@ -33,11 +58,11 @@ require("formatter").setup {
     jsonc = { prettier },
     html = { prettier },
     css = { prettier },
-    ruby = { prettier },
+    ruby = { rubocop },
     rust = { rustfmt },
-    lua = {},
+    lua = { stylua },
     python = { black },
   },
 }
 
--- nnoremap({ "<Leader>y", ":Format<CR>" })
+nnoremap({ "<Leader>y", ":Format<CR>" })
