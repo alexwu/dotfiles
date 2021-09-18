@@ -82,9 +82,6 @@ zinit wait lucid atload'_zsh_autosuggest_start' for \
 zinit wait lucid for \
   OMZL::history.zsh \
   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
-# zinit wait lucid for \
-#   OMZL::history.zsh \
-#   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
 if [ "$OS" = "Darwin" ]; then
   . $HOME/.asdf/asdf.sh

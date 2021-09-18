@@ -61,7 +61,7 @@ nnoremap {
 nnoremap {
   "<Leader>t",
   function()
-    require("telescope").extensions.frecency.frecency()
+    require("telescope.builtin").treesitter()
   end,
 }
 
@@ -84,14 +84,12 @@ nnoremap {
   end,
 }
 
--- nnoremap {
---   "-",
---   function()
---     require("telescope.builtin").file_browser {
---       cwd = "%:h",
---     }
---   end,
--- }
+nnoremap {
+  "<Leader>p",
+  function()
+    require("telescope").extensions.neoclip.default()
+  end,
+}
 
 nnoremap {
   "<Leader>b",

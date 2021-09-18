@@ -1,3 +1,14 @@
+local Terminal = require("toggleterm.terminal").Terminal
+local lazygit = Terminal:new { cmd = "lazygit", hidden = true }
+
+local rails_console = Terminal:new {
+  cmd = "bundle exec rails console",
+}
+
+function Rails_console()
+  rails_console:toggle()
+end
+
 require("toggleterm").setup {
   size = function(term)
     if term.direction == "horizontal" then
@@ -28,3 +39,4 @@ require("toggleterm").setup {
 vim.cmd [[autocmd FileType toggleterm nmap <buffer> - +]]
 vim.cmd [[autocmd FileType toggleterm nmap <buffer> <space><space> <cmd>ToggleTerm<CR>]]
 vim.cmd [[autocmd FileType toggleterm tmap <buffer> <esc> <C-\><C-n>]]
+vim.cmd [[command! -nargs=0 RConsole :lua Rails_console()<CR>]]

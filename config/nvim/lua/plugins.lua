@@ -198,14 +198,12 @@ return require("packer").startup {
     }
 
     use {
-      "kyazdani42/nvim-tree.lua",
+      "~/Code/nvim-tree.lua",
       requires = { "kyazdani42/nvim-web-devicons" },
       setup = function()
-        require "plugins.tree"
       end,
       config = function()
-        local tree_cb = require("nvim-tree.config").nvim_tree_callback
-        vim.g.nvim_tree_bindings = { { key = "-", cb = tree_cb "parent_node" } }
+        require "plugins.tree"
       end,
     }
 
