@@ -32,5 +32,6 @@ nnoremap { "<A-O>", "O<esc>" }
 nnoremap { "<A-w>", "<Cmd>tabclose<CR>" }
 nnoremap { "<A-t>", "<Cmd>tabnew<CR>" }
 
+vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <ESC> :cclose<CR> ]]
 vim.cmd [[command! -nargs=0 Trash :!trash %]]
 vim.cmd [[command! -nargs=0 Delete :!trash %]]

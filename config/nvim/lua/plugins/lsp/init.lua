@@ -37,10 +37,10 @@ for _, server in pairs(installed_servers) do
         disable_commands = false,
         enable_import_on_completion = true,
         import_on_completion_timeout = 5000,
+        eslint_enable_diagnostics = false,
         eslint_bin = "eslint_d",
-        eslint_enable_diagnostics = true,
         eslint_opts = { diagnostics_format = "#{m} [#{c}]" },
-        enable_formatting = true,
+        enable_formatting = false,
         formatter = "eslint_d",
         filter_out_diagnostics_by_code = { 80001 },
       }
@@ -80,6 +80,18 @@ local rubocop = {
   formatStdin = true,
 }
 
+local eslint = {
+  lintCommand = "eslint_d -f visualstudio --stdin --stdin-filename ${INPUT}",
+  lintStdin = true,
+  lintFormats = {
+    "%f(%l,%c): %tarning %m",
+    "%f(%l,%c): %rror %m",
+  },
+  lintIgnoreExitCode = true,
+  formatCommand = "eslint_d --fix-to-stdout --stdin --stdin-filename=${INPUT}",
+  formatStdin = true,
+}
+
 lspconfig.efm.setup {
   init_options = {
     documentFormatting = true,
@@ -88,17 +100,17 @@ lspconfig.efm.setup {
     hover = true,
     documentSymbol = true,
   },
-  filetypes = { "ruby", "eruby" },
+  filetypes = { "ruby", "eruby", "typescript", "typescript.tsx", "typescriptreact" },
   root_dir = function(fname)
     return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
   end,
   settings = {
     rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
     languages = {
-      javascript = {},
-      typescript = {},
-      javascriptreact = {},
-      typescriptreact = {},
+      javascript = { eslint },
+      typescript = { eslint },
+      javascriptreact = { eslint },
+      typescriptreact = { eslint },
       ruby = { rubocop },
     },
   },
@@ -132,4 +144,4 @@ lspconfig.rust_analyzer.setup {
   },
 }
 
-vim.cmd [[autocmd FileType LspInfo nmap <buffer> q <cmd>quit<cr>]]
+vim.cmd [[autocmd FileType LspInfo,null-ls-info nmap <buffer> q <cmd>quit<cr>]]

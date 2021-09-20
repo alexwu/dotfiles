@@ -77,6 +77,13 @@ nnoremap {
 }
 
 nnoremap {
+  "<Leader>p",
+  function()
+    require("telescope").extensions.neoclip.default()
+  end,
+}
+
+nnoremap {
   "<Leader>i",
   function()
     require("plugins.telescope.pickers").related_files()
