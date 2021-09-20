@@ -1,6 +1,5 @@
 local nnoremap = require("astronauta.keymap").nnoremap
 local actions = require "telescope.actions"
-local path = require "plenary.path"
 
 R = function(name)
   require("plenary.reload").reload_module(name)
@@ -39,16 +38,9 @@ require("telescope").setup {
       trace_entry = true,
       reset_selection = true,
     },
-    frecency = {
-      workspaces = {
-        ["dotfiles"] = "~/.dotfiles",
-        ["editorder"] = "~/Code/editorder",
-      },
-    },
   },
 }
 require("telescope").load_extension "fzf"
-require("telescope").load_extension "frecency"
 require("telescope").load_extension "hop"
 require("telescope").load_extension "gh"
 require("telescope").load_extension "neoclip"
@@ -61,7 +53,7 @@ nnoremap {
 nnoremap {
   "<Leader>t",
   function()
-    require("telescope").extensions.frecency.frecency()
+    require("telescope.builtin").treesitter()
   end,
 }
 
@@ -84,23 +76,10 @@ nnoremap {
   end,
 }
 
--- nnoremap {
---   "-",
---   function()
---     require("telescope.builtin").file_browser {
---       cwd = "%:h",
---     }
---   end,
--- }
-
 nnoremap {
-  "<Leader>b",
+  "<Leader>i",
   function()
-    local cwd = path.new "%"
-    for root, value in ipairs(vim.fn["projectionist#query"] "wrap") do
-      print(root)
-      print(value)
-    end
+    require("plugins.telescope.pickers").related_files()
   end,
 }
 

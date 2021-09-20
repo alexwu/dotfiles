@@ -85,7 +85,6 @@ return require("packer").startup {
         { "nvim-lua/plenary.nvim" },
         { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
         { "kyazdani42/nvim-web-devicons" },
-        { "nvim-telescope/telescope-frecency.nvim", requires = "tami5/sql.nvim" },
         { "nvim-telescope/telescope-hop.nvim" },
         { "AckslD/nvim-neoclip.lua" },
         { "nvim-telescope/telescope-github.nvim" },
@@ -104,6 +103,7 @@ return require("packer").startup {
             telescope = require("telescope.themes").get_dropdown { hide_preview = false },
           },
         }
+        require("telescope").load_extension "gotopreview"
       end,
       requires = { "nvim-telescope/telescope.nvim" },
     }
@@ -175,6 +175,14 @@ return require("packer").startup {
     }
 
     use {
+      "phaazon/hop.nvim",
+      as = "hop",
+      config = function()
+        require("hop").setup { keys = "etovxqpdygfblzhckisuran" }
+      end,
+    }
+
+    use {
       "ibhagwan/fzf-lua",
       requires = { "kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf" },
       config = function()
@@ -198,14 +206,10 @@ return require("packer").startup {
     }
 
     use {
-      "kyazdani42/nvim-tree.lua",
+      "~/Code/nvim-tree.lua",
       requires = { "kyazdani42/nvim-web-devicons" },
-      setup = function()
-        require "plugins.tree"
-      end,
       config = function()
-        local tree_cb = require("nvim-tree.config").nvim_tree_callback
-        vim.g.nvim_tree_bindings = { { key = "-", cb = tree_cb "parent_node" } }
+        require "plugins.tree"
       end,
     }
 
@@ -292,22 +296,7 @@ return require("packer").startup {
       "L3MON4D3/LuaSnip",
       requires = { "rafamadriz/friendly-snippets" },
       config = function()
-        require("luasnip.loaders.from_vscode").lazy_load {}
-        local types = require "luasnip.util.types"
-        require("luasnip").config.setup {
-          ext_opts = {
-            [types.choiceNode] = {
-              active = {
-                virt_text = { { "●", "" } },
-              },
-            },
-            [types.insertNode] = {
-              active = {
-                virt_text = { { "●", "" } },
-              },
-            },
-          },
-        }
+        require "plugins.snippets"
       end,
     }
 
