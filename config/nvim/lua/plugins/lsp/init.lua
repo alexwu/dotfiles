@@ -9,12 +9,11 @@ local installed_servers = lsp_installer.get_installed_servers()
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
-local null_ls = require "null-ls"
-
-null_ls.config {
-  sources = {},
-}
-lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
+-- local null_ls = require "null-ls"
+-- null_ls.config {
+--   sources = {},
+-- }
+-- lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
 
 for _, server in pairs(installed_servers) do
   local opts = { on_attach = on_attach, capabilities = capabilities }
