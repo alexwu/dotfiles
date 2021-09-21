@@ -31,13 +31,13 @@ cmp.setup {
     end,
   },
   mapping = {
-    ["<C-d>"] = cmp.mapping.scroll_docs(-4),
-    ["<C-f>"] = cmp.mapping.scroll_docs(4),
-    ["<C-Space>"] = cmp.mapping.complete(),
-    ["<C-e>"] = cmp.mapping.close(),
-    ["<Tab>"] = cmp.mapping(function(fallback)
+    ["<C-D>"] = cmp.mapping.scroll_docs(-4),
+    ["<C-F>"] = cmp.mapping.scroll_docs(4),
+    ["<C-SPACE>"] = cmp.mapping.complete(),
+    ["<C-E>"] = cmp.mapping.close(),
+    ["<TAB>"] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
-        cmp.mapping.select_next_item()
+        feedkey "<C-n>"
       elseif luasnip.expand_or_jumpable() then
         luasnip.expand_or_jump()
       elseif has_words_before() then
@@ -49,7 +49,7 @@ cmp.setup {
       "i",
       "s",
     }),
-    ["<S-Tab>"] = cmp.mapping(function(fallback)
+    ["<S-TAB>"] = cmp.mapping(function(fallback)
       if vim.fn.pumvisible() == 1 then
         feedkey "<C-p>"
       elseif luasnip.jumpable(-1) then

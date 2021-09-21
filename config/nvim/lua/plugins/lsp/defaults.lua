@@ -4,7 +4,7 @@ local nnoremap = require("astronauta.keymap").nnoremap
 function M.on_attach(client, bufnr)
   local signs = {
     Error = "✘ ",
-    Warning = " ",
+    Warn = " ",
     Hint = " ",
     Info = " ",
   }
