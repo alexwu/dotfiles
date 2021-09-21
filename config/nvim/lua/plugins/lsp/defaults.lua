@@ -35,13 +35,13 @@ function M.on_attach(client, bufnr)
     end,
     silent = true,
   }
-  nnoremap {
-    "gr",
-    function()
-      vim.lsp.buf.references()
-    end,
-    silent = true,
-  }
+  -- nnoremap {
+  --   "gr",
+  --   function()
+  --     vim.lsp.buf.references()
+  --   end,
+  --   silent = true,
+  -- }
   nnoremap {
     "<Leader>a",
     function()
@@ -59,7 +59,7 @@ function M.on_attach(client, bufnr)
   nnoremap {
     "L",
     function()
-      vim.lsp.diagnostic.show_position_diagnostics { border = "rounded", focusable = false }
+      vim.lsp.diagnostic.show_line_diagnostics { border = "rounded", focusable = false }
     end,
     silent = true,
   }
