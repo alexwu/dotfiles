@@ -80,13 +80,19 @@ return require("packer").startup {
     use {
       "rmagatti/goto-preview",
       config = function()
+        local nnoremap = require("astronauta.keymap").nnoremap
         require("goto-preview").setup {
-          default_mappings = true,
+          default_mappings = false,
           references = {
             telescope = require("telescope.themes").get_dropdown { hide_preview = false },
           },
         }
         require("telescope").load_extension "gotopreview"
+
+        nnoremap {
+          "gr",
+          require("goto-preview").goto_preview_references,
+        }
       end,
       requires = { "nvim-telescope/telescope.nvim" },
     }
