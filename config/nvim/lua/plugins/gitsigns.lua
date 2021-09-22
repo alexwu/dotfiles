@@ -2,7 +2,9 @@ local keymap = require "astronauta.keymap"
 local nnoremap = keymap.nnoremap
 
 require("gitsigns").setup {
-  current_line_blame = true,
+  debug_mode = true,
+  current_line_blame = false,
+  attach_to_untracked = false,
   preview_config = { border = "rounded" },
   current_line_blame_formatter_opts = { relative_time = true },
   current_line_blame_formatter = function(name, blame_info, opts)

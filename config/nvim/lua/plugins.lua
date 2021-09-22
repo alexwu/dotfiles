@@ -71,6 +71,7 @@ return require("packer").startup {
         { "nvim-telescope/telescope-hop.nvim" },
         { "AckslD/nvim-neoclip.lua" },
         { "nvim-telescope/telescope-github.nvim" },
+        { "nvim-telescope/telescope-packer.nvim" }
       },
       config = function()
         require "plugins.telescope"
@@ -303,6 +304,13 @@ return require("packer").startup {
     }
 
     use {
+      "lewis6991/spaceless.nvim",
+      config = function()
+        require("spaceless").setup()
+      end,
+    }
+
+    use {
       "knubie/vim-kitty-navigator",
       run = "cp ./*.py ~/.config/kitty/",
       config = function()
@@ -338,7 +346,6 @@ return require("packer").startup {
     use { "tpope/vim-rails", ft = { "ruby" } }
     use { "tpope/vim-repeat" }
     use { "tpope/vim-surround" }
-    use { "axelf4/vim-strip-trailing-whitespace" }
     use { "chaoren/vim-wordmotion" }
   end,
   config = {

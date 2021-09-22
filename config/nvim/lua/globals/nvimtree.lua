@@ -23,3 +23,4 @@ vim.g.nvim_tree_special_files = {
   ["Gemfile.lock"] = true,
   ["package.json"] = true,
 }
+vim.g.nvim_tree_git_hl = 0
