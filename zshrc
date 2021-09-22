@@ -6,7 +6,12 @@ fi
 OS="$(uname -s)"
 
 if [ "$OS" = "Darwin" ]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+  if [ $(arch) = "arm64" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ $(arch) = "i386" ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+
   export FZF_BASE=$(brew --prefix)/bin/fzf
   export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
   export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
@@ -38,10 +43,18 @@ then
   alias ssh="kitty +kitten ssh"
 fi
 
+if command -v floaterm &> /dev/null
+then
+  alias fvim="floaterm"
+fi
+
+if command -v exa &> /dev/null
+then
+  alias ls="exa --sort type"
+fi
+
 alias zshconfig="$EDITOR ~/.dotfiles/zshrc"
 alias nvimrc="$EDITOR ~/.dotfiles/config/nvim"
-alias ls="exa --sort type"
-alias fvim="floaterm"
 
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.zinit/bin/zinit.zsh ]]; then
@@ -112,3 +125,5 @@ function z() {
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 alias luamake=/Users/jamesbombeelu/Code/lua-language-server/3rd/luamake/luamake
+
+. /usr/local/opt/asdf/libexec/asdf.sh
