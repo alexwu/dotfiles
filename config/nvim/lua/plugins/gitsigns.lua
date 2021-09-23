@@ -1,5 +1,4 @@
-local keymap = require "astronauta.keymap"
-local nnoremap = keymap.nnoremap
+local nnoremap = vim.keymap.nnoremap
 
 require("gitsigns").setup {
   debug_mode = true,

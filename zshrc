@@ -20,6 +20,7 @@ fi
 export PATH="$HOME/.bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export NVM_COMPLETION=true
+export DEBUG_PLENARY=true
 
 autoload -U colors && colors
 
@@ -125,5 +126,3 @@ function z() {
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 alias luamake=/Users/jamesbombeelu/Code/lua-language-server/3rd/luamake/luamake
-
-. /usr/local/opt/asdf/libexec/asdf.sh

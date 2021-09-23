@@ -1,4 +1,4 @@
-local nnoremap = require("astronauta.keymap").nnoremap
+local nnoremap = vim.keymap.nnoremap
 
 vim.g.kitty_navigator_no_mappings = 1
 nnoremap { "<A-h>", "<CMD>KittyNavigateLeft<cr>" }

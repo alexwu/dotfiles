@@ -1,4 +1,4 @@
-local keymap = require "astronauta.keymap"
+local keymap = vim.keymap
 local nnoremap = keymap.nnoremap
 local xnoremap = keymap.xnoremap
 local inoremap = keymap.inoremap

@@ -2,7 +2,7 @@ local lspconfig = require "lspconfig"
 local root_pattern = lspconfig.util.root_pattern
 local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
-local nnoremap = require("astronauta.keymap").nnoremap
+local nnoremap = vim.keymap.nnoremap
 
 local installed_servers = lsp_installer.get_installed_servers()
 

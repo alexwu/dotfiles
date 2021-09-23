@@ -20,6 +20,7 @@ vim.opt.laststatus = 2
 vim.opt.linebreak = true
 vim.opt.modelines = 1
 vim.opt.backup = false
+vim.opt.swapfile = false
 vim.opt.writebackup = true
 vim.opt.joinspaces = false
 vim.opt.showmode = false

@@ -1,3 +1,7 @@
+local tree_width = function(percentage)
+  return math.min(35, vim.fn.round(vim.o.columns * percentage))
+end
+
 vim.g.nvim_tree_auto_close = 1
 vim.g.nvim_tree_auto_ignore_ft = { "startify", "dashboard", "netrw", "help" }
 vim.g.nvim_tree_auto_open = 1
@@ -9,7 +13,7 @@ vim.g.nvim_tree_ignore = { ".DS_Store" }
 vim.g.nvim_tree_indent_markers = 0
 vim.g.nvim_tree_quit_on_open = 1
 vim.g.nvim_tree_respect_buf_cwd = 1
-vim.g.nvim_tree_width = "20%"
+vim.g.nvim_tree_width = tree_width(0.2)
 vim.g.nvim_tree_auto_ignore_ft = { "startify", "dashboard", "netrw", "help" }
 vim.g.nvim_tree_ignore = { ".DS_Store" }
 vim.g.nvim_tree_show_icons = {

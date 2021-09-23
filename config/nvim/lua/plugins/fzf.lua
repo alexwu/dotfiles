@@ -1,4 +1,4 @@
-local nnoremap = require("astronauta.keymap").nnoremap
+local nnoremap = vim.keymap.nnoremap
 
 require("fzf-lua").setup {
   win_border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },

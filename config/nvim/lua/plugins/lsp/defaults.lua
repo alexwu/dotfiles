@@ -1,5 +1,5 @@
 local M = {}
-local nnoremap = require("astronauta.keymap").nnoremap
+local nnoremap = vim.keymap.nnoremap
 
 function M.on_attach(client, bufnr)
   local signs = {
@@ -35,17 +35,17 @@ function M.on_attach(client, bufnr)
     end,
     silent = true,
   }
-  -- nnoremap {
-  --   "gr",
-  --   function()
-  --     vim.lsp.buf.references()
-  --   end,
-  --   silent = true,
-  -- }
   nnoremap {
     "<Leader>a",
     function()
       vim.lsp.buf.code_action()
+    end,
+    silent = true,
+  }
+  nnoremap {
+    "<Leader>rn",
+    function()
+      vim.lsp.buf.rename()
     end,
     silent = true,
   }

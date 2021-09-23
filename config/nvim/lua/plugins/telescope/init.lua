@@ -1,4 +1,4 @@
-local nnoremap = require("astronauta.keymap").nnoremap
+local nnoremap = vim.keymap.nnoremap
 local actions = require "telescope.actions"
 
 R = function(name)
@@ -42,9 +42,6 @@ require("telescope").setup {
 }
 require("telescope").load_extension "fzf"
 require("telescope").load_extension "hop"
-require("telescope").load_extension "gh"
-require("telescope").load_extension "packer"
-require("telescope").load_extension "neoclip"
 
 nnoremap {
   "<Leader>f",
@@ -76,11 +73,10 @@ nnoremap {
     require("telescope.builtin").git_stash()
   end,
 }
-
 nnoremap {
-  "<Leader>p",
+  "<Leader>gd",
   function()
-    require("telescope").extensions.neoclip.default()
+    require("telescope.builtin").lsp_definitions()
   end,
 }
 
