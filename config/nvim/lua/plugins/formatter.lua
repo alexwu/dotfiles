@@ -58,7 +58,7 @@ require("formatter").setup {
     jsonc = { prettier },
     html = { prettier },
     css = { prettier },
-    ruby = { rubocop },
+    ruby = { prettier, rubocop },
     rust = { rustfmt },
     lua = { stylua },
     python = { black },

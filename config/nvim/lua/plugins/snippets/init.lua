@@ -163,7 +163,7 @@ ls.snippets = {
       i(1),
       t "(",
       -- Placeholder with initial text.
-      i(2, "foo"),
+      i(2, ""),
       -- Linebreak
       t { ")", "\t" },
       -- Last Placeholder, exit Point of the snippet. EVERY 'outer' SNIPPET NEEDS Placeholder 0.

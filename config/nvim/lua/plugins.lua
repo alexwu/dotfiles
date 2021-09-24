@@ -1,15 +1,9 @@
-local fn = vim.fn
-local install_path = fn.stdpath "data" .. "/site/pack/packer/start/packer.nvim"
-if fn.empty(fn.glob(install_path)) > 0 then
-  fn.system {
-    "git",
-    "clone",
-    "--depth",
-    "1",
-    "https://github.com/wbthomason/packer.nvim",
-    install_path,
-  }
-  vim.cmd "packadd packer.nvim"
+local needs_packer = require("utils").needs_packer
+local install_packer = require("utils").install_packer
+
+local install_path = vim.fn.stdpath "data" .. "/site/pack/packer/start/packer.nvim"
+if needs_packer(install_path) then
+  install_packer(install_path)
 end
 
 vim.cmd [[
@@ -134,7 +128,6 @@ return require("packer").startup {
       "hoob3rt/lualine.nvim",
       requires = {
         "kyazdani42/nvim-web-devicons",
-        "nvim-treesitter/nvim-treesitter",
       },
       config = function()
         require "statusline"
@@ -164,26 +157,6 @@ return require("packer").startup {
     }
 
     use {
-      "rmagatti/goto-preview",
-      config = function()
-        local nnoremap = vim.keymap.nnoremap
-        require("goto-preview").setup {
-          default_mappings = false,
-          references = {
-            telescope = require("telescope.themes").get_dropdown { hide_preview = false },
-          },
-        }
-        require("telescope").load_extension "gotopreview"
-
-        nnoremap {
-          "gr",
-          require("goto-preview").goto_preview_references,
-        }
-      end,
-      requires = { "nvim-telescope/telescope.nvim" },
-    }
-
-    use {
       "rcarriga/nvim-notify",
       config = function()
         vim.notify = require "notify"
@@ -204,18 +177,18 @@ return require("packer").startup {
       "IndianBoy42/hop.nvim",
       as = "hop",
       config = function()
-        require("hop").setup { keys = "etovxqpdygfblzhckisuran" }
+        require "plugins.hop"
       end,
     }
 
-    -- use {
-    --   "ibhagwan/fzf-lua",
-    --   requires = { "kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf" },
-    --   config = function()
-    --     require "plugins.fzf"
-    --   end,
-    --   disable = true,
-    -- }
+    use {
+      "ibhagwan/fzf-lua",
+      requires = { "kyazdani42/nvim-web-devicons", "vijaymarupudi/nvim-fzf" },
+      config = function()
+        require "plugins.fzf"
+      end,
+      disable = true,
+    }
 
     use {
       "~/Code/nvim-tree.lua",
@@ -255,7 +228,6 @@ return require("packer").startup {
       end,
     }
 
-    use { "ggandor/lightspeed.nvim" }
     use {
       "monaqa/dial.nvim",
       config = function()

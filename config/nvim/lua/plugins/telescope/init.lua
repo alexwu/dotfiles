@@ -74,9 +74,16 @@ nnoremap {
   end,
 }
 nnoremap {
-  "<Leader>gd",
+  "gd",
   function()
     require("telescope.builtin").lsp_definitions()
+  end,
+}
+
+nnoremap {
+  "gr",
+  function()
+    require("telescope.builtin").lsp_references()
   end,
 }
 
