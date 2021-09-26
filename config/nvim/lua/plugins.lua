@@ -173,8 +173,7 @@ return require("packer").startup {
     use { "kevinhwang91/nvim-bqf" }
 
     use {
-      -- "phaazon/hop.nvim",
-      "IndianBoy42/hop.nvim",
+      "phaazon/hop.nvim",
       as = "hop",
       config = function()
         require "plugins.hop"

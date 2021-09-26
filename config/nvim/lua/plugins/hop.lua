@@ -8,16 +8,10 @@ nnoremap {
     hop.hint_words()
   end,
 }
--- nnoremap {
---   "<Leader>l",
---   function()
---     hop.hint_lines()
---   end,
--- }
 
 nnoremap {
   "<Leader>l",
   function()
-    hop.hint_locals()
+    hop.hint_lines()
   end,
 }
