@@ -12,6 +12,6 @@ nnoremap {
 nnoremap {
   "<Leader>l",
   function()
-    hop.hint_lines()
+    hop.hint_lines_skip_whitespace()
   end,
 }
