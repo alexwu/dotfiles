@@ -54,10 +54,24 @@ require("fzf-lua").setup {
   lsp = { async_or_timeout = 3000 },
 }
 
--- nnoremap {"<Leader>f", function() require("fzf-lua").files() end}
--- nnoremap {"<Leader>rg", function() require("fzf-lua").live_grep() end}
--- nnoremap {"<Leader>ag", function() require("fzf-lua").live_grep() end}
+nnoremap {
+  "<Leader>f",
+  function()
+    require("fzf-lua").files()
+  end,
+}
+nnoremap {
+  "<Leader>rg",
+  function()
+    require("fzf-lua").live_grep()
+  end,
+}
+nnoremap {
+  "<Leader>ag",
+  function()
+    require("fzf-lua").live_grep()
+  end,
+}
 
 vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
-
 vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR>]]

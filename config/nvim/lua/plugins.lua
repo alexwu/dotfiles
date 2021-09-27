@@ -185,7 +185,7 @@ return require("packer").startup {
     }
 
     use {
-      "~/Code/nvim-tree.lua",
+      "kyazdani42/nvim-tree.lua",
       requires = { "kyazdani42/nvim-web-devicons" },
       config = function()
         require "plugins.tree"

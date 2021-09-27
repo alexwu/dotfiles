@@ -3,7 +3,7 @@ local nnoremap = vim.keymap.nnoremap
 require("gitsigns").setup {
   debug_mode = true,
   current_line_blame = false,
-  attach_to_untracked = false,
+  attach_to_untracked = true,
   preview_config = { border = "rounded" },
   current_line_blame_formatter_opts = { relative_time = true },
   current_line_blame_formatter = function(name, blame_info, opts)
