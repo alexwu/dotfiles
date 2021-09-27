@@ -1,8 +1,15 @@
 local Terminal = require("toggleterm.terminal").Terminal
-local lazygit = Terminal:new { cmd = "lazygit", hidden = true }
 
 local rails_console = Terminal:new {
   cmd = "bundle exec rails console",
+  direction = "float",
+  float_opts = {
+    border = "rounded",
+    width = vim.fn.round(0.9 * vim.o.columns),
+    height = vim.fn.round(0.9 * vim.o.lines),
+    winblend = 0,
+    highlights = { border = "FloatBorder", background = "Normal" },
+  },
 }
 
 function Rails_console()
@@ -32,7 +39,7 @@ require("toggleterm").setup {
     width = vim.fn.round(0.9 * vim.o.columns),
     height = vim.fn.round(0.9 * vim.o.lines),
     winblend = 0,
-    highlights = { border = "Normal", background = "Normal" },
+    highlights = { border = "FloatBorder", background = "Normal" },
   },
 }
 
