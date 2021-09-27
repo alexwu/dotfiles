@@ -101,12 +101,6 @@ return require("packer").startup {
         require "plugins.telescope"
       end,
     }
-    use {
-      "voldikss/vim-floaterm",
-      config = function()
-        require "plugins.floaterm"
-      end,
-    }
 
     use {
       "vim-test/vim-test",
