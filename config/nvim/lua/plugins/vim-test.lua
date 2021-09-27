@@ -1,4 +1,24 @@
-vim.api.nvim_set_var("test#strategy", "floaterm")
+_G.toggleterm_strategy = function(cmd)
+  require("toggleterm.terminal").Terminal
+    :new({
+      cmd = cmd,
+      close_on_exit = false,
+      hidden = true,
+      direction = "float",
+    })
+    :toggle()
+end
+
+vim.cmd [[
+function! ToggletermStrategy(cmd)
+  let g:cmd = a:cmd . "\n"
+  lua toggleterm_strategy(vim.g.cmd)
+endfunction
+
+let g:test#custom_strategies = {'toggleterm': function('ToggletermStrategy')}
+]]
+
+vim.api.nvim_set_var("test#strategy", "toggleterm")
 vim.api.nvim_set_var("test#ruby#rspec#executable", "bundle exec rspec")
 vim.api.nvim_set_var("test#ruby#rspec#patterns", "_spec.rb")
 vim.api.nvim_set_var("test#ruby#rspec#options", {

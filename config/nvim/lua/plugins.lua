@@ -113,6 +113,7 @@ return require("packer").startup {
       config = function()
         require "plugins.vim-test"
       end,
+      requires = { "akinsho/toggleterm.nvim" },
     }
 
     use {
