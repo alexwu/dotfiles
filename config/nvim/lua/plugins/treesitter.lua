@@ -48,6 +48,20 @@ require("nvim-treesitter.configs").setup {
     updatetime = 25,
     persist_queries = false,
   },
+  refactor = {
+    smart_rename = {
+      enable = true,
+      keymaps = {
+        smart_rename = "<leader>rn",
+      },
+    },
+    navigation = {
+      enable = false,
+      keymaps = {
+        goto_definition_lsp_fallback = "gd",
+      },
+    },
+  },
   autopairs = { enable = true },
   autotag = { enable = true },
   context_commentstring = { enable = true },

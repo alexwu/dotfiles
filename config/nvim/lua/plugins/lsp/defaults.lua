@@ -36,20 +36,6 @@ function M.on_attach(client, bufnr)
     silent = true,
   }
   nnoremap {
-    "<Leader>a",
-    function()
-      vim.lsp.buf.code_action()
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "<Leader>rn",
-    function()
-      vim.lsp.buf.rename()
-    end,
-    silent = true,
-  }
-  nnoremap {
     "K",
     function()
       vim.lsp.buf.hover()
@@ -98,10 +84,12 @@ function M.on_attach(client, bufnr)
   vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]
 end
 
-function M.capabilities()
+local capabilities = function()
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
   return capabilities
 end
+
+M.capabilities = capabilities()
 
 return M

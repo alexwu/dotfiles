@@ -2,12 +2,13 @@ local lspconfig = require "lspconfig"
 local root_pattern = lspconfig.util.root_pattern
 local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
+local capabilities = require("plugins.lsp.defaults").capabilities
 local nnoremap = vim.keymap.nnoremap
 
 local installed_servers = lsp_installer.get_installed_servers()
 
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
+-- local capabilities = vim.lsp.protocol.make_client_capabilities()
+-- capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 -- local null_ls = require "null-ls"
 -- null_ls.config {

@@ -130,6 +130,7 @@ return require("packer").startup {
     }
 
     use { "nvim-treesitter/nvim-treesitter-textobjects" }
+    use { "nvim-treesitter/nvim-treesitter-refactor" }
     use {
       "nvim-treesitter/playground",
       cmd = { "TSHighlightCapturesUnderCursor", "TSPlaygroundToggle" },

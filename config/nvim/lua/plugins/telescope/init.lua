@@ -73,6 +73,15 @@ nnoremap {
     require("telescope.builtin").git_stash()
   end,
 }
+
+nnoremap {
+  "<Leader>a",
+  function()
+    require("telescope.builtin").lsp_code_actions()
+  end,
+  silent = true,
+}
+
 nnoremap {
   "gd",
   function()

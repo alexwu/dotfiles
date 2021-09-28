@@ -10,6 +10,7 @@ vim.g.nvim_tree_ignore = { ".DS_Store" }
 vim.g.nvim_tree_disable_window_picker = 1
 vim.g.nvim_tree_respect_buf_cwd = 1
 vim.g.nvim_tree_highlight_opened_files = 1
+vim.g.nvim_tree_quit_on_open = 1
 vim.g.nvim_tree_special_files = {
   ["Gemfile"] = 1,
   ["Gemfile.lock"] = 1,
@@ -23,6 +24,7 @@ vim.g.show_icons = {
 }
 
 tree.setup {
+  auto_close = true,
   hijack_netrw = true,
   disable_netrw = true,
   ignore_ft_on_setup = { "startify", "dashboard", "netrw", "help" },
