@@ -50,6 +50,13 @@ function M.on_attach(client, bufnr)
     silent = true,
   }
   nnoremap {
+    "<Leader>a",
+    function()
+      require("code_action_menu").open_code_action_menu()
+    end,
+    silent = true,
+  }
+  nnoremap {
     "[d",
     function()
       vim.lsp.diagnostic.goto_prev()

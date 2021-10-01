@@ -20,7 +20,8 @@ fi
 export PATH="$HOME/.bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export NVM_COMPLETION=true
-export DEBUG_PLENARY=true
+export LESS="-XFR"
+# export DEBUG_PLENARY=false
 
 autoload -U colors && colors
 

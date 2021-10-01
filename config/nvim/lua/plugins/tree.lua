@@ -6,7 +6,6 @@ local tree_width = function(percentage)
   return math.min(35, vim.fn.round(vim.o.columns * percentage))
 end
 
-vim.g.nvim_tree_ignore = { ".DS_Store" }
 vim.g.nvim_tree_disable_window_picker = 1
 vim.g.nvim_tree_respect_buf_cwd = 1
 vim.g.nvim_tree_highlight_opened_files = 1

@@ -3,7 +3,14 @@ local cb = require("diffview.config").diffview_callback
 require("diffview").setup {
   diff_binaries = false,
   use_icons = true,
-  file_panel = { width = 35 },
+  file_panel = {
+    width = 35,
+    listing_style = "tree",
+    tree_options = {
+      flatten_dirs = true,
+    },
+  },
+  enhanced_diff_hl = true,
   key_bindings = {
     view = {
       ["<tab>"] = cb "select_next_entry",

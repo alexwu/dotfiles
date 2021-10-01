@@ -17,7 +17,7 @@ return require("packer").startup {
   function()
     -- Minimal setup
     use { "wbthomason/packer.nvim" }
-    use { "alexwu/nvim-snazzy" }
+    use { "~/Code/nvim-snazzy" }
     use { "nvim-treesitter/nvim-treesitter" }
     use {
       "b3nj5m1n/kommentary",
@@ -67,8 +67,10 @@ return require("packer").startup {
         "ray-x/lsp_signature.nvim",
         "kosayoda/nvim-lightbulb",
         "hrsh7th/cmp-nvim-lsp",
+        "weilbith/nvim-code-action-menu",
       },
     }
+
     use {
       "hrsh7th/nvim-cmp",
       requires = {
@@ -188,6 +190,9 @@ return require("packer").startup {
     use {
       "kyazdani42/nvim-tree.lua",
       requires = { "kyazdani42/nvim-web-devicons" },
+      setup = function()
+        vim.g.nvim_tree_ignore = { ".DS_Store", ".git" }
+      end,
       config = function()
         require "plugins.tree"
       end,
@@ -237,14 +242,6 @@ return require("packer").startup {
       config = function()
         require "plugins.diffview"
       end,
-      cmd = {
-        "DiffviewOpen",
-        "DiffviewClose",
-        "DiffviewFileHistory",
-        "DiffviewRefresh",
-        "DiffviewFocusFiles",
-        "DiffviewToggleFiles",
-      },
     }
     use {
       "lukas-reineke/indent-blankline.nvim",
@@ -279,7 +276,6 @@ return require("packer").startup {
     }
 
     use { "tpope/vim-projectionist", requires = { "tpope/vim-dispatch" } }
-    use { "tpope/vim-rails", ft = { "ruby" } }
     use { "tpope/vim-repeat" }
     use { "tpope/vim-surround" }
     use { "chaoren/vim-wordmotion" }
