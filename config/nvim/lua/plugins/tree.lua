@@ -24,7 +24,6 @@ vim.g.show_icons = {
 
 tree.setup {
   auto_close = true,
-  hijack_netrw = true,
   disable_netrw = true,
   ignore_ft_on_setup = { "startify", "dashboard", "netrw", "help" },
   view = {

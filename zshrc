@@ -47,12 +47,12 @@ fi
 
 if command -v floaterm &> /dev/null
 then
-  alias fvim="floaterm"
+  alias nvim="floaterm"
 fi
 
 if command -v exa &> /dev/null
 then
-  alias ls="exa --sort type"
+  alias ls="exa --sort type --ignore-glob='.DS_Store'"
 fi
 
 alias zshconfig="$EDITOR ~/.dotfiles/zshrc"
