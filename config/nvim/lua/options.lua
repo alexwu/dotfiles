@@ -42,6 +42,7 @@ vim.opt.wildignore =
   "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store"
 vim.opt.shortmess:append "Icq"
 vim.opt.termguicolors = true
+vim.o.shell = "/opt/homebrew/bin/zsh"
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
 

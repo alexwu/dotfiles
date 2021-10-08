@@ -158,6 +158,9 @@ return require("packer").startup {
       "rcarriga/nvim-notify",
       config = function()
         vim.notify = require "notify"
+        require("notify").setup {
+          timeout = 500,
+        }
       end,
     }
 
@@ -284,5 +287,10 @@ return require("packer").startup {
     opt_default = false,
     log = "debug",
     max_jobs = 9,
+    display = {
+      open_fn = function()
+        return require("packer.util").float { border = "rounded" }
+      end,
+    },
   },
 }

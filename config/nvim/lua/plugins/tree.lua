@@ -3,7 +3,7 @@ local tree = require "nvim-tree"
 local tree_cb = require("nvim-tree.config").nvim_tree_callback
 
 local tree_width = function(percentage)
-  return math.min(35, vim.fn.round(vim.o.columns * percentage))
+  return math.min(40, vim.fn.round(vim.o.columns * percentage))
 end
 
 vim.g.nvim_tree_disable_window_picker = 1
@@ -27,6 +27,7 @@ tree.setup {
   disable_netrw = true,
   ignore_ft_on_setup = { "startify", "dashboard", "netrw", "help" },
   view = {
+    auto_resize = true,
     width = tree_width(0.2),
     mappings = {
       list = {

@@ -12,7 +12,12 @@ local installed_servers = lsp_installer.get_installed_servers()
 
 -- local null_ls = require "null-ls"
 -- null_ls.config {
---   sources = {},
+--   sources = {
+--     null_ls.builtins.diagnostics.rubocop.with {
+--       command = "bundle",
+--       args = { "exec", "rubocop", "-f", "json", "--stdin", "$FILENAME" },
+--     },
+--   },
 -- }
 -- lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
 
@@ -96,7 +101,7 @@ local eslint = {
 lspconfig.efm.setup {
   init_options = {
     documentFormatting = true,
-    codeAction = true,
+    codeAction = false,
     completion = true,
     hover = true,
     documentSymbol = true,
