@@ -14,7 +14,9 @@ if [ "$OS" = "Darwin" ]; then
 
   export FZF_BASE=$(brew --prefix)/bin/fzf
   export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
-  export SSH_AUTH_SOCK=/Users/$(whoami)/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+  export SSH_AUTH_SOCK=$HOME/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+  export PATH="/Applications/Postgres.app/Contents/Versions/latest/bin:$PATH"
+  alias yoink=“open -a Yoink”
 fi
 
 export PATH="$HOME/.bin:$PATH"
