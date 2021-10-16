@@ -10,6 +10,7 @@ require("telescope").setup {
   defaults = {
     set_env = { ["COLORTERM"] = "truecolor" },
     prompt_prefix = "❯ ",
+    preview = false,
     mappings = {
       i = {
         ["<esc>"] = actions.close,
@@ -22,6 +23,7 @@ require("telescope").setup {
   },
   pickers = {
     file_browser = {},
+    find_files = {},
   },
   extensions = {
     fzf = {

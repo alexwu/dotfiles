@@ -2,6 +2,7 @@ local nnoremap = vim.keymap.nnoremap
 
 require("gitsigns").setup {
   debug_mode = true,
+  sign_priority = 6,
   current_line_blame = false,
   attach_to_untracked = true,
   preview_config = { border = "rounded" },

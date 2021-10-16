@@ -14,11 +14,11 @@ end
 cmp.setup {
   sources = {
     { name = "luasnip" },
-    { name = "treesitter" },
+    { name = "buffer" },
     { name = "nvim_lsp" },
     { name = "nvim_lua" },
     { name = "cmp_tabnine" },
-    { name = "buffer" },
+    { name = "treesitter" },
     { name = "path" },
   },
   snippet = {

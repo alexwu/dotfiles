@@ -7,19 +7,16 @@ local nnoremap = vim.keymap.nnoremap
 
 local installed_servers = lsp_installer.get_installed_servers()
 
--- local capabilities = vim.lsp.protocol.make_client_capabilities()
--- capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
-
--- local null_ls = require "null-ls"
--- null_ls.config {
---   sources = {
---     null_ls.builtins.diagnostics.rubocop.with {
---       command = "bundle",
---       args = { "exec", "rubocop", "-f", "json", "--stdin", "$FILENAME" },
---     },
---   },
--- }
--- lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
+local null_ls = require "null-ls"
+null_ls.config {
+  sources = {
+    null_ls.builtins.diagnostics.rubocop.with {
+      command = "bundle",
+      args = { "exec", "rubocop", "-f", "json", "--stdin", "$FILENAME" },
+    },
+  },
+}
+lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
 
 for _, server in pairs(installed_servers) do
   local opts = { on_attach = on_attach, capabilities = capabilities }
@@ -41,6 +38,7 @@ for _, server in pairs(installed_servers) do
 
       ts_utils.setup {
         disable_commands = false,
+        eslint_enable_code_actions = false,
         enable_import_on_completion = true,
         import_on_completion_timeout = 5000,
         eslint_enable_diagnostics = false,
@@ -51,18 +49,23 @@ for _, server in pairs(installed_servers) do
         filter_out_diagnostics_by_code = { 80001 },
       }
 
-      ts_utils.setup_client(client)
-
-      nnoremap {
-        "<Leader>o",
-        ts_utils.organize_imports,
-        silent = true,
-        buffer = true,
-      }
+      -- ts_utils.setup_client(client)
     end
+    opts.settings = {
+      flags = {
+        debounce_text_changes = 250,
+      },
+    }
     opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
-    opts.flags = {
-      debounce_text_changes = 500,
+  end
+
+  if server.name == "eslint" then
+    opts.on_attach = function(client, bufnr)
+      client.resolved_capabilities.document_formatting = true
+      on_attach(client, bufnr)
+    end
+    opts.settings = {
+      format = { enable = true },
     }
   end
 
@@ -70,6 +73,7 @@ for _, server in pairs(installed_servers) do
     opts.filetypes = { "graphql" }
     opts.root_dir = root_pattern(".git", ".graphqlrc")
   end
+
   if server.name == "jsonls" then
     opts.filetypes = { "json" }
   end
@@ -98,31 +102,31 @@ local eslint = {
   formatStdin = true,
 }
 
-lspconfig.efm.setup {
-  init_options = {
-    documentFormatting = true,
-    codeAction = false,
-    completion = true,
-    hover = true,
-    documentSymbol = true,
-  },
-  filetypes = { "ruby", "eruby", "typescript", "typescript.tsx", "typescriptreact" },
-  root_dir = function(fname)
-    return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
-  end,
-  settings = {
-    rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
-    languages = {
-      javascript = { eslint },
-      typescript = { eslint },
-      javascriptreact = { eslint },
-      typescriptreact = { eslint },
-      ruby = { rubocop },
-    },
-  },
-  on_attach = on_attach,
-  capabilities = capabilities,
-}
+-- lspconfig.efm.setup {
+--   init_options = {
+--     documentFormatting = true,
+--     codeAction = false,
+--     completion = true,
+--     hover = true,
+--     documentSymbol = true,
+--   },
+--   filetypes = { "ruby", "eruby", "typescript", "typescript.tsx", "typescriptreact" },
+--   root_dir = function(fname)
+--     return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
+--   end,
+--   settings = {
+--     rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
+--     languages = {
+--       javascript = { eslint },
+--       typescript = { eslint },
+--       javascriptreact = { eslint },
+--       typescriptreact = { eslint },
+--       ruby = { rubocop },
+--     },
+--   },
+--   on_attach = on_attach,
+--   capabilities = capabilities,
+-- }
 
 lspconfig.sorbet.setup {
   on_attach = on_attach,

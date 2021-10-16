@@ -26,8 +26,8 @@ require("nvim-treesitter.configs").setup {
     keymaps = {
       init_selection = "<C-s>",
       node_incremental = "<C-s>",
-      scope_incremental = "<C-a>",
-      node_decremental = "<C-x>",
+      -- scope_incremental = "<C-a>",
+      -- node_decremental = "<C-x>",
     },
   },
   textobjects = {

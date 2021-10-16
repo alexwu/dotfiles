@@ -1,7 +1,7 @@
 local M = {}
 local nnoremap = vim.keymap.nnoremap
 
-function M.on_attach(client, bufnr)
+function M.on_attach(_, _)
   local signs = {
     Error = "✘ ",
     Warn = " ",
@@ -86,8 +86,8 @@ function M.on_attach(client, bufnr)
     max_height = 4,
   }
 
+  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_position_diagnostics({focusable = false, border = "rounded"}) ]]
-  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb() ]]
   vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]
 end
 

@@ -1,3 +1,5 @@
+local bin = "/opt/homebrew/bin/"
+
 vim.cmd [[ syntax off ]]
 
 vim.opt.autoindent = true
@@ -42,10 +44,11 @@ vim.opt.wildignore =
   "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store"
 vim.opt.shortmess:append "Icq"
 vim.opt.termguicolors = true
-vim.o.shell = "/opt/homebrew/bin/zsh"
+
+vim.o.shell = bin .. "zsh"
 
 vim.cmd [[ au TextYankPost * silent! lua vim.highlight.on_yank{ higroup='IncSearch', timeout = 150 } ]]
 
 -- disable python 2
 vim.g.loaded_python_provider = 0
-vim.g["python3_host_prog"] = "/opt/homebrew/bin/python3"
+vim.g["python3_host_prog"] = bin .. "python3"

@@ -113,15 +113,6 @@ return require("packer").startup {
     }
 
     use {
-      "AckslD/nvim-neoclip.lua",
-      config = function()
-        require("neoclip").setup()
-        require("telescope").load_extension "neoclip"
-      end,
-      requires = { "nvim-telescope/telescope.nvim" },
-    }
-
-    use {
       "hoob3rt/lualine.nvim",
       requires = {
         "kyazdani42/nvim-web-devicons",
@@ -159,7 +150,7 @@ return require("packer").startup {
       config = function()
         vim.notify = require "notify"
         require("notify").setup {
-          timeout = 500,
+          timeout = 100,
         }
       end,
     }
@@ -234,10 +225,23 @@ return require("packer").startup {
     use {
       "monaqa/dial.nvim",
       config = function()
+        local dial = require "dial"
+        dial.augends["custom#boolean"] = dial.common.enum_cyclic {
+          name = "boolean",
+          strlist = { "true", "false" },
+        }
+        table.insert(dial.config.searchlist.normal, "custom#boolean")
+
         vim.api.nvim_set_keymap("n", "<C-a>", "<Plug>(dial-increment)", {})
         vim.api.nvim_set_keymap("n", "<C-x>", "<Plug>(dial-decrement)", {})
-        vim.api.nvim_set_keymap("v", "<C-a>", "<Plug>(dial-increment)", {})
-        vim.api.nvim_set_keymap("v", "<C-x>", "<Plug>(dial-decrement)", {})
+        vim.keymap.vnoremap {
+          "<C-a>",
+          "<Plug>(dial-increment)",
+        }
+        vim.keymap.vnoremap {
+          "<C-x>",
+          "<Plug>(dial-decrement)",
+        }
       end,
     }
     use {
@@ -282,6 +286,7 @@ return require("packer").startup {
     use { "tpope/vim-repeat" }
     use { "tpope/vim-surround" }
     use { "chaoren/vim-wordmotion" }
+    use { "junegunn/vim-easy-align" }
   end,
   config = {
     opt_default = false,

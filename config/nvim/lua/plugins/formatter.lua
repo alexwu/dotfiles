@@ -7,6 +7,7 @@ local function prettier()
     stdin = true,
   }
 end
+
 local function rubocop()
   return {
     exe = "bundle exec rubocop",
@@ -65,4 +66,4 @@ require("formatter").setup {
   },
 }
 
-nnoremap { "<Leader>y", ":Format<CR>" }
+nnoremap { "<Leader>y", ":Format<CR>", silent = true }

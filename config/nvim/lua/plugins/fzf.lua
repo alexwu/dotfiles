@@ -16,7 +16,7 @@ require("fzf-lua").setup {
   files = {
     prompt = "❯ ",
     cmd = "",
-    git_icons = true,
+    git_icons = false,
     file_icons = true,
     color_icons = true,
   },
@@ -36,19 +36,12 @@ require("fzf-lua").setup {
     ["ts"] = "blue",
     ["tsx"] = "cyan",
   },
-  fzf_binds = {
-    "f2:toggle-preview",
-    "f3:toggle-preview-wrap",
-    "shift-down:preview-page-down",
-    "shift-up:preview-page-up",
-    "ctrl-d:half-page-down",
-    "ctrl-u:half-page-up",
-    "ctrl-f:page-down",
-    "ctrl-b:page-up",
-    "ctrl-a:toggle-all",
-    "ctrl-u:clear-query",
+  keymap = {
+    fzf = {
+      ["ctrl-u"] = "unix-line-discard",
+    },
   },
-  window_on_create = function()
+  on_create = function()
     vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-c>", { nowait = true, silent = true })
   end,
   lsp = { async_or_timeout = 3000 },
