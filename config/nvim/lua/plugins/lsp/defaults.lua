@@ -45,7 +45,13 @@ function M.on_attach(_, _)
   nnoremap {
     "L",
     function()
-      vim.lsp.diagnostic.show_line_diagnostics { border = "rounded", focusable = false }
+      vim.diagnostic.open_float(nil, {
+        scope = "line",
+        show_header = false,
+        source = "always",
+        focusable = false,
+        border = "rounded",
+      })
     end,
     silent = true,
   }
@@ -87,8 +93,18 @@ function M.on_attach(_, _)
   }
 
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
-  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_position_diagnostics({focusable = false, border = "rounded"}) ]]
+  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua Show_cursor_diagnostics() ]]
   vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]
+end
+
+function Show_cursor_diagnostics()
+  vim.diagnostic.open_float(nil, {
+    scope = "cursor",
+    show_header = false,
+    source = "always",
+    focusable = false,
+    border = "rounded",
+  })
 end
 
 local capabilities = function()
