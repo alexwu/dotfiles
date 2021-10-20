@@ -28,6 +28,7 @@ return require("packer").startup {
       config = function()
         require "plugins.commenting"
       end,
+      requires = { "JoosepAlviste/nvim-ts-context-commentstring" },
     }
 
     -- important
