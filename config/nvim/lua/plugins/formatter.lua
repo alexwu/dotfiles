@@ -1,4 +1,5 @@
 local nnoremap = vim.keymap.nnoremap
+local xnoremap = vim.keymap.xnoremap
 
 local function prettier()
   return {
@@ -67,3 +68,4 @@ require("formatter").setup {
 }
 
 nnoremap { "<Leader>y", ":Format<CR>", silent = true }
+xnoremap { "<Leader>y", ":Format<CR>", silent = true }

@@ -17,6 +17,7 @@ return require("packer").startup {
   function()
     -- Minimal setup
     use { "wbthomason/packer.nvim" }
+    use { "nvim-lua/plenary.nvim" }
     use { "~/Code/nvim-snazzy" }
     use { "nvim-treesitter/nvim-treesitter" }
     use {
@@ -141,6 +142,7 @@ return require("packer").startup {
     use {
       "andymass/vim-matchup",
       setup = function()
+        vim.g.matchup_matchparen_deferred = 1
         vim.g.matchup_matchparen_offscreen = { method = "popup" }
       end,
     }
@@ -287,6 +289,23 @@ return require("packer").startup {
     use { "tpope/vim-surround" }
     use { "chaoren/vim-wordmotion" }
     use { "junegunn/vim-easy-align" }
+
+    use {
+      "karb94/neoscroll.nvim",
+      config = function()
+        require("neoscroll").setup {}
+
+        local t = {}
+        t["<C-u>"] = { "scroll", { "-vim.wo.scroll", "true", "250" } }
+        t["<C-d>"] = { "scroll", { "vim.wo.scroll", "true", "250" } }
+        t["<C-b>"] = { "scroll", { "-vim.api.nvim_win_get_height(0)", "true", "450" } }
+        t["<C-f>"] = { "scroll", { "vim.api.nvim_win_get_height(0)", "true", "450" } }
+        t["<C-y>"] = { "scroll", { "-0.10", "false", "100" } }
+        t["<C-e>"] = { "scroll", { "0.10", "false", "100" } }
+
+        require("neoscroll.config").set_mappings(t)
+      end,
+    }
   end,
   config = {
     opt_default = false,

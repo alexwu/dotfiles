@@ -47,7 +47,12 @@ require("telescope").load_extension "hop"
 
 nnoremap {
   "<Leader>f",
-  require("telescope.builtin").fd,
+  function()
+    require("telescope.builtin").find_files {
+      layout_strategy = "horizontal",
+      layout_config = { width = 0.5 },
+    }
+  end,
 }
 
 nnoremap {

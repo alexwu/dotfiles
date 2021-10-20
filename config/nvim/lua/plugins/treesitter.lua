@@ -43,7 +43,7 @@ require("nvim-treesitter.configs").setup {
     },
   },
   playground = {
-    enable = true,
+    enable = false,
     disable = {},
     updatetime = 25,
     persist_queries = false,
@@ -63,7 +63,7 @@ require("nvim-treesitter.configs").setup {
     },
   },
   autopairs = { enable = true },
-  autotag = { enable = true },
+  -- autotag = { enable = true },
   context_commentstring = { enable = true },
   matchup = { enable = true },
 }

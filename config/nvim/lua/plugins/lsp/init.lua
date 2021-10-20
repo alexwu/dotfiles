@@ -5,20 +5,7 @@ local on_attach = require("plugins.lsp.defaults").on_attach
 local capabilities = require("plugins.lsp.defaults").capabilities
 local nnoremap = vim.keymap.nnoremap
 
-local installed_servers = lsp_installer.get_installed_servers()
-
-local null_ls = require "null-ls"
-null_ls.config {
-  sources = {
-    null_ls.builtins.diagnostics.rubocop.with {
-      command = "bundle",
-      args = { "exec", "rubocop", "-f", "json", "--stdin", "$FILENAME" },
-    },
-  },
-}
-lspconfig["null-ls"].setup { on_attach = on_attach, autostart = false }
-
-for _, server in pairs(installed_servers) do
+lsp_installer.on_server_ready(function(server)
   local opts = { on_attach = on_attach, capabilities = capabilities }
 
   if server.name == "sumneko_lua" then
@@ -79,7 +66,8 @@ for _, server in pairs(installed_servers) do
   end
 
   server:setup(opts)
-end
+  vim.cmd [[ do User LspAttachBuffers ]]
+end)
 
 local rubocop = {
   lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",
@@ -90,43 +78,27 @@ local rubocop = {
   formatStdin = true,
 }
 
-local eslint = {
-  lintCommand = "eslint_d -f visualstudio --stdin --stdin-filename ${INPUT}",
-  lintStdin = true,
-  lintFormats = {
-    "%f(%l,%c): %tarning %m",
-    "%f(%l,%c): %rror %m",
+lspconfig.efm.setup {
+  init_options = {
+    documentFormatting = true,
+    codeAction = false,
+    completion = true,
+    hover = true,
+    documentSymbol = true,
   },
-  lintIgnoreExitCode = true,
-  formatCommand = "eslint_d --fix-to-stdout --stdin --stdin-filename=${INPUT}",
-  formatStdin = true,
+  filetypes = { "ruby", "eruby" },
+  root_dir = function(fname)
+    return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
+  end,
+  settings = {
+    rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
+    languages = {
+      ruby = { rubocop },
+    },
+  },
+  on_attach = on_attach,
+  capabilities = capabilities,
 }
-
--- lspconfig.efm.setup {
---   init_options = {
---     documentFormatting = true,
---     codeAction = false,
---     completion = true,
---     hover = true,
---     documentSymbol = true,
---   },
---   filetypes = { "ruby", "eruby", "typescript", "typescript.tsx", "typescriptreact" },
---   root_dir = function(fname)
---     return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
---   end,
---   settings = {
---     rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
---     languages = {
---       javascript = { eslint },
---       typescript = { eslint },
---       javascriptreact = { eslint },
---       typescriptreact = { eslint },
---       ruby = { rubocop },
---     },
---   },
---   on_attach = on_attach,
---   capabilities = capabilities,
--- }
 
 lspconfig.sorbet.setup {
   on_attach = on_attach,
