@@ -65,10 +65,10 @@ cmp.setup {
         buffer = "[Buffer]",
         nvim_lsp = "[LSP]",
         nvim_lua = "[Lua]",
-        cmp_tabnine = "[TN]",
+        cmp_tabnine = "[T9]",
         path = "[Path]",
         luasnip = "[LuaSnip]",
-        treesitter = "[Treesitter]",
+        treesitter = "[TS]",
       })[entry.source.name]
 
       vim_item.dup = ({
