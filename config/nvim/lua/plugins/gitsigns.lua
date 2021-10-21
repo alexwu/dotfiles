@@ -29,17 +29,16 @@ require("gitsigns").setup {
 
     return { { " " .. text, "GitSignsCurrentLineBlame" } }
   end,
-}
+  keymaps = {
+    noremap = true,
 
-nnoremap {
-  "<Leader>sb",
-  function()
-    require("gitsigns").stage_buffer()
-  end,
-}
-nnoremap {
-  "M",
-  function()
-    require("gitsigns").blame_line { full = true }
-  end,
+    ["n <leader>sh"] = "<cmd>lua require\"gitsigns\".stage_hunk()<CR>",
+    ["v <leader>sh"] = "<cmd>lua require\"gitsigns\".stage_hunk({vim.fn.line(\".\"), vim.fn.line(\"v\")})<CR>",
+    ["n <leader>sb"] = "<cmd>lua require\"gitsigns\".stage_buffer()<CR>",
+    ["n <leader>hr"] = "<cmd>lua require\"gitsigns\".reset_hunk()<CR>",
+    ["v <leader>hr"] = "<cmd>lua require\"gitsigns\".reset_hunk({vim.fn.line(\".\"), vim.fn.line(\"v\")})<CR>",
+    ["n <leader>hu"] = "<cmd>lua require\"gitsigns\".undo_stage_hunk()<CR>",
+    ["n <leader>hb"] = "<cmd>lua require\"gitsigns\".reset_buffer()<CR>",
+    ["n M"] = "<cmd>lua require\"gitsigns\".blame_line(true)<CR>",
+  },
 }

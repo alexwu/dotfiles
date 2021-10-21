@@ -23,7 +23,9 @@ require("telescope").setup {
   },
   pickers = {
     file_browser = {},
-    find_files = {},
+    find_files = {
+      theme = "dropdown",
+    },
   },
   extensions = {
     fzf = {
@@ -48,10 +50,11 @@ require("telescope").load_extension "hop"
 nnoremap {
   "<Leader>f",
   function()
-    require("telescope.builtin").find_files {
-      layout_strategy = "horizontal",
-      layout_config = { width = 0.5 },
-    }
+    require("telescope.builtin").find_files(require("telescope.themes").get_dropdown {
+      layout_config = {
+        width = 0.3,
+      },
+    })
   end,
 }
 

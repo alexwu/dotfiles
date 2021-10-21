@@ -3,11 +3,15 @@ local root_pattern = lspconfig.util.root_pattern
 local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
 local capabilities = require("plugins.lsp.defaults").capabilities
-local nnoremap = vim.keymap.nnoremap
 
 lsp_installer.on_server_ready(function(server)
   local opts = { on_attach = on_attach, capabilities = capabilities }
 
+  opts.settings = {
+    flags = {
+      debounce_text_changes = 400,
+    },
+  }
   if server.name == "sumneko_lua" then
     opts.settings = {
       Lua = { diagnostics = { globals = { "vim", "use", "use_rocks" } } },
@@ -38,11 +42,6 @@ lsp_installer.on_server_ready(function(server)
 
       -- ts_utils.setup_client(client)
     end
-    opts.settings = {
-      flags = {
-        debounce_text_changes = 250,
-      },
-    }
     opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
   end
 
@@ -91,7 +90,7 @@ lspconfig.efm.setup {
     return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
   end,
   settings = {
-    rootMarkers = { ".eslintrc.js", ".git/", "Gemfile" },
+    rootMarkers = { ".eslintrc.js", ".git/", "Gemfile", ".rubocop.yml" },
     languages = {
       ruby = { rubocop },
     },

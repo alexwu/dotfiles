@@ -20,7 +20,7 @@ function M.on_attach(_, _)
       virtual_text = false,
       underline = true,
       signs = true,
-      update_in_insert = false,
+      update_in_insert = true,
     }
   )
   vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
