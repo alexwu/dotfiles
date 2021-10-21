@@ -52,7 +52,9 @@ nnoremap {
   function()
     require("telescope.builtin").find_files(require("telescope.themes").get_dropdown {
       layout_config = {
-        width = 0.3,
+        width = function()
+          return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+        end,
       },
     })
   end,

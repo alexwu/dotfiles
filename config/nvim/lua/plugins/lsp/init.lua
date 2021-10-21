@@ -4,6 +4,14 @@ local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
 local capabilities = require("plugins.lsp.defaults").capabilities
 
+require("lsp_signature").setup {
+  bind = true,
+  handler_opts = { border = "rounded" },
+  floating_window = true,
+  hint_enable = true,
+  max_height = 4,
+}
+
 lsp_installer.on_server_ready(function(server)
   local opts = { on_attach = on_attach, capabilities = capabilities }
 
@@ -12,6 +20,7 @@ lsp_installer.on_server_ready(function(server)
       debounce_text_changes = 400,
     },
   }
+
   if server.name == "sumneko_lua" then
     opts.settings = {
       Lua = { diagnostics = { globals = { "vim", "use", "use_rocks" } } },
@@ -39,8 +48,6 @@ lsp_installer.on_server_ready(function(server)
         formatter = "eslint_d",
         filter_out_diagnostics_by_code = { 80001 },
       }
-
-      -- ts_utils.setup_client(client)
     end
     opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
   end

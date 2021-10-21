@@ -17,6 +17,25 @@ return require("packer").startup {
   function()
     -- Minimal setup
     use { "wbthomason/packer.nvim" }
+    use {
+      "nathom/filetype.nvim",
+      config = function()
+        require("filetype").setup {
+          overrides = {
+            literal = {
+              Steepfile = "ruby",
+            },
+          },
+        }
+      end,
+    }
+    use { "lewis6991/impatient.nvim" }
+    use {
+      "antoinemadec/FixCursorHold.nvim",
+      config = function()
+        vim.g.curshold_updatime = 250
+      end,
+    }
     use { "nvim-lua/plenary.nvim" }
     use { "~/Code/nvim-snazzy" }
     use { "nvim-treesitter/nvim-treesitter" }
@@ -37,13 +56,6 @@ return require("packer").startup {
       run = "cp ./*.py ~/.config/kitty/",
       config = function()
         require "plugins.kitty"
-      end,
-    }
-    use { "lewis6991/impatient.nvim" }
-    use {
-      "antoinemadec/FixCursorHold.nvim",
-      config = function()
-        vim.g.curshold_updatime = 250
       end,
     }
     use {
@@ -239,14 +251,15 @@ return require("packer").startup {
 
         vim.api.nvim_set_keymap("n", "<C-a>", "<Plug>(dial-increment)", {})
         vim.api.nvim_set_keymap("n", "<C-x>", "<Plug>(dial-decrement)", {})
-        vim.keymap.vnoremap {
+
+        --[[ vnoremap {
           "<C-a>",
           "<Plug>(dial-increment)",
         }
-        vim.keymap.vnoremap {
+        vnoremap {
           "<C-x>",
           "<Plug>(dial-decrement)",
-        }
+        } ]]
       end,
     }
     use {

@@ -84,14 +84,6 @@ function M.on_attach(_, _)
     silent = true,
   }
 
-  require("lsp_signature").on_attach {
-    bind = true,
-    handler_opts = { border = "rounded" },
-    floating_window = true,
-    hint_enable = false,
-    max_height = 4,
-  }
-
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
   vim.cmd [[ autocmd CursorHold,CursorHoldI * lua Show_cursor_diagnostics() ]]
   vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]
