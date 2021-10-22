@@ -48,7 +48,23 @@ lsp_installer.on_server_ready(function(server)
         formatter = "eslint_d",
         filter_out_diagnostics_by_code = { 80001 },
       }
+
+      require("plugins.lsp.typescript").setup()
     end
+
+    opts.init_options = {
+      hostInfo = "neovim",
+      preferences = {
+        includeCompletionsForImportStatements = true,
+        includeInlayParameterNameHints = "literals",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    }
     opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
   end
 

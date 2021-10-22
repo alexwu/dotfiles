@@ -14,7 +14,7 @@ function M.on_attach(_, _)
     vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
   end
 
-  vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+  --[[ vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
     vim.lsp.diagnostic.on_publish_diagnostics,
     {
       virtual_text = false,
@@ -22,7 +22,20 @@ function M.on_attach(_, _)
       signs = true,
       update_in_insert = true,
     }
-  )
+  ) ]]
+
+  vim.diagnostic.config {
+    --[[ virtual_text = {
+      severity = vim.diagnostic.ERROR,
+    }, ]]
+    virtual_text = false,
+    underline = {},
+    signs = true,
+    float = {
+      show_header = false,
+      source = "if_many",
+    },
+  }
   vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
     vim.lsp.handlers.hover,
     { border = "rounded", focusable = false }
