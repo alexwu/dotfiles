@@ -120,10 +120,14 @@ zinit wait lucid as"completion" for \
   https://github.com/asdf-vm/asdf/blob/master/completions/_asdf \
   https://github.com/ggreer/the_silver_searcher/blob/master/_the_silver_searcher
 
-eval "$(zoxide init zsh --no-aliases)"
-function z() {
-  __zoxide_z "$@"
-}
+
+if command -v zoxide &> /dev/null
+then
+  eval "$(zoxide init zsh --no-aliases)"
+  function z() {
+    __zoxide_z "$@"
+  }
+fi
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
