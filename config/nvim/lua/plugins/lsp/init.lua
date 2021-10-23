@@ -23,7 +23,15 @@ lsp_installer.on_server_ready(function(server)
 
   if server.name == "sumneko_lua" then
     opts.settings = {
-      Lua = { diagnostics = { globals = { "vim", "use", "use_rocks" } } },
+      Lua = {
+        diagnostics = { globals = { "vim", "use", "use_rocks" } },
+        workspace = {
+          library = vim.api.nvim_get_runtime_file("", true),
+        },
+        telemetry = {
+          enable = false,
+        },
+      },
     }
   end
 
@@ -110,10 +118,10 @@ lspconfig.efm.setup {
   },
   filetypes = { "ruby", "eruby" },
   root_dir = function(fname)
-    return root_pattern "tsconfig.json"(fname) or root_pattern(".eslintrc.js", ".git")(fname)
+    return root_pattern "Gemfile"(fname) or root_pattern(".rubocop.yml", ".git")(fname)
   end,
   settings = {
-    rootMarkers = { ".eslintrc.js", ".git/", "Gemfile", ".rubocop.yml" },
+    rootMarkers = { ".git/", "Gemfile", ".rubocop.yml" },
     languages = {
       ruby = { rubocop },
     },
@@ -147,5 +155,3 @@ lspconfig.rust_analyzer.setup {
     },
   },
 }
-
-vim.cmd [[autocmd FileType LspInfo,null-ls-info nmap <buffer> q <cmd>quit<cr>]]

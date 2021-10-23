@@ -1,6 +1,6 @@
 local bin = "/opt/homebrew/bin/"
 
--- vim.cmd [[ syntax off ]]
+vim.cmd [[ syntax off ]]
 
 vim.opt.autoindent = true
 vim.opt.ch = 2

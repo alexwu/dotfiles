@@ -99,13 +99,20 @@ local inlay_hints_callback = function(opts)
       else
         text = prefix .. hint.text
       end
-      vim.api.nvim_buf_set_virtual_text(
+      vim.api.nvim_buf_set_extmark(
+        ctx.bufnr,
+        inlay_hints_ns,
+        end_line,
+        -1,
+        { virt_text = text, virt_text_pos = "eol", hl_mode = "combine" }
+      )
+      --[[ vim.api.nvim_buf_set_virtual_text(
         ctx.bufnr,
         inlay_hints_ns,
         end_line,
         { { text, highlight } },
         {}
-      )
+      ) ]]
     end
 
     if only_current_line then
@@ -133,7 +140,7 @@ end
 
 function M.setup()
   M.inlay_hints()
-  vim.cmd [[ autocmd BufEnter,InsertLeave .ts,.tsx lua require("plugins.lsp.typescript").inlay_hints() ]]
+  vim.cmd [[ autocmd BufEnter,InsertLeave *.ts,*.tsx lua require("plugins.lsp.typescript").inlay_hints() ]]
 end
 
 return M

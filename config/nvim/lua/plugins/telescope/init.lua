@@ -48,6 +48,12 @@ require("telescope").load_extension "fzf"
 require("telescope").load_extension "hop"
 
 nnoremap {
+  "<Leader><space>",
+  function()
+    require("telescope.builtin").buffers()
+  end,
+}
+nnoremap {
   "<Leader>f",
   function()
     require("telescope.builtin").find_files(require("telescope.themes").get_dropdown {

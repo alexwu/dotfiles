@@ -127,3 +127,5 @@ function z() {
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+export PATH="/opt/homebrew/opt/python@3.10/bin:$PATH"
+export PATH="/opt/homebrew/opt/node@16/bin:$PATH"

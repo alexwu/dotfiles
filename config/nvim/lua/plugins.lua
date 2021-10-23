@@ -126,14 +126,20 @@ return require("packer").startup {
     }
 
     use {
-      "hoob3rt/lualine.nvim",
+      "windwp/windline.nvim",
+      config = function()
+        require "statusline"
+      end,
+    }
+    --[[ use {
+      "nvim-lualine/lualine.nvim",
       requires = {
         "kyazdani42/nvim-web-devicons",
       },
       config = function()
         require "statusline"
       end,
-    }
+    } ]]
 
     use { "nvim-treesitter/nvim-treesitter-textobjects" }
     use { "nvim-treesitter/nvim-treesitter-refactor" }
@@ -241,24 +247,7 @@ return require("packer").startup {
     use {
       "monaqa/dial.nvim",
       config = function()
-        local dial = require "dial"
-        dial.augends["custom#boolean"] = dial.common.enum_cyclic {
-          name = "boolean",
-          strlist = { "true", "false" },
-        }
-        table.insert(dial.config.searchlist.normal, "custom#boolean")
-
-        vim.api.nvim_set_keymap("n", "<C-a>", "<Plug>(dial-increment)", {})
-        vim.api.nvim_set_keymap("n", "<C-x>", "<Plug>(dial-decrement)", {})
-
-        --[[ vnoremap {
-          "<C-a>",
-          "<Plug>(dial-increment)",
-        }
-        vnoremap {
-          "<C-x>",
-          "<Plug>(dial-decrement)",
-        } ]]
+        require("plugins.dial")
       end,
     }
     use {

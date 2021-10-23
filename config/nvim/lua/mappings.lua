@@ -23,7 +23,7 @@ inoremap { "<C-k>", "<Up>" }
 inoremap { "<C-h>", "<Left>" }
 inoremap { "<C-l>", "<Right>" }
 
-nnoremap { "<space><space>", "<C-^>" }
+-- nnoremap { "<space><space>", "<C-^>" }
 
 nnoremap { "<A-o>", "o<esc>" }
 nnoremap { "<A-O>", "O<esc>" }

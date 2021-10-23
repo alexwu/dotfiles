@@ -97,9 +97,10 @@ function M.on_attach(_, _)
     silent = true,
   }
 
-  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
-  vim.cmd [[ autocmd CursorHold,CursorHoldI * lua Show_cursor_diagnostics() ]]
-  vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR> ]]
+  vim.cmd [[autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
+  vim.cmd [[autocmd CursorHold,CursorHoldI * lua Show_cursor_diagnostics()]]
+  vim.cmd [[autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR>]]
+  vim.cmd [[autocmd FileType LspInfo,null-ls-info nmap <buffer> q <cmd>quit<cr>]]
 end
 
 function Show_cursor_diagnostics()
