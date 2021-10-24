@@ -48,8 +48,7 @@ local snazzy = function()
   }
 end
 
-require "wlsample.bubble"
---[[ require("lualine").setup {
+require("lualine").setup {
   options = {
     theme = snazzy(),
     disabled_filetypes = {},
@@ -73,4 +72,4 @@ require "wlsample.bubble"
     lualine_y = {},
     lualine_z = {},
   },
-} ]]
+}

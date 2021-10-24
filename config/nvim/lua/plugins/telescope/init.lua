@@ -1,5 +1,6 @@
 local nnoremap = vim.keymap.nnoremap
 local actions = require "telescope.actions"
+local builtin = require "telescope.builtin"
 
 R = function(name)
   require("plenary.reload").reload_module(name)
@@ -20,11 +21,18 @@ require("telescope").setup {
         ["<C-u>"] = require("plugins.telescope.actions").clear_line,
       },
     },
+    theme = "dropdown",
   },
   pickers = {
     file_browser = {},
-    find_files = {
-      theme = "dropdown",
+    find_files = {},
+    buffers = {
+      initial_mode = "normal",
+      mappings = {
+        n = {
+          ["<leader><space>"] = actions.close,
+        },
+      },
     },
   },
   extensions = {
@@ -50,13 +58,13 @@ require("telescope").load_extension "hop"
 nnoremap {
   "<Leader><space>",
   function()
-    require("telescope.builtin").buffers()
+    builtin.buffers()
   end,
 }
 nnoremap {
   "<Leader>f",
   function()
-    require("telescope.builtin").find_files(require("telescope.themes").get_dropdown {
+    builtin.find_files(require("telescope.themes").get_dropdown {
       layout_config = {
         width = function()
           return math.max(100, vim.fn.round(vim.o.columns * 0.3))
@@ -69,48 +77,26 @@ nnoremap {
 nnoremap {
   "<Leader>t",
   function()
-    require("telescope.builtin").treesitter()
+    builtin.treesitter()
   end,
 }
 
 nnoremap {
   "<Leader>rg",
   function()
-    require("telescope.builtin").live_grep()
+    builtin.live_grep()
   end,
 }
 nnoremap {
   "<Leader>br",
   function()
-    require("telescope.builtin").git_branches()
+    builtin.git_branches()
   end,
 }
 nnoremap {
   "<Leader>st",
   function()
-    require("telescope.builtin").git_stash()
-  end,
-}
-
--- nnoremap {
---   "<Leader>a",
---   function()
---     require("telescope.builtin").lsp_code_actions()
---   end,
---   silent = true,
--- }
-
-nnoremap {
-  "gd",
-  function()
-    require("telescope.builtin").lsp_definitions()
-  end,
-}
-
-nnoremap {
-  "gr",
-  function()
-    require("telescope.builtin").lsp_references()
+    builtin.git_stash()
   end,
 }
 

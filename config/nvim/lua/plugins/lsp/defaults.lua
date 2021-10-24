@@ -1,4 +1,5 @@
 local M = {}
+local builtin = require "telescope.builtin"
 local nnoremap = vim.keymap.nnoremap
 
 function M.on_attach(_, _)
@@ -40,6 +41,19 @@ function M.on_attach(_, _)
     vim.lsp.handlers.hover,
     { border = "rounded", focusable = false }
   )
+  nnoremap {
+    "gd",
+    function()
+      builtin.lsp_definitions()
+    end,
+  }
+
+  nnoremap {
+    "gr",
+    function()
+      builtin.lsp_references()
+    end,
+  }
 
   nnoremap {
     "gD",

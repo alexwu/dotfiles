@@ -82,6 +82,7 @@ return require("packer").startup {
         "kosayoda/nvim-lightbulb",
         "hrsh7th/cmp-nvim-lsp",
         "weilbith/nvim-code-action-menu",
+        "nvim-telescope/telescope.nvim",
       },
     }
 
@@ -116,6 +117,11 @@ return require("packer").startup {
         require "plugins.telescope"
       end,
     }
+    use {
+      "mrjones2014/dash.nvim",
+      requires = { "nvim-telescope/telescope.nvim" },
+      run = "make install",
+    }
 
     use {
       "vim-test/vim-test",
@@ -130,8 +136,9 @@ return require("packer").startup {
       config = function()
         require "statusline"
       end,
+      disable = true,
     }
-    --[[ use {
+    use {
       "nvim-lualine/lualine.nvim",
       requires = {
         "kyazdani42/nvim-web-devicons",
@@ -139,7 +146,7 @@ return require("packer").startup {
       config = function()
         require "statusline"
       end,
-    } ]]
+    }
 
     use { "nvim-treesitter/nvim-treesitter-textobjects" }
     use { "nvim-treesitter/nvim-treesitter-refactor" }
@@ -247,7 +254,7 @@ return require("packer").startup {
     use {
       "monaqa/dial.nvim",
       config = function()
-        require("plugins.dial")
+        require "plugins.dial"
       end,
     }
     use {
