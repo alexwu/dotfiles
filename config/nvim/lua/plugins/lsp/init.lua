@@ -95,20 +95,11 @@ lsp_installer.on_server_ready(function(server)
     opts.filetypes = { "json" }
   end
 
-  if server.name == "rust_analyzer" then
-    opts.on_attach = on_attach
-    opts.settings = {
-      ["rust-analyzer"] = {
-        assist = { importGranularity = "module", importPrefix = "by_self" },
-        cargo = { loadOutDirsFromCheck = true },
-        procMacro = { enable = true },
-      },
-    }
-  end
-
   server:setup(opts)
   vim.cmd [[ do User LspAttachBuffers ]]
 end)
+
+require("rust-tools").setup {}
 
 local rubocop = {
   lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",

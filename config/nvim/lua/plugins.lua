@@ -189,6 +189,17 @@ return require("packer").startup {
       requires = { "jose-elias-alvarez/null-ls.nvim" },
     }
 
+    use {
+      "simrat39/rust-tools.nvim",
+      requires = {
+        "nvim-lua/popup.nvim",
+        "nvim-lua/plenary.nvim",
+        "nvim-telescope/telescope.nvim",
+      },
+    }
+
+    use { "mfussenegger/nvim-dap" }
+
     use { "gennaro-tedesco/nvim-jqx", ft = { "json" } }
 
     use { "kevinhwang91/nvim-bqf" }
