@@ -99,20 +99,15 @@ local inlay_hints_callback = function(opts)
       else
         text = prefix .. hint.text
       end
+      local virt_text = { { text, highlight } }
+
       vim.api.nvim_buf_set_extmark(
         ctx.bufnr,
         inlay_hints_ns,
         end_line,
-        -1,
-        { virt_text = text, virt_text_pos = "eol", hl_mode = "combine" }
+        1,
+        { virt_text = virt_text, virt_text_pos = "eol", hl_mode = "combine" }
       )
-      --[[ vim.api.nvim_buf_set_virtual_text(
-        ctx.bufnr,
-        inlay_hints_ns,
-        end_line,
-        { { text, highlight } },
-        {}
-      ) ]]
     end
 
     if only_current_line then
