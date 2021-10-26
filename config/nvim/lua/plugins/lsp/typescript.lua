@@ -105,7 +105,7 @@ local inlay_hints_callback = function(opts)
         ctx.bufnr,
         inlay_hints_ns,
         end_line,
-        1,
+        -1,
         { virt_text = virt_text, virt_text_pos = "eol", hl_mode = "combine" }
       )
     end

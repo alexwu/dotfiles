@@ -52,17 +52,27 @@ require("lualine").setup {
   options = {
     theme = snazzy(),
     disabled_filetypes = {},
-    component_separators = { "", "" },
-    section_separators = { "", "" },
+    --[[ component_separators = { left = "", right = "" },
+    section_separators = { left = "", right = "" }, ]]
+    component_separators = "|",
+    section_separators = { left = "", right = "" },
   },
   extensions = { "fzf", "fugitive", "nvim-tree", "quickfix" },
   sections = {
-    lualine_a = { "mode" },
-    lualine_b = { "branch" },
-    lualine_c = { "filename" },
-    lualine_x = { "encoding", "filetype" },
+    lualine_a = {
+      {
+        "mode",
+        separator = { left = "" },
+        right_padding = 2,
+      },
+    },
+    lualine_b = {
+      { "branch", color = { fg = "#3a3d4d", bg = "#f1f1f0" }, separator = { right = "" } },
+    },
+    lualine_c = { "filename", "lsp_progress" },
+    lualine_x = { "filetype" },
     lualine_y = {},
-    lualine_z = { "location" },
+    lualine_z = { { "location", separator = { right = "" }, left_padding = 2 } },
   },
   inactive_sections = {
     lualine_a = {},

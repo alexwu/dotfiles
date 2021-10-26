@@ -2,7 +2,20 @@ local M = {}
 local builtin = require "telescope.builtin"
 local nnoremap = vim.keymap.nnoremap
 
-function M.on_attach(_, _)
+--[[ Should_attach_lsp = function(bufnr)
+  local winnr = vim.fn.bufwinnr(bufnr)
+  local is_telescope_preview = vim.api.nvim_win_get_option(winnr, "winhl")
+  print(is_telescope_preview)
+    --[[ == "Normal:TelescopePreviewNormal" then
+    return nil;
+  end ]]
+
+  --[[ if prevent_lsp then
+    return nil
+  end ]]
+-- end ]]
+
+function M.on_attach(_, bufnr)
   local signs = {
     Error = "✘ ",
     Warn = " ",
@@ -14,16 +27,6 @@ function M.on_attach(_, _)
     local hl = "DiagnosticSign" .. type
     vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
   end
-
-  --[[ vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
-    vim.lsp.diagnostic.on_publish_diagnostics,
-    {
-      virtual_text = false,
-      underline = true,
-      signs = true,
-      update_in_insert = true,
-    }
-  ) ]]
 
   vim.diagnostic.config {
     --[[ virtual_text = {
@@ -75,7 +78,7 @@ function M.on_attach(_, _)
       vim.diagnostic.open_float(nil, {
         scope = "line",
         show_header = false,
-        source = "always",
+        source = "if_many",
         focusable = false,
         border = "rounded",
       })
@@ -121,7 +124,7 @@ function Show_cursor_diagnostics()
   vim.diagnostic.open_float(nil, {
     scope = "cursor",
     show_header = false,
-    source = "always",
+    source = "if_many",
     focusable = false,
     border = "rounded",
   })

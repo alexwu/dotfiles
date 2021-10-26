@@ -44,6 +44,7 @@ vim.opt.wildignore =
   "*.swp,.git,.svn,*.log,*.gif,*.jpeg,*.jpg,*.png,*.pdf,tmp/**,.DS_STORE,.DS_Store"
 vim.opt.shortmess:append "Icq"
 vim.opt.termguicolors = true
+vim.opt.timeoutlen = 500
 
 vim.o.shell = bin .. "zsh"
 

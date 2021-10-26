@@ -64,7 +64,7 @@ lsp_installer.on_server_ready(function(server)
       hostInfo = "neovim",
       preferences = {
         includeCompletionsForImportStatements = true,
-        includeInlayParameterNameHints = "literals",
+        includeInlayParameterNameHints = "none",
         includeInlayParameterNameHintsWhenArgumentMatchesName = false,
         includeInlayFunctionParameterTypeHints = true,
         includeInlayVariableTypeHints = true,

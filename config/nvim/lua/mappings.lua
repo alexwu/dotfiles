@@ -29,5 +29,6 @@ nnoremap { "<A-o>", "o<esc>" }
 nnoremap { "<A-O>", "O<esc>" }
 
 vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <ESC> :cclose<CR> ]]
+vim.cmd [[autocmd FileType help nnoremap <buffer> <silent> gd <C-]>]]
 vim.cmd [[command! -nargs=0 Trash :!trash %]]
 vim.cmd [[command! -nargs=0 Delete :!trash %]]
