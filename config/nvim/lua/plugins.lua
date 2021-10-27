@@ -303,11 +303,12 @@ return require("packer").startup {
       "sheerun/vim-polyglot",
       setup = function()
         vim.g.polyglot_disabled = {
-          "ruby.plugin",
-          "typescript.plugin",
-          "typescriptreact.plugin",
-          "lua.plugin",
+          "ruby",
+          "typescript",
+          "typescriptreact",
+          "lua",
           "sensible",
+          "ftdetect",
         }
       end,
     }

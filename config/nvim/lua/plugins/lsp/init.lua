@@ -12,6 +12,9 @@ require("lsp_signature").setup {
   max_height = 4,
 }
 
+lsp_installer.settings {
+  log_level = vim.log.levels.DEBUG,
+}
 lsp_installer.on_server_ready(function(server)
   local opts = { on_attach = on_attach, capabilities = capabilities }
 
