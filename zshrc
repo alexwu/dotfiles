@@ -6,22 +6,11 @@ fi
 OS="$(uname -s)"
 
 if [ "$OS" = "Darwin" ]; then
-  if [ $(arch) = "arm64" ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [ $(arch) = "i386" ]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
-
-  export FZF_BASE=$(brew --prefix)/bin/fzf
-  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
-  export SSH_AUTH_SOCK=$HOME/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
-  export PATH="/Applications/Postgres.app/Contents/Versions/latest/bin:$PATH"
-  alias yoink=“open -a Yoink”
+  source $HOME/.zsh/macos.zsh
 fi
 
 export PATH="$HOME/.bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
-export NVM_COMPLETION=true
 export LESS="-XFR"
 # export DEBUG_PLENARY=false
 
@@ -100,10 +89,6 @@ zinit wait lucid for \
   OMZL::history.zsh \
   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
 
-if [ "$OS" = "Darwin" ]; then
-  . $HOME/.asdf/asdf.sh
-fi
-
 zinit wait blockf lucid for \
   OMZP::bundler \
   OMZP::heroku \
@@ -131,5 +116,3 @@ fi
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-export PATH="/opt/homebrew/opt/python@3.10/bin:$PATH"
-export PATH="/opt/homebrew/opt/node@16/bin:$PATH"

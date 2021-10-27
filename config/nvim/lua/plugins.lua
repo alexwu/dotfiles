@@ -179,13 +179,7 @@ return require("packer").startup {
       "rcarriga/nvim-notify",
       requires = { "nvim-telescope/telescope.nvim" },
       config = function()
-        vim.notify = require "notify"
-        require("notify").setup {
-          timeout = 100,
-          on_open = function(win)
-            -- vim.cmd [[autocmd FileType notify nmap <buffer> q <cmd>quit<cr>]]
-          end,
-        }
+        require "plugins.notify"
       end,
     }
 
