@@ -22,6 +22,10 @@ return require("packer").startup {
       config = function()
         require("filetype").setup {
           overrides = {
+            extensions = {
+              rbi = "ruby",
+              rake = "ruby",
+            },
             literal = {
               Steepfile = "ruby",
             },
@@ -37,7 +41,7 @@ return require("packer").startup {
       end,
     }
     use { "nvim-lua/plenary.nvim" }
-    use { "~/Code/nvim-snazzy" }
+    use { "~/Code/neovim/nvim-snazzy" }
     use { "nvim-treesitter/nvim-treesitter" }
     use {
       "b3nj5m1n/kommentary",
@@ -121,6 +125,14 @@ return require("packer").startup {
       "mrjones2014/dash.nvim",
       requires = { "nvim-telescope/telescope.nvim" },
       run = "make install",
+    }
+
+    use {
+      "nvim-telescope/telescope-frecency.nvim",
+      config = function()
+        require("telescope").load_extension "frecency"
+      end,
+      requires = { "tami5/sqlite.lua" },
     }
 
     use {
@@ -230,9 +242,6 @@ return require("packer").startup {
     use {
       "kyazdani42/nvim-tree.lua",
       requires = { "kyazdani42/nvim-web-devicons" },
-      setup = function()
-        vim.g.nvim_tree_ignore = { ".DS_Store", ".git" }
-      end,
       config = function()
         require "plugins.tree"
       end,
@@ -318,21 +327,12 @@ return require("packer").startup {
     use { "tpope/vim-surround" }
     use { "chaoren/vim-wordmotion" }
     use { "junegunn/vim-easy-align" }
+    use { "AndrewRadev/splitjoin.vim" }
 
     use {
       "karb94/neoscroll.nvim",
       config = function()
-        require("neoscroll").setup {}
-
-        local t = {}
-        t["<C-u>"] = { "scroll", { "-vim.wo.scroll", "true", "150" } }
-        t["<C-d>"] = { "scroll", { "vim.wo.scroll", "true", "150" } }
-        t["<C-b>"] = { "scroll", { "-vim.api.nvim_win_get_height(0)", "true", "450" } }
-        t["<C-f>"] = { "scroll", { "vim.api.nvim_win_get_height(0)", "true", "450" } }
-        t["<C-y>"] = { "scroll", { "-0.10", "false", "100" } }
-        t["<C-e>"] = { "scroll", { "0.10", "false", "100" } }
-
-        require("neoscroll.config").set_mappings(t)
+        require "plugins.neoscroll"
       end,
     }
   end,

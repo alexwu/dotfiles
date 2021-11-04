@@ -11,7 +11,12 @@ require("telescope").setup {
   defaults = {
     set_env = { ["COLORTERM"] = "truecolor" },
     prompt_prefix = "❯ ",
-    preview = false,
+    layout_config = {
+      width = function()
+        return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+      end,
+    },
+    winblend = 30,
     mappings = {
       i = {
         ["<esc>"] = actions.close,
@@ -20,14 +25,61 @@ require("telescope").setup {
         ["<C-k>"] = actions.move_selection_previous,
         ["<C-u>"] = require("plugins.telescope.actions").clear_line,
       },
+      n = {
+        ["<C-h>"] = R("telescope").extensions.hop.hop,
+        ["<C-j>"] = actions.move_selection_next,
+        ["<C-k>"] = actions.move_selection_previous,
+      },
     },
     theme = "dropdown",
   },
   pickers = {
+    builtin = {
+      theme = "dropdown",
+    },
     file_browser = {},
-    find_files = {},
+    find_files = {
+      find_command = {
+        "fd",
+        "--type",
+        "f",
+        "-uu",
+        "--follow",
+        "--exclude",
+        ".git",
+        "--exclude",
+        "node_modules",
+        "--exclude",
+        "coverage",
+        "--exclude",
+        ".DS_Store",
+        "--exclude",
+        "*.cache",
+        "--exclude",
+        "*.chunk.js.map",
+        "--exclude",
+        "tmp",
+      },
+    },
+    git_files = {
+      theme = "dropdown",
+      layout_config = {
+        width = function()
+          return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+        end,
+      },
+    },
     buffers = {
       initial_mode = "normal",
+      theme = "dropdown",
+      ignore_current_buffer = true,
+      sort_lastused = true,
+      layout_config = {
+        width = function()
+          return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+        end,
+      },
+      path_display = { "smart" },
       mappings = {
         n = {
           ["<leader><space>"] = actions.close,
@@ -49,6 +101,18 @@ require("telescope").setup {
       clear_selection_hl = true,
       trace_entry = true,
       reset_selection = true,
+    },
+    frecency = {
+      show_scores = false,
+      show_unindexed = true,
+      ignore_patterns = { "*.git/*", "*/tmp/*" },
+      disable_devicons = false,
+      workspaces = {
+        ["eo"] = vim.fn.expand "~/Code/cleverific/editorder/",
+        ["admin"] = vim.fn.expand "~/Code/cleverific/editorder-admin/",
+        ["oracle"] = vim.fn.expand "~/Code/cleverific/oracle/",
+        ["dot"] = vim.fn.expand "~/.dotfiles",
+      },
     },
   },
 }
@@ -75,9 +139,16 @@ nnoremap {
 }
 
 nnoremap {
+  "<Leader>g",
+  function()
+    builtin.git_files()
+  end,
+}
+
+nnoremap {
   "<Leader>t",
   function()
-    builtin.treesitter()
+    builtin.builtin { include_extensions = true }
   end,
 }
 

@@ -1,10 +1,13 @@
-local nnoremap = vim.keymap.nnoremap
-
 require("gitsigns").setup {
   debug_mode = true,
   sign_priority = 6,
-  current_line_blame = false,
   attach_to_untracked = true,
+  current_line_blame = false,
+  current_line_blame_opts = {
+    virt_text = true,
+    virt_text_pos = "eol",
+    delay = 1000,
+  },
   preview_config = { border = "rounded" },
   current_line_blame_formatter_opts = { relative_time = true },
   current_line_blame_formatter = function(name, blame_info, opts)
@@ -39,6 +42,6 @@ require("gitsigns").setup {
     ["v <leader>hr"] = "<cmd>lua require\"gitsigns\".reset_hunk({vim.fn.line(\".\"), vim.fn.line(\"v\")})<CR>",
     ["n <leader>hu"] = "<cmd>lua require\"gitsigns\".undo_stage_hunk()<CR>",
     ["n <leader>hb"] = "<cmd>lua require\"gitsigns\".reset_buffer()<CR>",
-    ["n M"] = "<cmd>lua require\"gitsigns\".blame_line(true)<CR>",
+    ["n M"] = "<cmd>lua require\"gitsigns\".blame_line(false)<CR>",
   },
 }

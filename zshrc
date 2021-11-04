@@ -116,3 +116,6 @@ fi
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# alias luamake=/Users/jamesbombeelu/Code/lua-language-server/3rd/luamake/luamake
+export PATH="/usr/local/opt/v8@3.15/bin:$PATH"

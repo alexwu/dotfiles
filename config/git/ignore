@@ -1,3 +1,4 @@
 .ignore
 .fdignore
 .DS_Store
+bin/scripts

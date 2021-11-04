@@ -1,17 +1,26 @@
 local nnoremap = vim.keymap.nnoremap
 local hop = require "hop"
+
 hop.setup { keys = "etovxqpdygfblzhckisuran" }
 
-nnoremap {
-  "<Leader>b",
+--[[ nnoremap {
+  "<Leader>w",
   function()
-    hop.hint_words { direction = require("hop.hint").HintDirection.BEFORE_CURSOR }
+    hop.hint_words { current_line_only = true }
   end,
-}
+} ]]
+
+--[[ nnoremap {
+  "<Leader>w",
+  function()
+    hop.hint_words {}
+  end,
+} ]]
+
 nnoremap {
   "<Leader>w",
   function()
-    hop.hint_words { direction = require("hop.hint").HintDirection.AFTER_CURSOR }
+    require("plugins.hop.custom").hint_more_words()
   end,
 }
 

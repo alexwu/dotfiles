@@ -13,12 +13,21 @@ end
 
 cmp.setup {
   sources = {
-    { name = "luasnip" },
-    { name = "treesitter" },
-    { name = "nvim_lsp" },
+    { name = "nvim_lsp", max_item_count = 10, priority = 100 },
+    { name = "treesitter", max_item_count = 10 },
     { name = "nvim_lua" },
+    { name = "luasnip", max_item_count = 3 },
     { name = "cmp_tabnine" },
     { name = "path" },
+  },
+  comparators = {
+    cmp.config.compare.offset,
+    cmp.config.compare.exact,
+    cmp.config.compare.score,
+    cmp.config.compare.kind,
+    cmp.config.compare.sort_text,
+    cmp.config.compare.length,
+    cmp.config.compare.order,
   },
   snippet = {
     expand = function(args)
@@ -26,13 +35,17 @@ cmp.setup {
     end,
   },
   mapping = {
+    ["<CR>"] = cmp.mapping.confirm(),
     ["<C-p>"] = cmp.mapping.select_prev_item(),
     ["<C-n>"] = cmp.mapping.select_next_item(),
-    ["<C-D>"] = cmp.mapping.scroll_docs(-4),
-    ["<C-F>"] = cmp.mapping.scroll_docs(4),
-    ["<C-SPACE>"] = cmp.mapping.complete(),
-    ["<C-E>"] = cmp.mapping.close(),
-    ["<TAB>"] = cmp.mapping(function(fallback)
+    ["<C-d>"] = cmp.mapping.scroll_docs(-4),
+    ["<C-f>"] = cmp.mapping.scroll_docs(4),
+    ["<C-Space>"] = cmp.mapping.complete(),
+    ["<C-e>"] = cmp.mapping {
+      i = cmp.mapping.abort(),
+      c = cmp.mapping.close(),
+    },
+    ["<Tab>"] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_next_item()
       elseif luasnip.expand_or_jumpable() then
@@ -46,7 +59,7 @@ cmp.setup {
       "i",
       "s",
     }),
-    ["<S-TAB>"] = cmp.mapping(function(fallback)
+    ["<S-Tab>"] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_prev_item()
       elseif luasnip.jumpable(-1) then
@@ -61,9 +74,9 @@ cmp.setup {
   },
   preselect = cmp.PreselectMode.None,
   formatting = {
-    format = function(entry, vim_item)
-      vim_item.kind = lspkind.presets.default[vim_item.kind] .. " " .. vim_item.kind
-      vim_item.menu = ({
+    format = lspkind.cmp_format {
+      with_text = true,
+      menu = {
         buffer = "[Buffer]",
         nvim_lsp = "[LSP]",
         nvim_lua = "[Lua]",
@@ -71,18 +84,16 @@ cmp.setup {
         path = "[Path]",
         luasnip = "[LuaSnip]",
         treesitter = "[TS]",
-      })[entry.source.name]
-
-      vim_item.dup = ({
+      },
+      dup = {
         buffer = 0,
         path = 0,
-        nvim_lsp = 0,
+        nvim_lsp = 1,
         cmp_tabnine = 0,
         nvim_lua = 0,
         treesitter = 0,
-      })[entry.source.name] or 0
-      return vim_item
-    end,
+      },
+    },
   },
   documentation = { border = "rounded" },
 }

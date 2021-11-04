@@ -35,6 +35,9 @@ tree.setup {
         { key = "l", cb = tree_cb "unroll_dir" },
       },
     },
+    filters = {
+      custom = {".DS_Store", ".git"}
+    }
   },
   update_focused_file = {
     enable = true,

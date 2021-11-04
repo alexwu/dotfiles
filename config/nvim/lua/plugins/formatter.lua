@@ -4,7 +4,7 @@ local xnoremap = vim.keymap.xnoremap
 local function prettier()
   return {
     exe = "prettier",
-    args = { "--stdin", "--stdin-filepath", vim.api.nvim_buf_get_name(0) },
+    args = { "--stdin-filepath", vim.api.nvim_buf_get_name(0) },
     stdin = true,
   }
 end

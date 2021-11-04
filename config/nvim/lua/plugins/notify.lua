@@ -1,3 +1,5 @@
+local nnoremap = vim.keymap.nnoremap
+
 local stages = function()
   local stages_util = require "notify.stages.util"
 
@@ -54,6 +56,7 @@ local stages = function()
     end,
   }
 end
+
 vim.notify = require "notify"
 require("notify").setup {
   timeout = 50,
@@ -67,4 +70,11 @@ require("notify").setup {
     DEBUG = "",
     TRACE = "✎",
   },
+}
+
+nnoremap {
+  "<Leader><Esc>",
+  function()
+    require("notify").dismiss()
+  end,
 }
