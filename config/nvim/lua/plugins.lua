@@ -1,9 +1,10 @@
 local needs_packer = require("utils").needs_packer
 local install_packer = require("utils").install_packer
+local packer_bootstrap = nil
 
 local install_path = vim.fn.stdpath "data" .. "/site/pack/packer/start/packer.nvim"
 if needs_packer(install_path) then
-  install_packer(install_path)
+  packer_bootstrap = install_packer(install_path)
 end
 
 vim.cmd [[
@@ -126,13 +127,19 @@ return require("packer").startup {
       requires = { "nvim-telescope/telescope.nvim" },
       run = "make install",
     }
-
     use {
       "nvim-telescope/telescope-frecency.nvim",
       config = function()
         require("telescope").load_extension "frecency"
       end,
       requires = { "tami5/sqlite.lua" },
+    }
+    use {
+      "jvgrootveld/telescope-zoxide",
+      config = function()
+        require("telescope").load_extension "zoxide"
+      end,
+      requires = { "nvim-telescope/telescope.nvim" },
     }
 
     use {
@@ -308,20 +315,6 @@ return require("packer").startup {
       end,
     }
 
-    use {
-      "sheerun/vim-polyglot",
-      setup = function()
-        vim.g.polyglot_disabled = {
-          "ruby",
-          "typescript",
-          "typescriptreact",
-          "lua",
-          "sensible",
-          "ftdetect",
-        }
-      end,
-    }
-
     use { "tpope/vim-projectionist", requires = { "tpope/vim-dispatch" } }
     use { "tpope/vim-repeat" }
     use { "tpope/vim-surround" }
@@ -335,6 +328,17 @@ return require("packer").startup {
         require "plugins.neoscroll"
       end,
     }
+
+    use {
+      "beauwilliams/focus.nvim",
+      config = function()
+        require "plugins.focus"
+      end,
+    }
+
+    if packer_bootstrap then
+      require("packer").sync()
+    end
   end,
   config = {
     opt_default = false,

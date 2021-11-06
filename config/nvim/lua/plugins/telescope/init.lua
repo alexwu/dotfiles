@@ -69,6 +69,18 @@ require("telescope").setup {
         end,
       },
     },
+    live_grep = {
+      theme = "dropdown",
+      vimgrep_arguments = {
+        "ag",
+        "--nocolor",
+        "--no-heading",
+        "--filename",
+        "--numbers",
+        "--column",
+        "--smart-case",
+      },
+    },
     buffers = {
       initial_mode = "normal",
       theme = "dropdown",
@@ -86,6 +98,14 @@ require("telescope").setup {
         },
       },
     },
+    lsp_references = {
+      theme = "dropdown",
+      initial_mode = "normal",
+    },
+    lsp_definitions = {
+      theme = "dropdown",
+      initial_mode = "normal",
+    }
   },
   extensions = {
     fzf = {
@@ -114,10 +134,13 @@ require("telescope").setup {
         ["dot"] = vim.fn.expand "~/.dotfiles",
       },
     },
+    dash = {},
   },
 }
 require("telescope").load_extension "fzf"
 require("telescope").load_extension "hop"
+require("telescope").load_extension "frecency"
+require("telescope").load_extension "zoxide"
 
 nnoremap {
   "<Leader><space>",
@@ -159,9 +182,21 @@ nnoremap {
   end,
 }
 nnoremap {
+  "<Leader>ag",
+  function()
+    builtin.live_grep()
+  end,
+}
+nnoremap {
   "<Leader>br",
   function()
     builtin.git_branches()
+  end,
+}
+nnoremap {
+  "<Leader>sn",
+  function()
+    require("plugins.telescope.pickers").snippets()
   end,
 }
 nnoremap {

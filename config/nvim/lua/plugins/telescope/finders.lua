@@ -30,4 +30,23 @@ M.related_files = function(opts)
   }
 end
 
+M.luasnip = function(opts)
+  opts = opts or {}
+
+  local finder = function()
+    return require("luasnip").available()[vim.bo.filetype]
+  end
+
+  return finders.new_table {
+    results = finder(),
+    entry_maker = function(entry)
+      return {
+        value = entry.trigger,
+        display = entry.name,
+        ordinal = entry,
+      }
+    end,
+  }
+end
+
 return M

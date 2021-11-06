@@ -1,3 +1,4 @@
+require "impatient"
 require "keymap"
 require "options"
 require "mappings"

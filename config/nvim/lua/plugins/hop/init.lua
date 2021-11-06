@@ -10,17 +10,17 @@ hop.setup { keys = "etovxqpdygfblzhckisuran" }
   end,
 } ]]
 
---[[ nnoremap {
+nnoremap {
   "<Leader>w",
   function()
     hop.hint_words {}
   end,
-} ]]
+}
 
 nnoremap {
-  "<Leader>w",
+  "<Leader>e",
   function()
-    require("plugins.hop.custom").hint_more_words()
+    require("plugins.hop.custom").hint_end_words()
   end,
 }
 

@@ -5,7 +5,7 @@ local window = require "hop.window"
 local M = {}
 
 -- TODO:
-function M.hint_more_words(opts)
+function M.hint_end_words(opts)
   opts = opts
     or {
       keys = "asdghklqwertyuiopzxcvbnmfj",
@@ -27,7 +27,7 @@ function M.hint_more_words(opts)
       match = function(s)
         -- return vim.regex("\\(\\k\\|\\k\\)\\+"):match_str(s)
         -- return vim.regex("\\v(\\<|>)+"):match_str(s)
-        return vim.regex("\\v(_|\\{|\\}|\\(|\\)|\"|\'\\.|\\,|\\_$|\\k)+"):match_str(s)
+        return vim.regex("\\v(_|\\{|\\}|\\(|\\)|\"|\'\\.|\\,|\\_$|\\>)+"):match_str(s)
       end,
     },
     opts

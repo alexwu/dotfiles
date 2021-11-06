@@ -1,10 +1,7 @@
 local nnoremap = vim.keymap.nnoremap
 local tree = require "nvim-tree"
 local tree_cb = require("nvim-tree.config").nvim_tree_callback
-
-local tree_width = function(percentage)
-  return math.min(40, vim.fn.round(vim.o.columns * percentage))
-end
+local tree_width = require("utils").tree_width
 
 vim.g.nvim_tree_disable_window_picker = 1
 vim.g.nvim_tree_respect_buf_cwd = 1
@@ -33,11 +30,12 @@ tree.setup {
       list = {
         { key = "h", cb = tree_cb "close_node" },
         { key = "l", cb = tree_cb "unroll_dir" },
+        { key = "-", cb = nil },
       },
     },
     filters = {
-      custom = {".DS_Store", ".git"}
-    }
+      custom = { ".DS_Store", ".git" },
+    },
   },
   update_focused_file = {
     enable = true,
@@ -46,10 +44,5 @@ tree.setup {
   },
 }
 
-nnoremap { "<leader>m", "<Cmd>NvimTreeToggle<CR>" }
-nnoremap {
-  "-",
-  function()
-    tree.find_file(true)
-  end,
-}
+nnoremap { "-", "<Cmd>NvimTreeFindFileToggle<CR>" }
+nnoremap { "<Leader>m", "<Cmd>NvimTreeFindFileToggle<CR>" }

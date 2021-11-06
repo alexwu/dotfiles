@@ -33,40 +33,8 @@ end
 
 ls.snippets = {
   all = {},
-  typescript = {
-    snippet("() =>", {
-      text_node { "(" },
-      insert_node(1),
-      text_node { ") => " },
-      insert_node(0),
-    }),
-    snippet("() => { }", {
-      text_node { "(" },
-      insert_node(1),
-      text_node { ") => { " },
-      insert_node(0),
-      text_node { "}" },
-    }),
-    snippet("describe(\"\", () => { }", {
-      text_node { "describe(" },
-      insert_node(1),
-      text_node { ") => { " },
-      insert_node(0),
-      text_node { "}" },
-    }),
-  },
-  lua = {
-    snippet("function", {
-      function_node(copy, 2),
-      text_node { "function " },
-      insert_node(1),
-      text_node "(",
-      insert_node(2, ""),
-      text_node { ")", "\t" },
-      insert_node(0),
-      text_node { "", "end" },
-    }),
-  },
+  typescript = {},
+  lua = {},
 }
 
 -- autotriggered snippets have to be defined in a separate table, luasnip.autosnippets.
