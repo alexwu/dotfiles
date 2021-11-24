@@ -20,20 +20,20 @@ require("nvim-treesitter.configs").setup {
     "yaml",
   },
   highlight = { enable = true, additional_vim_regex_highlighting = false },
-  indent = { enable = true, disable = { "ruby" } },
+  indent = { enable = false, disable = { "ruby" } },
   incremental_selection = {
     enable = true,
     keymaps = {
-      init_selection = "<C-s>",
+      init_selection = "<CR>",
       -- node_incremental = "<C-s>",
       -- scope_incremental = "<C-a>",
-      -- node_decremental = "<C-x>",
+      -- node_decremental = "grm",
     },
   },
   textsubjects = {
     enable = true,
     keymaps = {
-      ["<C-s>"] = "textsubjects-smart",
+      ["<CR>"] = "textsubjects-smart",
       [";"] = "textsubjects-container-outer",
     },
   },

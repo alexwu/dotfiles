@@ -62,6 +62,7 @@ require("notify").setup {
   timeout = 50,
   stages = stages(),
   background_colour = "Normal",
+  render = "minimal",
   on_open = nil,
   icons = {
     ERROR = "",

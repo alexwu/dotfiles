@@ -187,7 +187,7 @@
       local tag=${(V)VCS_STATUS_TAG}
       # If tag name is at most 32 characters long, show it in full.
       # Otherwise show the first 12 … the last 12.
-      (( $#tag > 32 )) && tag[13,-13]="…"
+      (( $#tag > 24 )) && tag[13,-13]="…"
       res+="${meta}#${clean}${tag//\%/%%}"
     fi
 

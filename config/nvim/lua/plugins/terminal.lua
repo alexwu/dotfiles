@@ -50,7 +50,7 @@ require("toggleterm").setup {
       return vim.o.columns * 0.4
     end
   end,
-  open_mapping = [[<C-\>]],
+  open_mapping = [[<C-`>]],
   hide_numbers = true,
   shade_filetypes = {},
   shade_terminals = true,

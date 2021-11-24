@@ -2,19 +2,6 @@ local M = {}
 local builtin = require "telescope.builtin"
 local nnoremap = vim.keymap.nnoremap
 
---[[ Should_attach_lsp = function(bufnr)
-  local winnr = vim.fn.bufwinnr(bufnr)
-  local is_telescope_preview = vim.api.nvim_win_get_option(winnr, "winhl")
-  print(is_telescope_preview)
-    --[[ == "Normal:TelescopePreviewNormal" then
-    return nil;
-  end ]]
-
---[[ if prevent_lsp then
-    return nil
-  end ]]
--- end ]]
-
 function M.on_attach(_, bufnr)
   local signs = {
     Error = "✘ ",
@@ -29,16 +16,16 @@ function M.on_attach(_, bufnr)
   end
 
   vim.diagnostic.config {
-    --[[ virtual_text = {
-      severity = vim.diagnostic.ERROR,
-    }, ]]
-    virtual_text = false,
+    virtual_text = {
+      severity = { min = vim.diagnostic.severity.ERROR },
+    },
     underline = {},
     signs = true,
     float = {
       show_header = false,
-      source = "if_many",
+      source = "always",
     },
+    update_in_insert = false,
   }
   vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
     vim.lsp.handlers.hover,
@@ -55,6 +42,13 @@ function M.on_attach(_, bufnr)
     "gr",
     function()
       builtin.lsp_references()
+    end,
+  }
+
+  nnoremap {
+    "gi",
+    function()
+      builtin.lsp_implementations()
     end,
   }
 
@@ -78,7 +72,7 @@ function M.on_attach(_, bufnr)
       vim.diagnostic.open_float(nil, {
         scope = "line",
         show_header = false,
-        source = "if_many",
+        source = "always",
         focusable = false,
         border = "rounded",
       })
@@ -116,15 +110,13 @@ function M.on_attach(_, bufnr)
 
   vim.cmd [[autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
   vim.cmd [[autocmd CursorHold * lua Show_cursor_diagnostics()]]
-  vim.cmd [[autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR>]]
-  vim.cmd [[autocmd FileType LspInfo,null-ls-info nmap <buffer> q <cmd>quit<cr>]]
 end
 
 function Show_cursor_diagnostics()
   vim.diagnostic.open_float(nil, {
     scope = "cursor",
     show_header = false,
-    source = "if_many",
+    source = "always",
     focusable = false,
     border = "rounded",
   })

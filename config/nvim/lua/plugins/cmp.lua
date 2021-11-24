@@ -1,4 +1,5 @@
 local cmp = require "cmp"
+local cmp_buffer = require "cmp_buffer"
 local lspkind = require "lspkind"
 local luasnip = require "luasnip"
 
@@ -21,9 +22,13 @@ cmp.setup {
     { name = "path" },
   },
   comparators = {
+    function(...)
+      return cmp_buffer:compare_locality(...)
+    end,
     cmp.config.compare.offset,
     cmp.config.compare.exact,
     cmp.config.compare.score,
+    cmp.config.compare.recently_used,
     cmp.config.compare.kind,
     cmp.config.compare.sort_text,
     cmp.config.compare.length,
@@ -45,7 +50,7 @@ cmp.setup {
       i = cmp.mapping.abort(),
       c = cmp.mapping.close(),
     },
-    ["<TAB>"] = function(fallback)
+    ["<Tab>"] = function(fallback)
       if cmp.visible() then
         cmp.select_next_item()
       elseif luasnip.expand_or_jumpable() then

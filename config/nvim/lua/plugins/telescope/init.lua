@@ -105,7 +105,7 @@ require("telescope").setup {
     lsp_definitions = {
       theme = "dropdown",
       initial_mode = "normal",
-    }
+    },
   },
   extensions = {
     fzf = {
@@ -134,13 +134,19 @@ require("telescope").setup {
         ["dot"] = vim.fn.expand "~/.dotfiles",
       },
     },
-    dash = {},
+    dash = {
+      theme = "dropdown",
+    },
+    termfinder = {
+      theme = "dropdown",
+    },
   },
 }
 require("telescope").load_extension "fzf"
 require("telescope").load_extension "hop"
 require("telescope").load_extension "frecency"
 require("telescope").load_extension "zoxide"
+require("telescope").load_extension "termfinder"
 
 nnoremap {
   "<Leader><space>",

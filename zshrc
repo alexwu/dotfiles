@@ -7,12 +7,12 @@ OS="$(uname -s)"
 
 if [ "$OS" = "Darwin" ]; then
   source $HOME/.zsh/macos.zsh
+  # export PATH="/opt/homebrew/opt/node@16/bin:$PATH"
 fi
 
 export PATH="$HOME/.bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export LESS="-XFR"
-# export DEBUG_PLENARY=false
 autoload -U colors && colors
 
 export FZF_DEFAULT_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store"
@@ -124,5 +124,4 @@ fi
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# alias luamake=/Users/jamesbombeelu/Code/lua-language-server/3rd/luamake/luamake
 export PATH="/usr/local/opt/v8@3.15/bin:$PATH"

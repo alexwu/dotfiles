@@ -1,16 +1,9 @@
 local lspconfig = require "lspconfig"
-local root_pattern = lspconfig.util.root_pattern
+local util = lspconfig.util
+local root_pattern = util.root_pattern
 local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
 local capabilities = require("plugins.lsp.defaults").capabilities
-
-require("lsp_signature").setup {
-  bind = true,
-  handler_opts = { border = "rounded" },
-  floating_window = true,
-  hint_enable = true,
-  max_height = 4,
-}
 
 lsp_installer.settings {
   log_level = vim.log.levels.DEBUG,
@@ -19,9 +12,7 @@ lsp_installer.on_server_ready(function(server)
   local opts = { on_attach = on_attach, capabilities = capabilities }
 
   opts.settings = {
-    flags = {
-      debounce_text_changes = 400,
-    },
+    flags = {},
   }
 
   if server.name == "sumneko_lua" then
@@ -58,9 +49,9 @@ lsp_installer.on_server_ready(function(server)
         enable_formatting = false,
         formatter = "eslint_d",
         filter_out_diagnostics_by_code = { 80001 },
+        auto_inlay_hints = true,
+        inlay_hints_highlight = "Comment",
       }
-
-      require("plugins.lsp.typescript").setup()
     end
 
     opts.init_options = {
@@ -86,6 +77,7 @@ lsp_installer.on_server_ready(function(server)
     end
     opts.settings = {
       format = { enable = true },
+      rulesCustomizations = { { rule = "*", severity = "warn" } },
     }
   end
 
@@ -95,14 +87,22 @@ lsp_installer.on_server_ready(function(server)
   end
 
   if server.name == "jsonls" then
-    opts.filetypes = { "json" }
+    opts.settings = {
+      json = {
+        schemas = require("schemastore").json.schemas(),
+      },
+    }
+  end
+
+  if server.name == "rust_analyzer" then
+    require("rust-tools").setup {
+      server = server:get_default_options(),
+    }
   end
 
   server:setup(opts)
   vim.cmd [[ do User LspAttachBuffers ]]
 end)
-
-require("rust-tools").setup {}
 
 local rubocop = {
   lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",
@@ -113,31 +113,30 @@ local rubocop = {
   formatStdin = true,
 }
 
-lspconfig.efm.setup {
-  init_options = {
-    documentFormatting = true,
-    codeAction = false,
-    completion = true,
-    hover = true,
-    documentSymbol = true,
-  },
-  filetypes = { "ruby", "eruby" },
-  root_dir = function(fname)
-    return root_pattern "Gemfile"(fname) or root_pattern(".rubocop.yml", ".git")(fname)
-  end,
-  settings = {
-    rootMarkers = { ".git/", "Gemfile", ".rubocop.yml" },
-    languages = {
-      ruby = { rubocop },
-    },
-  },
-  on_attach = on_attach,
-  capabilities = capabilities,
-}
-
+-- lspconfig.efm.setup {
+--   init_options = {
+--     documentFormatting = true,
+--     codeAction = true,
+--     completion = true,
+--     hover = true,
+--     documentSymbol = true,
+--   },
+--   filetypes = { "ruby", "eruby" },
+--   root_dir = root_pattern ".rubocop.yml",
+--   settings = {
+--     rootMarkers = { ".rubocop.yml" },
+--     languages = {
+--       ruby = { rubocop },
+--     },
+--   },
+--   on_attach = on_attach,
+--   capabilities = capabilities,
+-- }
+--
 lspconfig.sorbet.setup {
   on_attach = on_attach,
   capabilities = capabilities,
+  filetypes = { "ruby" },
   cmd = {
     "bundle",
     "exec",
@@ -146,5 +145,45 @@ lspconfig.sorbet.setup {
     "--lsp",
     "--enable-all-beta-lsp-features",
   },
-  rootMarkers = { ".git/", "Gemfile", "sorbet" },
+  root_dir = util.root_pattern "sorbet",
 }
+
+local configs = require "lspconfig/configs"
+-- configs["steep"] = {
+--   default_config = {
+--     cmd = { "steep", "langserver" },
+--     filetypes = { "ruby" },
+--     root_dir = util.root_pattern "Steepfile",
+--   },
+-- }
+
+-- lspconfig["steep"].setup {
+--   on_attach = on_attach,
+--   capabilities = capabilities,
+-- }
+
+configs["rubocop-lsp"] = {
+  default_config = {
+    cmd = { "rubocop-lsp" },
+    filetypes = { "ruby" },
+    root_dir = util.root_pattern ".rubocop.yml",
+  },
+}
+
+lspconfig["rubocop-lsp"].setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- vim.lsp.start_client {
+--   cmd = { "steep", "langserver" },
+--   filetypes = { "ruby" },
+--   root_dir = find_steepfile_ancestor(vim.fn.expand "%"),
+--   on_attach = on_attach,
+--   capabilities = capabilities,
+-- }
+--
+require("trouble").setup {}
+
+vim.cmd [[autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR>]]
+vim.cmd [[autocmd FileType LspInfo,null-ls-info nmap <buffer> q <cmd>quit<cr>]]

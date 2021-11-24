@@ -25,10 +25,12 @@ return require("packer").startup {
           overrides = {
             extensions = {
               rbi = "ruby",
+              rbs = "ruby",
               rake = "ruby",
             },
             literal = {
               Steepfile = "ruby",
+              ["yarn.lock"] = "yaml",
             },
           },
         }
@@ -45,10 +47,7 @@ return require("packer").startup {
     use { "~/Code/neovim/nvim-snazzy" }
     use { "nvim-treesitter/nvim-treesitter" }
     use {
-      "b3nj5m1n/kommentary",
-      setup = function()
-        vim.g.kommentary_create_default_mappings = false
-      end,
+      "numToStr/Comment.nvim",
       config = function()
         require "plugins.commenting"
       end,
@@ -83,11 +82,12 @@ return require("packer").startup {
       end,
       requires = {
         "williamboman/nvim-lsp-installer",
-        "ray-x/lsp_signature.nvim",
         "kosayoda/nvim-lightbulb",
         "hrsh7th/cmp-nvim-lsp",
         "weilbith/nvim-code-action-menu",
         "nvim-telescope/telescope.nvim",
+        "b0o/schemastore.nvim",
+        "folke/trouble.nvim",
       },
     }
 
@@ -100,6 +100,7 @@ return require("packer").startup {
         "hrsh7th/cmp-nvim-lsp",
         "ray-x/cmp-treesitter",
         "saadparwaiz1/cmp_luasnip",
+        "hrsh7th/cmp-buffer",
       },
       config = function()
         require "plugins.cmp"
@@ -162,6 +163,7 @@ return require("packer").startup {
       requires = {
         "kyazdani42/nvim-web-devicons",
         "arkav/lualine-lsp-progress",
+        { "SmiteshP/nvim-gps", requires = "nvim-treesitter/nvim-treesitter" },
       },
       config = function()
         require "statusline"
@@ -260,6 +262,10 @@ return require("packer").startup {
         require "plugins.terminal"
       end,
     }
+    use {
+      "tknightz/telescope-termfinder.nvim",
+      requires = { "akinsho/toggleterm.nvim", "nvim-telescope/telescope.nvim" },
+    }
 
     use {
       "folke/todo-comments.nvim",
@@ -335,6 +341,8 @@ return require("packer").startup {
         require "plugins.focus"
       end,
     }
+
+    use { "ron-rs/ron.vim" }
 
     if packer_bootstrap then
       require("packer").sync()

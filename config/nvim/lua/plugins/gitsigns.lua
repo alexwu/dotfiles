@@ -42,6 +42,6 @@ require("gitsigns").setup {
     ["v <leader>hr"] = "<cmd>lua require\"gitsigns\".reset_hunk({vim.fn.line(\".\"), vim.fn.line(\"v\")})<CR>",
     ["n <leader>hu"] = "<cmd>lua require\"gitsigns\".undo_stage_hunk()<CR>",
     ["n <leader>hb"] = "<cmd>lua require\"gitsigns\".reset_buffer()<CR>",
-    ["n M"] = "<cmd>lua require\"gitsigns\".blame_line(false)<CR>",
+    ["n M"] = "<cmd>lua require\"gitsigns\".blame_line({full = false, ignore_whitespace=true})<CR>",
   },
 }
