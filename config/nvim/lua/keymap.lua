@@ -1,6 +1,5 @@
 -- use { "tjdevries/astronauta.nvim" }
--- This is all from ^
-
+-- NOTE: This is all from ^
 local keymap = {}
 
 -- Have to use a global to handle re-requiring this file and losing all of the keymap.
@@ -14,7 +13,11 @@ keymap._create = function(f)
 end
 
 keymap._execute = function(id)
-  keymap._store[id]()
+  return keymap._store[id]()
+end
+
+keymap._expr = function(id)
+  return vim.api.nvim_replace_termcodes(keymap._store[id](), true, true, true)
 end
 
 local make_mapper = function(mode, defaults, opts)
@@ -35,10 +38,15 @@ local make_mapper = function(mode, defaults, opts)
   if type(rhs) == "string" then
     mapping = rhs
   elseif type(rhs) == "function" then
-    assert(map_opts.noremap, "If `rhs` is a function, `opts.noremap` must be true")
-
     local func_id = keymap._create(rhs)
-    mapping = string.format([[<cmd>lua vim.keymap._execute(%s)<CR>]], func_id)
+
+    if map_opts.expr then
+      mapping = string.format([[luaeval("vim.keymap._expr(%s)")]], func_id)
+    else
+      assert(map_opts.noremap, "If `rhs` is a function and it's not an expr, `opts.noremap` must be true")
+      mapping = ""
+      map_opts.callback = rhs
+    end
   else
     error("Unexpected type for rhs:" .. tostring(rhs))
   end
@@ -221,6 +229,6 @@ function keymap.tnoremap(opts)
   return make_mapper("t", { noremap = true }, opts)
 end
 
-vim.keymap = vim.keymap or keymap
+vim.keymap = keymap
 
 return keymap
