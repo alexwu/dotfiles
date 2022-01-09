@@ -1,32 +1,16 @@
-local nnoremap = vim.keymap.nnoremap
+local set = vim.keymap.set
 local hop = require "hop"
 
 hop.setup { keys = "etovxqpdygfblzhckisuran" }
 
---[[ nnoremap {
-  "<Leader>w",
-  function()
-    hop.hint_words { current_line_only = true }
-  end,
-} ]]
+set("n", "<Leader>w", function()
+  hop.hint_words {}
+end)
 
-nnoremap {
-  "<Leader>w",
-  function()
-    hop.hint_words {}
-  end,
-}
+set("n", "<Leader>e", function()
+  require("plugins.hop.custom").hint_end_words()
+end)
 
-nnoremap {
-  "<Leader>e",
-  function()
-    require("plugins.hop.custom").hint_end_words()
-  end,
-}
-
-nnoremap {
-  "<Leader>l",
-  function()
-    hop.hint_lines_skip_whitespace()
-  end,
-}
+set("n", "<Leader>l", function()
+  hop.hint_lines_skip_whitespace()
+end)

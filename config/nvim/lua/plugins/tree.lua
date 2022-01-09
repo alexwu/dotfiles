@@ -1,4 +1,4 @@
-local nnoremap = vim.keymap.nnoremap
+local set = vim.keymap.set
 local tree = require "nvim-tree"
 local tree_cb = require("nvim-tree.config").nvim_tree_callback
 local tree_width = require("utils").tree_width
@@ -6,7 +6,36 @@ local tree_width = require("utils").tree_width
 vim.g.nvim_tree_disable_window_picker = 1
 vim.g.nvim_tree_respect_buf_cwd = 1
 vim.g.nvim_tree_highlight_opened_files = 1
-vim.g.nvim_tree_quit_on_open = 1
+vim.g.nvim_tree_quit_on_open = 0
+vim.g.nvim_tree_icons = {
+  default = "",
+  symlink = "",
+  git = {
+    unstaged = "✗",
+    staged = "✓",
+    unmerged = "",
+    renamed = "➜",
+    untracked = "+",
+    deleted = "",
+  },
+  folder = {
+    arrow_open = "",
+    arrow_closed = "",
+    default = "",
+    open = "",
+    empty = "",
+    empty_open = "",
+    symlink = "",
+    symlink_open = "",
+  },
+  lsp = {
+    hint = "",
+    info = "",
+    warning = "",
+    error = "",
+  },
+}
+
 vim.g.nvim_tree_special_files = {
   ["Gemfile"] = 1,
   ["Gemfile.lock"] = 1,
@@ -21,7 +50,11 @@ vim.g.show_icons = {
 
 tree.setup {
   auto_close = true,
+  git = {
+    ignore = "no",
+  },
   disable_netrw = true,
+  hijack_netrw = true,
   ignore_ft_on_setup = { "startify", "dashboard", "netrw", "help" },
   view = {
     auto_resize = true,
@@ -39,10 +72,12 @@ tree.setup {
   },
   update_focused_file = {
     enable = true,
-    update_cwd = true,
+    update_cwd = false,
     ignore_list = { "help" },
+  },
+  diagnostics = {
+    enable = true,
   },
 }
 
-nnoremap { "-", "<Cmd>NvimTreeFindFileToggle<CR>" }
-nnoremap { "<Leader>m", "<Cmd>NvimTreeFindFileToggle<CR>" }
+set("n", "<C-n>", "<Cmd>NvimTreeFindFileToggle<CR>")

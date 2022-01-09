@@ -1,6 +1,5 @@
 local dial = require "dial"
-local nmap = vim.keymap.nmap
-local vmap = vim.keymap.vmap
+local set = vim.keymap.set
 
 dial.augends["custom#boolean"] = dial.common.enum_cyclic {
   name = "boolean",
@@ -26,8 +25,8 @@ dial.config.searchlist.visual = {
   "char#alph#capital#word",
 }
 
-nmap { "<C-a>", "<Plug>(dial-increment)" }
-nmap { "<C-x>", "<Plug>(dial-decrement)" }
+set("n", "<C-a>", "<Plug>(dial-increment)")
+set("n", "<C-x>", "<Plug>(dial-decrement)")
 
-vmap { "<C-a>", "<Plug>(dial-increment)" }
-vmap { "<C-x>", "<Plug>(dial-decrement)" }
+set("v", "<C-a>", "<Plug>(dial-increment)")
+set("v", "<C-x>", "<Plug>(dial-decrement)")

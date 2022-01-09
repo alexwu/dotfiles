@@ -190,9 +190,11 @@ end)
 set("n", "<Leader>ag", function()
   builtin.live_grep()
 end)
+
 set("n", "<Leader>br", function()
   builtin.git_branches()
 end)
+
 set("n", "<Leader>sn", function()
   require("plugins.telescope.pickers").snippets()
 end)
@@ -204,7 +206,9 @@ set("n", "<Leader>i", function()
   require("plugins.telescope.pickers").related_files()
 end)
 
-set("n", "<A-v>", require("telescope").extensions.neoclip.default)
+set("n", "<A-v>", function()
+  require("telescope").extensions.neoclip.default()
+end)
 
 vim.cmd [[autocmd FileType TelescopePrompt setlocal nocursorline]]
 vim.cmd [[autocmd User TelescopePreviewerLoaded setlocal wrap]]

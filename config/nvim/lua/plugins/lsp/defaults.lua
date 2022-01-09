@@ -1,6 +1,6 @@
 local M = {}
 local builtin = require "telescope.builtin"
-local nnoremap = vim.keymap.nnoremap
+local set = vim.keymap.set
 
 function M.on_attach(_, bufnr)
   local signs = {
@@ -19,7 +19,9 @@ function M.on_attach(_, bufnr)
     virtual_text = {
       severity = { min = vim.diagnostic.severity.ERROR },
     },
-    underline = {},
+    underline = {
+      -- severity = { min = vim.diagnostic.severity.ERROR },
+    },
     signs = true,
     float = {
       show_header = false,
@@ -27,86 +29,72 @@ function M.on_attach(_, bufnr)
     },
     update_in_insert = false,
   }
+  vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+    vim.lsp.diagnostic.on_publish_diagnostics,
+    {
+      virtual_text = {
+        severity = { min = vim.diagnostic.severity.ERROR },
+      },
+      underline = {
+        -- severity = { min = vim.diagnostic.severity.ERROR },
+      },
+      signs = true,
+      float = {
+        show_header = false,
+        source = "always",
+      },
+      update_in_insert = false,
+    }
+  )
   vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
     vim.lsp.handlers.hover,
     { border = "rounded", focusable = false }
   )
-  nnoremap {
-    "gd",
-    function()
-      builtin.lsp_definitions()
-    end,
-  }
+  set("n", "gd", function()
+    builtin.lsp_definitions()
+  end)
 
-  nnoremap {
-    "gr",
-    function()
-      builtin.lsp_references()
-    end,
-  }
+  set("n", "gr", function()
+    builtin.lsp_references()
+  end)
 
-  nnoremap {
-    "gi",
-    function()
-      builtin.lsp_implementations()
-    end,
-  }
+  set("n", "gi", function()
+    builtin.lsp_implementations()
+  end)
 
-  nnoremap {
-    "gD",
-    function()
-      vim.lsp.buf.declaration()
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "K",
-    function()
-      vim.lsp.buf.hover()
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "L",
-    function()
-      vim.diagnostic.open_float(nil, {
-        scope = "line",
-        show_header = false,
-        source = "always",
-        focusable = false,
-        border = "rounded",
-      })
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "<Leader>a",
-    function()
-      require("code_action_menu").open_code_action_menu()
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "[d",
-    function()
-      vim.lsp.diagnostic.goto_prev()
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "]d",
-    function()
-      vim.lsp.diagnostic.goto_next()
-    end,
-    silent = true,
-  }
-  nnoremap {
-    "<BSlash>y",
-    function()
-      vim.lsp.buf.formatting()
-    end,
-    silent = true,
-  }
+  set("n", "gD", function()
+    vim.lsp.buf.declaration()
+  end, { silent = true })
+
+  set("n", "K", function()
+    vim.lsp.buf.hover()
+  end, { silent = true })
+
+  set("n", "L", function()
+    vim.diagnostic.open_float(nil, {
+      scope = "line",
+      show_header = false,
+      source = "always",
+      focusable = false,
+      border = "rounded",
+    })
+  end, { silent = true })
+
+  set("n", "<Leader>a", function()
+    require("code_action_menu").open_code_action_menu()
+  end, { silent = true })
+
+  set("n", "[d", function()
+    vim.lsp.diagnostic.goto_prev()
+  end, { silent = true })
+
+  set("n", "]d", function()
+    vim.lsp.diagnostic.goto_next()
+  end, { silent = true })
+
+  set("n", "<BSlash>y", function()
+    vim.lsp.buf.formatting()
+  end, { silent = true })
 
   vim.cmd [[autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]]
   vim.cmd [[autocmd CursorHold * lua Show_cursor_diagnostics()]]

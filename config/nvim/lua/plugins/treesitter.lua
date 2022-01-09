@@ -5,6 +5,7 @@ require("nvim-treesitter.configs").setup {
     "go",
     "graphql",
     "html",
+    "http",
     "json",
     "json5",
     "jsonc",
@@ -13,6 +14,7 @@ require("nvim-treesitter.configs").setup {
     "regex",
     "ruby",
     "rust",
+    "swift",
     "toml",
     "tsx",
     "typescript",
@@ -20,7 +22,7 @@ require("nvim-treesitter.configs").setup {
     "yaml",
   },
   highlight = { enable = true, additional_vim_regex_highlighting = false },
-  indent = { enable = false, disable = { "ruby" } },
+  indent = { enable = true },
   incremental_selection = {
     enable = true,
     keymaps = {
@@ -70,7 +72,7 @@ require("nvim-treesitter.configs").setup {
     },
   },
   autopairs = { enable = true },
-  -- autotag = { enable = true },
+  autotag = { enable = true },
   context_commentstring = { enable = true, enable_autocmd = false },
   matchup = { enable = true },
 }

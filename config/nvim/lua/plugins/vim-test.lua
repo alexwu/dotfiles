@@ -1,3 +1,5 @@
+local set = vim.keymap.set
+
 _G.toggleterm_strategy = function(cmd)
   require("toggleterm.terminal").Terminal
     :new({
@@ -38,7 +40,7 @@ vim.api.nvim_set_var("test#ruby#rspec#options", {
 vim.api.nvim_set_var("test#javascript#jest#options", "--color=always")
 vim.api.nvim_set_var("test#typescript#jest#options", "--color=always")
 
-vim.api.nvim_set_keymap("n", "t<C-n>", "<cmd>TestNearest<CR>", { noremap = true })
-vim.api.nvim_set_keymap("n", "t<C-f>", "<cmd>TestFile<CR>", { noremap = true })
+set("n", "<F3>", "<cmd>TestNearest<CR>")
+set("n", "<F5>", "<cmd>TestFile<CR>")
 vim.api.nvim_set_keymap("n", "t<C-l>", "<cmd>TestLast<CR>", { noremap = true })
 vim.api.nvim_set_keymap("n", "t<C-g>", "<cmd>TestVisit<CR>", { noremap = true })

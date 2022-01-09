@@ -1,19 +1,37 @@
 local lspconfig = require "lspconfig"
+local configs = require "lspconfig.configs"
 local util = lspconfig.util
 local root_pattern = util.root_pattern
 local lsp_installer = require "nvim-lsp-installer"
 local on_attach = require("plugins.lsp.defaults").on_attach
 local capabilities = require("plugins.lsp.defaults").capabilities
+local null_ls = require "null-ls"
+-- require "plugins.lsp.rubocop"
+
+null_ls.setup {
+  sources = {
+    null_ls.builtins.formatting.rubocop.with {
+      command = "bundle",
+      args = vim.list_extend(
+        { "exec", "rubocop" },
+        require("null-ls").builtins.formatting.rubocop._opts.args
+      ),
+    },
+    null_ls.builtins.diagnostics.rubocop.with {
+      command = "bundle",
+      args = vim.list_extend(
+        { "exec", "rubocop" },
+        require("null-ls").builtins.diagnostics.rubocop._opts.args
+      ),
+    },
+  },
+}
 
 lsp_installer.settings {
   log_level = vim.log.levels.DEBUG,
 }
 lsp_installer.on_server_ready(function(server)
   local opts = { on_attach = on_attach, capabilities = capabilities }
-
-  opts.settings = {
-    flags = {},
-  }
 
   if server.name == "sumneko_lua" then
     opts.settings = {
@@ -67,7 +85,14 @@ lsp_installer.on_server_ready(function(server)
         includeInlayEnumMemberValueHints = true,
       },
     }
-    opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx" }
+
+    opts.settings = {
+      flags = {
+        debounce_text_changes = 150,
+      },
+    }
+
+    opts.filetypes = { "typescript", "typescriptreact", "typescript.tsx", "javascript" }
   end
 
   if server.name == "eslint" then
@@ -82,8 +107,7 @@ lsp_installer.on_server_ready(function(server)
   end
 
   if server.name == "graphql" then
-    opts.filetypes = { "graphql" }
-    opts.root_dir = root_pattern(".git", ".graphqlrc")
+    opts.root_dir = root_pattern(".git", "graphql.config.ts")
   end
 
   if server.name == "jsonls" then
@@ -95,24 +119,87 @@ lsp_installer.on_server_ready(function(server)
   end
 
   if server.name == "rust_analyzer" then
-    require("rust-tools").setup {
-      server = server:get_default_options(),
+    local rustopts = {
+      tools = {
+        autoSetHints = true,
+        hover_with_actions = true,
+        executor = require("rust-tools/executors").termopen,
+        runnables = {
+          use_telescope = true,
+        },
+        debuggables = {
+          use_telescope = true,
+        },
+        inlay_hints = {
+          only_current_line = false,
+          only_current_line_autocmd = "CursorHold",
+          show_parameter_hints = true,
+          parameter_hints_prefix = "<- ",
+          other_hints_prefix = "=> ",
+          max_len_align = false,
+          max_len_align_padding = 1,
+          right_align = false,
+          right_align_padding = 7,
+          highlight = "Comment",
+        },
+        hover_actions = {
+          border = {
+            { "╭", "FloatBorder" },
+            { "─", "FloatBorder" },
+            { "╮", "FloatBorder" },
+            { "│", "FloatBorder" },
+            { "╯", "FloatBorder" },
+            { "─", "FloatBorder" },
+            { "╰", "FloatBorder" },
+            { "│", "FloatBorder" },
+          },
+          auto_focus = false,
+        },
+        diagnostics = {
+          enable = true,
+          disabled = { "unresolved-proc-macro" },
+          enableExperimental = true,
+        },
+      },
+      server = vim.tbl_deep_extend("force", server:get_default_options(), opts, {
+        settings = {
+          ["rust-analyzer"] = {
+            diagnostics = {
+              enable = true,
+              disabled = { "unresolved-proc-macro" },
+              enableExperimental = true,
+            },
+          },
+        },
+      }),
     }
+
+    require("rust-tools").setup(rustopts)
   end
 
-  server:setup(opts)
+  if server.name == "rust_analyzer" then
+    server:attach_buffers()
+  else
+    server:setup(opts)
+  end
+
   vim.cmd [[ do User LspAttachBuffers ]]
 end)
 
-local rubocop = {
-  lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",
-  lintStdin = true,
-  lintFormats = { "%f:%l:%c: %m" },
-  lintIgnoreExitCode = true,
-  formatCommand = "bundle exec rubocop -A -f quiet --stderr -s ${INPUT}",
-  formatStdin = true,
-}
+-- lspconfig["rubocop-lsp"].setup {
+--   on_attach = on_attach,
+--   capabilities = capabilities,
+-- }
 
+-- local rubocop = {
+--   lintCommand = "bundle exec rubocop --force-exclusion --stdin ${INPUT}",
+--   lintStdin = true,
+--   lintFormats = { "%f:%l:%c: %m" },
+--   lintIgnoreExitCode = true,
+--   formatCommand = "bundle exec rubocop -A -f quiet --stderr -s ${INPUT}",
+--   formatStdin = true,
+-- }
+--
 -- lspconfig.efm.setup {
 --   init_options = {
 --     documentFormatting = true,
@@ -132,7 +219,7 @@ local rubocop = {
 --   on_attach = on_attach,
 --   capabilities = capabilities,
 -- }
---
+
 lspconfig.sorbet.setup {
   on_attach = on_attach,
   capabilities = capabilities,
@@ -148,42 +235,22 @@ lspconfig.sorbet.setup {
   root_dir = util.root_pattern "sorbet",
 }
 
-local configs = require "lspconfig/configs"
--- configs["steep"] = {
---   default_config = {
---     cmd = { "steep", "langserver" },
---     filetypes = { "ruby" },
---     root_dir = util.root_pattern "Steepfile",
---   },
--- }
-
--- lspconfig["steep"].setup {
---   on_attach = on_attach,
---   capabilities = capabilities,
--- }
-
-configs["rubocop-lsp"] = {
-  default_config = {
-    cmd = { "rubocop-lsp" },
-    filetypes = { "ruby" },
-    root_dir = util.root_pattern ".rubocop.yml",
-  },
-}
-
-lspconfig["rubocop-lsp"].setup {
-  on_attach = on_attach,
-  capabilities = capabilities,
-}
-
--- vim.lsp.start_client {
---   cmd = { "steep", "langserver" },
---   filetypes = { "ruby" },
---   root_dir = find_steepfile_ancestor(vim.fn.expand "%"),
+-- if not configs["rubocop-lsp"] then
+--   configs["rubocop-lsp"] = {
+--     default_config = {
+--       cmd = { "rubocop-lsp" },
+--       filetypes = { "ruby" },
+--       root_dir = util.root_pattern(".rubocop.yml", "Gemfile"),
+--     },
+--   }
+-- end
+--
+-- lspconfig["rubocop-lsp"].setup {
 --   on_attach = on_attach,
 --   capabilities = capabilities,
 -- }
 --
-require("trouble").setup {}
+-- require("trouble").setup {}
 
 vim.cmd [[autocmd FileType qf nnoremap <buffer> <silent> <CR> <CR>:cclose<CR>]]
 vim.cmd [[autocmd FileType LspInfo,null-ls-info nmap <buffer> q <cmd>quit<cr>]]

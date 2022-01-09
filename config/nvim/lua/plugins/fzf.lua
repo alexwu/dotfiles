@@ -1,4 +1,4 @@
-local nnoremap = vim.keymap.nnoremap
+local set = vim.keymap.set
 
 require("fzf-lua").setup {
   win_border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
@@ -47,24 +47,15 @@ require("fzf-lua").setup {
   lsp = { async_or_timeout = 3000 },
 }
 
-nnoremap {
-  "<Leader>f",
-  function()
-    require("fzf-lua").files()
-  end,
-}
-nnoremap {
-  "<Leader>rg",
-  function()
-    require("fzf-lua").live_grep()
-  end,
-}
-nnoremap {
-  "<Leader>ag",
-  function()
-    require("fzf-lua").live_grep()
-  end,
-}
+set("n", "<Leader>f", function()
+  require("fzf-lua").files()
+end)
+set("n", "<Leader>rg", function()
+  require("fzf-lua").live_grep()
+end)
+set("n", "<Leader>ag", function()
+  require("fzf-lua").live_grep()
+end)
 
-vim.cmd [[ command! -nargs=0 Rg :lua require('fzf-lua').live_grep()<CR> ]]
+vim.api.nvim_add_user_command("Rg", function() end, { nargs = 0 })
 vim.cmd [[ autocmd FileType fzf inoremap <buffer> <Esc> :close<CR>]]

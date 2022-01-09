@@ -186,7 +186,6 @@ local explorer = {
 
 windline.setup {
   colors_name = function(colors)
-    -- ADD MORE COLOR HERE ----
     return colors
   end,
   statuslines = {

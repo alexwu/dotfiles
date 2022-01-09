@@ -1,5 +1,4 @@
-local nnoremap = vim.keymap.nnoremap
-local xnoremap = vim.keymap.xnoremap
+local set = vim.keymap.set
 
 local function prettier()
   return {
@@ -36,7 +35,7 @@ local function stylua()
 end
 
 local function rustfmt()
-  return { exe = "rustfmt", args = { "--emit=stdout" }, stdin = true }
+  return { exe = "rustfmt", args = { "--emit=stdout", "--edition=2021" }, stdin = true }
 end
 
 local function gofmt()
@@ -67,5 +66,7 @@ require("formatter").setup {
   },
 }
 
-nnoremap { "<Leader>y", ":Format<CR>", silent = true }
-xnoremap { "<Leader>y", ":Format<CR>", silent = true }
+set("n", "<F1>", "<CMD>Format<CR>", { silent = true })
+set("n", "<F1>", "<CMD>Format<CR>", { silent = true })
+set("n", "<Leader>y", "<CMD>Format<CR>", { silent = true })
+set("n", "<Leader>y", "<CMD>Format<CR>", { silent = true })

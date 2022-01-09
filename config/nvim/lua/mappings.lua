@@ -1,35 +1,31 @@
 local keymap = vim.keymap
-local nnoremap = keymap.nnoremap
-local xnoremap = keymap.xnoremap
-local inoremap = keymap.inoremap
+local set = keymap.set
 
 vim.g.mapleader = " "
 
-nnoremap { "j", "gj" }
-nnoremap { "k", "gk" }
+set ("n", "j", "gj")
+set ("n", "k", "gk" )
 
-nnoremap { "<C-j>", "5gj" }
-nnoremap { "<C-k>", "5gk" }
-nnoremap { "<C-h>", "5h" }
-nnoremap { "<C-l>", "5l" }
+set ({"n", "x"}, "<C-j>", "5gj" )
+set ({"n", "x"}, "<C-k>", "5gk" )
+set ({"n", "x"}, "<C-h>", "5h" )
+set ({"n", "x"}, "<C-l>", "5l" )
 
-xnoremap { "<C-j>", "5gj" }
-xnoremap { "<C-k>", "5gk" }
-xnoremap { "<C-h>", "5h" }
-xnoremap { "<C-l>", "5l" }
+set ("i", "<C-j>", "<Down>" )
+set ("i", "<C-k>", "<Up>" )
+set ("i", "<C-h>", "<Left>" )
+set ("i", "<C-l>", "<Right>" )
 
-inoremap { "<C-j>", "<Down>" }
-inoremap { "<C-k>", "<Up>" }
-inoremap { "<C-h>", "<Left>" }
-inoremap { "<C-l>", "<Right>" }
+set ("n", "<ESC>", "<cmd>noh<CR>" )
+set ("x", "<F2>", "\"*y" )
+set ("n", "<A-BS>", "db" )
+set ("i", "<A-BS>", "<C-W>" )
 
-nnoremap { "<A-BS>", "db" }
-inoremap { "<A-BS>", "<C-W>" }
+set ("n", "<A-o>", "o<esc>" )
+set ("n", "<A-O>", "O<esc>" )
 
-nnoremap { "<A-o>", "o<esc>" }
-nnoremap { "<A-O>", "O<esc>" }
+vim.cmd [[autocmd FileType qf set <buffer> <silent> <ESC> :cclose<CR>]]
+vim.cmd [[autocmd FileType help set <buffer> <silent> gd <C-]>]]
 
-vim.cmd [[ autocmd FileType qf nnoremap <buffer> <silent> <ESC> :cclose<CR> ]]
-vim.cmd [[autocmd FileType help nnoremap <buffer> <silent> gd <C-]>]]
-vim.cmd [[command! -nargs=0 Trash :!trash %]]
-vim.cmd [[command! -nargs=0 Delete :!trash %]]
+vim.api.nvim_add_user_command("Trash", "!trash %", { bang = true, nargs = 0 })
+vim.api.nvim_add_user_command("Delete", "!trash %", { bang = true, nargs = 0 })
