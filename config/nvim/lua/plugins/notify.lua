@@ -1,5 +1,3 @@
-local nnoremap = vim.keymap.nnoremap
-
 local stages = function()
   local stages_util = require "notify.stages.util"
 
@@ -71,11 +69,4 @@ require("notify").setup {
     DEBUG = "",
     TRACE = "✎",
   },
-}
-
-nnoremap {
-  "<Leader><Esc>",
-  function()
-    require("notify").dismiss()
-  end,
 }

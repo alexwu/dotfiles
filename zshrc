@@ -7,7 +7,6 @@ OS="$(uname -s)"
 
 if [ "$OS" = "Darwin" ]; then
   source $HOME/.zsh/macos.zsh
-  # export PATH="/opt/homebrew/opt/node@16/bin:$PATH"
 fi
 
 export PATH="$HOME/.bin:$PATH"
@@ -15,18 +14,10 @@ export PATH="$HOME/go/bin:$PATH"
 export LESS="-XFR"
 autoload -U colors && colors
 
-export FZF_DEFAULT_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store"
-export FZF_CTRL_T_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp"
-export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36'"
+export FZF_DEFAULT_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --strip-cwd-prefix"
+export FZF_CTRL_T_COMMAND="fd --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
+export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
 export BUNDLED_COMMANDS=(srb)
-
-source "$HOME/.bin/zsh-directory-history/directory-history.plugin.zsh"
-# Bind up/down arrow keys to navigate through your history
-bindkey '\e[A' directory-history-search-forward
-bindkey '\e[B' directory-history-search-backward
-# Bind CTRL+k and CTRL+j to substring search
-bindkey '^j' history-substring-search-up
-bindkey '^k' history-substring-search-down
 
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
@@ -95,7 +86,7 @@ zinit wait lucid atload'_zsh_autosuggest_start' for \
 # zinit wait lucid for \
 #   OMZL::history.zsh \
 #   atload"bindkey '^[[A' history-substring-search-up; bindkey '^[[B' history-substring-search-down;" zsh-users/zsh-history-substring-search
-
+#
 zinit wait blockf lucid for \
   OMZP::bundler \
   OMZP::heroku \
@@ -125,3 +116,13 @@ fi
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 export PATH="/usr/local/opt/v8@3.15/bin:$PATH"
+
+# Load a few important annexes, without Turbo
+# (this is currently required for annexes)
+zinit light-mode for \
+    zdharma-continuum/zinit-annex-as-monitor \
+    zdharma-continuum/zinit-annex-bin-gem-node \
+    zdharma-continuum/zinit-annex-patch-dl \
+    zdharma-continuum/zinit-annex-rust
+
+### End of Zinit's installer chunk

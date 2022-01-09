@@ -18,24 +18,6 @@ return require("packer").startup {
   function()
     -- Minimal setup
     use { "wbthomason/packer.nvim" }
-    use {
-      "nathom/filetype.nvim",
-      config = function()
-        require("filetype").setup {
-          overrides = {
-            extensions = {
-              rbi = "ruby",
-              rbs = "ruby",
-              rake = "ruby",
-            },
-            literal = {
-              Steepfile = "ruby",
-              ["yarn.lock"] = "yaml",
-            },
-          },
-        }
-      end,
-    }
     use { "lewis6991/impatient.nvim" }
     use {
       "antoinemadec/FixCursorHold.nvim",
@@ -87,7 +69,6 @@ return require("packer").startup {
         "weilbith/nvim-code-action-menu",
         "nvim-telescope/telescope.nvim",
         "b0o/schemastore.nvim",
-        "folke/trouble.nvim",
       },
     }
 
@@ -117,30 +98,13 @@ return require("packer").startup {
         { "nvim-lua/plenary.nvim" },
         { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
         { "kyazdani42/nvim-web-devicons" },
-        { "nvim-telescope/telescope-hop.nvim" },
+        { "nvim-telescope/telescope-ui-select.nvim" },
+        { "tami5/sqlite.lua", module = "sqlite" },
+        { "AckslD/nvim-neoclip.lua" },
       },
       config = function()
         require "plugins.telescope"
       end,
-    }
-    use {
-      "mrjones2014/dash.nvim",
-      requires = { "nvim-telescope/telescope.nvim" },
-      run = "make install",
-    }
-    use {
-      "nvim-telescope/telescope-frecency.nvim",
-      config = function()
-        require("telescope").load_extension "frecency"
-      end,
-      requires = { "tami5/sqlite.lua" },
-    }
-    use {
-      "jvgrootveld/telescope-zoxide",
-      config = function()
-        require("telescope").load_extension "zoxide"
-      end,
-      requires = { "nvim-telescope/telescope.nvim" },
     }
 
     use {
@@ -151,13 +115,14 @@ return require("packer").startup {
       requires = { "akinsho/toggleterm.nvim" },
     }
 
-    use {
-      "windwp/windline.nvim",
-      config = function()
-        require "statusline"
-      end,
-      disable = true,
-    }
+    -- use {
+    --   "windwp/windline.nvim",
+    --   config = function()
+    --     require "statusline"
+    --
+    --     require("wlfloatline").toggle()
+    --   end,
+    -- }
     use {
       "nvim-lualine/lualine.nvim",
       requires = {
@@ -204,12 +169,12 @@ return require("packer").startup {
       end,
     }
 
-    use {
-      "folke/which-key.nvim",
-      config = function()
-        require("which-key").setup {}
-      end,
-    }
+    -- use {
+    --   "folke/which-key.nvim",
+    --   config = function()
+    --     require("which-key").setup {}
+    --   end,
+    -- }
 
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",
@@ -225,7 +190,40 @@ return require("packer").startup {
       },
     }
 
-    use { "mfussenegger/nvim-dap" }
+    use {
+      "rcarriga/nvim-dap-ui",
+      requires = { "mfussenegger/nvim-dap" },
+      config = function()
+        require("dapui").setup()
+      end,
+      disable = true,
+    }
+
+    use {
+      "NTBBloodbath/rest.nvim",
+      requires = { "nvim-lua/plenary.nvim" },
+      config = function()
+        require("rest-nvim").setup {
+          result_split_horizontal = false,
+          skip_ssl_verification = false,
+          highlight = {
+            enabled = true,
+            timeout = 150,
+          },
+          result = {
+            show_url = true,
+            show_http_info = true,
+            show_headers = true,
+          },
+          jump_to_request = false,
+          env_file = ".env",
+          custom_dynamic_variables = {},
+        }
+        vim.keymap.nmap { "<leader>rq", "<Plug>RestNvim" }
+        -- vim.cmd [[ command! -nargs=0 Query <Plug>RestNvim ]]
+      end,
+      disable = true,
+    }
 
     use { "gennaro-tedesco/nvim-jqx", ft = { "json" } }
 
@@ -256,15 +254,85 @@ return require("packer").startup {
       end,
     }
 
+    -- use {
+    --   "tamago324/lir.nvim",
+    --   config = function()
+    --     local actions = require "lir.actions"
+    --     local mark_actions = require "lir.mark.actions"
+    --     local clipboard_actions = require "lir.clipboard.actions"
+    --
+    --     require("lir").setup {
+    --       show_hidden_files = false,
+    --       devicons_enable = true,
+    --       mappings = {
+    --         ["l"] = actions.edit,
+    --         ["<C-s>"] = actions.split,
+    --         ["<C-v>"] = actions.vsplit,
+    --         ["<C-t>"] = actions.tabedit,
+    --
+    --         ["h"] = actions.up,
+    --         ["q"] = actions.quit,
+    --
+    --         ["K"] = actions.mkdir,
+    --         ["N"] = actions.newfile,
+    --         ["R"] = actions.rename,
+    --         ["@"] = actions.cd,
+    --         ["Y"] = actions.yank_path,
+    --         ["."] = actions.toggle_show_hidden,
+    --         ["D"] = actions.delete,
+    --
+    --         ["J"] = function()
+    --           mark_actions.toggle_mark()
+    --           vim.cmd "normal! j"
+    --         end,
+    --         ["C"] = clipboard_actions.copy,
+    --         ["X"] = clipboard_actions.cut,
+    --         ["P"] = clipboard_actions.paste,
+    --       },
+    --       float = {
+    --         winblend = 0,
+    --         curdir_window = {
+    --           enable = false,
+    --           highlight_dirname = false,
+    --         },
+    --
+    --         -- -- You can define a function that returns a table to be passed as the third
+    --         -- -- argument of nvim_open_win().
+    --         -- win_opts = function()
+    --         --   local width = math.floor(vim.o.columns * 0.8)
+    --         --   local height = math.floor(vim.o.lines * 0.8)
+    --         --   return {
+    --         --     border = require("lir.float.helper").make_border_opts({
+    --         --       "+", "─", "+", "│", "+", "─", "+", "│",
+    --         --     }, "Normal"),
+    --         --     width = width,
+    --         --     height = height,
+    --         --     row = 1,
+    --         --     col = math.floor((vim.o.columns - width) / 2),
+    --         --   }
+    --         -- end,
+    --       },
+    --       hide_cursor = true,
+    --       on_init = function()
+    --         vim.api.nvim_buf_set_keymap(
+    --           0,
+    --           "x",
+    --           "J",
+    --           ":<C-u>lua require\"lir.mark.actions\".toggle_mark(\"v\")<CR>",
+    --           { noremap = true, silent = true }
+    --         )
+    --
+    --         -- echo cwd
+    --         vim.api.nvim_echo({ { vim.fn.expand "%:p", "Normal" } }, false, {})
+    --       end,
+    --     }
+    -- }
+
     use {
       "akinsho/toggleterm.nvim",
       config = function()
         require "plugins.terminal"
       end,
-    }
-    use {
-      "tknightz/telescope-termfinder.nvim",
-      requires = { "akinsho/toggleterm.nvim", "nvim-telescope/telescope.nvim" },
     }
 
     use {
@@ -280,6 +348,7 @@ return require("packer").startup {
         require("colorizer").setup()
       end,
       cmd = { "ColorizerToggle" },
+      disable = true,
     }
 
     use {
@@ -307,6 +376,7 @@ return require("packer").startup {
       config = function()
         require "plugins.indent-blankline"
       end,
+      -- after = "windline.nvim",
     }
 
     use {
@@ -321,9 +391,16 @@ return require("packer").startup {
       end,
     }
 
-    use { "tpope/vim-projectionist", requires = { "tpope/vim-dispatch" } }
+    use {
+      "tpope/vim-projectionist",
+      requires = { "tpope/vim-dispatch" },
+      config = function()
+        require "plugins.projectionist"
+      end,
+    }
     use { "tpope/vim-repeat" }
     use { "tpope/vim-surround" }
+    -- use { "tpope/vim-rails" }
     use { "chaoren/vim-wordmotion" }
     use { "junegunn/vim-easy-align" }
     use { "AndrewRadev/splitjoin.vim" }
@@ -340,9 +417,8 @@ return require("packer").startup {
       config = function()
         require "plugins.focus"
       end,
+      disable = true,
     }
-
-    use { "ron-rs/ron.vim" }
 
     if packer_bootstrap then
       require("packer").sync()

@@ -1,4 +1,4 @@
-local nnoremap = vim.keymap.nnoremap
+local set = vim.keymap.set
 local actions = require "telescope.actions"
 local builtin = require "telescope.builtin"
 
@@ -15,18 +15,21 @@ require("telescope").setup {
       width = function()
         return math.max(100, vim.fn.round(vim.o.columns * 0.3))
       end,
+      height = function(_, _, max_lines)
+        return math.min(max_lines, 15)
+      end,
     },
+    sorting_strategy = "ascending",
+    layout_strategy = "center",
     winblend = 30,
     mappings = {
       i = {
         ["<esc>"] = actions.close,
-        ["<C-h>"] = R("telescope").extensions.hop.hop,
         ["<C-j>"] = actions.move_selection_next,
         ["<C-k>"] = actions.move_selection_previous,
         ["<C-u>"] = require("plugins.telescope.actions").clear_line,
       },
       n = {
-        ["<C-h>"] = R("telescope").extensions.hop.hop,
         ["<C-j>"] = actions.move_selection_next,
         ["<C-k>"] = actions.move_selection_previous,
       },
@@ -59,9 +62,20 @@ require("telescope").setup {
         "*.chunk.js.map",
         "--exclude",
         "tmp",
+        "--exclude",
+        "target",
+        "--strip-cwd-prefix",
       },
     },
     git_files = {
+      theme = "dropdown",
+      layout_config = {
+        width = function()
+          return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+        end,
+      },
+    },
+    git_status = {
       theme = "dropdown",
       layout_config = {
         width = function()
@@ -140,84 +154,57 @@ require("telescope").setup {
     termfinder = {
       theme = "dropdown",
     },
+    ["ui-select"] = {
+      require("telescope.themes").get_dropdown {},
+    },
   },
 }
 require("telescope").load_extension "fzf"
-require("telescope").load_extension "hop"
-require("telescope").load_extension "frecency"
-require("telescope").load_extension "zoxide"
-require("telescope").load_extension "termfinder"
+require("telescope").load_extension "ui-select"
+require("neoclip").setup()
 
-nnoremap {
-  "<Leader><space>",
-  function()
-    builtin.buffers()
-  end,
-}
-nnoremap {
-  "<Leader>f",
-  function()
-    builtin.find_files(require("telescope.themes").get_dropdown {
-      layout_config = {
-        width = function()
-          return math.max(100, vim.fn.round(vim.o.columns * 0.3))
-        end,
-      },
-    })
-  end,
-}
+set("n", "<Leader><space>", function()
+  builtin.buffers()
+end)
+set("n", "<Leader>f", function()
+  builtin.find_files(require("telescope.themes").get_dropdown {
+    layout_config = {
+      width = function()
+        return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+      end,
+    },
+  })
+end, { desc = "Default fuzzy finder" })
 
-nnoremap {
-  "<Leader>g",
-  function()
-    builtin.git_files()
-  end,
-}
+set("n", "<Leader>g", function()
+  builtin.git_files()
+end)
 
-nnoremap {
-  "<Leader>t",
-  function()
-    builtin.builtin { include_extensions = true }
-  end,
-}
+set("n", "<Leader>t", function()
+  builtin.builtin { include_extensions = true }
+end)
 
-nnoremap {
-  "<Leader>rg",
-  function()
-    builtin.live_grep()
-  end,
-}
-nnoremap {
-  "<Leader>ag",
-  function()
-    builtin.live_grep()
-  end,
-}
-nnoremap {
-  "<Leader>br",
-  function()
-    builtin.git_branches()
-  end,
-}
-nnoremap {
-  "<Leader>sn",
-  function()
-    require("plugins.telescope.pickers").snippets()
-  end,
-}
-nnoremap {
-  "<Leader>st",
-  function()
-    builtin.git_stash()
-  end,
-}
+set("n", "<Leader>rg", function()
+  builtin.live_grep()
+end)
+set("n", "<Leader>ag", function()
+  builtin.live_grep()
+end)
+set("n", "<Leader>br", function()
+  builtin.git_branches()
+end)
+set("n", "<Leader>sn", function()
+  require("plugins.telescope.pickers").snippets()
+end)
+set("n", "<Leader>st", function()
+  builtin.git_status()
+end)
 
-nnoremap {
-  "<Leader>i",
-  function()
-    require("plugins.telescope.pickers").related_files()
-  end,
-}
+set("n", "<Leader>i", function()
+  require("plugins.telescope.pickers").related_files()
+end)
+
+set("n", "<A-v>", require("telescope").extensions.neoclip.default)
 
 vim.cmd [[autocmd FileType TelescopePrompt setlocal nocursorline]]
 vim.cmd [[autocmd User TelescopePreviewerLoaded setlocal wrap]]

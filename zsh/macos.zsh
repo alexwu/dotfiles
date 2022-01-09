@@ -5,6 +5,7 @@ elif [ $(arch) = "i386" ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+export HOMEBREW_NO_ENV_HINTS=true
 export FZF_BASE=$(brew --prefix)/bin/fzf
 # export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 export SSH_AUTH_SOCK=/Users/jamesbombeelu/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
