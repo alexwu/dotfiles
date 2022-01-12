@@ -81,7 +81,8 @@ function M.on_attach(_, bufnr)
   end, { silent = true })
 
   set("n", "<Leader>a", function()
-    require("code_action_menu").open_code_action_menu()
+    -- require("code_action_menu").open_code_action_menu()
+    vim.lsp.buf.code_action()
   end, { silent = true })
 
   set("n", "[d", function()

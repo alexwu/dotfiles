@@ -24,8 +24,8 @@ set ("i", "<A-BS>", "<C-W>" )
 set ("n", "<A-o>", "o<esc>" )
 set ("n", "<A-O>", "O<esc>" )
 
-vim.cmd [[autocmd FileType qf set <buffer> <silent> <ESC> :cclose<CR>]]
-vim.cmd [[autocmd FileType help set <buffer> <silent> gd <C-]>]]
+vim.cmd [[autocmd FileType qf nnoremap <buffer> <silent> <ESC> :cclose<CR>]]
+vim.cmd [[autocmd FileType help nnoremap <buffer> <silent> gd <C-]>]]
 
 vim.api.nvim_add_user_command("Trash", "!trash %", { bang = true, nargs = 0 })
 vim.api.nvim_add_user_command("Delete", "!trash %", { bang = true, nargs = 0 })

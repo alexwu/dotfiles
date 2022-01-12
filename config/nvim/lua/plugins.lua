@@ -101,6 +101,7 @@ return require("packer").startup {
         { "nvim-telescope/telescope-ui-select.nvim" },
         { "tami5/sqlite.lua", module = "sqlite" },
         { "AckslD/nvim-neoclip.lua" },
+        { "nvim-telescope/telescope-file-browser.nvim" },
       },
       config = function()
         require "plugins.telescope"
@@ -175,6 +176,18 @@ return require("packer").startup {
     --     require("which-key").setup {}
     --   end,
     -- }
+
+    use {
+      "pwntester/octo.nvim",
+      requires = {
+        "nvim-lua/plenary.nvim",
+        "nvim-telescope/telescope.nvim",
+        "kyazdani42/nvim-web-devicons",
+      },
+      config = function()
+        require("octo").setup()
+      end,
+    }
 
     use {
       "jose-elias-alvarez/nvim-lsp-ts-utils",

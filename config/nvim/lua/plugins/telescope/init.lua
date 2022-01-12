@@ -40,7 +40,6 @@ require("telescope").setup {
     builtin = {
       theme = "dropdown",
     },
-    file_browser = {},
     find_files = {
       find_command = {
         "fd",
@@ -161,6 +160,7 @@ require("telescope").setup {
 }
 require("telescope").load_extension "fzf"
 require("telescope").load_extension "ui-select"
+require("telescope").load_extension "file_browser"
 require("neoclip").setup()
 
 set("n", "<Leader><space>", function()
@@ -209,6 +209,9 @@ end)
 set("n", "<A-v>", function()
   require("telescope").extensions.neoclip.default()
 end)
+set("n", "-", function()
+  require("telescope").extensions.file_browser.file_browser()
+end, { noremap = true })
 
 vim.cmd [[autocmd FileType TelescopePrompt setlocal nocursorline]]
 vim.cmd [[autocmd User TelescopePreviewerLoaded setlocal wrap]]
