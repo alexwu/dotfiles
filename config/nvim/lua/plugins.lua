@@ -7,6 +7,10 @@ if needs_packer(install_path) then
   packer_bootstrap = install_packer(install_path)
 end
 
+local function is_not_vscode()
+  return not vim.fn.exists "g:vscode"
+end
+
 vim.cmd [[
   augroup packer_user_config
     autocmd!
@@ -66,7 +70,6 @@ return require("packer").startup {
         "williamboman/nvim-lsp-installer",
         "kosayoda/nvim-lightbulb",
         "hrsh7th/cmp-nvim-lsp",
-        "weilbith/nvim-code-action-menu",
         "nvim-telescope/telescope.nvim",
         "b0o/schemastore.nvim",
       },
@@ -102,6 +105,7 @@ return require("packer").startup {
         { "tami5/sqlite.lua", module = "sqlite" },
         { "AckslD/nvim-neoclip.lua" },
         { "nvim-telescope/telescope-file-browser.nvim" },
+        { "nvim-telescope/telescope-project.nvim" },
       },
       config = function()
         require "plugins.telescope"
@@ -170,13 +174,6 @@ return require("packer").startup {
       end,
     }
 
-    -- use {
-    --   "folke/which-key.nvim",
-    --   config = function()
-    --     require("which-key").setup {}
-    --   end,
-    -- }
-
     use {
       "pwntester/octo.nvim",
       requires = {
@@ -212,43 +209,17 @@ return require("packer").startup {
       disable = true,
     }
 
-    use {
-      "NTBBloodbath/rest.nvim",
-      requires = { "nvim-lua/plenary.nvim" },
-      config = function()
-        require("rest-nvim").setup {
-          result_split_horizontal = false,
-          skip_ssl_verification = false,
-          highlight = {
-            enabled = true,
-            timeout = 150,
-          },
-          result = {
-            show_url = true,
-            show_http_info = true,
-            show_headers = true,
-          },
-          jump_to_request = false,
-          env_file = ".env",
-          custom_dynamic_variables = {},
-        }
-        vim.keymap.set("n", "<leader>rq", "<Plug>RestNvim")
-        -- vim.cmd [[ command! -nargs=0 Query <Plug>RestNvim ]]
-      end,
-      disable = true,
-    }
-
     use { "gennaro-tedesco/nvim-jqx", ft = { "json" } }
-
     use { "kevinhwang91/nvim-bqf" }
 
     use {
       "phaazon/hop.nvim",
-      as = "hop",
+      requires = { "indianboy42/hop-extensions" },
       config = function()
         require "plugins.hop"
       end,
     }
+    use "ggandor/lightspeed.nvim"
 
     use {
       "ibhagwan/fzf-lua",
@@ -265,6 +236,18 @@ return require("packer").startup {
       config = function()
         require "plugins.tree"
       end,
+    }
+
+    use {
+      "tamago324/lir.nvim",
+      requires = {
+        "nvim-lua/plenary.nvim",
+        "kyazdani42/nvim-web-devicons",
+      },
+      config = function()
+        require "plugins.lir"
+      end,
+      disable = true,
     }
 
     use {
@@ -339,7 +322,7 @@ return require("packer").startup {
     }
     use { "tpope/vim-repeat" }
     use { "tpope/vim-surround" }
-    -- use { "tpope/vim-rails" }
+    use { "tpope/vim-rails" }
     use { "chaoren/vim-wordmotion" }
     use { "junegunn/vim-easy-align" }
     use { "AndrewRadev/splitjoin.vim" }
@@ -356,8 +339,9 @@ return require("packer").startup {
       config = function()
         require "plugins.focus"
       end,
-      disable = true,
     }
+
+    use { "rafcamlet/nvim-luapad" }
 
     if packer_bootstrap then
       require("packer").sync()

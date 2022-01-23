@@ -39,6 +39,11 @@ cmp.setup {
       luasnip.lsp_expand(args.body)
     end,
   },
+  enabled = function()
+    -- disable completion in comments
+    local context = require "cmp.config.context"
+    return not context.in_treesitter_capture "comment" and not context.in_syntax_group "Comment"
+  end,
   mapping = {
     ["<CR>"] = cmp.mapping.confirm(),
     ["<C-p>"] = cmp.mapping.select_prev_item(),

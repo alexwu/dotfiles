@@ -1,5 +1,6 @@
 local set = vim.keymap.set
 local actions = require "telescope.actions"
+local fb_actions = require("telescope").extensions.file_browser.actions
 local builtin = require "telescope.builtin"
 
 R = function(name)
@@ -63,6 +64,8 @@ require("telescope").setup {
         "tmp",
         "--exclude",
         "target",
+        "--exclude",
+        "vendor",
         "--strip-cwd-prefix",
       },
     },
@@ -127,34 +130,53 @@ require("telescope").setup {
       override_file_sorter = true,
       case_mode = "smart_case",
     },
-    hop = {
-      keys = { "a", "s", "d", "f", "g", "h", "j", "k", "l", ";" },
-      sign_hl = { "HopNextKey" },
-      line_hl = { "HopNextKey" },
-      clear_selection_hl = true,
-      trace_entry = true,
-      reset_selection = true,
-    },
-    frecency = {
-      show_scores = false,
-      show_unindexed = true,
-      ignore_patterns = { "*.git/*", "*/tmp/*" },
-      disable_devicons = false,
-      workspaces = {
-        ["eo"] = vim.fn.expand "~/Code/cleverific/editorder/",
-        ["admin"] = vim.fn.expand "~/Code/cleverific/editorder-admin/",
-        ["oracle"] = vim.fn.expand "~/Code/cleverific/oracle/",
-        ["dot"] = vim.fn.expand "~/.dotfiles",
-      },
-    },
     dash = {
       theme = "dropdown",
     },
-    termfinder = {
-      theme = "dropdown",
-    },
     ["ui-select"] = {
-      require("telescope.themes").get_dropdown {},
+      require("telescope.themes").get_dropdown {
+        layout_config = {
+          width = function()
+            return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+          end,
+          height = function(_, _, max_lines)
+            return math.min(max_lines, 15)
+          end,
+        },
+      },
+    },
+    file_browser = {
+      layout_strategy = "horizontal",
+      layout_config = {
+        vertical = {
+          height = 0.9,
+          preview_cutoff = 40,
+          prompt_position = "bottom",
+          width = 0.8,
+        },
+        width = function()
+          return math.max(100, vim.fn.round(vim.o.columns * 0.8))
+        end,
+        height = function(_, _, max_lines)
+          return math.min(max_lines, 15)
+        end,
+      },
+      mappings = {
+        i = {
+          ["<esc>"] = false,
+        },
+        n = { ["a"] = fb_actions.create },
+      },
+    },
+    project = {
+      base_dirs = {
+        "~/Code/editorder/cleverific",
+        -- { "~/dev/src2" },
+        -- { "~/dev/src3", max_depth = 4 },
+        -- { path = "~/dev/src4" },
+        -- { path = "~/dev/src5", max_depth = 2 },
+      },
+      hidden_files = true, -- default: false
     },
   },
 }
@@ -164,7 +186,23 @@ require("telescope").load_extension "file_browser"
 require("neoclip").setup()
 
 set("n", "<Leader><space>", function()
-  builtin.buffers()
+  require("plugins.telescope.pickers").buffers {
+    initial_mode = "normal",
+    theme = "dropdown",
+    ignore_current_buffer = true,
+    sort_lastused = true,
+    layout_config = {
+      width = function()
+        return math.max(100, vim.fn.round(vim.o.columns * 0.3))
+      end,
+    },
+    path_display = { "smart" },
+    mappings = {
+      n = {
+        ["<leader><space>"] = actions.close,
+      },
+    },
+  }
 end)
 set("n", "<Leader>f", function()
   builtin.find_files(require("telescope.themes").get_dropdown {
@@ -206,11 +244,16 @@ set("n", "<Leader>i", function()
   require("plugins.telescope.pickers").related_files()
 end)
 
-set("n", "<A-v>", function()
+set("n", "<Leader>v", function()
   require("telescope").extensions.neoclip.default()
 end)
-set("n", "-", function()
-  require("telescope").extensions.file_browser.file_browser()
+
+set("n", "<C-p>", function()
+  require("telescope").extensions.project.project {}
+end, { noremap = true, silent = true })
+
+set("n", "<Leader>tr", function()
+  require("telescope").extensions.file_browser.file_browser { path = vim.fn.expand "%:p:h" }
 end, { noremap = true })
 
 vim.cmd [[autocmd FileType TelescopePrompt setlocal nocursorline]]

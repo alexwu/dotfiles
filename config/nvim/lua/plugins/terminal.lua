@@ -47,7 +47,7 @@ require("toggleterm").setup {
     if term.direction == "horizontal" then
       return 15
     elseif term.direction == "vertical" then
-      return vim.o.columns * 0.4
+      return vim.o.columns * 0.8
     end
   end,
   open_mapping = [[<Bslash><Bslash>]],
@@ -62,12 +62,18 @@ require("toggleterm").setup {
   close_on_exit = true,
   float_opts = {
     border = "rounded",
-    width = vim.fn.round(0.6 * vim.o.columns),
-    height = vim.fn.round(0.6 * vim.o.lines),
-    winblend = 0,
+    width = vim.fn.round(0.9 * vim.o.columns),
+    height = vim.fn.round(0.9 * vim.o.lines),
+    winblend = 3,
     highlights = { border = "FloatBorder", background = "Normal" },
   },
 }
+
+vim.cmd [[
+  if has('nvim') && executable('nvr')
+    let $GIT_EDITOR = "nvr -cc split --remote-wait +'set bufhidden=wipe'"
+  endif
+]]
 
 vim.cmd [[autocmd FileType toggleterm nmap <buffer> - +]]
 vim.cmd [[autocmd FileType toggleterm nmap <buffer> <space><space> <cmd>ToggleTerm<CR>]]

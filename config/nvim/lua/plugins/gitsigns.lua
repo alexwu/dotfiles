@@ -32,16 +32,36 @@ require("gitsigns").setup {
 
     return { { " " .. text, "GitSignsCurrentLineBlame" } }
   end,
-  keymaps = {
-    noremap = true,
+  on_attach = function(bufnr)
+    local gs = package.loaded.gitsigns
 
-    ["n <leader>sh"] = "<cmd>lua require\"gitsigns\".stage_hunk()<CR>",
-    ["v <leader>sh"] = "<cmd>lua require\"gitsigns\".stage_hunk({vim.fn.line(\".\"), vim.fn.line(\"v\")})<CR>",
-    ["n <leader>sb"] = "<cmd>lua require\"gitsigns\".stage_buffer()<CR>",
-    ["n <leader>hr"] = "<cmd>lua require\"gitsigns\".reset_hunk()<CR>",
-    ["v <leader>hr"] = "<cmd>lua require\"gitsigns\".reset_hunk({vim.fn.line(\".\"), vim.fn.line(\"v\")})<CR>",
-    ["n <leader>hu"] = "<cmd>lua require\"gitsigns\".undo_stage_hunk()<CR>",
-    ["n <leader>hb"] = "<cmd>lua require\"gitsigns\".reset_buffer()<CR>",
-    ["n M"] = "<cmd>lua require\"gitsigns\".blame_line({full = false, ignore_whitespace=true})<CR>",
-  },
+    local function map(mode, l, r, opts)
+      opts = opts or {}
+      opts.buffer = bufnr
+      vim.keymap.set(mode, l, r, opts)
+    end
+
+    -- Navigation
+    map("n", "]c", "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'", { expr = true })
+    map("n", "[c", "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'", { expr = true })
+
+    -- Actions
+    map({ "n", "v" }, "<leader>sh", gs.stage_hunk)
+    map("n", "<leader>sb", gs.stage_buffer)
+    map({ "n", "v" }, "<leader>rh", gs.reset_hunk)
+    map("n", "<leader>rb", gs.reset_buffer)
+    map("n", "<leader>uh", gs.undo_stage_hunk)
+    map("n", "<leader>ph", gs.preview_hunk)
+    map("n", "M", function()
+      gs.blame_line { full = false, ignore_whitespace = true }
+    end)
+    map("n", "<leader>tb", gs.toggle_current_line_blame)
+    map("n", "<leader>hd", gs.diffthis)
+    map("n", "<leader>hD", function()
+      gs.diffthis "~"
+    end)
+    map("n", "<leader>td", gs.toggle_deleted)
+
+    map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>")
+  end,
 }

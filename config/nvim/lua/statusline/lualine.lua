@@ -56,12 +56,10 @@ require("lualine").setup {
   options = {
     theme = snazzy(),
     disabled_filetypes = {},
-    --[[ component_separators = { left = "", right = "" },
-    section_separators = { left = "", right = "" }, ]]
     component_separators = "|",
     section_separators = { left = "", right = "" },
   },
-  extensions = { "fzf", "fugitive", "nvim-tree", "quickfix" },
+  extensions = { "fzf", "fugitive", "nvim-tree", "quickfix", "toggleterm" },
   sections = {
     lualine_a = {
       {
@@ -74,7 +72,7 @@ require("lualine").setup {
       { "branch", color = { fg = "#3a3d4d", bg = "#f1f1f0" }, separator = { right = "" } },
     },
     lualine_c = {
-      "filename",
+      { "filename", path = 0, shorting_target = 20 },
       { gps.get_location, cond = gps.is_available },
     },
     lualine_x = { "filetype" },
@@ -85,8 +83,8 @@ require("lualine").setup {
     lualine_a = {},
     lualine_b = {},
     lualine_c = { "filename" },
-    lualine_x = { "lsp_progress" },
-    lualine_y = { "location" },
+    lualine_x = {},
+    lualine_y = {},
     lualine_z = {},
   },
 }

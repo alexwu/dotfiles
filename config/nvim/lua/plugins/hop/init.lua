@@ -1,20 +1,25 @@
 local set = vim.keymap.set
 local hop = require "hop"
+local extension = require "hop-extensions"
 
-hop.setup { keys = "etovxqpdygfblzhckisuran" }
+hop.setup { --[[ keys = "etovxqpdygfblzhckisuran"  ]]}
 
 set("n", "<Leader>w", function()
-  hop.hint_words {}
+  require("plugins.hop.custom").hint_both_ends()
 end)
 
-set("n", "s", function()
-  hop.hint_words {}
-end)
+-- set({"n", "o"}, "s", function()
+--   require("plugins.hop.custom").hint_both_ends()
+-- end)
 
-set("n", "<Leader>e", function()
-  require("plugins.hop.custom").hint_end_words()
-end)
+-- set("n", "gs", function()
+--   hop.hint_words {}
+-- end)
 
 set("n", "<Leader>l", function()
-  hop.hint_lines_skip_whitespace()
+  extension.hint_textobjects()
+end)
+
+set("n", "<Leader>d", function()
+  extension.hint_diagnostics()
 end)

@@ -66,7 +66,7 @@ require("formatter").setup {
   },
 }
 
-set("n", "<F1>", "<CMD>Format<CR>", { silent = true })
-set("n", "<F1>", "<CMD>Format<CR>", { silent = true })
+set("n", "<F8>", "<CMD>Format<CR>", { silent = true })
+set("n", "<F8>", "<CMD>Format<CR>", { silent = true })
 set("n", "<Leader>y", "<CMD>Format<CR>", { silent = true })
 set("n", "<Leader>y", "<CMD>Format<CR>", { silent = true })

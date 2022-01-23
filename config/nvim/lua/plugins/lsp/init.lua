@@ -177,6 +177,19 @@ lsp_installer.on_server_ready(function(server)
     require("rust-tools").setup(rustopts)
   end
 
+  if server.name == "sqls" then
+    opts.settings = {
+      sqls = {
+        connections = {
+          {
+            driver = "postgresql",
+            dataSourceName = "host=127.0.0.1 port=5432 user=jamesbombeelu  dbname=sheikah-slate_development sslmode=disable",
+          },
+        },
+      },
+    }
+  end
+
   if server.name == "rust_analyzer" then
     server:attach_buffers()
   else

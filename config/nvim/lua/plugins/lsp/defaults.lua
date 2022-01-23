@@ -52,10 +52,12 @@ function M.on_attach(_, bufnr)
   )
   set("n", "gd", function()
     builtin.lsp_definitions()
+    -- vim.lsp.buf.definition()
   end)
 
   set("n", "gr", function()
-    builtin.lsp_references()
+    -- builtin.lsp_references()
+    vim.lsp.buf.references()
   end)
 
   set("n", "gi", function()
