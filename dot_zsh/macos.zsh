@@ -15,7 +15,7 @@ fi
 
 if (( $+commands[fzf] ))
 then
-  [ -f fzf.zsh ] && source fzf.zsh
+  source ~/.zsh/fzf.zsh
 fi
 
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
