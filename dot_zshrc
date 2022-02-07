@@ -183,10 +183,10 @@ then
   alias ssh="kitty +kitten ssh"
 fi
 
-# if command -v exa &> /dev/null
-# then
-#   alias ls="exa --sort type --ignore-glob='.DS_Store'"
-# fi
+if (( $+commands[exa] ))
+then
+  alias ls="exa --sort type --ignore-glob='.DS_Store'"
+fi
 
 if (( $+commands[zoxide] ))
 then
