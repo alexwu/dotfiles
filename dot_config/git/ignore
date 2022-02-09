@@ -2,3 +2,5 @@
 .fdignore
 .DS_Store
 bin/scripts
+src/configs/dev.js
+.prettierrc.toml

@@ -1,0 +1,2 @@
+cd ~/Code/cleverific/zenlocator/dash
+launch --title "dash" npm start
