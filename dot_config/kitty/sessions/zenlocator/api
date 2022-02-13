@@ -1,4 +1,4 @@
 cd ~/Code/cleverific/zenlocator/api
-launch --title "api" npm start
-launch --title "api:queue:short" npm run start:queue:short
-launch --title "api:queue:long" npm run start:queue:long
+launch --title "api" npm start --type=background
+launch --title "api:queue:short" npm run start:queue:short --type=background
+launch --title "api:queue:long" npm run start:queue:long --type=background
