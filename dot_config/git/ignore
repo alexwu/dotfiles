@@ -4,3 +4,5 @@
 bin/scripts
 src/configs/dev.js
 .prettierrc.toml
+.vscode
+coverage
