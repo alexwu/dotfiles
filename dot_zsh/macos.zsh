@@ -18,6 +18,7 @@ then
   source ~/.zsh/fzf.zsh
 fi
 
+export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true
 # export FZF_BASE=$(brew --prefix)/bin/fzf
