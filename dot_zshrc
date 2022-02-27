@@ -158,8 +158,6 @@ if (( $+commands[nvim] ))
 then
   export PATH="$HOME/go/bin:$PATH"
 fi
-# export PATH="/usr/local/opt/v8@3.15/bin:$PATH"
-# export LESS="-XFR"
 
 alias glol="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'"
 

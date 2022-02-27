@@ -5,6 +5,8 @@ elif [ $(arch) = "i386" ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+fpath+=~/.zfunc
+
 if type brew &>/dev/null
 then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
