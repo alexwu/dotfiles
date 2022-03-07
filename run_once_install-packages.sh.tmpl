@@ -3,7 +3,7 @@
 sudo apt install git ripgrep fzf fd-find asdf zoxide exa
 {{ else if eq .chezmoi.os "darwin" -}}
 #!/bin/sh
-brew install ripgrep exa fzf fd asdf gh delta bat zoxide
+brew install ripgrep exa fzf fd asdf gh git-delta bat zoxide
 brew install neovim --head
 {{ end -}}
 
