@@ -1,2 +1,5 @@
 prettier
 eslint
+eslint_d
+typescript
+concurrently
