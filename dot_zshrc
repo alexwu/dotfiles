@@ -1,3 +1,7 @@
+# Fig pre block. Keep at the top of this file.
+export PATH="${PATH}:${HOME}/.local/bin"
+eval "$(fig init zsh pre)"
+
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -81,7 +85,7 @@ WORDCHARS=${WORDCHARS//[\/]}
 # Set a custom terminal title format using prompt expansion escape sequences.
 # See http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html#Simple-Prompt-Escapes
 # If none is provided, the default '%n@%m: %~' is used.
-#zstyle ':zim:termtitle' format '%1~'
+zstyle ':zim:termtitle' format '%1~'
 
 #
 # zsh-autosuggestions
@@ -154,7 +158,7 @@ bindkey -M vicmd 'j' history-substring-search-down
 
 
 export PATH="$HOME/.bin:$PATH"
-if (( $+commands[nvim] ))
+if (( $+commands[go] ))
 then
   export PATH="$HOME/go/bin:$PATH"
 fi
@@ -166,28 +170,44 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
 
 if (( $+commands[nvim] ))
 then
-  if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
-    alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
+  export NVIM_SERVER="$HOME/.cache/nvim/server_$KITTY_WINDOW_ID.pipe"
+  function nvim_remote() {
+    nvim --server "$NVIM_SERVER" --remote-send "<C-\><C-n>:ToggleTerm<CR>"
+    nvim --server "$NVIM_SERVER" --remote "$@"
+  }
+  if [[ -a "$NVIM_SERVER" ]]; then
+    alias nvim=nvim_remote
+    export VISUAL=nvim_remote
+    export EDITOR=nvim_remote
+  else
+    alias nvim="nvim --listen $NVIM_SERVER"
   fi
 
-  if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
-    export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
-    export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
-  else
-    export VISUAL="nvim"
-    export EDITOR="nvim"
-  fi
+  # if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+    # alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
+  # fi
+
+  # if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+    # export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
+    # export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
+  # else
+  #   export VISUAL="nvim"
+  #   export EDITOR="nvim"
+  # fi
 else
   export EDITOR="vim"
 fi
 
 if (( $+commands[chezmoi] ))
 then
-  alias chez="chezmoi"
-  alias dot="chezmoi cd"
+  function dot() {
+    kitty @ set-tab-title "Dotfiles"
+    chezmoi cd
+  }
+  alias config="dot"
 fi
 
-export FZF_CTRL_T_COMMAND="fd -c always --type f -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
+export FZF_CTRL_T_COMMAND="fd -c always -tf -td -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
 
 if [[ $TERM = "xterm-kitty" ]]
@@ -210,8 +230,19 @@ then
   }
 fi
 
-# zinit wait blockf lucid for \
-#   OMZP::bundler \
+start_zenlocator () {
+  cd ~/Work/cleverific/zenlocator
+  if [[ $TERM = "xterm-kitty" ]] then
+    kitty @ set-tab-title "ZenLocator"
+  fi
+  concurrently "npm --prefix sdk start" "npm --prefix api start" "npm --prefix api run start:queue:short" "npm --prefix api run start:queue:long" "npm --prefix dash start" --kill-others
+}
+
+precmd () {print -Pn "\e]0;%~\a"}
 
 (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Fig post block. Keep at the bottom of this file.
+eval "$(fig init zsh post)"
+

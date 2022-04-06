@@ -1,4 +1,4 @@
-hs.hotkey.bind({ "shift", "alt", "ctrl" }, "`", function()
+hs.hotkey.bind({ "alt" }, "`", function()
 	local app = hs.application.get("kitty")
 
 	if app then
@@ -14,6 +14,6 @@ hs.hotkey.bind({ "shift", "alt", "ctrl" }, "`", function()
 		app = hs.application.get("kitty")
 	end
 
-	app:mainWindow():moveToUnit("[100,50,0,0]")
+	-- app:mainWindow():moveToUnit("[100,50,0,0]")
 	app:mainWindow().setShadows(false)
 end)

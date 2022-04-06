@@ -1,7 +1,6 @@
-# [selene]
-# base = "lua51"
-std = "lua51"
-# name = "neovim"
+[selene]
+base = "lua51"
+name = "neovim"
 
 [vim]
 any = true
