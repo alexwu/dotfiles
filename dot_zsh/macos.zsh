@@ -20,6 +20,7 @@ then
   source ~/.zsh/fzf.zsh
 fi
 
+export NEOVIDE_MULTIGRID=true
 export XDG_CONFIG_HOME=$HOME/.config/
 export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true

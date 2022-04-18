@@ -4,6 +4,8 @@ name = "neovim"
 
 [vim]
 any = true
+[map]
+any = true
 
 [[assert.args]]
 type = "bool"

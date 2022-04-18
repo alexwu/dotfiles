@@ -1,68 +1,78 @@
-# Fig pre block. Keep at the top of this file.
-path=($HOME/.bin $HOME/.local/bin $path)
-eval "$(fig init zsh pre)"
+if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
+  . "$HOME/.fig/shell/zshrc.pre.zsh"
 
-typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-export OS="$(uname -s)"
-
-if [ "$OS" = "Darwin" ]; then
-  source $HOME/.zsh/macos.zsh
-fi
-
-source $HOME/.zsh/zim-init.zsh
-
-if (( $+commands[go] ))
-then
-  export PATH="$HOME/go/bin:$PATH"
-fi
-
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
-
-if (( $+commands[nvim] ))
-then
-  if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
-    alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
+  typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+  if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
   fi
 
-  if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
-    export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
-    export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
+  export OS="$(uname -s)"
+
+  if [ "$OS" = "Darwin" ]; then
+    source $HOME/.zsh/macos.zsh
+  fi
+
+  source $HOME/.zsh/zim-init.zsh
+
+  if (( $+commands[go] )) then
+    path=($HOME/go/bin $path)
+  fi
+
+  zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+  # zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+
+  if (( $+commands[nvim] ))
+  then
+    if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+      alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
+    fi
+
+    if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+      export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
+      export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
+    else
+      export VISUAL="nvim"
+      export EDITOR="nvim"
+    fi
+    export NEOVIDE_MULTIGRID=true
   else
-    export VISUAL="nvim"
-    export EDITOR="nvim"
+    export VISUAL="vim"
+    export EDITOR="vim"
   fi
-else
-  export EDITOR="vim"
-fi
 
-if [[ $TERM = "xterm-kitty" ]]
-then
-  source $HOME/.zsh/kitty.zsh
-fi
+  if [[ $TERM = "xterm-kitty" ]]
+  then
+    source $HOME/.zsh/kitty.zsh
+  fi
 
-if (( $+commands[exa] ))
-then
-  alias ls="exa --sort type --ignore-glob='.DS_Store'"
-fi
+  if (( $+commands[exa] ))
+  then
+    alias ls="exa --sort type --ignore-glob='.DS_Store'"
+  fi
 
-if (( $+commands[zoxide] ))
-then
-  eval "$(zoxide init zsh --no-aliases)"
-  function z() {
-    __zoxide_z "$@"
-  }
-fi
+  if (( $+commands[zoxide] ))
+  then
+    eval "$(zoxide init zsh --no-aliases)"
+    function z() {
+      __zoxide_z "$@"
+    }
+  fi
 
-precmd () {print -Pn "\e]0;%~\a"}
+  if (( $+commands[chezmoi] ))
+  then
+    function dot() {
+      cd "$HOME/.local/share/chezmoi/"
+    }
+    alias config="dot"
+  fi
 
-(( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+  export FZF_CTRL_T_COMMAND="fd -c always -tf -td -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
+  export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
+  # export FZF_T_COMMAND="fd -c always -tf -td -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
+
+  (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
+  [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Fig post block. Keep at the bottom of this file.
-eval "$(fig init zsh post)"
-
+. "$HOME/.fig/shell/zshrc.post.zsh"
+fi
