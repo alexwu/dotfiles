@@ -6,6 +6,10 @@ name = "neovim"
 any = true
 [map]
 any = true
+[use]
+any = true
+[use_rocks]
+any = true
 
 [[assert.args]]
 type = "bool"

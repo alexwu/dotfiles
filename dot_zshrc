@@ -19,7 +19,8 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   fi
 
   zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-  # zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+
+  export HISTORY_IGNORE="(fg|ls|exit)"
 
   if (( $+commands[nvim] ))
   then
