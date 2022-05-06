@@ -1,8 +1,9 @@
 local M = {}
-local set = vim.keymap.set
 local telescope = require("telescope.builtin")
+local lazy = require("bombeelu.utils").lazy
+local set = require("bombeelu.utils").set
 
-function M.on_attach(_, bufnr)
+function M.on_attach(_, _bufnr)
 	local signs = {
 		Error = "✘ ",
 		Warn = " ",
@@ -19,9 +20,7 @@ function M.on_attach(_, bufnr)
 		virtual_text = {
 			severity = { min = vim.diagnostic.severity.ERROR },
 		},
-		underline = {
-			-- severity = { min = vim.diagnostic.severity.ERROR },
-		},
+		underline = {},
 		signs = true,
 		float = {
 			show_header = false,
@@ -34,29 +33,27 @@ function M.on_attach(_, bufnr)
 		vim.lsp.handlers.hover,
 		{ border = "rounded", focusable = false }
 	)
-	set("n", "gd", function()
-		telescope.lsp_definitions()
-	end)
+	set("n", "gd", lazy(telescope.lsp_definitions), { buffer = true })
 
-	set("n", "gr", function()
+	set("n", "grr", function()
 		telescope.lsp_references()
-	end)
+	end, { buffer = true })
 
 	set("n", "gi", function()
 		telescope.lsp_implementations()
-	end)
+	end, { buffer = true })
 
 	set("n", "g-", function()
 		telescope.lsp_document_symbols()
-	end)
+	end, { buffer = true })
 
 	set("n", "gD", function()
-		vim.lsp.buf.declaration()
-	end, { silent = true })
+		vim.lsp.buf.type_definition()
+	end, { silent = true, buffer = true })
 
 	set("n", "K", function()
 		vim.lsp.buf.hover()
-	end, { silent = true })
+	end, { silent = true, buffer = true })
 
 	set("n", "L", function()
 		vim.diagnostic.open_float(nil, {
@@ -66,57 +63,76 @@ function M.on_attach(_, bufnr)
 			focusable = false,
 			border = "rounded",
 		})
-	end, { silent = true })
+	end, { silent = true, buffer = true })
 
+	-- vim.lsp.buf.code_action({
+	--        filter = function(action)
+	--            return action.isPreferred
+	--        end,
+	--        apply = true,
+	--    })
 	set("n", "<Leader>a", function()
-		vim.lsp.buf.code_action()
-	end, { silent = true })
+		require("code_action_menu").open_code_action_menu()
+	end, { silent = true, buffer = true })
 
 	set("n", "ga", function()
-		vim.lsp.buf.code_action()
-	end, { silent = true })
+		require("code_action_menu").open_code_action_menu()
+	end, { silent = true, buffer = true })
 
 	set("n", "[d", function()
 		vim.diagnostic.goto_prev()
-	end, { silent = true })
+	end, { silent = true, buffer = true })
 
 	set("n", "]d", function()
 		vim.diagnostic.goto_next()
-	end, { silent = true })
+	end, { silent = true, buffer = true })
 
 	set("n", "<BSlash>y", function()
-		vim.lsp.buf.formatting()
-	end, { silent = true })
+		vim.lsp.buf.format({
+			async = true,
+			filter = function(clients)
+				return vim.tbl_filter(function(client)
+					return client.name ~= "tsserver" and client.name ~= "jsonls" and client.name ~= "sumneko_lua"
+				end, clients)
+			end,
+		})
+	end, { silent = true, buffer = true })
 
-	set("n", "<F8>", function()
-		vim.lsp.buf.formatting()
-	end, { silent = true })
-
-	-- set("v", "'<,'><F8>", function()
-	-- 	vim.lsp.buf.range_formatting()
+	-- set({ "n", "i" }, "<F8>", function()
+	-- 	vim.lsp.buf.formatting()
 	-- end, { silent = true })
+
 	set("v", "<F8>", function()
 		vim.lsp.buf.range_formatting()
-	end, { silent = true })
+	end, { silent = true, buffer = true })
 
-	vim.cmd([[autocmd CursorHold,CursorHoldI * lua require("nvim-lightbulb").update_lightbulb()]])
-	vim.cmd([[autocmd CursorHold * lua Show_cursor_diagnostics()]])
-end
-
-function Show_cursor_diagnostics()
-	vim.diagnostic.open_float(nil, {
-		scope = "cursor",
-		show_header = false,
-		source = "always",
-		focusable = false,
-		border = "rounded",
+	vim.api.nvim_create_augroup("LspDiagnosticsConfig", { clear = true })
+	vim.api.nvim_create_autocmd("CursorHold", {
+		pattern = "*",
+		group = "LspDiagnosticsConfig",
+		callback = function()
+			vim.diagnostic.open_float(nil, {
+				scope = "cursor",
+				show_header = false,
+				source = "always",
+				focusable = false,
+				border = "rounded",
+			})
+		end,
+	})
+	vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+		pattern = "*",
+		group = "LspDiagnosticsConfig",
+		callback = function()
+			require("nvim-lightbulb").update_lightbulb()
+		end,
 	})
 end
 
 local capabilities = function()
-	local capabilities = vim.lsp.protocol.make_client_capabilities()
-	capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
-	return capabilities
+	local cmp_capabilities = vim.lsp.protocol.make_client_capabilities()
+	cmp_capabilities = require("cmp_nvim_lsp").update_capabilities(cmp_capabilities)
+	return cmp_capabilities
 end
 
 M.capabilities = capabilities()

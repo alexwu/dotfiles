@@ -1,8 +1,9 @@
 local cmp = require("cmp")
-local cmp_buffer = require("cmp_buffer")
+local types = require("cmp.types")
+local mapping = cmp.mapping
+local compare = cmp.config.compare
 local lspkind = require("lspkind")
 local luasnip = require("luasnip")
-require("cmp-npm").setup({})
 
 local has_words_before = function()
 	if vim.api.nvim_buf_get_option(0, "buftype") == "prompt" then
@@ -12,35 +13,67 @@ local has_words_before = function()
 	return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 end
 
+local select_next = function(fallback)
+	if cmp.visible() then
+		cmp.select_next_item()
+		-- elseif luasnip.expand_or_jumpable() then
+		-- 	luasnip.expand_or_jump()
+	elseif has_words_before() then
+		cmp.complete()
+	else
+		fallback()
+	end
+end
+
+local select_prev = function(fallback)
+	if cmp.visible() then
+		cmp.select_prev_item()
+		-- elseif luasnip.jumpable(-1) then
+		-- 	luasnip.jump(-1)
+	else
+		fallback()
+	end
+end
+
+local preset = function()
+	if vim.env.TERM_PROGRAM == "iTerm.app" or vim.g.neovide then
+		return "default"
+	else
+		return "codicons"
+	end
+end
+
 ---@diagnostic disable-next-line: redundant-parameter
 cmp.setup({
-	sources = {
-		{ name = "nvim_lsp", max_item_count = 10, priority = 100 },
+	sources = cmp.config.sources({
+		{ name = "nvim_lsp", max_item_count = 10 },
 		{ name = "treesitter", max_item_count = 10 },
-		{ name = "nvim_lua" },
+		{ name = "copilot" },
 		{ name = "luasnip", max_item_count = 3 },
 		{ name = "cmp_tabnine" },
 		{ name = "path" },
 		{ name = "npm", keyword_length = 4 },
-	},
+	}),
 	comparators = {
+		compare.locality,
+		compare.exact,
+		compare.recently_used,
 		require("cmp_tabnine.compare"),
-		function(...)
-			return cmp_buffer:compare_locality(...)
-		end,
-		cmp.config.compare.offset,
-		cmp.config.compare.exact,
-		cmp.config.compare.score,
-		cmp.config.compare.recently_used,
-		cmp.config.compare.kind,
-		cmp.config.compare.sort_text,
-		cmp.config.compare.length,
-		cmp.config.compare.order,
+		compare.offset,
+		compare.scopes,
+		compare.score,
+		compare.kind,
+		compare.sort_text,
+		compare.length,
 	},
 	snippet = {
 		expand = function(args)
 			luasnip.lsp_expand(args.body)
 		end,
+	},
+	window = {
+		completion = cmp.config.window.bordered({ border = "rounded" }),
+		documentation = cmp.config.window.bordered({ border = "rounded", winhighlight = "FloatBorder:FloatBorder" }),
 	},
 	enabled = function()
 		local context = require("cmp.config.context")
@@ -50,64 +83,42 @@ cmp.setup({
 			return not context.in_treesitter_capture("comment") and not context.in_syntax_group("Comment")
 		end
 	end,
-	mapping = {
-		["<CR>"] = cmp.mapping.confirm(),
-		["<C-p>"] = cmp.mapping.select_prev_item(),
-		["<C-n>"] = cmp.mapping.select_next_item(),
-		["<C-d>"] = cmp.mapping.scroll_docs(-4),
-		["<C-f>"] = cmp.mapping.scroll_docs(4),
-		["<C-Space>"] = cmp.mapping.complete(),
-		["<Down>"] = cmp.mapping(cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }), { "i", "c" }),
-		["<Up>"] = cmp.mapping(cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }), { "i", "c" }),
-		["<C-e>"] = cmp.mapping({
-			i = cmp.mapping.abort(),
-			c = cmp.mapping.close(),
+	mapping = mapping.preset.insert({
+		["<CR>"] = mapping.confirm(),
+		["<C-n>"] = mapping(mapping.select_next_item({ behavior = types.cmp.SelectBehavior.Insert }), { "i", "c" }),
+		["<C-p>"] = mapping(mapping.select_prev_item({ behavior = types.cmp.SelectBehavior.Insert }), { "i", "c" }),
+		["<C-d>"] = mapping.scroll_docs(-4),
+		["<C-f>"] = mapping.scroll_docs(4),
+		["<Down>"] = mapping(select_next, { "i", "c" }),
+		["<Up>"] = mapping(select_prev, { "i", "c" }),
+		["<C-e>"] = mapping({
+			i = mapping.abort(),
+			c = mapping.close(),
 		}),
-		["<Tab>"] = function(fallback)
-			if cmp.visible() then
-				cmp.select_next_item()
-			elseif luasnip.expand_or_jumpable() then
-				luasnip.expand_or_jump()
-			elseif has_words_before() then
-				cmp.complete()
-			else
-				fallback()
-			end
-		end,
-		["<S-Tab>"] = function(fallback)
-			if cmp.visible() then
-				cmp.select_prev_item()
-			elseif luasnip.jumpable(-1) then
-				luasnip.jump(-1)
-			else
-				fallback()
-			end
-		end,
-		["<C-l>"] = cmp.mapping(function(fallback)
+		["<Tab>"] = mapping(select_next, { "i", "c" }),
+		["<S-Tab>"] = mapping(select_prev, { "i", "c" }),
+		["<C-l>"] = mapping(function(fallback)
 			if cmp.visible() then
 				return cmp.complete_common_string()
 			end
 			fallback()
 		end, { "i", "c" }),
-		-- ["<Right>"] = cmp.mapping(function(fallback)
-		-- 	if cmp.visible() then
-		-- 		return cmp.complete_common_string()
-		-- 	end
-		-- 	fallback()
-		-- end, { "i", "c" }),
-	},
-	preselect = cmp.PreselectMode.None,
+	}),
 	formatting = {
 		format = lspkind.cmp_format({
-			with_text = true,
+			preset = preset(),
+			mode = "symbol_text",
 			menu = {
 				buffer = "[Buffer]",
+				cmp_tabnine = "[TabNine]",
+				copilot = "[Copilot]",
+				crates = "[Crates]",
+				luasnip = "[LuaSnip]",
+				npm = "[npm]",
 				nvim_lsp = "[LSP]",
 				nvim_lua = "[Lua]",
-				cmp_tabnine = "[T9]",
 				path = "[Path]",
-				luasnip = "[LuaSnip]",
-				treesitter = "[TS]",
+				treesitter = "[TreeSitter]",
 			},
 			dup = {
 				buffer = 0,
@@ -119,24 +130,29 @@ cmp.setup({
 			},
 		}),
 	},
-	documentation = { border = "rounded" },
-})
-
--- Use buffer source for `/` (if you enabled `native_menu`, this won't work anymore).
-cmp.setup.cmdline("/", {
-	sources = {
-		{ name = "buffer" },
+	experimental = {
+		ghost_text = true,
 	},
 })
 
--- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+cmp.setup.cmdline("/", {
+	mapping = mapping.preset.cmdline(),
+	sources = {
+		{ name = "buffer" },
+		{ name = "path" },
+	},
+})
+
 cmp.setup.cmdline(":", {
+	mapping = mapping.preset.cmdline(),
 	sources = cmp.config.sources({
 		{ name = "path" },
 	}, {
 		{ name = "cmdline" },
 	}),
 })
+
+require("cmp-npm").setup({})
 
 vim.cmd([[autocmd FileType toml lua require('cmp').setup.buffer { sources = { { name = 'crates' } } }]])
 vim.cmd([[autocmd FileType TelescopePrompt lua require('cmp').setup.buffer { enabled = false }]])

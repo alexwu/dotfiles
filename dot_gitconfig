@@ -10,6 +10,15 @@
 [interactive]
   diffFilter = delta --color-only --features=interactive
 
+[diff]
+  tool = difftastic
+
+[difftool]
+  prompt = false
+
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+
 [delta]
   features = decorations
   side-by-side = true

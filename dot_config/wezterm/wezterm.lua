@@ -2,7 +2,41 @@ local wezterm = require("wezterm")
 
 return {
 	color_scheme = "Snazzy",
-	font = wezterm.font("Fira Code", { weight = 450, stretch = "Normal", italic = false }),
+	font = wezterm.font_with_fallback({
+		{ family = "Fira Code", weight = 450, stretch = "Normal", italic = false },
+		"codicons",
+	}),
 	font_size = 14,
-	window_background_opacity = 0.95,
+	keys = {
+		{
+			key = "d",
+			mods = "CMD",
+			action = wezterm.action({ SplitHorizontal = { domain = "CurrentPaneDomain" } }),
+		},
+		{ key = "w", mods = "CMD", action = wezterm.action({ CloseCurrentPane = { confirm = false } }) },
+	},
+	window_background_opacity = 0.90,
+	window_frame = {
+		font = wezterm.font_with_fallback({
+			{ family = "Fira Code", weight = 450, stretch = "Normal", italic = false },
+			"codicons",
+		}),
+		font_size = 14.0,
+		-- The overall background color of the tab bar when
+		-- the window is focused
+		active_titlebar_bg = "#282a36",
+		-- The overall background color of the tab bar when
+		-- the window is not focused
+		inactive_titlebar_bg = "#282a36",
+		-- The color of the inactive tab bar edge/divider
+		inactive_tab_edge = "#282a36",
+	},
+	unix_domains = {
+		{
+			name = "default",
+		},
+	},
+
+	default_gui_startup_args = { "connect", "default" },
+	debug_key_events = true,
 }

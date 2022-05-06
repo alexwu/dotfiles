@@ -61,8 +61,7 @@ git:
   parseEmoji: false
   diffContextSize: 3 # how many lines of context are shown around a change in diffs
 os:
-  editCommand: '' # see 'Configuring File Editing' section
-  editCommandTemplate: '{{editor}} {{filename}}'
+  editCommandTemplate: '{{editor}} --server $NVIM_SERVER --remote {{filename}}'
   openCommand: ''
 refresher:
   refreshInterval: 10 # file/submodule refresh interval in seconds

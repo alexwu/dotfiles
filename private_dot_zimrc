@@ -14,10 +14,11 @@ zmodule exa
 zmodule fzf
 
 zmodule romkatv/powerlevel10k --use degit
-zmodule Aloxaf/fzf-tab
+# zmodule Aloxaf/fzf-tab
 zmodule zsh-users/zsh-completions
 zmodule g-plane/zsh-yarn-autocompletions
 zmodule ohmyzsh/ohmyzsh -f 'plugins/bundler' -s 'plugins/bundler/bundler.plugin.zsh'
+zmodule ohmyzsh/ohmyzsh -f 'plugins/git' -s 'plugins/git/git.plugin.zsh'
 
 # Enables and configures smart and extensive tab completion.
 # completion must be sourced after zsh-users/zsh-completions

@@ -4,11 +4,10 @@ local custom_actions = require("plugins.telescope.actions")
 local finders = require("telescope.finders")
 local make_entry = require("telescope.make_entry")
 local pickers = require("telescope.pickers")
-local sorters = require("telescope.sorters")
-local utils = require("telescope.utils")
 
 local conf = require("telescope.config").values
 local filter = vim.tbl_filter
+local if_nil = vim.F.if_nil
 
 local M = {}
 
@@ -27,6 +26,8 @@ end
 
 M.buffers = function(opts)
 	opts = apply_cwd_only_aliases(opts)
+	opts.should_jump = if_nil(opts.should_jump, true)
+
 	local bufnrs = filter(function(b)
 		if 1 ~= vim.fn.buflisted(b) then
 			return false
@@ -80,7 +81,8 @@ M.buffers = function(opts)
 		opts.bufnr_width = #tostring(max_bufnr)
 	end
 
-	if #buffers == 1 then
+	--       vim.lsp.util.jump_to_location(flattened_results[1], offset_encoding)
+	if opts.should_jump and #buffers == 1 then
 		local bufnr = buffers[1].bufnr
 		return vim.api.nvim_set_current_buf(bufnr)
 	end
@@ -98,27 +100,35 @@ M.buffers = function(opts)
 end
 
 M.project_files = function(opts)
-	opts = opts or {}
+	opts = if_nil(opts, {})
 	local ok = pcall(require("telescope.builtin").git_files, opts)
 	if not ok then
 		require("telescope.builtin").find_files(opts)
 	end
 end
 
-M.related_files = function()
-	pickers.new({
+M.related_files = function(opts)
+	opts = if_nil(opts, {})
+
+	pickers.new(opts, {
 		results_title = "Related Files",
 		finder = require("plugins.telescope.finders").related_files(),
-		sorter = sorters.get_fuzzy_file(),
+		sorter = require("telescope.sorters").get_generic_fuzzy_sorter(),
 	}):find()
 end
 
-M.snippets = function()
-	pickers.new({
+M.snippets = function(opts)
+	opts = if_nil(opts, {})
+
+	opts.bufnr = vim.api.nvim_get_current_buf()
+	opts.winnr = vim.api.nvim_get_current_win()
+	opts.ft = opts.ft or vim.bo.ft
+
+	pickers.new(opts, {
 		results_title = "Snippets",
-		finder = require("plugins.telescope.finders").luasnip(),
+		finder = require("plugins.telescope.finders").luasnip(opts),
 		sorter = require("telescope.sorters").get_generic_fuzzy_sorter(),
-		attach_mappings = function(_, map)
+		attach_mappings = function()
 			actions.select_default:replace(custom_actions.expand_snippet)
 			return true
 		end,
@@ -126,16 +136,16 @@ M.snippets = function()
 end
 
 M.favorites = function(opts)
-	opts = opts or {}
+	opts = if_nil(opts, {})
 
-	local favorites = opts.favorites or {}
-	local title = "Favorites"
+	local favorites = if_nil(opts.favorites, {})
 
 	opts.bufnr = vim.api.nvim_get_current_buf()
 	opts.winnr = vim.api.nvim_get_current_win()
+	opts.ft = vim.bo.ft
 
 	pickers.new(opts, {
-		prompt_title = title,
+		prompt_title = "Favorites",
 		finder = finders.new_table({
 			results = favorites,
 			entry_maker = function(entry)
@@ -163,6 +173,21 @@ M.favorites = function(opts)
 			return true
 		end,
 	}):find()
+end
+
+function M.git_changes(opts)
+	opts = if_nil(opts, {})
+
+	pickers.new(opts, {
+		prompt_title = "Git Changes",
+		finder = finders.new_oneshot_job({
+			"git",
+			"diff",
+			"—name-only",
+			"origin",
+			[[$("git symbolic-ref refs/remotes/origin/HEAD | cut -d '/' -f4")]],
+		}),
+	})
 end
 
 return M

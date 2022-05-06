@@ -1,12 +1,12 @@
 require("gitsigns").setup({
-	debug_mode = true,
+	debug_mode = false,
 	sign_priority = 6,
 	attach_to_untracked = true,
 	current_line_blame = true,
 	current_line_blame_opts = {
 		virt_text = true,
 		virt_text_pos = "eol",
-		delay = 1000,
+		delay = 500,
 	},
 	preview_config = { border = "rounded" },
 	current_line_blame_formatter_opts = { relative_time = true },
@@ -47,21 +47,21 @@ require("gitsigns").setup({
 		-- vim.call('repeat#set', ']d')
 
 		-- Actions
-		map({ "n", "v" }, "<leader>sh", gs.stage_hunk)
-		map("n", "<leader>sb", gs.stage_buffer)
+		map({ "n", "v" }, "gsh", gs.stage_hunk)
+		map("n", "gsb", gs.stage_buffer)
 		map({ "n", "v" }, "<leader>rh", gs.reset_hunk)
-		map("n", "<leader>rb", gs.reset_buffer)
-		map("n", "<leader>uh", gs.undo_stage_hunk)
-		map("n", "<leader>ph", gs.preview_hunk)
+		map("n", "grb", gs.reset_buffer)
+		map("n", "guh", gs.undo_stage_hunk)
+		map("n", "gph", gs.preview_hunk)
 		map("n", "M", function()
 			gs.blame_line({ full = true, ignore_whitespace = true })
 		end)
-		map("n", "<leader>tb", gs.toggle_current_line_blame)
-		map("n", "<leader>hd", gs.diffthis)
-		map("n", "<leader>hD", function()
+		map("n", "gtb", gs.toggle_current_line_blame)
+		map("n", "ghd", gs.diffthis)
+		map("n", "ghD", function()
 			gs.diffthis("~")
 		end)
-		map("n", "<leader>td", gs.toggle_deleted)
+		map("n", "gtd", gs.toggle_deleted)
 
 		map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>")
 	end,
