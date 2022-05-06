@@ -1,9 +1,9 @@
 {{ if eq .chezmoi.os "linux" -}}
 #!/bin/sh
-sudo apt install git ripgrep fzf fd-find asdf zoxide exa
+sudo apt install git ripgrep fzf fd-find zoxide exa
+git clone https://github.com/asdf-vm/asdf.git ~/.asdf
 {{ else if eq .chezmoi.os "darwin" -}}
 #!/bin/sh
 brew install ripgrep exa fzf fd asdf gh git-delta bat zoxide
 brew install neovim --head
 {{ end -}}
-
