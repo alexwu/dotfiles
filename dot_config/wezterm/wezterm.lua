@@ -15,7 +15,7 @@ return {
 		},
 		{ key = "w", mods = "CMD", action = wezterm.action({ CloseCurrentPane = { confirm = false } }) },
 	},
-	window_background_opacity = 0.95,
+	window_background_opacity = 0.90,
 	window_frame = {
 		font = wezterm.font_with_fallback({
 			{ family = "Fira Code", weight = 450, stretch = "Normal", italic = false },
@@ -31,4 +31,12 @@ return {
 		-- The color of the inactive tab bar edge/divider
 		inactive_tab_edge = "#282a36",
 	},
+	unix_domains = {
+		{
+			name = "default",
+		},
+	},
+
+	default_gui_startup_args = { "connect", "default" },
+	debug_key_events = true,
 }

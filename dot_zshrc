@@ -24,11 +24,12 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
 
   if (( $+commands[nvim] ))
   then
-    if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+    if [ -n "$NVIM" ]; then
       alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
+      # alias nvim="nvim --server $NVIM --remote"
     fi
 
-    if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+    if [ -n "$NVIM" ]; then
       export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
       export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
     else
@@ -39,6 +40,10 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   else
     export VISUAL="vim"
     export EDITOR="vim"
+  fi
+  if (( $+commands[delta] ))
+  then
+    alias diff="delta"
   fi
 
   if [[ $TERM = "xterm-kitty" ]]
