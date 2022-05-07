@@ -2,7 +2,7 @@ export OS="$(uname -s)"
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   if [ "$OS" = "Darwin" ]; then
     . "$HOME/.fig/shell/zshrc.pre.zsh"
-  end
+  fi
 
   typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
   if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
@@ -13,6 +13,8 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
     source $HOME/.zsh/macos.zsh
   else
     export PATH="$HOME/bin:$PATH"
+    source "/usr/share/doc/fzf/examples/key-bindings.zsh"
+    source "/usr/share/doc/fzf/examples/completion.zsh"
   fi
 
   source $HOME/.zsh/zim-init.zsh
@@ -61,10 +63,10 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
 
   if (( $+commands[zoxide] ))
   then
-    eval "$(zoxide init zsh --no-aliases)"
-    function z() {
-      __zoxide_z "$@"
-    }
+    eval "$(zoxide init zsh)"
+    # function z() {
+    #   __zoxide_z "$@"
+   #  }
   fi
 
   if (( $+commands[chezmoi] ))
@@ -75,15 +77,14 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
     alias config="dot"
   fi
 
-  export FZF_CTRL_T_COMMAND="fd -c always -tf -td -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
+  export FZF_T_COMMAND="fd --strip-cwd-prefix --follow -c always --hidden --no-vcs-ignore"
   export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
-  # export FZF_T_COMMAND="fd -c always -tf -td -uu --follow --exclude .git --exclude node_modules --exclude coverage --exclude .DS_Store --exclude tmp --exclude target --strip-cwd-prefix"
 
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
   [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Fig post block. Keep at the bottom of this file.
-if [ "$OS" = "Darwin" ]; then
-  . "$HOME/.fig/shell/zshrc.post.zsh"
-end
+  if [ "$OS" = "Darwin" ]; then
+    . "$HOME/.fig/shell/zshrc.post.zsh"
+  fi
 fi
