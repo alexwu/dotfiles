@@ -8,83 +8,82 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
   fi
+fi
 
-  if [ "$OS" = "Darwin" ]; then
-    source $HOME/.zsh/macos.zsh
+if [ "$OS" = "Darwin" ]; then
+  source $HOME/.zsh/macos.zsh
+else
+  export PATH="$HOME/bin:$PATH"
+  source "/usr/share/doc/fzf/examples/key-bindings.zsh"
+  source "/usr/share/doc/fzf/examples/completion.zsh"
+fi
+
+source $HOME/.zsh/zim-init.zsh
+
+if (( $+commands[go] )) then
+  path=($HOME/go/bin $path)
+fi
+
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+
+export HISTORY_IGNORE="(fg|ls|exit)"
+
+if (( $+commands[nvim] ))
+then
+  if [ -n "$NVIM" ]; then
+    alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
+    # alias nvim="nvim --server $NVIM --remote"
+  fi
+
+  if [ -n "$NVIM" ]; then
+    export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
+    export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
   else
-    export PATH="$HOME/bin:$PATH"
-    source "/usr/share/doc/fzf/examples/key-bindings.zsh"
-    source "/usr/share/doc/fzf/examples/completion.zsh"
+    export VISUAL="nvim"
+    export EDITOR="nvim"
   fi
+  export NEOVIDE_MULTIGRID=true
+else
+  export VISUAL="vim"
+  export EDITOR="vim"
+fi
+if (( $+commands[delta] ))
+then
+  alias diff="delta"
+fi
 
-  source $HOME/.zsh/zim-init.zsh
+if [[ $TERM = "xterm-kitty" ]]
+then
+  source $HOME/.zsh/kitty.zsh
+fi
 
-  if (( $+commands[go] )) then
-    path=($HOME/go/bin $path)
-  fi
+if (( $+commands[exa] ))
+then
+  alias ls="exa --sort type --ignore-glob='.DS_Store'"
+fi
 
-  zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+if (( $+commands[zoxide] ))
+then
+  eval "$(zoxide init zsh)"
+fi
 
-  export HISTORY_IGNORE="(fg|ls|exit)"
+if (( $+commands[chezmoi] ))
+then
+  function dot() {
+    cd "$HOME/.local/share/chezmoi/"
+  }
+  alias config="dot"
+fi
 
-  if (( $+commands[nvim] ))
-  then
-    if [ -n "$NVIM" ]; then
-      alias nvim=nvr -cc split --remote-wait +'set bufhidden=wipe'
-      # alias nvim="nvim --server $NVIM --remote"
-    fi
+export FZF_CTRL_T_COMMAND="fd --strip-cwd-prefix --follow -c always --hidden --exclude .git --exclude .DS_Store"
+export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
 
-    if [ -n "$NVIM" ]; then
-      export VISUAL="nvr -cc split --remote-wait +'set bufhidden=wipe'"
-      export EDITOR="nvr -cc split --remote-wait +'set bufhidden=wipe'"
-    else
-      export VISUAL="nvim"
-      export EDITOR="nvim"
-    fi
-    export NEOVIDE_MULTIGRID=true
-  else
-    export VISUAL="vim"
-    export EDITOR="vim"
-  fi
-  if (( $+commands[delta] ))
-  then
-    alias diff="delta"
-  fi
-
-  if [[ $TERM = "xterm-kitty" ]]
-  then
-    source $HOME/.zsh/kitty.zsh
-  fi
-
-  if (( $+commands[exa] ))
-  then
-    alias ls="exa --sort type --ignore-glob='.DS_Store'"
-  fi
-
-  if (( $+commands[zoxide] ))
-  then
-    eval "$(zoxide init zsh)"
-    # function z() {
-    #   __zoxide_z "$@"
-   #  }
-  fi
-
-  if (( $+commands[chezmoi] ))
-  then
-    function dot() {
-      cd "$HOME/.local/share/chezmoi/"
-    }
-    alias config="dot"
-  fi
-
-  export FZF_T_COMMAND="fd --strip-cwd-prefix --follow -c always --hidden --no-vcs-ignore"
-  export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
-
+if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
   [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Fig post block. Keep at the bottom of this file.
-  if [ "$OS" = "Darwin" ]; then
-    . "$HOME/.fig/shell/zshrc.post.zsh"
-  fi
+if [ "$OS" = "Darwin" ]; then
+  . "$HOME/.fig/shell/zshrc.post.zsh"
+fi
 fi
