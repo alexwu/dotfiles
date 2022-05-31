@@ -20,8 +20,9 @@ then
   source ~/.zsh/fzf.zsh
 fi
 
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NEOVIDE_MULTIGRID=true
-export XDG_CONFIG_HOME=$HOME/.config/
+# export XDG_CONFIG_HOME=$HOME/.config/
 export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true

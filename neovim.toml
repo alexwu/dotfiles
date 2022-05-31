@@ -4,6 +4,8 @@ name = "neovim"
 
 [vim]
 any = true
+[nvim]
+any = true
 [map]
 any = true
 [use]

@@ -20,6 +20,10 @@ fi
 
 source $HOME/.zsh/zim-init.zsh
 
+if (( $+commands[luarocks] )) then
+  export PATH="$HOME/.luarocks/bin:$PATH"
+fi
+
 if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
 fi
@@ -86,4 +90,6 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
 if [ "$OS" = "Darwin" ]; then
   . "$HOME/.fig/shell/zshrc.post.zsh"
 fi
+else
+  eval "$(starship init zsh)"
 fi
