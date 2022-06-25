@@ -24,6 +24,8 @@ if (( $+commands[luarocks] )) then
   export PATH="$HOME/.luarocks/bin:$PATH"
 fi
 
+export PATH="$HOME/.bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
 fi
@@ -63,6 +65,7 @@ fi
 
 if (( $+commands[exa] ))
 then
+  alias ll='exa -l --git'
   alias ls="exa --sort type --ignore-glob='.DS_Store'"
 fi
 
@@ -79,7 +82,7 @@ then
   alias config="dot"
 fi
 
-export FZF_CTRL_T_COMMAND="fd --strip-cwd-prefix --follow -c always --hidden --exclude .git --exclude .DS_Store"
+export FZF_CTRL_T_COMMAND="fd --strip-cwd-prefix --follow -c always --hidden --exclude .git --exclude .DS_Store --exclude .keep"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
 
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then

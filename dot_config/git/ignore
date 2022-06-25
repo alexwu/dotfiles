@@ -8,3 +8,4 @@ src/configs/dev.js
 .vscode
 .idea
 coverage
+.luarc.json

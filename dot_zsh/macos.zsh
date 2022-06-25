@@ -20,6 +20,8 @@ then
   source ~/.zsh/fzf.zsh
 fi
 
+alias co="git checkout"
+
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NEOVIDE_MULTIGRID=true
 # export XDG_CONFIG_HOME=$HOME/.config/
@@ -27,4 +29,4 @@ export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true
 export SSH_AUTH_SOCK=/Users/jamesbombeelu/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
-path=(/Applications/Postgres.app/Contents/Versions/latest/bin $path)
+path=(/Applications/Postgres.app/Contents/Versions/13/bin $path)
