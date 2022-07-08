@@ -3,3 +3,4 @@ eslint
 eslint_d
 typescript
 concurrently
+typescript-language-server
