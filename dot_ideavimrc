@@ -1,0 +1,32 @@
+set ideajoin
+
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-commentary'
+
+map <space> <leader>
+map <leader>y <Action>(ReformatCode)
+map <F8> <Action>(ReformatCode)
+map <C-n> <Action>(ActivateProjectToolWindow)
+" map <C-n> <Action>(HideActiveWindow)
+
+nmap <leader>a <Action>(ShowIntentionActions)
+nmap <leader>f <Action>(GotoFile)
+nmap <leader>k <Action>(GotoAction)
+nmap <leader>s <Action>(GotoSymbol)
+nmap <A-o> o<esc>
+nmap <A-O> O<esc>
+
+nmap <C-d> 20j
+nmap <C-u> 20k
+
+nmap <C-_> <Action>(CommentByLineComment)
+
+nmap gd <Action>(GotoDeclaration)
+
+nmap <CR> <Action>(EditorSelectWord)
+xmap <CR> <Action>(EditorSelectWord)
+
+nmap <BS> <Action>(EditorUnSelectWord)
+xmap <BS> <Action>(EditorUnSelectWord)
+
+autocmd CursorHold * <Action>(ShowErrorDescription)

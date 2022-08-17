@@ -1,3 +1,5 @@
+# Fig pre block. Keep at the top of this file.
+[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
 export OS="$(uname -s)"
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   if [ "$OS" = "Darwin" ]; then
@@ -30,6 +32,16 @@ if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
 fi
 
+# bun completions
+[ -s "/Users/jamesbombeelu/.bun/_bun" ] && source "/Users/jamesbombeelu/.bun/_bun"
+
+# bun
+export BUN_INSTALL="/Users/jamesbombeelu/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+# pnpm
+export PNPM_HOME="/Users/jamesbombeelu/Library/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 export HISTORY_IGNORE="(fg|ls|exit)"
@@ -48,7 +60,7 @@ then
     export VISUAL="nvim"
     export EDITOR="nvim"
   fi
-  export NEOVIDE_MULTIGRID=true
+  export NEOVIDE_MULTIGRID=false
 else
   export VISUAL="vim"
   export EDITOR="vim"
@@ -96,3 +108,6 @@ fi
 else
   eval "$(starship init zsh)"
 fi
+
+# Fig post block. Keep at the bottom of this file.
+[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"

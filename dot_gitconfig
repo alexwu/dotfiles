@@ -48,7 +48,7 @@
 [pull]
 	rebase = false
 [core]
-	fsmonitor = true
+	fsmonitor = false
 [credential]
 	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager-core
