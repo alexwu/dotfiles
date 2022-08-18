@@ -5,6 +5,7 @@ Plug 'tpope/vim-commentary'
 
 map <space> <leader>
 map <leader>y <Action>(ReformatCode)
+map gq <Action>(ReformatCode)
 map <F8> <Action>(ReformatCode)
 map <C-n> <Action>(ActivateProjectToolWindow)
 " map <C-n> <Action>(HideActiveWindow)
@@ -15,6 +16,9 @@ nmap <leader>k <Action>(GotoAction)
 nmap <leader>s <Action>(GotoSymbol)
 nmap <A-o> o<esc>
 nmap <A-O> O<esc>
+
+nmap ]g <Action>(GotoNextError)
+nmap [g <Action>(GotoPreviousError)
 
 nmap <C-d> 20j
 nmap <C-u> 20k
