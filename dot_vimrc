@@ -24,7 +24,6 @@ Plug 'w0rp/ale'
 Plug 'sheerun/vim-polyglot'
 Plug 'justinmk/vim-sneak'
 
-
 Plug 'Yggdroot/indentLine'
 Plug 'chaoren/vim-wordmotion'
 Plug 'maximbaz/lightline-ale'
@@ -133,6 +132,8 @@ command! Wq :wq
 
 map <space> <leader>
 
+nmap <A-o> o<esc>
+nmap <A-O> O<esc>
 """""""""""""""" COC
 " Use tab for trigger completion with characters ahead and navigate.
 " Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.pumvisible() ? "\" : "\\

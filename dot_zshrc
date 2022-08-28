@@ -60,7 +60,7 @@ then
     export VISUAL="nvim"
     export EDITOR="nvim"
   fi
-  export NEOVIDE_MULTIGRID=false
+  export NEOVIDE_MULTIGRID=true
 else
   export VISUAL="vim"
   export EDITOR="vim"

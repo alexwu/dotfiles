@@ -1,19 +1,31 @@
 set ideajoin
 
+let g:highlightedyank_highlight_duration = "150"
+let g:EasyMotion_do_mapping = 0
+
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-commentary'
+Plug 'machakann/vim-highlightedyank'
+Plug 'easymotion/vim-easymotion'
+Plug 'preservim/nerdtree'
+
+set easymotion
+" set sneak
 
 map <space> <leader>
-map <leader>y <Action>(ReformatCode)
-map gq <Action>(ReformatCode)
-map <F8> <Action>(ReformatCode)
-map <C-n> <Action>(ActivateProjectToolWindow)
+nmap <leader>y <Action>(ReformatCode)
+nmap gq <Action>(ReformatCode)
+nmap <F8> <Action>(ReformatCode)
+" map <C-n> <Action>(ActivateProjectToolWindow)
+" map <C-n> <Cmd>NerdTreeToggle<CR>
 " map <C-n> <Action>(HideActiveWindow)
+nmap s <Plug>(easymotion-s)
 
 nmap <leader>a <Action>(ShowIntentionActions)
 nmap <leader>f <Action>(GotoFile)
 nmap <leader>k <Action>(GotoAction)
 nmap <leader>s <Action>(GotoSymbol)
+
 nmap <A-o> o<esc>
 nmap <A-O> O<esc>
 
@@ -23,6 +35,7 @@ nmap [g <Action>(GotoPreviousError)
 nmap <C-d> 20j
 nmap <C-u> 20k
 
+nmap <C-/> <Action>(CommentByLineComment)
 nmap <C-_> <Action>(CommentByLineComment)
 
 nmap gd <Action>(GotoDeclaration)
