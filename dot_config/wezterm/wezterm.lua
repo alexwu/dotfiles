@@ -3,9 +3,16 @@ local wezterm = require("wezterm")
 return {
 	color_scheme = "Snazzy",
 	font = wezterm.font_with_fallback({
-		{ family = "Fira Code", weight = 450, stretch = "Normal", italic = false },
+		--{ family = "Fira Code", weight = 450, stretch = "Normal", style = "Normal" },
+		{ family = "Fira Code" },
 		"codicons",
 	}),
+	font_rules = {
+		{
+			italic = true,
+			font = wezterm.font_with_fallback({ { family = "Victor Mono", style = "Italic" }, "codicons" }),
+		},
+	},
 	font_size = 14,
 	keys = {
 		{
@@ -28,8 +35,11 @@ return {
 		-- The overall background color of the tab bar when
 		-- the window is not focused
 		inactive_titlebar_bg = "#282a36",
-		-- The color of the inactive tab bar edge/divider
-		inactive_tab_edge = "#282a36",
+	},
+	colors = {
+		tab_bar = {
+			inactive_tab_edge = "#282a36",
+		},
 	},
 	unix_domains = {
 		{

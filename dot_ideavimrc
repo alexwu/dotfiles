@@ -1,4 +1,6 @@
 set ideajoin
+set incsearch
+set scrolloff=5
 
 let g:highlightedyank_highlight_duration = "150"
 let g:EasyMotion_do_mapping = 0
@@ -10,14 +12,19 @@ Plug 'easymotion/vim-easymotion'
 Plug 'preservim/nerdtree'
 
 set easymotion
+
+" Do incremental searching.
+
+" Don't use Ex mode, use Q for formatting.
+" map Q q
 " set sneak
 
 map <space> <leader>
 nmap <leader>y <Action>(ReformatCode)
 nmap gq <Action>(ReformatCode)
 nmap <F8> <Action>(ReformatCode)
-" map <C-n> <Action>(ActivateProjectToolWindow)
-" map <C-n> <Cmd>NerdTreeToggle<CR>
+" nmap <C-n> <Action>(ActivateProjectToolWindow)
+nmap <C-n> :NERDTreeToggle<CR>
 " map <C-n> <Action>(HideActiveWindow)
 nmap s <Plug>(easymotion-s)
 
