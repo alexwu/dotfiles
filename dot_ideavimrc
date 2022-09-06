@@ -1,9 +1,12 @@
 set ideajoin
 set incsearch
+set ignorecase
+set smartcase
 set scrolloff=5
 
 let g:highlightedyank_highlight_duration = "150"
 let g:EasyMotion_do_mapping = 0
+let g:NERDTreeMapQuit = '<C-n>'
 
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-commentary'
@@ -13,20 +16,15 @@ Plug 'preservim/nerdtree'
 
 set easymotion
 
-" Do incremental searching.
-
-" Don't use Ex mode, use Q for formatting.
-" map Q q
 " set sneak
 
 map <space> <leader>
+
 nmap <leader>y <Action>(ReformatCode)
 nmap gq <Action>(ReformatCode)
 nmap <F8> <Action>(ReformatCode)
-" nmap <C-n> <Action>(ActivateProjectToolWindow)
 nmap <C-n> :NERDTreeToggle<CR>
-" map <C-n> <Action>(HideActiveWindow)
-nmap s <Plug>(easymotion-s)
+nmap <Tab> <Plug>(easymotion-s)
 
 nmap <leader>a <Action>(ShowIntentionActions)
 nmap <leader>f <Action>(GotoFile)
@@ -36,8 +34,8 @@ nmap <leader>s <Action>(GotoSymbol)
 nmap <A-o> o<esc>
 nmap <A-O> O<esc>
 
-nmap ]g <Action>(GotoNextError)
-nmap [g <Action>(GotoPreviousError)
+nmap ]d <Action>(GotoNextError)
+nmap [d <Action>(GotoPreviousError)
 
 nmap <C-d> 20j
 nmap <C-u> 20k
@@ -46,6 +44,9 @@ nmap <C-/> <Action>(CommentByLineComment)
 nmap <C-_> <Action>(CommentByLineComment)
 
 nmap gd <Action>(GotoDeclaration)
+nmap gc <Action>(GotoClass)
+nmap gi <Action>(GotoImplementation)
+nmap gp <Action>(GotToSuperMethod)
 
 nmap <CR> <Action>(EditorSelectWord)
 xmap <CR> <Action>(EditorSelectWord)
@@ -53,4 +54,17 @@ xmap <CR> <Action>(EditorSelectWord)
 nmap <BS> <Action>(EditorUnSelectWord)
 xmap <BS> <Action>(EditorUnSelectWord)
 
-autocmd CursorHold * <Action>(ShowErrorDescription)
+nmap \r <Action>(IdeaVim.ReloadVimRc.reload)
+
+nmap L <Action>(ShowErrorDescription)
+
+sethandler <c-j> a:vim
+sethandler <c-k> a:vim
+nnoremap <c-h> <c-w>h
+nnoremap <c-l> <c-w>l
+nnoremap <c-j> <c-w>j
+nnoremap <c-k> <c-w>k
+
+nmap Q <Action>(CloseContent)
+nmap <Leader>r <Action>(Refactorings.QuickListPopupAction)
+xmap <Leader>r <Action>(Refactorings.QuickListPopupAction)
