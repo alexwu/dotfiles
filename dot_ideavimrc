@@ -48,6 +48,11 @@ nmap gc <Action>(GotoClass)
 nmap gi <Action>(GotoImplementation)
 nmap gp <Action>(GotToSuperMethod)
 
+nmap vu <Action>(MoveElementRight)
+nmap vd <Action>(MoveElementLeft)
+nmap vU <Action>(MoveStatementUp)
+nmap vD <Action>(MoveStatementDown)
+
 nmap <CR> <Action>(EditorSelectWord)
 xmap <CR> <Action>(EditorSelectWord)
 
