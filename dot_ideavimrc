@@ -22,14 +22,17 @@ map <space> <leader>
 
 nmap <leader>y <Action>(ReformatCode)
 nmap gq <Action>(ReformatCode)
-nmap <F8> <Action>(ReformatCode)
+map <F8> <Action>(ReformatCode)
 nmap <C-n> :NERDTreeToggle<CR>
 nmap <Tab> <Plug>(easymotion-s)
 
 nmap <leader>a <Action>(ShowIntentionActions)
+nmap <leader>d <Action>(ActivateProblemsViewToolWindow)
+nmap <leader>e <Action>(RecentFiles)
 nmap <leader>f <Action>(GotoFile)
 nmap <leader>k <Action>(GotoAction)
 nmap <leader>s <Action>(GotoSymbol)
+nmap <leader>/ <Action>(FindInPath)
 
 nmap <A-o> o<esc>
 nmap <A-O> O<esc>
@@ -44,6 +47,7 @@ nmap <C-/> <Action>(CommentByLineComment)
 nmap <C-_> <Action>(CommentByLineComment)
 
 nmap gd <Action>(GotoDeclaration)
+nmap gr <Action>(FindUsages)
 nmap gc <Action>(GotoClass)
 nmap gi <Action>(GotoImplementation)
 nmap gp <Action>(GotToSuperMethod)
