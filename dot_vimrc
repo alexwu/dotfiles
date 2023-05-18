@@ -220,11 +220,10 @@ command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organize
 nmap <leader>y :Format<CR>
 command! -nargs=0 Prettier :CocCommand prettier.formatFile
 command! -nargs=0 EslintFix :CocCommand eslint.executeAutofix
-nmap <leader>f :EslintFix<CR>
 
 let g:coc_status_error_sign = '✘'
 
-nnoremap <silent> <C-p> :Files<CR>
+nnoremap <silent> <Leader>f<C-p> :Files<CR>
 
 """""""""""""""" ALE
 let g:ale_enabled = 1

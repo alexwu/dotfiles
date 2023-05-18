@@ -1,9 +1,8 @@
 # Fig pre block. Keep at the top of this file.
-[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
 export OS="$(uname -s)"
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   if [ "$OS" = "Darwin" ]; then
-    . "$HOME/.fig/shell/zshrc.pre.zsh"
+  [[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.pre.zsh"
   fi
 
   typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
@@ -31,6 +30,8 @@ export PATH="$HOME/.cargo/bin:$PATH"
 if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
 fi
+
+eval "$(atuin init zsh)" >> ~/.zshrc
 
 # bun completions
 [ -s "/Users/jamesbombeelu/.bun/_bun" ] && source "/Users/jamesbombeelu/.bun/_bun"
@@ -94,6 +95,41 @@ then
   alias config="dot"
 fi
 
+export RTX_SHELL=zsh
+
+rtx() {
+  local command
+  command="${1:-}"
+  if [ "$#" = 0 ]; then
+    command rtx
+    return
+  fi
+  shift
+
+  case "$command" in
+  deactivate|shell)
+    eval "$(command rtx "$command" "$@")"
+    ;;
+  *)
+    command rtx "$command" "$@"
+    ;;
+  esac
+}
+
+_rtx_hook() {
+  trap -- '' SIGINT;
+  eval "$(rtx hook-env -s zsh)";
+  trap - SIGINT;
+}
+typeset -ag precmd_functions;
+if [[ -z "${precmd_functions[(r)_rtx_hook]+1}" ]]; then
+  precmd_functions=( _rtx_hook ${precmd_functions[@]} )
+fi
+typeset -ag chpwd_functions;
+if [[ -z "${chpwd_functions[(r)_rtx_hook]+1}" ]]; then
+  chpwd_functions=( _rtx_hook ${chpwd_functions[@]} )
+fi
+
 export FZF_CTRL_T_COMMAND="fd --strip-cwd-prefix --follow -c always --hidden --exclude .git --exclude .DS_Store --exclude .keep"
 export FZF_CTRL_T_OPTS="--color 'fg:#f9f9ff,fg+:#f3f99d,hl:#5af78e,hl+:#5af78e,spinner:#5af78e,pointer:#ff6ac1,info:#5af78e,prompt:#9aedfe,gutter:#282a36' --border"
 
@@ -103,11 +139,10 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
 
 # Fig post block. Keep at the bottom of this file.
 if [ "$OS" = "Darwin" ]; then
-  . "$HOME/.fig/shell/zshrc.post.zsh"
+# Fig post block. Keep at the bottom of this file.
+[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
 fi
 else
   eval "$(starship init zsh)"
 fi
 
-# Fig post block. Keep at the bottom of this file.
-[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"

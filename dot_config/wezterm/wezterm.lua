@@ -44,15 +44,13 @@ local function split_nav(resize_or_move, key)
 end
 
 config.color_scheme = "Snazzy"
-config.font = wezterm.font_with_fallback({
-	{ family = "Fira Code" },
-	{ family = "codicons" },
-})
+config.font = wezterm.font("Fira Code", { weight = 450 })
+-- config.font = wezterm.font("SF Mono", { weight = 450 })
 
 config.font_rules = {
 	{
 		italic = true,
-		font = wezterm.font_with_fallback({ { family = "Victor Mono", style = "Italic" }, "codicons" }),
+		font = wezterm.font("Victor Mono", { style = "Italic" }),
 	},
 }
 

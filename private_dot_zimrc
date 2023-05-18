@@ -9,7 +9,7 @@ zmodule input
 zmodule termtitle
 zmodule utility
 
-zmodule asdf
+# zmodule asdf
 zmodule exa
 zmodule fzf
 

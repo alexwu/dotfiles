@@ -3,7 +3,9 @@ set incsearch
 set ignorecase
 set smartcase
 set scrolloff=5
+set showmode
 
+let mapleader=" "
 let g:highlightedyank_highlight_duration = "150"
 let g:EasyMotion_do_mapping = 0
 let g:NERDTreeMapQuit = '<C-n>'
@@ -16,8 +18,6 @@ Plug 'preservim/nerdtree'
 
 set easymotion
 
-" set sneak
-
 map <space> <leader>
 
 nmap <leader>y <Action>(ReformatCode)
@@ -25,7 +25,10 @@ nmap gq <Action>(ReformatCode)
 map <F8> <Action>(ReformatCode)
 nmap <C-n> :NERDTreeToggle<CR>
 nmap <Tab> <Plug>(easymotion-s)
+nmap s <Plug>(easymotion-f)
+nmap S <Plug>(easymotion-F)
 
+nmap <leader><leader> <Action>(RecentFiles)
 nmap <leader>a <Action>(ShowIntentionActions)
 nmap <leader>d <Action>(ActivateProblemsViewToolWindow)
 nmap <leader>e <Action>(RecentFiles)
@@ -34,17 +37,34 @@ nmap <leader>k <Action>(GotoAction)
 nmap <leader>s <Action>(GotoSymbol)
 nmap <leader>/ <Action>(FindInPath)
 
+" map <leader>d <Action>(Debug)
+map <leader>r <Action>(RenameElement)
+" map <leader>c <Action>(Stop)
+map <leader>z <Action>(ToggleDistractionFreeMode)
+
+map <leader>s <Action>(SelectInProjectView)
+" map <leader>a <Action>(Annotate)
+map <leader>h <Action>(Vcs.ShowTabbedFileHistory)
+
+map <leader>b <Action>(ToggleLineBreakpoint)
+map <leader>o <Action>(FileStructurePopup)
+
 nmap <A-o> o<esc>
 nmap <A-O> O<esc>
 
 nmap ]d <Action>(GotoNextError)
 nmap [d <Action>(GotoPreviousError)
 
+nmap ]c <Action>(VcsShowNextChangeMarker)
+nmap [c <Action>(VcsShowPrevChangeMarker)
+
 nmap <C-d> 20j
 nmap <C-u> 20k
 
 nmap <C-/> <Action>(CommentByLineComment)
 nmap <C-_> <Action>(CommentByLineComment)
+xmap <C-/> <Action>(CommentByLineComment)
+xmap <C-_> <Action>(CommentByLineComment)
 
 nmap gd <Action>(GotoDeclaration)
 nmap gr <Action>(FindUsages)
@@ -77,3 +97,6 @@ nnoremap <c-k> <c-w>k
 nmap Q <Action>(CloseContent)
 nmap <Leader>r <Action>(Refactorings.QuickListPopupAction)
 xmap <Leader>r <Action>(Refactorings.QuickListPopupAction)
+
+nnoremap g; :action JumpToLastChange<Enter>
+nnoremap g, :action JumpToNextChange<Enter>
