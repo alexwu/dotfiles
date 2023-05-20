@@ -44,7 +44,16 @@ local function split_nav(resize_or_move, key)
 end
 
 config.color_scheme = "Snazzy"
-config.font = wezterm.font("Fira Code", { weight = 450 })
+-- config.color_scheme = "Sonokai (Gogh)"
+-- config.color_scheme = "Snazzy (base16)"
+-- config.color_scheme = "Dracula (Gogh)"
+-- config.color_scheme = "Dracula (Official)"
+
+config.font = wezterm.font_with_fallback({
+	{ family = "Fira Code", weight = 450 },
+	"codicon",
+	{ family = "FiraCode Nerd Font", weight = 450 },
+})
 -- config.font = wezterm.font("SF Mono", { weight = 450 })
 
 config.font_rules = {
