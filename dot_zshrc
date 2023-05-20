@@ -31,7 +31,7 @@ if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
 fi
 
-eval "$(atuin init zsh)" >> ~/.zshrc
+# eval "$(atuin init zsh)" >> ~/.zshrc
 
 # bun completions
 [ -s "/Users/jamesbombeelu/.bun/_bun" ] && source "/Users/jamesbombeelu/.bun/_bun"
