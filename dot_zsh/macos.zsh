@@ -22,6 +22,12 @@ fi
 
 alias co="git checkout"
 
+if (( $+commands[rtx] ))
+then
+  eval "$(rtx activate zsh)"
+fi
+
+
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NEOVIDE_MULTIGRID=true
 # export XDG_CONFIG_HOME=$HOME/.config/
