@@ -1,5 +1,6 @@
 local wezterm = require("wezterm")
 
+local config = nil
 if wezterm.config_builder then
 	config = wezterm.config_builder()
 end
@@ -76,6 +77,11 @@ config.keys = {
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 	{
+		key = "P",
+		mods = "CMD",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
 		key = "m",
 		mods = "CMD",
 		action = wezterm.action.DisableDefaultAssignment,
@@ -84,6 +90,21 @@ config.keys = {
 		key = "P",
 		mods = "CMD|SHIFT",
 		action = wezterm.action.ActivateCommandPalette,
+	},
+	{
+		key = "=",
+		mods = "CTRL",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
+		key = "-",
+		mods = "CTRL",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
+		key = "0",
+		mods = "CTRL",
+		action = wezterm.action.DisableDefaultAssignment,
 	},
 	split_nav("move", "h"),
 	split_nav("move", "j"),
@@ -95,8 +116,19 @@ config.keys = {
 	split_nav("resize", "l"),
 }
 
-config.window_background_opacity = 0.90
+-- config.window_background_opacity = 0.90
 config.window_close_confirmation = "NeverPrompt"
+config.unix_domains = {
+	{
+		name = "unix",
+	},
+}
+
+-- This causes `wezterm` to act as though it was started as
+-- `wezterm connect unix` by default, connecting to the unix
+-- domain on startup.
+-- If you prefer to connect manually, leave out this line.
+-- config.default_gui_startup_args = { "connect", "unix" }
 
 config.font_size = 14.0
 
