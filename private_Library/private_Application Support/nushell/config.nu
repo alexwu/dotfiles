@@ -202,13 +202,12 @@ let external_completer = {|spans|
         git: $fish_completer
         # carapace doesn't have completions for asdf
         asdf: $fish_completer
+        z: $zoxide_completer
         __zoxide_z: $zoxide_completer
         __zoxide_zi: $zoxide_completer
     } | get -i $spans.0 | default $carapace_completer | do $in $spans
 
 }
-
-
 
 # The default config record. This is where much of your global configuration is setup.
 $env.config = {
@@ -301,18 +300,18 @@ $env.config = {
 
     cursor_shape: {
         emacs: line # block, underscore, line, blink_block, blink_underscore, blink_line (line is the default)
-        vi_insert: block # block, underscore, line , blink_block, blink_underscore, blink_line (block is the default)
-        vi_normal: underscore # block, underscore, line, blink_block, blink_underscore, blink_line (underscore is the default)
+        vi_insert: blink_line # block, underscore, line , blink_block, blink_underscore, blink_line (block is the default)
+        vi_normal: block # block, underscore, line, blink_block, blink_underscore, blink_line (underscore is the default)
     }
 
     color_config: {} # if you want a more interesting theme, you can replace the empty record with `$dark_theme`, `$light_theme` or another custom record
     use_grid_icons: true
     footer_mode: "25" # always, never, number_of_rows, auto
     float_precision: 2 # the precision for displaying floats in tables
-    buffer_editor: "" # command that will be used to edit the current line buffer with ctrl+o, if unset fallback to $env.EDITOR and $env.VISUAL
+    buffer_editor: "nvim" # command that will be used to edit the current line buffer with ctrl+o, if unset fallback to $env.EDITOR and $env.VISUAL
     use_ansi_coloring: true
     bracketed_paste: true # enable bracketed paste, currently useless on windows
-    edit_mode: emacs # emacs, vi
+    edit_mode: vi # emacs, vi
     shell_integration: false # enables terminal shell integration. Off by default, as some terminals have issues with this.
     render_right_prompt_on_last_line: false # true or false to enable or disable right prompt to be rendered on last line of the prompt.
 
@@ -451,7 +450,7 @@ $env.config = {
             modifier: control
             keycode: char_d
             mode: [emacs, vi_normal, vi_insert]
-            event: { send: ctrld }
+            event: null
         }
         {
             name: clear_screen
@@ -466,6 +465,13 @@ $env.config = {
             keycode: char_r
             mode: [emacs, vi_normal, vi_insert]
             event: { send: searchhistory }
+        }
+        {
+            name: delete_line
+            modifier: control
+            keycode: char_u
+            mode: [emacs, vi_normal, vi_insert]
+            event: { edit: Clear }
         }
         {
             name: open_command_editor
@@ -851,8 +857,14 @@ alias gf = git fetch
 alias gfo = git fetch origin
 alias ggpull = git pull origin $"(git_current_branch)"
 
+alias l = ls
+alias ll = ls -l
 
-use ~/.cache/starship/init.nu
+def dot [] {
+    cd ~/.local/share/chezmoi/
+}
+
+# use ~/.cache/starship/init.nu
 source ~/.zoxide.nu
 source ~/.cache/carapace/init.nu
 source ~/.nu/scripts/git-completions.nu

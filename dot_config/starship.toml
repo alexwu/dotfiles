@@ -12,13 +12,22 @@ $git_state\
 $git_metrics\
 $git_status\
 $hg_branch\
+$line_break\
+$jobs\
+$battery\
+$time\
+$status\
+$os\
+$container\
+$shell\
+$character"""
+
+right_format = """
 $docker_context\
 $package\
 $c\
 $cmake\
 $cobol\
-$daml\
-$dart\
 $deno\
 $dotnet\
 $elixir\
@@ -31,18 +40,14 @@ $haskell\
 $haxe\
 $helm\
 $java\
-$julia\
 $kotlin\
 $gradle\
 $lua\
-$nim\
 $nodejs\
 $ocaml\
 $opa\
 $perl\
-$php\
 $pulumi\
-$purescript\
 $python\
 $raku\
 $rlang\
@@ -67,14 +72,11 @@ $crystal\
 $custom\
 $sudo\
 $cmd_duration\
-$line_break\
-$jobs\
-$battery\
-$time\
-$status\
-$os\
-$container\
-$shell\
-$character"""
+"""
 
 add_newline = true
+
+[directory]
+truncate_to_repo = false
+truncation_length = 8
+style = "blue"
