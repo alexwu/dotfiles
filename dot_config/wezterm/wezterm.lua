@@ -130,6 +130,8 @@ config.unix_domains = {
 -- If you prefer to connect manually, leave out this line.
 -- config.default_gui_startup_args = { "connect", "unix" }
 
+config.default_prog = { "/opt/homebrew/bin/nu" }
+
 config.font_size = 14.0
 
 return config

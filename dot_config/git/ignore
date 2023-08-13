@@ -9,4 +9,3 @@ src/configs/dev.js
 .idea
 .fleet
 coverage
-.luarc.json
