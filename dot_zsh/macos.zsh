@@ -36,3 +36,4 @@ export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true
 export SSH_AUTH_SOCK=/Users/jamesbombeelu/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 path=(/Applications/Postgres.app/Contents/Versions/13/bin $path)
+path=($HOME/.bin/nvim/bin $path)
