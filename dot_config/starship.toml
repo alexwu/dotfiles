@@ -43,7 +43,6 @@ $java\
 $kotlin\
 $gradle\
 $lua\
-$nodejs\
 $ocaml\
 $opa\
 $perl\
@@ -53,6 +52,7 @@ $raku\
 $rlang\
 $red\
 $ruby\
+$nodejs\
 $rust\
 $scala\
 $solidity\
@@ -80,3 +80,20 @@ add_newline = true
 truncate_to_repo = false
 truncation_length = 8
 style = "blue"
+
+[git_branch]
+format = '[$symbol$branch(:$remote_branch)]($style) '
+style = 'green'
+
+[git_status]
+style = 'yellow'
+
+[nodejs]
+format = '[$symbol($version )]($style)'
+style = 'green'
+
+[ruby]
+format = '[$symbol($version )]($style)'
+
+[rust]
+format = '[$symbol($version )]($style)'

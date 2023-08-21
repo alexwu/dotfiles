@@ -864,8 +864,8 @@ def dot [] {
     cd ~/.local/share/chezmoi/
 }
 
-# use ~/.cache/starship/init.nu
+use ~/.cache/starship/init.nu
 source ~/.zoxide.nu
 source ~/.cache/carapace/init.nu
 source ~/.nu/scripts/git-completions.nu
-source '~/Library/Application Support/nushell/rtx.nu'
+source "/Users/jamesbombeelu/Library/Application Support/nushell/rtx.nu"
