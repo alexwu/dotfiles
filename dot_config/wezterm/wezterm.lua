@@ -69,7 +69,23 @@ config.keys = {
 	{
 		key = "d",
 		mods = "CMD",
-		action = wezterm.action({ SplitHorizontal = { domain = "CurrentPaneDomain" } }),
+		action = wezterm.action({
+			SplitPane = {
+				direction = "Right",
+				size = { Percent = 33 },
+				-- top_level = true,
+			},
+		}),
+	},
+	{
+		key = "s",
+		mods = "CMD",
+		action = wezterm.action({
+			SplitPane = {
+				direction = "Down",
+				size = { Percent = 33 },
+			},
+		}),
 	},
 	{ key = "w", mods = "CMD", action = wezterm.action({ CloseCurrentPane = { confirm = false } }) },
 	{
