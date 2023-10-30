@@ -2,15 +2,14 @@
 # -------
 # Modules
 # -------
-
+zmodule joke/zim-rtx
+zmodule kiesman99/zim-zoxide
 zmodule environment
+zmodule homebrew
 zmodule git
 zmodule input
 zmodule termtitle
 zmodule utility
-
-# zmodule asdf
-zmodule exa
 
 zmodule romkatv/powerlevel10k --use degit
 # zmodule Aloxaf/fzf-tab
