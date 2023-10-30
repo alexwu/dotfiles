@@ -69,10 +69,12 @@ then
   source $HOME/.zsh/kitty.zsh
 fi
 
-if (( $+commands[exa] ))
+if (( $+commands[eza] ))
 then
-  alias ll='exa -l --git'
-  alias ls="exa --ignore-glob='.DS_Store'"
+  alias exa="eza"
+  alias l='eza'
+  alias ll='eza -l --git'
+  alias ls="eza --ignore-glob='.DS_Store'"
 fi
 
 if (( $+commands[zoxide] ))
