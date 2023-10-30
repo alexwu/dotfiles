@@ -1,1 +1,16 @@
 theme = "snazzy"
+[keys.normal]
+# Quick iteration on config changes
+C-o = ":config-open"
+C-r = ":config-reload"
+
+# Some nice Helix stuff
+# C-h = "select_prev_sibling"
+backspace = "shrink_selection"
+ret = "expand_selection"
+# C-l = "select_next_sibling"
+
+# Personal preference
+o = ["open_below", "normal_mode"]
+O = ["open_above", "normal_mode"]
+

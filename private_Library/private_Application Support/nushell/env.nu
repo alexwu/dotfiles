@@ -82,7 +82,7 @@ $env.NU_PLUGIN_DIRS = [
 # $env.PATH = ($env.PATH | split row (char esep) | prepend '/some/path')
 
 $env.PATH = ($env.PATH | split row (char esep) | prepend '/opt/homebrew/bin')
-$env.PATH = ($env.PATH | split row (char esep) | prepend '~/.bin')
+$env.PATH = ($env.PATH | split row (char esep) | prepend '~/.bin/neovim/bin')
 $env.PATH = ($env.PATH | split row (char esep) | prepend '~/.cargo/bin')
 
 mkdir ~/.cache/starship

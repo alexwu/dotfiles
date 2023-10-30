@@ -5,22 +5,8 @@ format = """
 $username\
 $hostname\
 $singularity\
-$directory\
-$git_branch\
-$git_commit\
-$git_state\
-$git_metrics\
-$git_status\
-$hg_branch\
-$line_break\
-$jobs\
-$battery\
-$time\
-$status\
-$os\
-$container\
-$shell\
-$character"""
+[╭─](blue)$directory$git_branch$git_commit$git_state$git_metrics$git_status$hg_branch$jobs$time$status$os$container$shell
+[╰─](blue)$character"""
 
 right_format = """
 $docker_context\
@@ -87,6 +73,19 @@ style = 'green'
 
 [git_status]
 style = 'yellow'
+format = '([$ahead_behind$conflicted$stashed$deleted$renamed$modified$staged$untracked]($style) )'
+modified = ' !${count}(yellow)'
+conflicted = '='
+ahead = '⇡${count}'
+behind = '⇣${count}'
+diverged = '⇕'
+up_to_date = ''
+untracked = '?'
+stashed = ' *${count}'
+staged = '+'
+renamed = '»'
+deleted = '✘'
+typechanged = ""
 
 [nodejs]
 format = '[$symbol($version )]($style)'

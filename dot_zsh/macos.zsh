@@ -30,10 +30,13 @@ fi
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NEOVIDE_MULTIGRID=true
-# export XDG_CONFIG_HOME=$HOME/.config/
 export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true
-export SSH_AUTH_SOCK=/Users/jamesbombeelu/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+export OP_BIOMETRIC_UNLOCK_ENABLED=true
+export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+export LDFLAGS="-L/opt/homebrew/opt/llvm@14/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/llvm@14/include"
+export PATH="/opt/homebrew/opt/llvm@14/bin:$PATH"
 path=(/Applications/Postgres.app/Contents/Versions/13/bin $path)
 path=($HOME/.bin/nvim/bin $path)
