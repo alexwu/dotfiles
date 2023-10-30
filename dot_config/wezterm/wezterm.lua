@@ -1,4 +1,5 @@
 local wezterm = require("wezterm")
+local w = wezterm
 
 local config = nil
 if wezterm.config_builder then
@@ -27,7 +28,7 @@ local function split_nav(resize_or_move, key)
 	return {
 		key = key,
 		mods = resize_or_move == "resize" and "META" or "CTRL",
-		action = wezterm.action_callback(function(win, pane)
+		action = w.action_callback(function(win, pane)
 			if is_vim(pane) then
 				-- pass the keys through to vim/nvim
 				win:perform_action({
@@ -116,7 +117,6 @@ config.keys = {
 	split_nav("resize", "l"),
 }
 
--- config.window_background_opacity = 0.90
 config.window_close_confirmation = "NeverPrompt"
 config.unix_domains = {
 	{
