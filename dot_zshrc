@@ -1,8 +1,8 @@
-# Fig pre block. Keep at the top of this file.
 export OS="$(uname -s)"
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   if [ "$OS" = "Darwin" ]; then
-  [[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.pre.zsh"
+    # CodeWhisperer pre block. Keep at the top of this file.
+    [[ -f "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.pre.zsh"
   fi
 
   typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
@@ -86,12 +86,10 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
   [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Fig post block. Keep at the bottom of this file.
 if [ "$OS" = "Darwin" ]; then
-# Fig post block. Keep at the bottom of this file.
-[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
+  # CodeWhisperer post block. Keep at the bottom of this file.
+  [[ -f "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.post.zsh"
 fi
 else
   eval "$(starship init zsh)"
 fi
-
