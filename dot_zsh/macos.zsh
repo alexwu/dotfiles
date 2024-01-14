@@ -22,9 +22,9 @@ fi
 
 alias co="git checkout"
 
-if (( $+commands[rtx] ))
+if (( $+commands[mise] ))
 then
-  eval "$(rtx activate zsh)"
+  eval "$(mise activate zsh)"
 fi
 
 
