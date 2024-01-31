@@ -222,10 +222,6 @@ $env.config = {
         always_trash: true # always act as if -t was given. Can be overridden with -p
     }
 
-    cd: {
-        abbreviations: false # allows `cd s/o/f` to expand to `cd some/other/folder`
-    }
-
     table: {
         mode: rounded # basic, compact, compact_double, light, thin, with_love, rounded, reinforced, heavy, none, other
         index_mode: always # "always" show indexes, "never" show indexes, "auto" = show indexes when a table has "index" column
@@ -868,4 +864,8 @@ use ~/.cache/starship/init.nu
 source ~/.zoxide.nu
 source ~/.cache/carapace/init.nu
 source ~/.nu/scripts/git-completions.nu
-source "/Users/jamesbombeelu/Library/Application Support/nushell/rtx.nu"
+do {
+  let misepath = ($nu.config-path | path dirname | path join "mise.nu")
+  run-external mise activate nu --redirect-stdout | save $misepath -f
+  $"\nsource "($misepath)"" | save $nu.config-path --append
+}
