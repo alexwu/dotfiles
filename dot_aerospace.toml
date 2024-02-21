@@ -12,10 +12,14 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands.html
-after-startup-command = []
+after-startup-command = [
+  # JankyBorders has a built-in detection of already running process,
+  # so it won't be run twice on AeroSpace restart
+  'exec-and-forget borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0',
+]
 
 # Start AeroSpace at login
-start-at-login = false
+start-at-login = true
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide.html#normalization
 enable-normalization-flatten-containers = true
@@ -80,8 +84,11 @@ alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
 
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#layout
-alt-slash = 'layout tiles horizontal vertical'
-alt-comma = 'layout accordion horizontal vertical'
+# alt-slash = 'layout tiles horizontal vertical'
+# alt-slash = 'layout tiles horizontal'
+# alt-comma = 'layout accordion horizontal vertical'
+# alt-comma = 'layout accordion horizontal'
+alt-comma = 'layout h_accordion h_tiles'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#focus
 alt-h = 'focus left'
@@ -100,7 +107,7 @@ alt-shift-minus = 'resize smart -50'
 alt-shift-equal = 'resize smart +50'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace
-alt-0 = 'workspace 0'
+# alt-0 = 'workspace 0'
 alt-1 = 'workspace 1'
 alt-2 = 'workspace 2'
 alt-3 = 'workspace 3'
@@ -134,7 +141,7 @@ alt-9 = 'workspace 9'
 # alt-z = 'workspace Z'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
-alt-shift-0 = 'move-node-to-workspace 0'
+# alt-shift-0 = 'move-node-to-workspace 0'
 alt-shift-1 = 'move-node-to-workspace 1'
 alt-shift-2 = 'move-node-to-workspace 2'
 alt-shift-3 = 'move-node-to-workspace 3'
@@ -168,9 +175,9 @@ alt-shift-9 = 'move-node-to-workspace 9'
 # alt-shift-z = 'move-node-to-workspace Z'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace-back-and-forth
-alt-tab = 'workspace-back-and-forth'
+# alt-tab = 'workspace-back-and-forth'
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-workspace-to-monitor
-alt-shift-tab = 'move-workspace-to-monitor next'
+# alt-shift-tab = 'move-workspace-to-monitor next'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#mode
 alt-shift-semicolon = 'mode service'
@@ -205,4 +212,8 @@ run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'pl.maketheweb.cleanshotx'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.1password.1password'
 run = 'layout floating'
