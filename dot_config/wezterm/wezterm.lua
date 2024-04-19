@@ -1,7 +1,9 @@
 local wezterm = require("wezterm")
-local w = wezterm
+local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
+local act = wezterm.action
 
-local config = nil
+---@class WeztermConfig
+local config = {}
 if wezterm.config_builder then
 	config = wezterm.config_builder()
 end
@@ -24,11 +26,13 @@ local direction_keys = {
 	l = "Right",
 }
 
+---@param resize_or_move '"resize"'|'"move"'
+---@param key string
 local function split_nav(resize_or_move, key)
 	return {
 		key = key,
 		mods = resize_or_move == "resize" and "META" or "CTRL",
-		action = w.action_callback(function(win, pane)
+		action = wezterm.action_callback(function(win, pane)
 			if is_vim(pane) then
 				-- pass the keys through to vim/nvim
 				win:perform_action({
@@ -45,6 +49,44 @@ local function split_nav(resize_or_move, key)
 	}
 end
 
+wezterm.on("update-right-status", function(window, _)
+	window:set_right_status(wezterm.format({
+		{ Attribute = { Intensity = "Bold" } },
+		{ Text = window:mux_window():get_workspace():gsub("^.*/", "") },
+		"ResetAttributes",
+	}))
+end)
+
+-- wezterm.on("window-focus-changed", function(window, pane)
+-- 	window:toast_notification(
+-- 		"wezterm",
+-- 		"the focus state of " .. window:window_id() .. " changed to " .. tostring(window:is_focused()),
+-- 		nil,
+-- 		4000
+-- 	)
+-- 	-- window:toast_notification("wezterm", "the focus state of ", window:window_id(), " changed to ", window:is_focused(), nil, 4000)
+-- 	wezterm.log_info("the focus state of ", window:window_id(), " changed to ", tostring(window:is_focused()))
+-- end)
+--
+-- wezterm.on("window-config-reloaded", function(window, pane)
+-- 	window:toast_notification("wezterm", "configuration reloaded!", nil, 4000)
+-- end)
+
+wezterm.on("user-var-changed", function(window, pane, name, value)
+	if name == "switch-workspace" then
+		local cmd_context = wezterm.json_parse(value)
+		window:perform_action(
+			act.SwitchToWorkspace({
+				name = cmd_context.workspace,
+				spawn = {
+					cwd = cmd_context.cwd,
+				},
+			}),
+			pane
+		)
+	end
+end)
+
 config.color_scheme = "Snazzy"
 -- config.color_scheme = "Sonokai (Gogh)"
 -- config.color_scheme = "Snazzy (base16)"
@@ -56,7 +98,6 @@ config.font = wezterm.font_with_fallback({
 	"codicon",
 	{ family = "FiraCode Nerd Font", weight = 450 },
 })
--- config.font = wezterm.font("SF Mono", { weight = 450 })
 
 config.font_rules = {
 	{
@@ -87,25 +128,64 @@ config.keys = {
 			},
 		}),
 	},
+	{
+		key = "`",
+		mods = "CTRL",
+		action = wezterm.action({
+			SplitPane = {
+				direction = "Down",
+				size = { Percent = 33 },
+			},
+		}),
+	},
 	{ key = "w", mods = "CMD", action = wezterm.action({ CloseCurrentPane = { confirm = false } }) },
 	{
 		key = "P",
 		mods = "CTRL|SHIFT",
 		action = wezterm.action.DisableDefaultAssignment,
 	},
-	{
-		key = "P",
-		mods = "CMD",
-		action = wezterm.action.DisableDefaultAssignment,
-	},
+	-- {
+	-- 	key = "P",
+	-- 	mods = "CMD",
+	-- 	action = wezterm.action.DisableDefaultAssignment,
+	-- },
 	{
 		key = "m",
 		mods = "CMD",
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 	{
+		key = "N",
+		mods = "CMD|SHIFT",
+		action = act.PromptInputLine({
+			description = wezterm.format({
+				{ Attribute = { Intensity = "Bold" } },
+				{ Foreground = { AnsiColor = "Fuchsia" } },
+				{ Text = "Enter name for new workspace" },
+			}),
+			action = wezterm.action_callback(function(window, pane, line)
+				-- line will be `nil` if they hit escape without entering anything
+				-- An empty string if they just hit enter
+				-- Or the actual line of text they wrote
+				if line then
+					window:perform_action(
+						act.SwitchToWorkspace({
+							name = line,
+						}),
+						pane
+					)
+				end
+			end),
+		}),
+	},
+	{
 		key = "P",
 		mods = "CMD|SHIFT",
+		action = wezterm.action.ActivateCommandPalette,
+	},
+	{
+		key = "k",
+		mods = "CMD",
 		action = wezterm.action.ActivateCommandPalette,
 	},
 	{
@@ -123,6 +203,11 @@ config.keys = {
 		mods = "CTRL",
 		action = wezterm.action.DisableDefaultAssignment,
 	},
+	{
+		key = "p",
+		mods = "CMD",
+		action = workspace_switcher.switch_workspace(),
+	},
 	split_nav("move", "h"),
 	split_nav("move", "j"),
 	split_nav("move", "k"),
@@ -139,6 +224,11 @@ config.unix_domains = {
 		name = "unix",
 	},
 }
+
+workspace_switcher.apply_to_config(config)
+
+-- config.window_background_opacity = 0.9
+-- config.macos_window_background_blur = 20
 
 -- This causes `wezterm` to act as though it was started as
 -- `wezterm connect unix` by default, connecting to the unix
