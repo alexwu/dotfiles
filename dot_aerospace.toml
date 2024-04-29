@@ -15,14 +15,21 @@ after-login-command = []
 after-startup-command = [
   # JankyBorders has a built-in detection of already running process,
   # so it won't be run twice on AeroSpace restart
-  'exec-and-forget borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0',
+  # 'exec-and-forget /opt/homebrew/bin/sketchybar',
+  # 'exec-and-forget /opt/homebrew/bin/borders active_color=0xff5af78e inactive_color=0xff494d64 width=5.0 hidpi=on',
+]
+
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  '/opt/homebrew/opt/sketchybar/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
 # Start AeroSpace at login
 start-at-login = true
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide.html#normalization
-enable-normalization-flatten-containers = true
+enable-normalization-flatten-containers = false
 enable-normalization-opposite-orientation-for-nested-containers = true
 
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#layouts
@@ -42,13 +49,10 @@ gaps.inner.horizontal = 20
 gaps.inner.vertical = 20
 gaps.outer.left = 20
 gaps.outer.bottom = 20
-gaps.outer.top = 20
+# gaps.outer.top = 20
+# NOTE: For sketchybar:
+gaps.outer.top = [{ monitor."built-in" = 20 }, 50]
 gaps.outer.right = 20
-
-# Visual indent makes it easier to understand that containers of the same orientation are nested.
-# If you have 'enable-normalization-opposite-orientation-for-nested-containers' enabled then
-# there is no way to observe the indent
-indent-for-nested-containers-with-the-same-orientation = 30
 
 # Layout of root containers of non-empty workspaces. The layout is applied only on startup
 # Possible values: smart|tiles|accordion
@@ -93,12 +97,17 @@ alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
 alt-comma = 'layout h_accordion h_tiles'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#focus
-alt-h = 'focus left'
-alt-j = 'focus down'
-alt-k = 'focus up'
-alt-l = 'focus right'
+ctrl-alt-shift-h = 'focus left'
+ctrl-alt-shift-j = 'focus down'
+ctrl-alt-shift-k = 'focus up'
+ctrl-alt-shift-l = 'focus right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-through
+cmd-ctrl-alt-shift-h = 'move-through left'
+cmd-ctrl-alt-shift-j = 'move-through down'
+cmd-ctrl-alt-shift-k = 'move-through up'
+cmd-ctrl-alt-shift-l = 'move-through right'
+
 alt-shift-h = 'move-through left'
 alt-shift-j = 'move-through down'
 alt-shift-k = 'move-through up'
@@ -188,9 +197,9 @@ if.during-aerospace-startup = true
 run = 'move-node-to-workspace 4'
 
 [workspace-to-monitor-force-assignment]
-1 = 'main'                       # Main monitor
-2 = 'main'                       # Main monitor
-3 = 'main'                       # Main monitor
-4 = 'built-in'                   # Case insensitive regex substring
-5 = 'built-in'                   # Case insensitive regex substring
-6 = 'built-in'                   # Case insensitive regex substring
+1 = 'main'     # Main monitor
+2 = 'main'     # Main monitor
+3 = 'main'     # Main monitor
+4 = 'built-in' # Case insensitive regex substring
+5 = 'built-in' # Case insensitive regex substring
+6 = 'built-in' # Case insensitive regex substring
