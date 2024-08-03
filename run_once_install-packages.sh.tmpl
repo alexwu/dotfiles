@@ -4,8 +4,7 @@ sudo apt install git ripgrep fzf fd-find zoxide eza
 git clone https://github.com/asdf-vm/asdf.git ~/.asdf
 {{ else if eq .chezmoi.os "darwin" -}}
 #!/bin/sh
-brew install ripgrep eza fzf fd asdf gh git-delta bat zoxide
-brew tap homebrew/cask-fonts
+brew install ripgrep eza fzf fd mise gh git-delta bat zoxide just
 brew install --cask font-fira-code
 brew install --cask font-victor-mono
 brew install neovim --head
