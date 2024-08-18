@@ -1,5 +1,5 @@
 local wezterm = require("wezterm")
-local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
+-- local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
 local act = wezterm.action
 
 ---@class WeztermConfig
@@ -52,7 +52,7 @@ end
 wezterm.on("update-right-status", function(window, _)
 	window:set_right_status(wezterm.format({
 		{ Attribute = { Intensity = "Bold" } },
-		{ Text = window:mux_window():get_workspace():gsub("^.*/", "") },
+		{ Text = window:mux_window():get_workspace():gsub("^.*/", "") .. " " },
 		"ResetAttributes",
 	}))
 end)
@@ -94,6 +94,7 @@ config.color_scheme = "Snazzy"
 -- config.color_scheme = "Dracula (Official)"
 
 config.font = wezterm.font_with_fallback({
+	{ family = "SF Mono", weight = 450 },
 	{ family = "Fira Code", weight = 450 },
 	"codicon",
 	{ family = "FiraCode Nerd Font", weight = 450 },
@@ -203,19 +204,19 @@ config.keys = {
 		mods = "CTRL",
 		action = wezterm.action.DisableDefaultAssignment,
 	},
-	{
-		key = "p",
-		mods = "CMD",
-		action = workspace_switcher.switch_workspace(),
-	},
+-- {
+	-- 	key = "p",
+	-- 	mods = "CMD",
+	-- 	action = workspace_switcher.switch_workspace(),
+	-- },
 	split_nav("move", "h"),
 	split_nav("move", "j"),
 	split_nav("move", "k"),
 	split_nav("move", "l"),
-	split_nav("resize", "h"),
-	split_nav("resize", "j"),
-	split_nav("resize", "k"),
-	split_nav("resize", "l"),
+	-- split_nav("resize", "h"),
+	-- split_nav("resize", "j"),
+	-- split_nav("resize", "k"),
+	-- split_nav("resize", "l"),
 }
 
 config.window_close_confirmation = "NeverPrompt"
@@ -225,7 +226,7 @@ config.unix_domains = {
 	},
 }
 
-workspace_switcher.apply_to_config(config)
+-- workspace_switcher.apply_to_config(config)
 
 -- config.window_background_opacity = 0.9
 -- config.macos_window_background_blur = 20
