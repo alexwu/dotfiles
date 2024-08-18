@@ -2,7 +2,8 @@
 # -------
 # Modules
 # -------
-zmodule joke/zim-rtx
+zmodule joke/zim-mise
+zmodule joke/zim-chezmoi
 zmodule kiesman99/zim-zoxide
 zmodule environment
 zmodule homebrew
@@ -16,11 +17,13 @@ zmodule romkatv/powerlevel10k --use degit
 zmodule zsh-users/zsh-completions
 zmodule g-plane/zsh-yarn-autocompletions
 zmodule ohmyzsh/ohmyzsh -f 'plugins/bundler' -s 'plugins/bundler/bundler.plugin.zsh'
-zmodule ohmyzsh/ohmyzsh -f 'plugins/git' -s 'plugins/git/git.plugin.zsh'
+zmodule ohmyzsh/ohmyzsh --root plugins/fancy-ctrl-z
 
 # Enables and configures smart and extensive tab completion.
 # completion must be sourced after zsh-users/zsh-completions
 zmodule completion
+
+zmodule ohmyzsh/ohmyzsh --root plugins/git
 # Fish-like syntax highlighting for Zsh.
 # zsh-users/zsh-syntax-highlighting must be sourced after completion
 zmodule zdharma-continuum/fast-syntax-highlighting
