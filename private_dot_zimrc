@@ -13,7 +13,6 @@ zmodule termtitle
 zmodule utility
 
 zmodule romkatv/powerlevel10k --use degit
-# zmodule Aloxaf/fzf-tab
 zmodule zsh-users/zsh-completions
 zmodule g-plane/zsh-yarn-autocompletions
 zmodule ohmyzsh/ohmyzsh -f 'plugins/bundler' -s 'plugins/bundler/bundler.plugin.zsh'
@@ -21,9 +20,11 @@ zmodule ohmyzsh/ohmyzsh --root plugins/fancy-ctrl-z
 
 # Enables and configures smart and extensive tab completion.
 # completion must be sourced after zsh-users/zsh-completions
+# NOTE: compinit called here
 zmodule completion
 
 zmodule ohmyzsh/ohmyzsh --root plugins/git
+zmodule Aloxaf/fzf-tab
 # Fish-like syntax highlighting for Zsh.
 # zsh-users/zsh-syntax-highlighting must be sourced after completion
 zmodule zdharma-continuum/fast-syntax-highlighting
