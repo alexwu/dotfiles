@@ -7,7 +7,6 @@ zmodule joke/zim-chezmoi
 zmodule kiesman99/zim-zoxide
 zmodule environment
 zmodule homebrew
-zmodule git
 zmodule input
 zmodule termtitle
 zmodule utility
