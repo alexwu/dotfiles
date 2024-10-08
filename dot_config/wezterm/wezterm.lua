@@ -226,6 +226,8 @@ config.unix_domains = {
 	},
 }
 
+config.enable_kitty_keyboard = true
+config.enable_csi_u_key_encoding = false
 -- workspace_switcher.apply_to_config(config)
 
 -- config.window_background_opacity = 0.9
