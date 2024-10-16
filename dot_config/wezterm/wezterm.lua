@@ -56,13 +56,13 @@ wezterm.on("update-right-status", function(window, _)
 	for _i, name in ipairs(workspaces) do
 		-- text = text .. " "
 		if name == wezterm.mux.get_active_workspace() then
-			-- table.insert(cells, { Background = { Color = "#1D1F29" } })
+			table.insert(cells, { Foreground = { Color = "#1D1F29" } })
 			table.insert(cells, { Attribute = { Intensity = "Bold" } })
-			table.insert(cells, { Foreground = { Color = "#5af78e" } })
-			table.insert(cells, { Text = string.upper(name) .. " " })
+			table.insert(cells, { Background = { Color = "#5af78e" } })
+			table.insert(cells, { Text = " " .. name .. " " })
 			table.insert(cells, "ResetAttributes")
 		else
-			table.insert(cells, { Text = name .. " " })
+			table.insert(cells, { Text = " " .. name .. " " })
 		end
 	end
 
