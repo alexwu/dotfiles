@@ -134,9 +134,9 @@ alt-shift-5 = 'move-node-to-workspace 5'
 alt-shift-6 = 'move-node-to-workspace 6'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace-back-and-forth
-# alt-tab = 'workspace-back-and-forth'
+alt-tab = 'focus right --boundaries-action wrap-around-the-workspace'
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-workspace-to-monitor
-# alt-shift-tab = 'move-workspace-to-monitor next'
+alt-shift-tab = 'focus left --boundaries-action wrap-around-the-workspace'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#mode
 alt-shift-semicolon = 'mode service'
