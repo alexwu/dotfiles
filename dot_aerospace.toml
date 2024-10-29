@@ -20,16 +20,23 @@ after-startup-command = [
 ]
 
 exec-on-workspace-change = [
-  '/bin/bash',
+  '/bin/zsh',
   '-c',
-  '/opt/homebrew/opt/sketchybar/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+  'open -g "raycast://extensions/jamesbombeelu/aerospace/focused-workspace?launchType=background&arguments=%7B%22workspace%22%3A%20%22$AEROSPACE_FOCUSED_WORKSPACE%22%7D"',
 ]
+
+on-focus-changed = [
+  'exec-and-forget open -g raycast://extensions/jamesbombeelu/aerospace/focused-window?launchType=background',
+]
+on-focused-monitor-changed = []
 
 # Start AeroSpace at login
 start-at-login = true
 
+automatically-unhide-macos-hidden-apps = true
+
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide.html#normalization
-enable-normalization-flatten-containers = false
+enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#layouts
@@ -49,9 +56,9 @@ gaps.inner.horizontal = 20
 gaps.inner.vertical = 20
 gaps.outer.left = 20
 gaps.outer.bottom = 20
-# gaps.outer.top = 20
+gaps.outer.top = 20
 # NOTE: For sketchybar:
-gaps.outer.top = [{ monitor."built-in" = 20 }, 50]
+# gaps.outer.top = [{ monitor."built-in" = 20 }, 50]
 gaps.outer.right = 20
 
 # Layout of root containers of non-empty workspaces. The layout is applied only on startup
@@ -64,6 +71,7 @@ non-empty-workspaces-root-containers-layout-on-startup = 'smart'
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#binding-modes
 # 'main' binding mode must be always presented
+
 [mode.main.binding]
 
 # All possible keys:
@@ -86,7 +94,7 @@ cmd-h = []
 # You can uncomment this line to open up terminal with alt + enter shortcut
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#exec-and-forget
 # alt-enter = 'exec-and-forget open -n /System/Applications/Utilities/Terminal.app'
-alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
+# alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
 
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#layout
@@ -97,46 +105,61 @@ alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
 alt-comma = 'layout h_accordion h_tiles'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#focus
-ctrl-alt-shift-h = 'focus left'
-ctrl-alt-shift-j = 'focus down'
-ctrl-alt-shift-k = 'focus up'
-ctrl-alt-shift-l = 'focus right'
+alt-h = 'focus left --boundaries-action wrap-around-the-workspace'
+alt-j = 'focus down'
+alt-k = 'focus up'
+# alt-l = 'focus right --boundaries all-monitors-outer-frame'
+alt-l = 'focus right --boundaries-action wrap-around-the-workspace'
 
-# See: https://nikitabobko.github.io/AeroSpace/commands.html#move-through
-cmd-ctrl-alt-shift-h = 'move-through left'
-cmd-ctrl-alt-shift-j = 'move-through down'
-cmd-ctrl-alt-shift-k = 'move-through up'
-cmd-ctrl-alt-shift-l = 'move-through right'
+ctrl-alt-shift-comma = 'workspace prev --wrap-around'
+ctrl-alt-shift-period = 'workspace next --wrap-around'
 
-alt-shift-h = 'move-through left'
-alt-shift-j = 'move-through down'
-alt-shift-k = 'move-through up'
-alt-shift-l = 'move-through right'
+# See: https://nikitabobko.github.io/AeroSpace/commands.html#move
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#resize
 alt-shift-minus = 'resize smart -50'
 alt-shift-equal = 'resize smart +50'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace
-alt-1 = 'workspace 1'
-alt-2 = 'workspace 2'
+# See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
+
+# Workspace (M)ain
+alt-1 = 'workspace M'
+alt-m = 'workspace M'
+alt-shift-1 = 'move-node-to-workspace M'
+alt-shift-m = 'move-node-to-workspace M'
+
+# Workspace (N)otes
+alt-2 = 'workspace N'
+alt-n = 'workspace N'
+alt-shift-2 = 'move-node-to-workspace N'
+alt-shift-n = 'move-node-to-workspace N'
+
 alt-3 = 'workspace 3'
 alt-4 = 'workspace 4'
 alt-5 = 'workspace 5'
-alt-6 = 'workspace 6'
 
-# See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
-alt-shift-1 = 'move-node-to-workspace 1'
-alt-shift-2 = 'move-node-to-workspace 2'
+# Workspace (S)lack?
+alt-s = 'workspace S'
+alt-shift-s = 'move-node-to-workspace S'
+
 alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
 alt-shift-5 = 'move-node-to-workspace 5'
-alt-shift-6 = 'move-node-to-workspace 6'
 
-# See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace-back-and-forth
-alt-tab = 'focus right --boundaries-action wrap-around-the-workspace'
-# See: https://nikitabobko.github.io/AeroSpace/commands.html#move-workspace-to-monitor
-alt-shift-tab = 'focus left --boundaries-action wrap-around-the-workspace'
+ctrl-alt-h = 'join-with left'
+ctrl-alt-j = 'join-with down'
+ctrl-alt-k = 'join-with up'
+ctrl-alt-l = 'join-with right'
+
+# # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace-back-and-forth
+# alt-tab = 'focus right --boundaries-action wrap-around-the-workspace'
+# # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-workspace-to-monitor
+# alt-shift-tab = 'focus left --boundaries-action wrap-around-the-workspace'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#mode
 alt-shift-semicolon = 'mode service'
@@ -181,25 +204,87 @@ run = 'layout floating'
 if.app-id = 'org.chromium.Chromium'
 run = 'layout floating'
 
+# Main workspace
 [[on-window-detected]]
 if.app-id = 'com.github.wez.wezterm'
-if.during-aerospace-startup = true
-run = 'move-node-to-workspace 1'
-
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace M'
 [[on-window-detected]]
 if.app-id = 'company.thebrowser.Browser'
-if.during-aerospace-startup = true
-run = 'move-node-to-workspace 1'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace M'
+[[on-window-detected]]
+if.app-id = 'com.culturedcode.ThingsMac'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace M'
 
 [[on-window-detected]]
+if.app-id = 'com.figma.Desktop'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace M'
+
+# Slack
+[[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
-if.during-aerospace-startup = true
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace S'
+
+# Notes
+[[on-window-detected]]
+if.app-id = 'notion.id'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace N'
+[[on-window-detected]]
+if.app-id = 'com.lukilabs.lukiapp'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace N'
+[[on-window-detected]]
+if.app-id = 'md.obsidian'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace N'
+
+# Chat
+[[on-window-detected]]
+if.app-id = 'net.whatsapp.WhatsApp'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 3'
+[[on-window-detected]]
+if.app-id = 'com.apple.MobileSMS'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 3'
+[[on-window-detected]]
+if.app-id = 'org.whispersystems.signal-desktop-beta'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 3'
+
+# Email
+[[on-window-detected]]
+if.app-id = 'com.apple.mail'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 4'
+[[on-window-detected]]
+if.app-id = 'com.mimestream.Mimestream'
+# if.during-aerospace-startup = true
 run = 'move-node-to-workspace 4'
 
+# Other?
+
+[[on-window-detected]]
+if.app-id = 'tv.parsec.www'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.moonlight-stream.Moonlight'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 5'
+
+
 [workspace-to-monitor-force-assignment]
-1 = 'main'     # Main monitor
-2 = 'main'     # Main monitor
+M = 'main'     # Main monitor
+N = 'main'     # Main monitor
 3 = 'main'     # Main monitor
-4 = 'built-in' # Case insensitive regex substring
-5 = 'built-in' # Case insensitive regex substring
-6 = 'built-in' # Case insensitive regex substring
+4 = 'main'     # Case insensitive regex substring
+5 = 'main'     # Case insensitive regex substring
+6 = 'main'     # Case insensitive regex substring
+S = 'built-in'
