@@ -102,7 +102,7 @@ cmd-h = []
 # alt-slash = 'layout tiles horizontal'
 # alt-comma = 'layout accordion horizontal vertical'
 # alt-comma = 'layout accordion horizontal'
-alt-comma = 'layout h_accordion h_tiles'
+alt-shift-comma = 'layout h_accordion h_tiles'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#focus
 alt-h = 'focus left --boundaries-action wrap-around-the-workspace'
