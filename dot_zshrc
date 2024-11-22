@@ -1,10 +1,5 @@
 export OS="$(uname -s)"
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
-  if [ "$OS" = "Darwin" ]; then
-    # CodeWhisperer pre block. Keep at the top of this file.
-    [[ -f "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.pre.zsh"
-  fi
-
   typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
   if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -19,7 +14,6 @@ else
   source "/usr/share/doc/fzf/examples/completion.zsh"
 fi
 
-source $HOME/.zsh/zim-init.zsh
 
 if (( $+commands[luarocks] )) then
   export PATH="$HOME/.luarocks/bin:$PATH"
@@ -64,6 +58,10 @@ then
   alias diff="delta"
 fi
 
+
+# Created by `pipx` on 2024-11-07 03:52:32                                                                                                                                │    │
+export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
+
 if [[ $TERM = "xterm-kitty" ]]
 then
   source $HOME/.zsh/kitty.zsh
@@ -82,14 +80,21 @@ then
   eval "$(zoxide init zsh)"
 fi
 
+source $HOME/.zsh/zim-init.zsh
+
+if command -v ngrok &>/dev/null; then
+  eval "$(ngrok completion)"
+fi
+
+
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
   [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-if [ "$OS" = "Darwin" ]; then
-  # CodeWhisperer post block. Keep at the bottom of this file.
-  [[ -f "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/zshrc.post.zsh"
-fi
 else
   eval "$(starship init zsh)"
+fi
+
+if (( $+commands[pokemon-colorscripts] ))
+then
+  pokemon-colorscripts -r --no-title
 fi
