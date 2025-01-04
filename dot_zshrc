@@ -19,6 +19,17 @@ if (( $+commands[luarocks] )) then
   export PATH="$HOME/.luarocks/bin:$PATH"
 fi
 
+if (( $+commands[yazi] )) then
+  function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+      builtin cd -- "$cwd"
+    fi
+    rm -f -- "$tmp"
+  }
+fi
+
 export PATH="$HOME/.bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 if (( $+commands[go] )) then
@@ -78,6 +89,16 @@ fi
 if (( $+commands[zoxide] ))
 then
   eval "$(zoxide init zsh)"
+fi
+
+if (( $+commands[runpodctl] ))
+then
+  eval "$(runpodctl completion zsh)"
+fi
+
+if (( $+commands[atuin] ))
+then
+  eval "$(atuin init zsh)"
 fi
 
 source $HOME/.zsh/zim-init.zsh
