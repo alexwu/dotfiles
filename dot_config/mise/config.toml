@@ -1,0 +1,19 @@
+[tools]
+ruby = "latest"
+neovim = "system"
+uv = "latest"
+"pipx:psf/black" = "latest"
+"pipx:gdtoolkit" = "latest"
+chromedriver = "latest"
+bun = "latest"
+"npm:prettier" = "latest"
+zig = "latest"
+ubi = "latest"
+
+[settings]
+
+[settings.pipx]
+uvx = true
+
+[settings.npm]
+bun = true
