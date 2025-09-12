@@ -32,6 +32,7 @@ fi
 
 export PATH="$HOME/.bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.bun/bin:$PATH"
 if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
 fi
@@ -56,8 +57,10 @@ if (( $+commands[nvim] ))
 then
   export VISUAL="nvim"
   export EDITOR="nvim"
-  export NEOVIDE_MULTIGRID=false
   function vimrc() {
+    eval "$(chezmoi source-path ~/.config/nvim)"
+  }
+  function nvimrc() {
     eval "$(chezmoi source-path ~/.config/nvim)"
   }
 else
@@ -69,9 +72,15 @@ then
   alias diff="delta"
 fi
 
+export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
 
+alias claude="/Users/jamesbombeelu/.claude/local/claude"
+# alias claude="~/.local/bin/claude"
 # Created by `pipx` on 2024-11-07 03:52:32                                                                                                                                │    │
 export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
+export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-mcp-hub/1.7.1/bin:$PATH"
+. "$HOME/.grit/bin/env"
+export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-smithery-cli/1.1.48/bin:$PATH"
 
 if [[ $TERM = "xterm-kitty" ]]
 then
@@ -91,22 +100,32 @@ then
   eval "$(zoxide init zsh)"
 fi
 
-if (( $+commands[runpodctl] ))
-then
-  eval "$(runpodctl completion zsh)"
-fi
-
 if (( $+commands[atuin] ))
 then
   eval "$(atuin init zsh)"
 fi
 
+if (( $+commands[just] ))
+then
+  alias J="just -g"
+fi
+
 source $HOME/.zsh/zim-init.zsh
+
+# NOTE: Load completions that depend on compdef AFTER zim initializes
+if (( $+commands[tv] ))
+then
+  eval "$(tv init zsh)"
+fi
+
+if (( $+commands[runpodctl] ))
+then
+  eval "$(runpodctl completion zsh)"
+fi
 
 if command -v ngrok &>/dev/null; then
   eval "$(ngrok completion)"
 fi
-
 
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
