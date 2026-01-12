@@ -75,8 +75,6 @@ fi
 export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
 
 alias claude="/Users/jamesbombeelu/.claude/local/claude"
-# alias claude="~/.local/bin/claude"
-# Created by `pipx` on 2024-11-07 03:52:32                                                                                                                                │    │
 export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
 export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-mcp-hub/1.7.1/bin:$PATH"
 . "$HOME/.grit/bin/env"
