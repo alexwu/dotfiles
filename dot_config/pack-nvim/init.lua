@@ -213,7 +213,12 @@ end
 
 vim.api.nvim_create_autocmd("PackChanged", {
   callback = function(event)
-    if event.data.spec and event.data.spec.name == "fff.nvim" and event.data.active and (event.data.kind == "install" or event.data.kind == "update") then
+    if
+      event.data.spec
+      and event.data.spec.name == "fff.nvim"
+      and event.data.active
+      and (event.data.kind == "install" or event.data.kind == "update")
+    then
       require("fff.download").download_or_build_binary()
     end
   end,
@@ -280,6 +285,7 @@ local plugins = {
   { src = gh("saghen/blink.pairs"), version = vim.version.range("*") },
   { src = gh("stevearc/overseer.nvim"), cond = invert(is_vscode) },
   { src = gh("chrisgrieser/nvim-tinygit"), cond = invert(is_vscode) },
+  { src = gh("folke/ts-comments.nvim") },
 }
 
 ---Determines if a plugin should be loaded based on its cond field
@@ -1352,3 +1358,5 @@ if is_active("nvim-tinygit") then
     desc = "Commit staged changes or all diffs",
   })
 end
+
+require("ts-comments").setup()
