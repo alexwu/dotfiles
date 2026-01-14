@@ -619,12 +619,12 @@ end
 
 -- Get list of plugin names for completion
 local function get_plugin_names()
-  local plugins = vim.pack.get()
-  local names = {}
-  for _, plugin in ipairs(plugins) do
-    table.insert(names, plugin.spec.name)
-  end
-  return names
+  return vim
+    .iter(vim.pack.get())
+    :map(function(plugin)
+      return plugin.spec.name
+    end)
+    :totable()
 end
 
 -- :Pack update [plugin]
@@ -904,6 +904,7 @@ vim.lsp.enable("yamlls")
 vim.lsp.enable("zls")
 vim.lsp.enable("markdown_oxide")
 vim.lsp.enable("ruff")
+vim.lsp.enable("emmylua_ls")
 
 vim.lsp.config("basedpyright", {
   settings = {
