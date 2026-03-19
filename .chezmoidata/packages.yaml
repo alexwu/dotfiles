@@ -97,6 +97,7 @@ packages:
       - whisper-cpp
       - xcbeautify
       - xcode-build-server
+      - xcodes
       - xcsift
       - xh
       - yazi
@@ -130,7 +131,7 @@ packages:
       - kitty
       - localsend
       - moonlight
-      - neovide
+      - neovide-app
       - ngrok
       - orbstack
       - proton-drive
@@ -140,13 +141,12 @@ packages:
       - sf-symbols
       - signal
       - spokenly
-      - syncthing
       - syncthing-app
       - transmission
       - transmit
       - visual-studio-code
       - wezterm@nightly
-      - xcodes
+      - xcodes-app
       - zen@twilight
   linux:
     apts:
