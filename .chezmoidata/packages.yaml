@@ -146,7 +146,6 @@ packages:
       - transmit
       - visual-studio-code
       - wezterm@nightly
-      - xcodes-app
       - zen@twilight
   linux:
     apts:
