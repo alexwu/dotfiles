@@ -190,6 +190,14 @@ let fish_completer = {|spans|
     | from tsv --flexible --no-infer
 }
 
+def "nu-complete just" [] {
+    (^just --dump --unstable --dump-format json | from json).recipes | transpose recipe data | flatten | where {|row| $row.private == false } | select recipe doc parameters | rename value description
+}
+
+# Just: A Command Runner
+export extern "just" [
+    ...recipe: string@"nu-complete just", # Recipe(s) to run, may be with argument(s)
+]
 
 let external_completer = {|spans|
     let expanded_alias = (scope aliases | where name == $spans.0 | get -i 0 | get -i expansion)
@@ -308,7 +316,34 @@ $env.config = {
     use_ansi_coloring: true
     bracketed_paste: true # enable bracketed paste, currently useless on windows
     edit_mode: vi # emacs, vi
-    shell_integration: false # enables terminal shell integration. Off by default, as some terminals have issues with this.
+    shell_integration: {
+        # osc2 abbreviates the path if in the home_dir, sets the tab/window title, shows the running command in the tab/window title
+        osc2: true
+        # osc7 is a way to communicate the path to the terminal, this is helpful for spawning new tabs in the same directory
+        osc7: true
+        # osc8 is also implemented as the deprecated setting ls.show_clickable_links, it shows clickable links in ls output if your terminal supports it. show_clickable_links is deprecated in favor of osc8
+        osc8: true
+        # osc9_9 is from ConEmu and is starting to get wider support. It's similar to osc7 in that it communicates the path to the terminal
+        osc9_9: false
+        # osc133 is several escapes invented by Final Term which include the supported ones below.
+        # 133;A - Mark prompt start
+        # 133;B - Mark prompt end
+        # 133;C - Mark pre-execution
+        # 133;D;exit - Mark execution finished with exit code
+        # This is used to enable terminals to know where the prompt is, the command is, where the command finishes, and where the output of the command is
+        osc133: true
+        # osc633 is closely related to osc133 but only exists in visual studio code (vscode) and supports their shell integration features
+        # 633;A - Mark prompt start
+        # 633;B - Mark prompt end
+        # 633;C - Mark pre-execution
+        # 633;D;exit - Mark execution finished with exit code
+        # 633;E - NOT IMPLEMENTED - Explicitly set the command line with an optional nonce
+        # 633;P;Cwd=<path> - Mark the current working directory and communicate it to the terminal
+        # and also helps with the run recent menu in vscode
+        osc633: true
+        # reset_application_mode is escape \x1b[?1l and was added to help ssh work better
+        reset_application_mode: true
+    }
     render_right_prompt_on_last_line: false # true or false to enable or disable right prompt to be rendered on last line of the prompt.
 
     hooks: {
@@ -864,8 +899,9 @@ use ~/.cache/starship/init.nu
 source ~/.zoxide.nu
 source ~/.cache/carapace/init.nu
 source ~/.nu/scripts/git-completions.nu
-do {
-  let misepath = ($nu.config-path | path dirname | path join "mise.nu")
-  run-external mise activate nu --redirect-stdout | save $misepath -f
-  $"\nsource "($misepath)"" | save $nu.config-path --append
-}
+source "/Users/jamesbombeelu/Library/Application Support/nushell/mise.nu"
+# do {
+#   let misepath = ($nu.config-path | path dirname | path join "mise.nu")
+#   run-external mise activate nu --redirect-stdout | save $misepath -f
+#   $"\nsource "($misepath)"" | save $nu.config-path --append
+# }

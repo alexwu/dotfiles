@@ -1,0 +1,96 @@
+[
+  {
+    "context": "VimControl && !menu",
+    "bindings": {
+      "]t": "pane::ActivateNextItem",
+      "[t": "pane::ActivatePrevItem",
+      "]c": "editor::GoToHunk",
+      "[c": "editor::GoToPreviousHunk"
+    }
+  },
+  {
+    "context": "VimControl && !menu && vim_mode != operator",
+    "bindings": {
+      "w": "vim::NextSubwordStart",
+      "b": "vim::PreviousSubwordStart",
+      "e": "vim::NextSubwordEnd",
+      "g e": "vim::PreviousSubwordEnd"
+    }
+  },
+  {
+    "context": "vim_mode == normal && !menu",
+    "bindings": {
+      "shift-q": "pane::CloseActiveItem",
+      "escape": "buffer_search::Dismiss",
+      "alt-o": ["workspace::SendKeystrokes", "o escape"],
+      "alt-shift-o": ["workspace::SendKeystrokes", "shift-o escape"],
+      "-": "project_panel::ToggleFocus",
+      "s": "vim::PushSneak",
+      "shift-s": "vim::PushSneakBackward",
+      "g s s h": "editor::ToggleHunkDiff",
+      "g s r h": "editor::RevertSelectedHunks",
+      "g s d h": "editor::ExpandAllHunkDiffs",
+      "shift-m": "editor::ToggleHunkDiff",
+      "g q": "editor::Format"
+    }
+  },
+  {
+    "context": "vim_mode == normal || vim_mode == visual || vim_mode == operator",
+    "bindings": {
+      "enter": "editor::SelectLargerSyntaxNode",
+      "backspace": "editor::SelectLargerSyntaxNode"
+    }
+  },
+  {
+    "context": "vim_mode == visual",
+    "bindings": {
+      "s": "vim::PushSneak",
+      "shift-s": "vim::PushSneakBackward"
+    }
+  },
+  {
+    "context": "vim_mode == insert",
+    "bindings": {
+      "alt-backspace": "editor::DeleteToPreviousWordStart"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "space f f": "file_finder::Toggle",
+      "space z": "workspace::ToggleZoom",
+      "space shift-z": "workspace::ToggleZoom",
+      "space b d": "pane::CloseActiveItem",
+      "space .": "workspace::NewFile",
+      "space f b": "tab_switcher::Toggle",
+      "space g s": "git_panel::ToggleFocus",
+      "space g l": "git_panel::ToggleFocus",
+      "space g shift-b": "editor::OpenUrl",
+      "space f h": "command_palette::Toggle",
+      "space f j": "go_to_line::Toggle",
+      "space n s": "workspace::NewFile",
+      "ctrl-`": "terminal_panel::Toggle",
+      "ctrl-/": "terminal_panel::Toggle"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "ctrl-s": "workspace::Save",
+      "cmd-s": "workspace::Save"
+    }
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "space": "project_panel::Open"
+    }
+  },
+  {
+    "context": "Editor && mode == full",
+    "bindings": {
+      "ctrl-d": ["editor::MovePageDown", { "center_cursor": true }],
+      "ctrl-u": ["editor::MovePageUp", { "center_cursor": true }]
+    }
+  }
+]

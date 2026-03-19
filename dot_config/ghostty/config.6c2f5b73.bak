@@ -1,0 +1,9 @@
+font-family = "Fira Code Retina"
+font-family = "FiraCode Nerd Font Mono Ret"
+font-size = 14.0
+theme = "Snazzy"
+copy-on-select = true
+cursor-style = block
+cursor-style-blink = false
+keybind = super+`=toggle_quick_terminal
+keybind = super+w=close_surface

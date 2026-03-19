@@ -62,7 +62,9 @@ then
   }
   function nvimrc() {
     eval "$(chezmoi source-path ~/.config/nvim)"
+    nvim .
   }
+  alias envim="NVIM_APPNAME=pack-nvim nvim"
 else
   export VISUAL="vim"
   export EDITOR="vim"
@@ -73,8 +75,6 @@ then
 fi
 
 export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
-
-alias claude="/Users/jamesbombeelu/.claude/local/claude"
 export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
 export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-mcp-hub/1.7.1/bin:$PATH"
 . "$HOME/.grit/bin/env"
@@ -83,14 +83,6 @@ export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-smithery-cli/1.
 if [[ $TERM = "xterm-kitty" ]]
 then
   source $HOME/.zsh/kitty.zsh
-fi
-
-if (( $+commands[eza] ))
-then
-  alias exa="eza"
-  alias l='eza'
-  alias ll='eza -l --git'
-  alias ls="eza --ignore-glob='.DS_Store'"
 fi
 
 if (( $+commands[zoxide] ))
@@ -108,17 +100,27 @@ then
   alias J="just -g"
 fi
 
+if (( $+commands[mise] ))
+then
+  alias must="mise run"
+fi
+
+if (( $+commands[fnox] ))
+then
+  eval "$(fnox activate zsh)"
+fi
+
+# if (( $+commands[codex] ))
+# then
+  # alias claudex="OPENROUTER_API_KEY="$(op read "op://personal/Open Router API Key/credential" --no-newline)" codex --profile claude"
+# fi
+
 source $HOME/.zsh/zim-init.zsh
 
 # NOTE: Load completions that depend on compdef AFTER zim initializes
 if (( $+commands[tv] ))
 then
   eval "$(tv init zsh)"
-fi
-
-if (( $+commands[runpodctl] ))
-then
-  eval "$(runpodctl completion zsh)"
 fi
 
 if command -v ngrok &>/dev/null; then

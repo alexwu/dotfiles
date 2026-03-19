@@ -1,18 +1,25 @@
 if [ $(arch) = "arm64" ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
-  alias ibrew="arch -x86_64 /usr/local/bin/brew"
-elif [ $(arch) = "i386" ]; then
-  eval "$(/usr/local/bin/brew shellenv)"
 fi
 
-fpath+=~/.zfunc
+# zerobrew
+export PATH="/opt/zerobrew/prefix/bin:$PATH"
 
+if (( $+commands[kk] ))
+then
+  kk completions zsh > ~/.zfunc/_kk 2>/dev/null
+fi
+
+
+fpath=(~/.zsh/completion $fpath)
+fpath+=~/.zfunc
+#
 if type brew &>/dev/null
 then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
-
-  autoload -Uz compinit
-  compinit
+#
+#   # autoload -Uz compinit
+#   # compinit
 fi
 
 if (( $+commands[fzf] ))
@@ -21,6 +28,7 @@ then
 fi
 
 alias co="git checkout"
+alias obsidian="nvim ~/Obsidian/Default"
 
 # if (( $+commands[mise] ))
 # then
@@ -30,6 +38,7 @@ alias co="git checkout"
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
 source ~/.zsh/wezterm.sh
+source ~/.config/op/plugins.sh
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NEOVIDE_MULTIGRID=true
@@ -41,6 +50,8 @@ path=(/Applications/Postgres.app/Contents/Versions/latest/bin $path)
 path=($HOME/.bin/nvim/bin $path)
 export SSH_AUTH_SOCK=""~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
+export OLLAMA_FLASH_ATTENTION=1
+export OLLAMA_KV_CACHE_TYPE=q8_0
 
 if (( $+commands[wezterm] ))
 then
@@ -71,3 +82,16 @@ wezterm-switch-workspace() {
 # 3. Switch to the workspace by communicating with wezterm
 # wezterm-switch-workspace $selected_folder $HOME/$selected_folder
 fi
+
+export OPEN_WEBUI_TOKEN="op://personal/Open WebUI/credential"
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
+export PATH="$PATH:/Applications/WezTerm.app/Contents/MacOS"
+
+# HOTFIX: until we use an updated ruby for work
+export PATH="/opt/homebrew/opt/openssl@3.0/bin:$PATH"
+export PATH="/opt/homebrew/opt/curl/bin:$PATH"
+
+export KARAKEEP_API_KEY=ak1_ef289e95342521ffd62a_e09c5d3460c805e62100
+export KARAKEEP_SERVER_ADDR=https://keep.bombee.dev

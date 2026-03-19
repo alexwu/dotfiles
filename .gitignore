@@ -1,1 +1,17 @@
 .pnpm-debug.log
+
+# Luna persona files (backed up elsewhere)
+dot_claude/CLAUDE.md
+dot_codex/AGENTS.md
+
+# OS junk
+**/dot_DS_Store
+
+# Zed ephemeral data
+dot_config/zed/conversations/
+dot_config/zed/embeddings/
+dot_config/zed/prompts/prompts-library-db.*/
+dot_config/zed/private_empty_dot_tmp*
+
+# Zellij claude mind data
+dot_config/zellij/.claude/

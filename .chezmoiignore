@@ -1,0 +1,14 @@
+# Ignore OS-generated files
+**/.DS_Store
+
+# Ignore Zed lock files and temp artifacts
+.config/zed/prompts/prompts-library-db.*/lock.mdb
+.config/zed/prompts/prompts-library-db.*/data.mdb
+.config/zed/.tmp*
+.config/zed/private_empty_*
+
+# Source files that exist only as symlink targets (don't deploy these to home root)
+claude-settings.json
+codex-config.toml
+mise-config.toml
+zed-settings.json

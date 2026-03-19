@@ -42,7 +42,7 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#layouts
 # The 'accordion-padding' specifies the size of accordion padding
 # You can set 0 to disable the padding feature
-accordion-padding = 50
+accordion-padding = 16
 
 # Possible values: tiles|accordion
 default-root-container-layout = 'tiles'
@@ -52,14 +52,14 @@ default-root-container-layout = 'tiles'
 #               tall monitor (anything higher than wide) gets vertical orientation
 default-root-container-orientation = 'auto'
 
-gaps.inner.horizontal = 20
-gaps.inner.vertical = 20
-gaps.outer.left = 20
-gaps.outer.bottom = 20
-gaps.outer.top = 20
+gaps.inner.horizontal = 8
+gaps.inner.vertical = 8
+gaps.outer.left = 8
+gaps.outer.right = 8
+gaps.outer.bottom = 8
 # NOTE: For sketchybar:
 # gaps.outer.top = [{ monitor."built-in" = 20 }, 50]
-gaps.outer.right = 20
+gaps.outer.top = 8
 
 # Layout of root containers of non-empty workspaces. The layout is applied only on startup
 # Possible values: smart|tiles|accordion
@@ -103,13 +103,13 @@ cmd-h = []
 # alt-comma = 'layout accordion horizontal vertical'
 # alt-comma = 'layout accordion horizontal'
 alt-shift-comma = 'layout h_accordion h_tiles'
+cmd-alt-comma = 'layout h_accordion h_tiles'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#focus
-alt-h = 'focus left --boundaries-action wrap-around-the-workspace'
+alt-h = 'focus left --boundaries-action wrap-around-the-workspace --ignore-floating'
 alt-j = 'focus down'
 alt-k = 'focus up'
-# alt-l = 'focus right --boundaries all-monitors-outer-frame'
-alt-l = 'focus right --boundaries-action wrap-around-the-workspace'
+alt-l = 'focus right --boundaries-action wrap-around-the-workspace --ignore-floating'
 
 ctrl-alt-shift-comma = 'workspace prev --wrap-around'
 ctrl-alt-shift-period = 'workspace next --wrap-around'
@@ -124,6 +124,8 @@ alt-shift-l = 'move right'
 alt-shift-minus = 'resize smart -50'
 alt-shift-equal = 'resize smart +50'
 
+alt-shift-f = 'fullscreen'
+
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
 
@@ -134,14 +136,15 @@ alt-shift-1 = 'move-node-to-workspace M'
 alt-shift-m = 'move-node-to-workspace M'
 
 # Workspace (N)otes
-alt-2 = 'workspace N'
-alt-n = 'workspace N'
-alt-shift-2 = 'move-node-to-workspace N'
-alt-shift-n = 'move-node-to-workspace N'
+alt-2 = 'workspace 2'
+alt-shift-2 = 'move-node-to-workspace 2'
 
 alt-3 = 'workspace 3'
 alt-4 = 'workspace 4'
 alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
 
 # Workspace (S)lack?
 alt-s = 'workspace S'
@@ -150,6 +153,9 @@ alt-shift-s = 'move-node-to-workspace S'
 alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
 alt-shift-5 = 'move-node-to-workspace 5'
+alt-shift-6 = 'move-node-to-workspace 6'
+alt-shift-7 = 'move-node-to-workspace 7'
+alt-shift-8 = 'move-node-to-workspace 8'
 
 ctrl-alt-h = 'join-with left'
 ctrl-alt-j = 'join-with down'
@@ -196,9 +202,9 @@ run = 'layout floating'
 if.app-id = 'pl.maketheweb.cleanshotx'
 run = 'layout floating'
 
-[[on-window-detected]]
-if.app-id = 'com.1password.1password'
-run = 'layout floating'
+# [[on-window-detected]]
+# if.app-id = 'com.1password.1password'
+# run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'org.chromium.Chromium'
@@ -213,8 +219,9 @@ run = 'move-node-to-workspace M'
 if.app-id = 'company.thebrowser.Browser'
 # if.during-aerospace-startup = true
 run = 'move-node-to-workspace M'
+
 [[on-window-detected]]
-if.app-id = 'com.culturedcode.ThingsMac'
+if.app-id = 'company.thebrowser.dia'
 # if.during-aerospace-startup = true
 run = 'move-node-to-workspace M'
 
@@ -231,31 +238,34 @@ run = 'move-node-to-workspace S'
 
 # Notes
 [[on-window-detected]]
+if.app-id = 'com.culturedcode.ThingsMac'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 2'
+[[on-window-detected]]
 if.app-id = 'notion.id'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace N'
+run = 'move-node-to-workspace 2'
 [[on-window-detected]]
 if.app-id = 'com.lukilabs.lukiapp'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace N'
+run = 'move-node-to-workspace 2'
 [[on-window-detected]]
 if.app-id = 'md.obsidian'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace N'
-
+run = 'move-node-to-workspace 2'
 # Chat
 [[on-window-detected]]
 if.app-id = 'net.whatsapp.WhatsApp'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace 3'
+run = 'move-node-to-workspace 4'
 [[on-window-detected]]
 if.app-id = 'com.apple.MobileSMS'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace 3'
+run = 'move-node-to-workspace 4'
 [[on-window-detected]]
 if.app-id = 'org.whispersystems.signal-desktop-beta'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace 3'
+run = 'move-node-to-workspace 4'
 
 # Email
 [[on-window-detected]]
@@ -275,16 +285,58 @@ if.app-id = 'tv.parsec.www'
 run = 'move-node-to-workspace 5'
 
 [[on-window-detected]]
+if.app-id = 'com.edovia.screens.5'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
 if.app-id = 'com.moonlight-stream.Moonlight'
 # if.during-aerospace-startup = true
 run = 'move-node-to-workspace 5'
 
+[[on-window-detected]]
+if.window-title-regex-substring = 'Fig Autocomplete'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.window-title-regex-substring = 'Amazon Q'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.electron.wispr-flow'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.window-title-regex-substring = 'Aqua Voice'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'dev.warp.Warp-Stable'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'app.zen-browser.zen'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.dt.Xcode'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.flexibits.fantastical2.mac'
+run = 'layout floating'
 
 [workspace-to-monitor-force-assignment]
 M = 'main'     # Main monitor
-N = 'main'     # Main monitor
+2 = 'main'     # Main monitor
 3 = 'main'     # Main monitor
 4 = 'main'     # Case insensitive regex substring
 5 = 'main'     # Case insensitive regex substring
 6 = 'main'     # Case insensitive regex substring
+7 = 'main'     # Case insensitive regex substring
+8 = 'main'     # Case insensitive regex substring
 S = 'built-in'

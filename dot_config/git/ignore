@@ -1,6 +1,6 @@
 .ignore
 .fdignore
-.DS_Store
+**/.DS_Store
 bin/scripts
 src/configs/dev.js
 **/configs/dev.local.js
@@ -9,3 +9,13 @@ src/configs/dev.js
 .idea
 .fleet
 coverage
+nucleo.log
+.Trash
+.http
+ http-client.env.json
+
+**/.claude/settings.local.json
+.claude/.mind.mv2.*
+.claude/mind.mv2
+.claude/mind.mv2.lock
+CLAUDE.local.md

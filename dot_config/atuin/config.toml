@@ -33,6 +33,7 @@
 ## which filter mode to use
 ## possible values: global, host, session, directory
 # filter_mode = "global"
+# filter_mode = "directory"
 
 ## which filter mode to use when atuin is invoked from a shell up-key binding
 ## the accepted values are identical to those of "filter_mode"
@@ -41,11 +42,13 @@
 
 ## which style to use
 ## possible values: auto, full, compact
+# style = "auto"
 style = "compact"
 
 ## the maximum number of lines the interface should take up
 ## set it to 0 to always go full screen
-# inline_height = 0
+inline_height = 20
+enter_accept = false
 
 ## enable or disable showing a preview of the selected command
 ## useful when the command is longer than the terminal width and is cut off
@@ -54,6 +57,9 @@ style = "compact"
 ## what to do when the escape key is pressed when searching
 ## possible values: return-original, return-query
 # exit_mode = "return-original"
+exit_mode = "return-query"
+
+workspaces = true
 
 ## possible values: emacs, subl
 # word_jump_mode = "emacs"
@@ -73,3 +79,7 @@ style = "compact"
 #   "^secret-cmd",
 #   "^innocuous-cmd .*--secret=.+"
 # ]
+ctrl_n_shortcuts = true
+
+[sync]
+records = true

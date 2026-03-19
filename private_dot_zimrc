@@ -5,6 +5,7 @@
 zmodule joke/zim-mise
 zmodule joke/zim-chezmoi
 zmodule kiesman99/zim-zoxide
+zmodule exa
 zmodule environment
 zmodule homebrew
 zmodule input
@@ -12,6 +13,7 @@ zmodule termtitle
 zmodule utility
 
 zmodule romkatv/powerlevel10k --use degit
+zmodule xs5871/p10k-jj-status -s 'p10k-jj-status.plugin.zsh'
 zmodule zsh-users/zsh-completions
 zmodule g-plane/zsh-yarn-autocompletions
 zmodule ohmyzsh/ohmyzsh -f 'plugins/bundler' -s 'plugins/bundler/bundler.plugin.zsh'
@@ -29,6 +31,6 @@ zmodule Aloxaf/fzf-tab
 zmodule zdharma-continuum/fast-syntax-highlighting
 # Fish-like history search (up arrow) for Zsh.
 # zsh-users/zsh-history-substring-search must be sourced after zsh-users/zsh-syntax-highlighting
-zmodule zsh-users/zsh-history-substring-search
+# zmodule zsh-users/zsh-history-substring-search
 # Fish-like autosuggestions for Zsh.
 zmodule zsh-users/zsh-autosuggestions

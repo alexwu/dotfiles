@@ -1,0 +1,58 @@
+[tools]
+ruby = "latest"
+uv = "latest"
+"pipx:gdtoolkit" = "latest"
+chromedriver = "145"
+bun = "latest"
+"npm:prettier" = "latest"
+zig = "latest"
+ubi = "latest"
+rust = "nightly"
+"cargo:nrr" = "latest"
+"npm:mcp-hub" = "latest"
+"npm:@smithery/cli" = "latest"
+go = "latest"
+"go:github.com/rhysd/actionlint/cmd/actionlint" = "latest"
+"pipx:mcp-server-tree-sitter" = "latest"
+tuist = "latest"
+"pipx:claude-conversation-extractor" = "latest"
+"pipx:leann-core" = "latest"
+usage = "latest"
+"ubi:clux/lq" = "latest"
+"pipx:mcp-proxy" = "latest"
+"npm:@just-every/code" = "latest"
+"npm:@herb-tools/formatter" = "latest"
+"npm:@herb-tools/linter" = "latest"
+"gem:rails-mcp-server" = "latest"
+"cargo:gfold" = "latest"
+ruff = "latest"
+"ubi:burntsushi/biff" = "latest"
+"cargo:headson" = "latest"
+"npm:agent-browser" = "latest"
+cargo-binstall = "latest"
+"cargo:ck-search" = "latest"
+"npm:@mermaid-js/mermaid-cli" = "latest"
+"npm:@karakeep/cli" = "latest"
+"npm:@toon-format/cli" = "latest"
+"npm:playwright" = "latest"
+"github:github/copilot-language-server-release" = "latest"
+"github:dathere/qsv" = "latest"
+fnox = "latest"
+"github:akiyosi/zonvie" = "latest"
+"npm:claude-code-rust" = "latest"
+
+[settings]
+idiomatic_version_file_enable_tools = ["ruby"]
+experimental = true
+disable_tools = []
+ruby.ruby_build_opts = "--with-openssl-dir=/opt/homebrew/opt/openssl@3.0"
+env_shell_expand = true
+
+[settings.pipx]
+uvx = true
+
+[settings.npm]
+bun = true
+
+[settings.python]
+uv_venv_auto = true
