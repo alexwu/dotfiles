@@ -1,0 +1,24 @@
+sandbox_mode = "read-only"
+approval_policy = "untrusted"
+model = "gpt-5.1-codex"
+project_doc_fallback_filenames = ["CLAUDE.md"]
+
+[tools]
+web_search = true
+
+[model_providers.openrouter]
+name = "OpenRouter"
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+wire_api = "chat"
+
+[profiles.claude]
+model = "anthropic/claude-4.5-sonnet"
+model_provider = "openrouter"
+
+[mcp_servers.shopify-dev-mcp]
+command = "bunx"
+args = ["-y", "@shopify/dev-mcp@latest"]
+
+[notice]
+hide_gpt5_1_migration_prompt = true

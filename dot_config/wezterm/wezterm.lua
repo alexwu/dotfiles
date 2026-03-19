@@ -1,6 +1,13 @@
 local wezterm = require("wezterm")
-local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
 local act = wezterm.action
+
+local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
+workspace_switcher.zoxide_path = "/opt/homebrew/bin/zoxide"
+
+local sessionizer = wezterm.plugin.require("https://github.com/mikkasendke/sessionizer.wezterm")
+local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
+local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
+local toggle_terminal = wezterm.plugin.require("https://github.com/zsh-sage/toggle_terminal.wez")
 
 ---@class WeztermConfig
 local config = {}
@@ -49,12 +56,33 @@ local function split_nav(resize_or_move, key)
 	}
 end
 
+smart_splits.apply_to_config(config, {
+	-- the default config is here, if you'd like to use the default keys,
+	-- you can omit this configuration table parameter and just use
+	-- smart_splits.apply_to_config(config)
+
+	-- directional keys to use in order of: left, down, up, right
+	-- direction_keys = { "h", "j", "k", "l" },
+	-- if you want to use separate direction keys for move vs. resize, you
+	-- can also do this:
+	direction_keys = {
+		move = { "h", "j", "k", "l" },
+		resize = { "LeftArrow", "DownArrow", "UpArrow", "RightArrow" },
+	},
+	-- modifier keys to combine with direction_keys
+	modifiers = {
+		move = "CTRL", -- modifier to use for pane movement, e.g. CTRL+h to move left
+		resize = "META", -- modifier to use for pane resize, e.g. META+h to resize to the left
+	},
+	-- log level to use: info, warn, error
+	log_level = "info",
+})
+
 wezterm.on("update-right-status", function(window, _)
 	local workspaces = wezterm.mux.get_workspace_names()
 
 	local cells = {}
 	for _i, name in ipairs(workspaces) do
-		-- text = text .. " "
 		if name == wezterm.mux.get_active_workspace() then
 			table.insert(cells, { Foreground = { Color = "#1D1F29" } })
 			table.insert(cells, { Attribute = { Intensity = "Bold" } })
@@ -66,15 +94,7 @@ wezterm.on("update-right-status", function(window, _)
 		end
 	end
 
-	-- local text = window:mux_window():get_workspace():gsub("^.*/", "") .. " "
 	window:set_right_status(wezterm.format(cells))
-	-- window:set_right_status(wezterm.format({
-	-- 	{ Attribute = { Intensity = "Bold" } },
-	-- 	{ Background = { Color = "#1D1F29" } },
-	-- 	{ Foreground = { Color = "#5af78e" } },
-	-- 	{ Text = string.upper(text) },
-	-- 	"ResetAttributes",
-	-- }))
 end)
 
 wezterm.on("smart_workspace_switcher.workspace_switcher.chosen", function(window, workspace)
@@ -131,23 +151,47 @@ wezterm.on("augment-command-palette", function(window, pane)
 
 			action = workspace_switcher.switch_workspace(),
 		},
+		{
+			brief = "Save workspace",
+			icon = "",
+			action = wezterm.action_callback(function(win, pane)
+				resurrect.save_state(resurrect.workspace_state.get_workspace_state())
+				resurrect.window_state.save_window_action()
+			end),
+		},
+
+		{
+			brief = "Restore workspace",
+			icon = "",
+			action = wezterm.action_callback(function(win, pane)
+				resurrect.fuzzy_load(win, pane, function(id, label)
+					local type = string.match(id, "^([^/]+)") -- match before '/'
+					id = string.match(id, "([^/]+)$") -- match after '/'
+					id = string.match(id, "(.+)%..+$") -- remove file extension
+					local opts = {
+						relative = true,
+						restore_text = true,
+						on_pane_restore = resurrect.tab_state.default_on_pane_restore,
+					}
+					if type == "workspace" then
+						local state = resurrect.load_state(id, "workspace")
+						resurrect.workspace_state.restore_workspace(state, opts)
+					elseif type == "window" then
+						local state = resurrect.load_state(id, "window")
+						resurrect.window_state.restore_window(pane:window(), state, opts)
+					elseif type == "tab" then
+						local state = resurrect.load_state(id, "tab")
+						resurrect.tab_state.restore_tab(pane:tab(), state, opts)
+					end
+				end)
+			end),
+		},
 	}
 end)
 
--- wezterm.on("window-focus-changed", function(window, pane)
--- 	window:toast_notification(
--- 		"wezterm",
--- 		"the focus state of " .. window:window_id() .. " changed to " .. tostring(window:is_focused()),
--- 		nil,
--- 		4000
--- 	)
--- 	-- window:toast_notification("wezterm", "the focus state of ", window:window_id(), " changed to ", window:is_focused(), nil, 4000)
--- 	wezterm.log_info("the focus state of ", window:window_id(), " changed to ", tostring(window:is_focused()))
--- end)
---
--- wezterm.on("window-config-reloaded", function(window, pane)
--- 	window:toast_notification("wezterm", "configuration reloaded!", nil, 4000)
--- end)
+config.command_palette_bg_color = "#23272e"
+config.command_palette_fg_color = "#eff0eb"
+config.command_palette_font_size = 16
 
 wezterm.on("user-var-changed", function(window, pane, name, value)
 	if name == "switch-workspace" then
@@ -169,70 +213,98 @@ config.color_scheme = "Snazzy"
 config.font = wezterm.font_with_fallback({
 	{ family = "Fira Code", weight = 450 },
 	"codicon",
-	{ family = "FiraCode Nerd Font", weight = 450 },
+	-- { family = "FiraCode Nerd Font Mono", weight = 450 },
+	{ family = "Maple Mono NF", weight = 450 },
 	{ family = "Nerd Font Symbols Font", weight = 450 },
 })
 
-config.window_frame = {
-	-- The font used in the tab bar.
-	-- Roboto Bold is the default; this font is bundled
-	-- with wezterm.
-	-- Whatever font is selected here, it will have the
-	-- main font setting appended to it to pick up any
-	-- fallback fonts you may have used there.
-	font = wezterm.font({ family = "SF Mono", weight = 450 }),
-
-	-- The size of the font in the tab bar.
-	-- Default to 10.0 on Windows but 12.0 on other systems
-	font_size = 13.0,
-
-	-- The overall background color of the tab bar when
-	-- the window is focused
-	active_titlebar_bg = "#1D1F29",
-
-	-- The overall background color of the tab bar when
-	-- the window is not focused
-	inactive_titlebar_bg = "#333333",
+sessionizer.apply_to_config(config, true) -- disable default binds (right now you can also just not call this)
+sessionizer.config = {
+	paths = "/Users/jamesbombeelu/Code",
 }
 
--- config.font_rules = {
--- 	{
--- 		italic = true,
--- 		font = wezterm.font("Victor Mono", { style = "Italic" }),
--- 	},
--- }
+config.window_frame = {
+	font = wezterm.font({ family = "SF Mono", weight = 450 }),
+	font_size = 16.0,
+	active_titlebar_bg = "#1D1F29",
+	inactive_titlebar_bg = "#333333",
+}
 
 config.keys = {
 	{
 		key = "d",
 		mods = "CMD",
+		action = wezterm.action_callback(function(win, pane)
+			local tab = pane:tab()
+			local panes = tab:panes_with_info()
+
+			if #panes == 1 then
+				pane:split({
+					direction = "Right",
+					size = 0.33,
+				})
+			elseif not panes[1].is_zoomed then
+				panes[1].pane:activate()
+				tab:set_zoomed(true)
+			elseif panes[1].is_zoomed then
+				tab:set_zoomed(false)
+				panes[2].pane:activate()
+			end
+		end),
+	},
+	{
+		key = "d",
+		mods = "CMD|SHIFT",
 		action = wezterm.action({
 			SplitPane = {
-				direction = "Right",
-				size = { Percent = 33 },
+				direction = "Down",
+				size = { Percent = 50 },
 				-- top_level = true,
 			},
 		}),
 	},
-	{
-		key = "s",
-		mods = "CMD",
-		action = wezterm.action({
-			SplitPane = {
-				direction = "Down",
-				size = { Percent = 33 },
-			},
-		}),
-	},
+	-- {
+	-- 	key = "s",
+	-- 	mods = "CMD",
+	-- 	action = wezterm.action_callback(function(win, pane)
+	-- 		local tab = pane:tab()
+	-- 		local panes = tab:panes_with_info()
+	--
+	-- 		if #panes == 1 then
+	-- 			pane:split({
+	-- 				direction = "Down",
+	-- 				size = 0.33,
+	-- 			})
+	-- 		elseif not panes[1].is_zoomed then
+	-- 			panes[1].pane:activate()
+	-- 			tab:set_zoomed(true)
+	-- 		elseif panes[1].is_zoomed then
+	-- 			tab:set_zoomed(false)
+	-- 			panes[2].pane:activate()
+	-- 		end
+	-- 	end),
+	-- },
 	{
 		key = "`",
-		mods = "CTRL",
-		action = wezterm.action({
-			SplitPane = {
-				direction = "Down",
-				size = { Percent = 33 },
-			},
-		}),
+		mods = "CMD",
+		action = wezterm.action_callback(function(win, pane)
+			local tab = pane:tab()
+			local panes = tab:panes_with_info()
+
+			if #panes == 1 then
+				pane:split({
+					direction = "Down",
+					size = 0.33,
+					top_level = true,
+				})
+			elseif not panes[1].is_zoomed then
+				panes[1].pane:activate()
+				tab:set_zoomed(true)
+			elseif panes[1].is_zoomed then
+				tab:set_zoomed(false)
+				panes[2].pane:activate()
+			end
+		end),
 	},
 	{ key = "w", mods = "CMD", action = wezterm.action({ CloseCurrentPane = { confirm = false } }) },
 	{
@@ -248,6 +320,11 @@ config.keys = {
 	{
 		key = "m",
 		mods = "CMD",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
+		key = "Enter",
+		mods = "ALT",
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 	{
@@ -299,6 +376,29 @@ config.keys = {
 		mods = "CTRL",
 		action = wezterm.action.DisableDefaultAssignment,
 	},
+	{
+		key = "s",
+		mods = "CMD",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
+		key = "Enter",
+		mods = "CMD",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
+	{ key = ".", mods = "CTRL|ALT", action = act.SwitchWorkspaceRelative(1) },
+	{ key = ",", mods = "CTRL|ALT", action = act.SwitchWorkspaceRelative(-1) },
+	-- {
+	-- 	key = "s",
+	-- 	mods = "CMD|SHIFT",
+	-- 	action = sessionizer.show,
+	-- },
+	-- {
+	-- 	key = "r",
+	-- 	mods = "CMD|SHIFT",
+	-- 	action = sessionizer.switch_to_most_recent,
+	-- },
 	split_nav("move", "h"),
 	split_nav("move", "j"),
 	split_nav("move", "k"),
@@ -309,29 +409,21 @@ config.keys = {
 	-- split_nav("resize", "l"),
 }
 
+toggle_terminal.apply_to_config(config)
+
+config.max_fps = 120
 config.window_close_confirmation = "NeverPrompt"
 config.unix_domains = {
 	{
 		name = "unix",
 	},
 }
-
-config.enable_kitty_keyboard = true
-config.enable_csi_u_key_encoding = false
--- workspace_switcher.apply_to_config(config)
-
--- config.window_background_opacity = 0.9
--- config.macos_window_background_blur = 20
-
--- This causes `wezterm` to act as though it was started as
--- `wezterm connect unix` by default, connecting to the unix
--- domain on startup.
--- If you prefer to connect manually, leave out this line.
--- config.default_gui_startup_args = { "connect", "unix" }
-
--- config.default_prog = { "/opt/homebrew/bin/nu" }
-
--- config.front_end = "WebGpu"
+-- config.enable_kitty_keyboard = true
+-- config.enable_csi_u_key_encoding = false
+config.window_background_opacity = 0.9
+config.macos_window_background_blur = 25
+config.front_end = "WebGpu"
 config.font_size = 14.0
+config.notification_handling = "AlwaysShow"
 
 return config

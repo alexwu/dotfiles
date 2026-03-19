@@ -51,3 +51,12 @@
 	fsmonitor = false
 [credential "https://dev.azure.com"]
 	useHttpPath = true
+[commit]
+	gpgsign = false
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[gpg]
+	program = /opt/homebrew/bin/gpg
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager

@@ -1,0 +1,18 @@
+default:
+    @just -g -l
+
+[group("mac")]
+remove-quarantine FILE:
+    xattr -d com.apple.quarantine {{ FILE }}
+
+[group("docker")]
+docker-build COMPOSE:
+    docker compose -f {{ COMPOSE }} up --build
+
+[group("docker")]
+docker-rebuild COMPOSE:
+    docker compose down && docker compose -f {{ COMPOSE }} up --build
+
+[group("mcp")]
+mcp-inspector:
+    bunx @modelcontextprotocol/inspector

@@ -87,8 +87,8 @@ $env.PATH = ($env.PATH | split row (char esep) | prepend '~/.bin/nvim/bin')
 $env.PATH = ($env.PATH | split row (char esep) | prepend '~/.local/bin')
 $env.PATH = ($env.PATH | split row (char esep) | prepend '~/.cargo/bin')
 
-mkdir ~/.cache/starship
-starship init nu | save -f ~/.cache/starship/init.nu
+# mkdir ~/.cache/starship
+# starship init nu | save -f ~/.cache/starship/init.nu
 
 # zoxide init nushell | save -f ~/.zoxide.nu
 

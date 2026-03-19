@@ -5,7 +5,7 @@ options=(
 	width=6.0
 	active_color=0xff5af78e
 	inactive_color=0xff494d64
-	blacklist="iPhone Mirroring"
+	blacklist="iPhone Mirroring,Dropover"
 	hidpi=on
 )
 
