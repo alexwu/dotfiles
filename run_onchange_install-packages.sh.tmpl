@@ -1,0 +1,19 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+brew bundle --no-lock --file=/dev/stdin <<EOF
+{{ range .packages.darwin.brews -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ range .packages.darwin.head_brews -}}
+brew {{ . | quote }}, args: ["HEAD"]
+{{ end -}}
+{{ range .packages.darwin.casks -}}
+cask {{ . | quote }}
+{{ end -}}
+EOF
+{{ else if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+sudo apt install -y {{ range .packages.linux.apts }}{{ . | quote }} {{ end }}
+{{ end -}}
