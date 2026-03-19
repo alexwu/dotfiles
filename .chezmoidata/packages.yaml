@@ -2,7 +2,6 @@ packages:
   darwin:
     brews:
       - 1jehuang/mmdr/mmdr
-      - 1password-cli
       - age
       - apprise
       - ast-grep
@@ -14,7 +13,6 @@ packages:
       - cargo-nextest
       - choose-gui
       - claude-agent-acp
-      - claude-code
       - cloudflared
       - cmake
       - coreutils
@@ -109,6 +107,8 @@ packages:
       - neovim
     casks:
       - 1password
+      - 1password-cli
+      - claude-code
       - nikitabobko/tap/aerospace
       - arq
       - betterdisplay
