@@ -1,23 +1,153 @@
 packages:
   darwin:
     brews:
+      - 1jehuang/mmdr/mmdr
+      - 1password-cli
+      - age
+      - apprise
+      - ast-grep
+      - atuin
+      - basedpyright
       - bat
+      - bottom
+      - caddy
+      - cargo-nextest
+      - choose-gui
+      - claude-agent-acp
+      - claude-code
+      - cloudflared
+      - cmake
+      - coreutils
+      - curl
+      - difftastic
+      - dotenv-linter
+      - dprint
       - dua-cli
+      - emmylua_ls
       - eza
       - fd
+      - felixkratz/formulae/borders
+      - felixkratz/formulae/sketchybar
+      - ffmpeg
       - fzf
+      - gemini-cli
       - gh
       - git-delta
+      - git-lfs
+      - glab
+      - gnu-sed
+      - go
+      - grex
+      - harper
+      - heroku
+      - hexyl
       - hub
+      - hyperfine
+      - imagemagick
+      - jackielii/tap/skhd-zig
+      - jaq
+      - jj
+      - jless
+      - jq
       - just
+      - languagetool
+      - lazydocker
+      - lazygit
+      - lazyjj
+      - llama.cpp
+      - luarocks
+      - macos-trash
+      - mas
       - mise
+      - mkvtoolnix
+      - monolith
+      - mosh
+      - mostlygeek/llama-swap/llama-swap
+      - onefetch
+      - oven-sh/bun/bun
+      - oxipng
+      - playwright-cli
+      - postgresql@18
+      - prettier
+      - rage
+      - railway
       - ripgrep
+      - rubyfmt
+      - ruff
+      - rumdl
+      - rust-parallel
+      - sd
+      - shellcheck
+      - shopify/shopify/shopify-cli
+      - silicon
+      - sk
+      - sox
+      - sqlite
+      - starship
+      - stylua
+      - swift-format
+      - swiftformat
+      - swiftlint
+      - task
+      - television
+      - tree
+      - tree-sitter-cli
       - uv
+      - vivid
+      - watchexec
+      - wget
+      - whisper-cpp
+      - xcbeautify
+      - xcode-build-server
+      - xcsift
+      - xh
+      - yazi
+      - zellij
+      - zk
       - zoxide
     head_brews:
       - neovim
     casks:
+      - 1password
+      - aerospace
+      - arq
+      - betterdisplay
+      - cleanshot
+      - codex
+      - cryptomator
+      - filebot
       - font-fira-code
+      - font-fira-code-nerd-font
+      - font-hack-nerd-font
+      - font-symbols-only-nerd-font
+      - fuse-t
+      - godot
+      - google-chrome
+      - hazel
+      - helium-browser
+      - iina
+      - kaleidoscope
+      - kitty
+      - localsend
+      - moonlight
+      - neovide
+      - ngrok
+      - orbstack
+      - proton-drive
+      - proton-mail-bridge
+      - protonvpn
+      - raycast
+      - sf-symbols
+      - signal
+      - spokenly
+      - syncthing
+      - syncthing-app
+      - transmission
+      - transmit
+      - visual-studio-code
+      - wezterm@nightly
+      - xcodes
+      - zen@twilight
   linux:
     apts:
       - eza
