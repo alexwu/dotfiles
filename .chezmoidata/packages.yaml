@@ -109,7 +109,7 @@ packages:
       - neovim
     casks:
       - 1password
-      - aerospace
+      - nikitabobko/tap/aerospace
       - arq
       - betterdisplay
       - cleanshot
