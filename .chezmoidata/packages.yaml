@@ -1,0 +1,28 @@
+packages:
+  darwin:
+    brews:
+      - bat
+      - dua-cli
+      - eza
+      - fd
+      - fzf
+      - gh
+      - git-delta
+      - hub
+      - just
+      - mise
+      - ripgrep
+      - uv
+      - zoxide
+    head_brews:
+      - neovim
+    casks:
+      - font-fira-code
+  linux:
+    apts:
+      - eza
+      - fd-find
+      - fzf
+      - git
+      - ripgrep
+      - zoxide
