@@ -1,0 +1,6 @@
+[".config/nvim"]
+    type = "git-repo"
+    url = "git@github.com:alexwu/nvim.git"
+    refreshPeriod = "168h"
+    clone.args = ["--branch", "nightly"]
+    pull.args = ["--ff-only"]
