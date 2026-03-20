@@ -1,0 +1,3 @@
+#!/bin/sh
+mkdir -p "{{ .chezmoi.homeDir }}/.local/bin"
+ln -sf "{{ .chezmoi.homeDir }}/.local/opt/pokemon-colorscripts/pokemon-colorscripts.py" "{{ .chezmoi.homeDir }}/.local/bin/pokemon-colorscripts"

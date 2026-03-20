@@ -1,6 +1,11 @@
 [".config/nvim"]
     type = "git-repo"
-    url = "git@github.com:alexwu/nvim.git"
+    url = "https://github.com/alexwu/nvim"
     refreshPeriod = "168h"
     clone.args = ["--branch", "nightly"]
     pull.args = ["--ff-only"]
+
+[".local/opt/pokemon-colorscripts"]
+    type = "git-repo"
+    url = "https://gitlab.com/phoneybadger/pokemon-colorscripts.git"
+    refreshPeriod = "168h"
