@@ -1,4 +1,6 @@
 return {
+  { "nvim-lua/plenary.nvim", lazy = true },
+
   -- mini.icons
   {
     "nvim-mini/mini.icons",
@@ -92,9 +94,24 @@ return {
       })
 
       local map = vim.keymap.set
-      map({ "n", "o", "x" }, "w", "<cmd>lua require('spider').motion('w')<CR>", { desc = "[count] words forward (subword)" })
-      map({ "n", "o", "x" }, "e", "<cmd>lua require('spider').motion('e')<CR>", { desc = "Forward to end of word [count] (subword)" })
-      map({ "n", "o", "x" }, "b", "<cmd>lua require('spider').motion('b')<CR>", { desc = "[count] words backward (subword)" })
+      map(
+        { "n", "o", "x" },
+        "w",
+        "<cmd>lua require('spider').motion('w')<CR>",
+        { desc = "[count] words forward (subword)" }
+      )
+      map(
+        { "n", "o", "x" },
+        "e",
+        "<cmd>lua require('spider').motion('e')<CR>",
+        { desc = "Forward to end of word [count] (subword)" }
+      )
+      map(
+        { "n", "o", "x" },
+        "b",
+        "<cmd>lua require('spider').motion('b')<CR>",
+        { desc = "[count] words backward (subword)" }
+      )
     end,
   },
 

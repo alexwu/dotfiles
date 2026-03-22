@@ -54,6 +54,7 @@ return {
 
   {
     "lewis6991/gitsigns.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
     event = "BufReadPre",
     cond = function() return vim.g.vscode == nil end,
     opts = {

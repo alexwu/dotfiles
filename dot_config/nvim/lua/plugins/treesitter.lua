@@ -2,6 +2,14 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     event = "BufReadPost",
+    init = function()
+      -- Custom predicate for mise config file detection (used by queries/toml/injections.scm)
+      require("vim.treesitter.query").add_predicate("is-mise?", function(_, _, bufnr, _)
+        local filepath = vim.api.nvim_buf_get_name(tonumber(bufnr) or 0)
+        local filename = vim.fn.fnamemodify(filepath, ":t")
+        return string.match(filename, ".*mise.*%.toml$") ~= nil
+      end, { force = true, all = false })
+    end,
     config = function()
       -- Auto-install tree-sitter CLI if not present
       if vim.fn.executable("tree-sitter") == 0 then
