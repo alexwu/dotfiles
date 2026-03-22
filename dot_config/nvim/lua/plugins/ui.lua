@@ -35,8 +35,20 @@ return {
       },
     },
     keys = {
-      { "g?", function() require("which-key").show({ global = true }) end, desc = "Keymaps (which-key)" },
-      { "<leader>?", function() require("which-key").show({ global = false }) end, desc = "Buffer keymaps (which-key)" },
+      {
+        "g?",
+        function()
+          require("which-key").show({ global = true })
+        end,
+        desc = "Keymaps (which-key)",
+      },
+      {
+        "<leader>?",
+        function()
+          require("which-key").show({ global = false })
+        end,
+        desc = "Buffer keymaps (which-key)",
+      },
     },
   },
 
@@ -56,7 +68,9 @@ return {
     "lewis6991/gitsigns.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     event = "BufReadPre",
-    cond = function() return vim.g.vscode == nil end,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
     opts = {
       sign_priority = 6,
       attach_to_untracked = true,
@@ -77,14 +91,22 @@ return {
         end
 
         map("n", "]c", function()
-          if vim.wo.diff then return "]c" end
-          vim.schedule(function() gs.next_hunk({ navigation_message = false, preview = false }) end)
+          if vim.wo.diff then
+            return "]c"
+          end
+          vim.schedule(function()
+            gs.next_hunk({ navigation_message = false, preview = false })
+          end)
           return "<Ignore>"
         end, { expr = true, desc = "Next Git hunk" })
 
         map("n", "[c", function()
-          if vim.wo.diff then return "[c" end
-          vim.schedule(function() gs.prev_hunk({ navigation_message = false, preview = false }) end)
+          if vim.wo.diff then
+            return "[c"
+          end
+          vim.schedule(function()
+            gs.prev_hunk({ navigation_message = false, preview = false })
+          end)
           return "<Ignore>"
         end, { expr = true, desc = "Previous Git hunk" })
 
@@ -93,7 +115,9 @@ return {
         map("n", "<leader>hu", gs.undo_stage_hunk, { desc = "Undo stage hunk" })
         map("n", "<leader>hb", gs.stage_buffer, { desc = "Stage buffer" })
         map("n", "<leader>hR", gs.reset_buffer, { desc = "Reset buffer" })
-        map("n", "gM", function() gs.blame_line({ full = true, ignore_whitespace = true }) end, { desc = "Git blame" })
+        map("n", "gM", function()
+          gs.blame_line({ full = true, ignore_whitespace = true })
+        end, { desc = "Git blame" })
         map("n", "M", gs.preview_hunk, { desc = "Preview hunk" })
         map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", { desc = "Inner Git hunk" })
       end,
@@ -103,7 +127,9 @@ return {
   {
     "sindrets/diffview.nvim",
     cmd = { "DiffviewOpen", "DiffviewFileHistory" },
-    cond = function() return vim.g.vscode == nil end,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
   },
 
   {
@@ -114,13 +140,17 @@ return {
   {
     "stevearc/overseer.nvim",
     cmd = { "OverseerRun", "OverseerToggle" },
-    cond = function() return vim.g.vscode == nil end,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
     opts = {},
   },
 
   {
     "chrisgrieser/nvim-tinygit",
-    cond = function() return vim.g.vscode == nil end,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
     config = function()
       require("tinygit").setup({
         commit = {

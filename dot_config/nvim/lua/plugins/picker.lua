@@ -2,7 +2,9 @@ return {
   {
     "folke/snacks.nvim",
     lazy = false,
-    cond = function() return vim.g.vscode == nil end,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
     ---@type fun():snacks.Config
     opts = function()
       local in_git = Snacks.git.get_root() ~= nil
@@ -21,7 +23,9 @@ return {
             },
           },
           actions = {
-            clear_input = function(picker) picker.input:set("") end,
+            clear_input = function(picker)
+              picker.input:set("")
+            end,
           },
         },
         dashboard = {
@@ -74,33 +78,131 @@ return {
       vim.o.statuscolumn = [[%!v:lua.require'snacks.statuscolumn'.get()]]
     end,
     keys = {
-      { "<c-`>", function() Snacks.terminal.toggle() end, desc = "Toggle Terminal (bottom)" },
-      { "<c-/>", function() Snacks.terminal() end, desc = "Toggle Terminal (floating)" },
-      { "<c-_>", function() Snacks.terminal() end, desc = "Toggle Terminal (floating)" },
-      { "<leader><space>", function() Snacks.picker.smart() end, desc = "Files (smart)" },
-      { "<leader>gs", function() Snacks.picker.git_status() end, desc = "Files (git status)" },
-      { "<leader>fb", function() Snacks.picker.buffers() end, desc = "Buffers" },
-      { "<leader>f/", function() Snacks.picker.search_history() end, desc = "Search history" },
-      { "<leader>fc", function() Snacks.picker.command_history() end, desc = "Command history" },
-      { "<leader>fh", function() Snacks.picker.help() end, desc = "Help pages" },
-      { "<leader>fH", function() Snacks.picker.highlights() end, desc = "Highlights" },
-      { "<leader>fii", function() Snacks.picker.icons() end, desc = "Icons" },
-      { "<leader>fj", function() Snacks.picker.jumps() end, desc = "Jumps" },
-      { "<leader>fn", function() Snacks.picker.notifications() end, desc = "Notifications" },
-      { "<leader>fk", function() Snacks.picker.keymaps({ global = true, plugs = true, ["local"] = true }) end, desc = "Keymaps" },
+      {
+        "<c-`>",
+        function()
+          Snacks.terminal.toggle()
+        end,
+        desc = "Toggle Terminal (bottom)",
+      },
+      {
+        "<c-/>",
+        function()
+          Snacks.terminal()
+        end,
+        desc = "Toggle Terminal (floating)",
+      },
+      {
+        "<c-_>",
+        function()
+          Snacks.terminal()
+        end,
+        desc = "Toggle Terminal (floating)",
+      },
+      {
+        "<leader><space>",
+        function()
+          Snacks.picker.smart()
+        end,
+        desc = "Files (smart)",
+      },
+      {
+        "<leader>gs",
+        function()
+          Snacks.picker.git_status()
+        end,
+        desc = "Files (git status)",
+      },
+      {
+        "<leader>fb",
+        function()
+          Snacks.picker.buffers()
+        end,
+        desc = "Buffers",
+      },
+      {
+        "<leader>f/",
+        function()
+          Snacks.picker.search_history()
+        end,
+        desc = "Search history",
+      },
+      {
+        "<leader>fc",
+        function()
+          Snacks.picker.command_history()
+        end,
+        desc = "Command history",
+      },
+      {
+        "<leader>fh",
+        function()
+          Snacks.picker.help()
+        end,
+        desc = "Help pages",
+      },
+      {
+        "<leader>fH",
+        function()
+          Snacks.picker.highlights()
+        end,
+        desc = "Highlights",
+      },
+      {
+        "<leader>fii",
+        function()
+          Snacks.picker.icons()
+        end,
+        desc = "Icons",
+      },
+      {
+        "<leader>fj",
+        function()
+          Snacks.picker.jumps()
+        end,
+        desc = "Jumps",
+      },
+      {
+        "<leader>fn",
+        function()
+          Snacks.picker.notifications()
+        end,
+        desc = "Notifications",
+      },
+      {
+        "<leader>fk",
+        function()
+          Snacks.picker.keymaps({ global = true, plugs = true, ["local"] = true })
+        end,
+        desc = "Keymaps",
+      },
     },
   },
 
   {
     "dmtrKovalenko/fff.nvim",
-    cond = function() return vim.g.vscode == nil end,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
     event = "VeryLazy",
     build = function()
       require("fff.download").download_or_build_binary()
     end,
     keys = {
-      { "<leader>ff", function() require("fff").find_files() end, desc = "Files" },
-      { "<leader>/", function() require("fff").live_grep() end, desc = "Live Grep" },
+      {
+        "<leader>ff",
+        function()
+          require("fff").find_files()
+        end,
+        desc = "Files",
+      },
+      {
+        "<leader>/",
+        function()
+          require("fff").live_grep()
+        end,
+        desc = "Live Grep",
+      },
     },
     config = function()
       vim.g.fff = { lazy_sync = true, debug = { enabled = false, show_scores = false } }
