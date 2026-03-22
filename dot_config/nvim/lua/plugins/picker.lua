@@ -32,12 +32,11 @@ return {
           preset = {
             pick = nil,
             keys = {
-              { icon = " ", key = "f", desc = "Find File", action = ":lua require('fff').find_files()" },
-              { icon = " ", key = "/", desc = "Grep", action = ":lua require('fff').live_grep()" },
-              { icon = " ", key = "r", desc = "Recent", action = ":lua Snacks.picker.recent()" },
-              { icon = " ", key = "d", desc = "Diff HEAD", action = ":DiffviewOpen", enabled = in_git },
+              { icon = " ", key = "f", desc = "Find File", action = ":lua require('fff').find_files()" },
+              { icon = " ", key = "/", desc = "Grep", action = ":lua require('fff').live_grep()" },
+              { icon = " ", key = "d", desc = "Diff HEAD", action = ":DiffviewOpen", enabled = in_git },
               { icon = "󰒲 ", key = "L", desc = "Lazy", action = ":Lazy", enabled = package.loaded.lazy },
-              { icon = " ", key = "q", desc = "Quit", action = ":qa" },
+              { icon = " ", key = "q", desc = "Quit", action = ":qa" },
             },
           },
           sections = {
