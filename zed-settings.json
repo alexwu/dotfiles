@@ -7,6 +7,37 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "agent": {
+    "button": false,
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "collaboration_panel": {
+    "button": false
+  },
+  "status_bar": {
+    "active_language_button": true
+  },
+  "project_panel": {
+    "button": true
+  },
+  "diagnostics": {
+    "inline": {
+      "enabled": true
+    }
+  },
+  "document_folding_ranges": "on",
+  "semantic_tokens": "combined",
+  "colorize_brackets": true,
+  "inlay_hints": {
+    "enabled": true
+  },
+  "which_key": {
+    "enabled": true
+  },
+  "session": {
+    "trust_all_worktrees": true
+  },
   "git_panel": {
     "tree_view": true
   },

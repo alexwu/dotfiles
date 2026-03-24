@@ -46,12 +46,9 @@ export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true
 export OP_BIOMETRIC_UNLOCK_ENABLED=true
-path=(/Applications/Postgres.app/Contents/Versions/latest/bin $path)
+# path=(/Applications/Postgres.app/Contents/Versions/latest/bin $path)
 path=($HOME/.bin/nvim/bin $path)
 export SSH_AUTH_SOCK=""~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
-
-export OLLAMA_FLASH_ATTENTION=1
-export OLLAMA_KV_CACHE_TYPE=q8_0
 
 if (( $+commands[wezterm] ))
 then
@@ -82,8 +79,6 @@ wezterm-switch-workspace() {
 # 3. Switch to the workspace by communicating with wezterm
 # wezterm-switch-workspace $selected_folder $HOME/$selected_folder
 fi
-
-export OPEN_WEBUI_TOKEN="op://personal/Open WebUI/credential"
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
