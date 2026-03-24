@@ -18,6 +18,9 @@ dot_config/nvim/
 ├── lua/
 │   ├── options.lua                   # Vim options and basic autocmds
 │   ├── mappings.lua                  # Global keymaps
+│   ├── bombeelu/                     # Custom modules (bombeelu namespace)
+│   │   ├── git.lua                   # Git base branch detection (tiered: PR cache → reflog → merge-base → default)
+│   │   └── visual-surround.lua       # Visual selection surround (parens, quotes, brackets, tags)
 │   └── plugins/                      # lazy.nvim plugin specs (auto-imported)
 │       ├── colorscheme.lua           # Colorscheme plugin
 │       ├── completion.lua            # Completion engine (blink.cmp)
@@ -101,6 +104,17 @@ return {
 
 Mason auto-enables all installed servers except those in the exclude list (`harper-ls`, `lua_ls`).
 
+## Dev Plugins
+
+Local dev plugins load from `~/Code/neovim/plugins/` (configured in init.lua `dev.path`).
+Plugins with `dev = true` and matching `patterns = { "alexwu" }` resolve to this path.
+The `bu` library (`alexwu/bu`) provides `bu.keys` and `bu.nvim.repeatable` used in mappings.
+
+## Custom Modules (`lua/bombeelu/`)
+
+- **`bombeelu.git`**: Tiered base branch detection for diff pickers. Async PR cache on `BufEnter` (5-min TTL), cleared on `DirChanged`. Tiers: PR base → reflog → merge-base scan (top 20) → default branch fallback.
+- **`bombeelu.visual-surround`**: Wraps visual selection in pairs. Keymaps: `(`, `{`, `[`, `q` (double quotes), `'`, `` ` ``, `t` (HTML tag prompt).
+
 ## Adding a New Formatter
 
 Add to the `formatters_by_ft` table in the conform.nvim spec in `editor.lua`:
@@ -123,6 +137,10 @@ formatters_by_ft = {
 | `:Format`     | Format current buffer with configured formatter  |
 | `:Format name`| Format with a specific formatter                 |
 | `:Commit`     | Smart git commit (tinygit)                       |
+| `<leader>gd`  | Git diff picker vs base branch (Snacks)          |
+| `<leader>gD`  | CodeDiff view vs base branch                     |
+| `<leader>nd`  | Dismiss notifications (noice)                    |
+| `<leader>nh`  | Notification history (noice)                     |
 
 ## lazy.nvim Spec Patterns
 

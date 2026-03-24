@@ -81,7 +81,9 @@ return {
         vim.lsp.buf.type_definition()
       end, { desc = "Go to type definition" })
 
-      set("n", "K", vim.lsp.buf.hover, { silent = true, desc = "Hover" })
+      set("n", "K", function()
+        require("pretty_hover").hover()
+      end, { silent = true, desc = "Hover" })
     end,
   },
   {

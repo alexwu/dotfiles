@@ -142,10 +142,276 @@ return {
       return vim.g.vscode == nil
     end,
   },
+  {
+    "esmuellert/codediff.nvim",
+    dependencies = { "MunifTanjim/nui.nvim" },
+    lazy = false,
+    cond = function()
+      return vim.g.vscode == nil
+    end,
+    opts = {
+      explorer = {
+        view_mode = "tree",
+      },
+    },
+    keys = {
+      {
+        "<leader>gD",
+        function()
+          local git_base = require("bombeelu.git")
+          local base_ref, merge_base = git_base.find_base_branch()
+
+          -- CodeDiff takes two revisions: base vs HEAD
+          vim.cmd("CodeDiff " .. merge_base .. " HEAD")
+        end,
+        desc = "CodeDiff (vs base branch)",
+      },
+    },
+  },
 
   {
     "vim-test/vim-test",
     cmd = { "TestNearest", "TestFile", "TestSuite", "TestLast", "TestVisit" },
+  },
+
+  -- Statusline
+  {
+    "nvim-lualine/lualine.nvim",
+    event = "VeryLazy",
+    cond = function()
+      return vim.g.vscode == nil
+    end,
+    dependencies = { "nvim-mini/mini.icons" },
+    config = function()
+      local colors = {
+        background = "#282a36",
+        foreground = "#eff0eb",
+        black = "#282a36",
+        red = "#ff5c57",
+        green = "#5af78e",
+        yellow = "#f3f99d",
+        blue = "#57c7ff",
+        purple = "#ff6ac1",
+        cyan = "#9aedfe",
+        white = "#f1f1f0",
+        lightgray = "#b1b1b1",
+        darkgray = "#3a3d4d",
+      }
+
+      local snazzy_theme = {
+        normal = {
+          a = { bg = colors.blue, fg = colors.black, gui = "bold" },
+          b = { bg = colors.lightgray, fg = colors.white },
+          c = { bg = colors.darkgray, fg = colors.lightgray },
+        },
+        insert = {
+          a = { bg = colors.green, fg = colors.black, gui = "bold" },
+          b = { bg = colors.lightgray, fg = colors.white },
+          c = { bg = colors.darkgray, fg = colors.lightgray },
+        },
+        visual = {
+          a = { bg = colors.purple, fg = colors.black, gui = "bold" },
+          b = { bg = colors.lightgray, fg = colors.white },
+          c = { bg = colors.darkgray, fg = colors.lightgray },
+        },
+        replace = {
+          a = { bg = colors.red, fg = colors.black, gui = "bold" },
+          b = { bg = colors.lightgray, fg = colors.white },
+          c = { bg = colors.darkgray, fg = colors.lightgray },
+        },
+        command = {
+          a = { bg = colors.yellow, fg = colors.black, gui = "bold" },
+          b = { bg = colors.lightgray, fg = colors.white },
+          c = { bg = colors.darkgray, fg = colors.lightgray },
+        },
+        inactive = {
+          a = { bg = colors.darkgray, fg = colors.lightgray, gui = "bold" },
+          b = { bg = colors.lightgray, fg = colors.lightgray },
+          c = { bg = colors.darkgray, fg = colors.darkgray },
+        },
+      }
+
+      require("lualine").setup({
+        options = {
+          theme = snazzy_theme,
+          disabled_filetypes = {
+            statusline = { "dashboard", "alpha", "starter", "snacks_dashboard" },
+          },
+          component_separators = "|",
+          section_separators = { left = "", right = "" },
+          globalstatus = true,
+        },
+        extensions = { "quickfix", "lazy", "oil", "overseer", "man", "mason" },
+        sections = {
+          lualine_a = {
+            { "mode", separator = {}, right_padding = 2 },
+          },
+          lualine_b = {
+            { "branch", color = { fg = "#3a3d4d", bg = "#f1f1f0" }, separator = { right = "" } },
+          },
+          lualine_c = {
+            {
+              "filetype",
+              icon_only = true,
+              separator = "",
+              padding = { left = 1, right = 0 },
+            },
+            {
+              "filename",
+              color = { fg = colors.white },
+              symbols = {
+                modified = "[+]",
+                readonly = "[-]",
+                unnamed = "",
+                newfile = "[New]",
+              },
+            },
+            {
+              "diagnostics",
+              sources = { "nvim_diagnostic" },
+              sections = { "error", "warn", "info", "hint" },
+              symbols = { error = " ", warn = " ", info = " ", hint = " " },
+              colored = true,
+              update_in_insert = false,
+              always_visible = false,
+            },
+          },
+          lualine_x = {
+            Snacks.profiler.status(),
+            {
+              function()
+                return require("noice").api.status.mode.get()
+              end,
+              cond = function()
+                return package.loaded["noice"] and require("noice").api.status.mode.has()
+              end,
+              color = { fg = "#ff9e64" },
+            },
+            {
+              require("lazy.status").updates,
+              cond = require("lazy.status").has_updates,
+              color = { fg = "#ff9e64" },
+            },
+            {
+              "diff",
+              symbols = {
+                added = " ",
+                modified = " ",
+                removed = " ",
+              },
+              source = function()
+                local gitsigns = vim.b.gitsigns_status_dict
+                if gitsigns then
+                  return {
+                    added = gitsigns.added,
+                    modified = gitsigns.changed,
+                    removed = gitsigns.removed,
+                  }
+                end
+              end,
+            },
+          },
+          lualine_y = {},
+          lualine_z = {},
+        },
+        inactive_sections = {
+          lualine_a = {},
+          lualine_b = {},
+          lualine_c = {},
+          lualine_x = {},
+          lualine_y = {},
+          lualine_z = {},
+        },
+      })
+    end,
+  },
+
+  -- Pretty hover for LSP
+  {
+    "Fildo7525/pretty_hover",
+    event = "LspAttach",
+    opts = {},
+  },
+
+  -- Noice: cmdline UI + message routing
+  {
+    "folke/noice.nvim",
+    event = "VeryLazy",
+    cond = function()
+      return vim.g.vscode == nil
+    end,
+    dependencies = { "MunifTanjim/nui.nvim" },
+    opts = {
+      cmdline = {
+        enabled = true,
+        view = "cmdline_popup",
+      },
+      messages = {
+        enabled = true,
+        view = "notify",
+        view_error = "notify",
+        view_warn = "notify",
+      },
+      popupmenu = {
+        enabled = true,
+        backend = "nui",
+      },
+      lsp = {
+        override = {
+          ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+          ["vim.lsp.util.stylize_markdown"] = true,
+        },
+        hover = {
+          enabled = false, -- pretty_hover handles this
+        },
+        signature = {
+          enabled = false, -- blink.cmp handles this
+        },
+        progress = {
+          enabled = true,
+        },
+      },
+      presets = {
+        bottom_search = false,
+        command_palette = true,
+        long_message_to_split = true,
+        lsp_doc_border = true,
+        inc_rename = false, -- snacks input handles this
+      },
+      routes = {
+        {
+          filter = { event = "msg_show", kind = "", find = "written" },
+          opts = { skip = true },
+        },
+        {
+          filter = { event = "msg_show", kind = "search_count" },
+          opts = { skip = true },
+        },
+      },
+    },
+    keys = {
+      {
+        "<leader>nd",
+        function()
+          require("noice").cmd("dismiss")
+        end,
+        desc = "Dismiss notifications",
+      },
+      {
+        "<leader>nh",
+        function()
+          require("noice").cmd("history")
+        end,
+        desc = "Notification history",
+      },
+      {
+        "<leader>nl",
+        function()
+          require("noice").cmd("last")
+        end,
+        desc = "Last notification",
+      },
+    },
   },
 
   {

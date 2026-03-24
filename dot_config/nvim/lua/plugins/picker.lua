@@ -11,6 +11,7 @@ return {
       return {
         input = {},
         gitbrowse = {},
+        notifier = {},
         statuscolumn = {},
         picker = {
           enabled = true,
@@ -174,6 +175,25 @@ return {
           Snacks.picker.keymaps({ global = true, plugs = true, ["local"] = true })
         end,
         desc = "Keymaps",
+      },
+      {
+        "<leader>gd",
+        function()
+          local git_base = require("bombeelu.git")
+          local base_ref, merge_base = git_base.find_base_branch()
+
+          local short = vim.trim(
+            vim.system({ "git", "rev-parse", "--short", merge_base }, { text = true }):wait().stdout
+              or merge_base:sub(1, 7)
+          )
+
+          Snacks.picker.git_diff({
+            title = "Git Changes (vs " .. short .. ")",
+            base = merge_base,
+            group = true,
+          })
+        end,
+        desc = "Git changes (vs base branch)",
       },
     },
   },

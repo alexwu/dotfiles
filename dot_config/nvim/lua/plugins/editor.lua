@@ -1,5 +1,6 @@
 return {
   { "nvim-lua/plenary.nvim", lazy = true },
+  { "alexwu/bu", dev = true },
 
   -- mini.icons
   {
@@ -132,7 +133,7 @@ return {
           enabled = false,
         },
         char = {
-          enabled = true,
+          enabled = false,
           jump_labels = true,
           search = { wrap = false },
           highlight = { backdrop = false },
@@ -388,6 +389,9 @@ return {
       vim.g["chezmoi#source_dir_path"] = vim.uv.os_homedir() .. "/.local/share/chezmoi"
     end,
   },
+  -- Strip trailing whitespace on edited lines
+  { "lewis6991/spaceless.nvim", event = "InsertEnter", opts = {} },
+
   {
     "xvzc/chezmoi.nvim",
     opts = {
