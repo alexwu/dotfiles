@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.github.mostlygeek.llama-swap</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/opt/homebrew/bin/llama-swap</string>
+		<string>-listen</string>
+		<string>localhost:8000</string>
+		<string>-config</string>
+		<string>/Users/jamesbombeelu/.config/llama-swap/config.yaml</string>
+		<string>-watch-config</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/Users/jamesbombeelu/.config/llama-swap/llama-swap.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/jamesbombeelu/.config/llama-swap/llama-swap.log</string>
+</dict>
+</plist>
