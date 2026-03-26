@@ -23,6 +23,7 @@ packages:
       - dua-cli
       - emmylua_ls
       - eza
+      - fastfetch
       - fd
       - felixkratz/formulae/borders
       - felixkratz/formulae/sketchybar
@@ -39,7 +40,6 @@ packages:
       - harper
       - heroku
       - hexyl
-      - hub
       - hyperfine
       - imagemagick
       - jackielii/tap/skhd-zig
@@ -58,10 +58,10 @@ packages:
       - mas
       - mise
       - mkvtoolnix
+      - mlx-lm
       - monolith
       - mosh
       - mostlygeek/llama-swap/llama-swap
-      - onefetch
       - oven-sh/bun/bun
       - oxipng
       - playwright-cli
@@ -101,6 +101,7 @@ packages:
       - xcsift
       - xh
       - yazi
+      - yek
       - zellij
       - zk
       - zoxide
@@ -122,12 +123,12 @@ packages:
       - font-hack-nerd-font
       - font-symbols-only-nerd-font
       - fuse-t
+      - ghostty@tip
       - godot
       - google-chrome
       - hazel
       - helium-browser
       - iina
-      - kaleidoscope
       - kitty
       - localsend
       - moonlight

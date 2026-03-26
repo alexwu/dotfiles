@@ -41,8 +41,6 @@ vim.o.exrc = true
 
 vim.o.pumheight = 10
 vim.o.conceallevel = 2
-vim.o.grepformat = "%f:%l:%c:%m"
-vim.o.grepprg = "rg --vimgrep"
 vim.o.splitkeep = "screen"
 vim.o.splitright = true
 vim.o.conceallevel = 2

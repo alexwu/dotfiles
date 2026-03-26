@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mostlygeek/llama-swap/refs/heads/main/config-schema.json
+
+groups:
+  "always-on":
+    persistent: true
+    swap: false
+    exclusive: false
+    members:
+      - "sweepai/sweep-next-edit-1.5b"
+      - "qwen3.5-9b"
+
+models:
+  "Qwen3-VL-32B-Instruct-heretic-v2":
+    cmd: llama-server --port ${PORT} --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
+  "sweepai/sweep-next-edit-1.5b":
+    cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --port ${PORT}
+  # "qwen3.5-9b":
+  #   cmd: mlx_lm.server --model "mlx-community/Qwen3.5-9B-4bit" --port ${PORT} --chat-template-args '{"enable_thinking":false}'
+  #   useModelName: "mlx-community/Qwen3.5-9B-4bit"
+  "qwen3.5-9b":
+    cmd: mlx_lm.server --model "mlx-community/Qwen3.5-9B-4bit" --port ${PORT} --chat-template-args '{"enable_thinking":false}' --log-level DEBUG
+    useModelName: "mlx-community/Qwen3.5-9B-4bit"
