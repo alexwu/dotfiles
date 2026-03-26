@@ -104,7 +104,8 @@ fi
 
 if (( $+commands[zmx] ))
 then
-  alias zn='zmx attach "$(petname)"'
+  alias dbzname='petname -d ~/.config/petname-dbz'
+  alias zn='zmx attach "$(dbzname)"'
 
   zmx-select() {
     local display
