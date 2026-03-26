@@ -101,6 +101,7 @@
     todo                    # todo items (https://github.com/todotxt/todo.txt-cli)
     timewarrior             # timewarrior tracking status (https://timewarrior.net/)
     taskwarrior             # taskwarrior task count (https://taskwarrior.org/)
+    my_zmx_session          # zmx session name
     # time                  # current time
     # =========================[ Line #2 ]=========================
     newline                 # \n
@@ -1569,6 +1570,12 @@
   # Type `p10k help segment` for documentation and a more sophisticated example.
   function prompt_example() {
     p10k segment -f 2 -i '⭐' -t 'hello, %n'
+  }
+
+  function prompt_my_zmx_session() {
+    if [[ -n $ZMX_SESSION ]]; then
+      p10k segment -b '%k' -f '%f' -t "[$ZMX_SESSION]"
+    fi
   }
 
   # User-defined prompt segments may optionally provide an instant_prompt_* function. Its job

@@ -76,9 +76,6 @@ fi
 
 export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
 export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
-export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-mcp-hub/1.7.1/bin:$PATH"
-. "$HOME/.grit/bin/env"
-export PATH="/Users/jamesbombeelu/.local/share/mise/installs/npm-smithery-cli/1.1.48/bin:$PATH"
 
 if [[ $TERM = "xterm-kitty" ]]
 then
@@ -103,6 +100,47 @@ fi
 if (( $+commands[mise] ))
 then
   alias must="mise run"
+fi
+
+if (( $+commands[zmx] ))
+then
+  alias zn='zmx attach "$(petname)"'
+
+  zmx-select() {
+    local display
+    display=$(zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients created dir; do
+      name=${name#name=}
+      pid=${pid#pid=}
+      clients=${clients#clients=}
+      dir=${dir#start_dir=}
+      printf "%-20s  pid:%-8s  clients:%-2s  %s\n" "$name" "$pid" "$clients" "$dir"
+    done)
+
+    local output query selected session_name
+    output=$({ [[ -n "$display" ]] && echo "$display"; } | fzf \
+      --print-query \
+      --height=80% \
+      --reverse \
+      --prompt="zmx> " \
+      --header="Enter: select" \
+      --preview='zmx history {1}' \
+      --preview-window=right:60%:follow \
+    )
+    local rc=$?
+
+    query=$(echo "$output" | sed -n '1p')
+    selected=$(echo "$output" | sed -n '2p')
+
+    if [[ $rc -eq 0 && -n "$selected" ]]; then
+      session_name=$(echo "$selected" | awk '{print $1}')
+    elif [[ -n "$query" ]]; then
+      session_name="$query"
+    else
+      return 130
+    fi
+
+    zmx attach "$session_name"
+  }
 fi
 
 if (( $+commands[fnox] ))
@@ -138,3 +176,10 @@ if (( $+commands[pokemon-colorscripts] ))
 then
   pokemon-colorscripts -r --no-title
 fi
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/jamesbombeelu/.lmstudio/bin"
+# End of LM Studio CLI section
+
+
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
