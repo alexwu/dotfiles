@@ -15,8 +15,8 @@ android-20
 android-8
 aoi-kimidori
 assistant-black
-baba
 babidi
+fortuneteller-baba
 baby
 bacterian
 bardock
@@ -64,6 +64,7 @@ forte
 frieza
 frost
 froze
+future-gohan
 future-trunks
 fuwa
 galactic-king
@@ -93,6 +94,7 @@ hell-fighter-17
 hit
 isaza
 jaco
+jackie-chun
 jajan
 jeice
 jiren
@@ -178,7 +180,6 @@ spopovich
 su-shenlong
 super-android-17
 supreme-kai
-supreme-kai-of-time
 tagoma
 tao
 taro-soramame
