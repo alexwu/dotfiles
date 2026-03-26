@@ -102,9 +102,13 @@ then
   alias must="mise run"
 fi
 
-if (( $+commands[zmx] ))
+if (( $+commands[petname] ))
 then
   alias dbzname='petname -d ~/.config/petname-dbz'
+fi
+
+if (( $+commands[zmx] ))
+then
   alias zn='zmx attach "$(dbzname)"'
 
   zmx-select() {
@@ -142,6 +146,11 @@ then
 
     zmx attach "$session_name"
   }
+fi
+
+if (( $+commands[zellij] ))
+then
+  alias zjn='zellij a -c "$(dbzname)"'
 fi
 
 if (( $+commands[fnox] ))
