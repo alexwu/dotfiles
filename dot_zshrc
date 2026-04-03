@@ -166,13 +166,39 @@ fi
 source $HOME/.zsh/zim-init.zsh
 
 # NOTE: Load completions that depend on compdef AFTER zim initializes
-if (( $+commands[tv] ))
+if (( $+commands[sk] ))
 then
-  eval "$(tv init zsh)"
+  eval "$(sk --shell zsh --shell-bindings)"
+fi
+
+if (( $+commands[carapace] ))
+then
+  source <(carapace _carapace zsh)
 fi
 
 if command -v ngrok &>/dev/null; then
   eval "$(ngrok completion)"
+fi
+
+# Override zoxide: always show frecency-ranked results on tab
+if (( $+commands[zoxide] ))
+then
+  function __zoxide_z_complete() {
+    [[ "${#words[@]}" -eq "${CURRENT}" ]] || return 0
+    local -a paths entries
+    paths=("${(@f)$(zoxide query -l -- ${words[2,-1]} 2>/dev/null)}")
+    local p short
+    for p in "${paths[@]}"; do
+      [[ -z "$p" ]] && continue
+      short="${p/#$HOME/~}"
+      entries+=("${p:t}:${short}")
+    done
+    _describe 'zoxide directory' entries -U
+    return 0
+  }
+  compdef __zoxide_z_complete z
+  zstyle ':completion:*:zoxide-directory:*' sort false
+  zstyle ':fzf-tab:complete:z:*' fzf-preview 'eza -1 --color=always $(zoxide query -- $word 2>/dev/null)'
 fi
 
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
