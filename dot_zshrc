@@ -165,6 +165,9 @@ fi
 
 source $HOME/.zsh/zim-init.zsh
 
+# Override zim's completion format — fzf-tab can't parse zsh color codes
+zstyle ':completion:*:descriptions' format '[%d]'
+
 # NOTE: Load completions that depend on compdef AFTER zim initializes
 if (( $+commands[sk] ))
 then
