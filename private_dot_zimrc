@@ -25,6 +25,7 @@ zmodule completion
 
 zmodule ohmyzsh/ohmyzsh --root plugins/git
 zmodule Aloxaf/fzf-tab
+zmodule Freed-Wu/fzf-tab-source
 # Fish-like syntax highlighting for Zsh.
 # zsh-users/zsh-syntax-highlighting must be sourced after completion
 zmodule zdharma-continuum/fast-syntax-highlighting
