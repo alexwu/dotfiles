@@ -76,6 +76,9 @@ return {
     config = function(_, opts)
       require("snacks").setup(opts)
       vim.o.statuscolumn = [[%!v:lua.require'snacks.statuscolumn'.get()]]
+
+      Snacks.toggle.inlay_hints():map("<leader>uh")
+      Snacks.toggle.diagnostics():map("<leader>ud")
     end,
     keys = {
       {
@@ -177,7 +180,7 @@ return {
         desc = "Keymaps",
       },
       {
-        "<leader>gd",
+        "<leader>gg",
         function()
           local git_base = require("bombeelu.git")
           local base_ref, merge_base = git_base.find_base_branch()

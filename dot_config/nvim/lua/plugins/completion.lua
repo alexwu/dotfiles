@@ -2,8 +2,13 @@ return {
   {
     "saghen/blink.cmp",
     version = "*",
-    event = "InsertEnter",
+    event = { "InsertEnter", "CmdlineEnter" },
     dependencies = { "rafamadriz/friendly-snippets" },
+    opts_extend = {
+      "sources.completion.enabled_providers",
+      "sources.compat",
+      "sources.default",
+    },
     opts = {
       fuzzy = {
         prebuilt_binaries = {
@@ -40,6 +45,7 @@ return {
             border = "rounded",
           },
         },
+        ghost_text = { enabled = true },
       },
       appearance = {
         use_nvim_cmp_as_default = false,
@@ -52,7 +58,17 @@ return {
         },
       },
       sources = {
-        default = { "lsp", "path", "snippets", "buffer" },
+        default = { "lsp", "path", "snippets", "buffer", "cursortab" },
+        providers = {
+          cursortab = {
+            module = "cursortab.blink",
+            name = "cursortab",
+            async = true,
+            -- Should match provider.completion_timeout in cursortab config
+            timeout_ms = 5000,
+            score_offset = 50, -- Higher priority among suggestions
+          },
+        },
       },
     },
   },

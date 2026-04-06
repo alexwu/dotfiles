@@ -392,6 +392,9 @@ return {
   -- Strip trailing whitespace on edited lines
   { "lewis6991/spaceless.nvim", event = "InsertEnter", opts = {} },
 
+  -- Open file:line format (e.g., nvim foo.lua:10)
+  { "lewis6991/fileline.nvim", lazy = false },
+
   {
     "xvzc/chezmoi.nvim",
     opts = {
@@ -416,5 +419,30 @@ return {
         end,
       })
     end,
+  },
+
+  {
+    "cursortab/cursortab.nvim",
+    -- version = "*",
+    lazy = false,
+    build = "cd server && go build",
+    opts = {
+      provider = {
+        type = "sweep",
+        url = "http://localhost:8000",
+        model = "sweepai/sweep-next-edit-1.5b",
+
+        -- type = "sweepapi",
+        -- api_key_env = "SWEEPAPI_TOKEN",
+      },
+      keymaps = {
+        -- accept = false,
+        accept = "<C-y>",
+      },
+      blink = {
+        enabled = false,
+        ghost_text = true,
+      },
+    },
   },
 }

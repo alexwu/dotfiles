@@ -39,6 +39,24 @@ set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
 set("n", "]t", vim.cmd.tabnext, { desc = "Next tab" })
 set("n", "[t", vim.cmd.tabprevious, { desc = "Previous tab" })
 
+-- NOTE: This is just the exact copy of the builtin mappings.
+-- https://github.com/neovim/neovim/blob/ea878f456a8b15381ce215b6e53781b0a061c5f4/runtime/lua/vim/_core/defaults.lua#L462-L477I
+set({ "n", "x", "o" }, "<CR>", function()
+  if vim.treesitter.get_parser(nil, nil, { error = false }) then
+    require("vim.treesitter._select").select_parent(vim.v.count1)
+  else
+    vim.lsp.buf.selection_range(vim.v.count1)
+  end
+end, { desc = "Select parent (outer) node" })
+
+set({ "x", "o" }, "<BS>", function()
+  if vim.treesitter.get_parser(nil, nil, { error = false }) then
+    require("vim.treesitter._select").select_child(vim.v.count1)
+  else
+    vim.lsp.buf.selection_range(-vim.v.count1)
+  end
+end, { desc = "Select child (inner) node" })
+
 -- Scroll half page
 local function scroll_half_page(dir)
   local line_count = vim.api.nvim_buf_line_count(0)

@@ -137,10 +137,13 @@ formatters_by_ft = {
 | `:Format`     | Format current buffer with configured formatter  |
 | `:Format name`| Format with a specific formatter                 |
 | `:Commit`     | Smart git commit (tinygit)                       |
-| `<leader>gd`  | Git diff picker vs base branch (Snacks)          |
+| `<leader>gg`  | Git diff picker vs base branch (Snacks)          |
 | `<leader>gD`  | CodeDiff view vs base branch                     |
 | `<leader>nd`  | Dismiss notifications (noice)                    |
 | `<leader>nh`  | Notification history (noice)                     |
+| `<leader>uh`  | Toggle inlay hints (Snacks.toggle)               |
+| `<leader>ud`  | Toggle diagnostics (Snacks.toggle)               |
+| `<leader>up`  | Toggle inline diagnostics (Snacks.toggle)        |
 
 ## lazy.nvim Spec Patterns
 
@@ -193,6 +196,11 @@ Uses Neovim 0.12+'s builtin LSP configuration instead of lspconfig's legacy `.se
 - Statuscolumn, terminal toggles, dashboard
 - Built-in pickers (used as fallback)
 - Input prompts (used by inc-rename)
+- `Snacks.toggle` for feature toggles with which-key integration, notifications, and state indicators
+
+### Snacks.toggle for Feature Toggles
+
+Prefer `Snacks.toggle` over plain keymaps for on/off features. It provides which-key state icons/colors and toggle notifications. Use built-in toggles where available (`Snacks.toggle.inlay_hints()`, `Snacks.toggle.diagnostics()`), and `Snacks.toggle.new()` for custom toggles (e.g., tiny-inline-diagnostic).
 
 ### Unified Picker Interface
 
@@ -201,3 +209,24 @@ The `:Pick` command provides a consistent picker interface that works with both 
 ### fff.nvim + Snacks Pickers
 
 Primary file/grep picker is fff.nvim. Snacks pickers serve as fallback and provide additional picker types (LSP symbols, diagnostics, etc.).
+
+## LSP Feature Gating
+
+New LSP features are enabled conditionally in a single `LspAttach` autocmd in `lsp.lua`. Use `client:supports_method()` to gate features:
+
+```lua
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(ev)
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+    if client and client:supports_method("textDocument/someFeature") then
+      -- enable feature
+    end
+  end,
+})
+```
+
+Currently gated: inlay hints (`textDocument/inlayHint`), linked editing range (`textDocument/linkedEditingRange`).
+
+## Reference: Old Nightly Config
+
+The previous nightly Neovim config lives at `github.com/alexwu/nvim` branch `nightly`. Useful as reference for porting features. Access via `gh api "repos/alexwu/nvim/contents/<path>?ref=nightly"`.
