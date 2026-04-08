@@ -21,6 +21,22 @@ keybinds {
     locked {
         bind "Ctrl g" { SwitchToMode "Normal"; }
     }
+    shared_among "normal" "locked" {
+        bind "Ctrl Alt Shift h" { GoToPreviousTab; }
+        bind "Ctrl Alt Shift l" { GoToNextTab; }
+        bind "Ctrl Alt Shift t" { NewTab; }
+        bind "Ctrl Alt Shift 1" { GoToTab 1; }
+        bind "Ctrl Alt Shift 2" { GoToTab 2; }
+        bind "Ctrl Alt Shift 3" { GoToTab 3; }
+        bind "Ctrl Alt Shift 4" { GoToTab 4; }
+        bind "Ctrl Alt Shift 5" { GoToTab 5; }
+        bind "Ctrl Alt Shift 6" { GoToTab 6; }
+        bind "Ctrl Alt Shift 7" { GoToTab 7; }
+        bind "Ctrl Alt Shift 8" { GoToTab 8; }
+        bind "Ctrl Alt Shift 9" { GoToTab 9; }
+        bind "Ctrl Alt Shift w" { CloseFocus; }
+        bind "Ctrl Alt Shift d" { NewPane "Right"; }
+    }
     resize {
         bind "Ctrl n" { SwitchToMode "Normal"; }
         bind "h" "Left" { Resize "Increase Left"; }
@@ -212,40 +228,32 @@ keybinds {
     shared_except "tmux" "locked" {
         bind "Ctrl b" { SwitchToMode "Tmux"; }
     }
-    shared_except "locked" {
+    shared {
         bind "Ctrl h" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus_or_tab";
                 payload "left";
-
-                // Plugin Configuration
-                move_mod "ctrl"; // Optional, should be added on every command if you want to use it
+                move_mod "ctrl";
             };
         }
-
         bind "Ctrl j" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus";
                 payload "down";
-
                 move_mod "ctrl";
             };
         }
-
         bind "Ctrl k" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus";
                 payload "up";
-
                 move_mod "ctrl";
             };
         }
-
         bind "Ctrl l" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus_or_tab";
                 payload "right";
-
                 move_mod "ctrl";
             };
         }
@@ -362,7 +370,7 @@ default_layout "default"
 // Choose the mode that zellij uses when starting up.
 // Default: normal
 //
-// default_mode "locked"
+default_mode "locked"
 
 // Toggle enabling the mouse mode.
 // On certain configurations, or terminals this could

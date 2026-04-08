@@ -74,6 +74,12 @@ then
   alias diff="delta"
 fi
 
+
+if (( $+commands[nvim] ))
+then
+  export NEOVIDE_FORK=1
+fi
+
 export PATH="$PATH:/Users/jamesbombeelu/.cache/lm-studio/bin"
 export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
 
@@ -150,6 +156,7 @@ fi
 
 if (( $+commands[zellij] ))
 then
+  export ZELLIJ_SOCKET_DIR=/tmp/zellij
   alias zjn='zellij a -c "$(dbzname)"'
 fi
 
@@ -181,6 +188,11 @@ fi
 
 if command -v ngrok &>/dev/null; then
   eval "$(ngrok completion)"
+fi
+
+if (( $+commands[zellij] ))
+then
+  zellij setup --generate-completion zsh > ~/.zfunc/_zellij
 fi
 
 # Override zoxide: always show frecency-ranked results on tab
