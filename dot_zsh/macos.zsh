@@ -88,5 +88,12 @@ export PATH="$PATH:/Applications/WezTerm.app/Contents/MacOS"
 export PATH="/opt/homebrew/opt/openssl@3.0/bin:$PATH"
 export PATH="/opt/homebrew/opt/curl/bin:$PATH"
 
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/jamesbombeelu/.lmstudio/bin"
+# End of LM Studio CLI section
+
+
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+
 export KARAKEEP_API_KEY=REDACTED_KARAKEEP_KEY
 export KARAKEEP_SERVER_ADDR=https://keep.bombee.dev
