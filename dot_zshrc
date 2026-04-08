@@ -192,7 +192,7 @@ fi
 
 if (( $+commands[zellij] ))
 then
-  zellij setup --generate-completion zsh > ~/.zfunc/_zellij
+  [[ -f ~/.zfunc/_zellij ]] || zellij setup --generate-completion zsh > ~/.zfunc/_zellij
 fi
 
 # Override zoxide: always show frecency-ranked results on tab
