@@ -194,10 +194,12 @@ def _build_local_notify_cmd(
 ) -> list[list[str]]:
     """Build the local notification command(s). Uses terminal-notifier with
     click-to-focus when in Zellij, falls back to apprise otherwise."""
+    apprise_title = f"{title} — {subtitle}" if subtitle else title
+    apprise_cmd = ["apprise", "-t", apprise_title, "-b", body, "-i", "markdown"]
+
     pane_id = os.environ.get("ZELLIJ_PANE_ID")
     if pane_id is None:
-        apprise_title = f"{title} — {subtitle}" if subtitle else title
-        return [["apprise", "-t", apprise_title, "-b", body, "-i", "markdown"]]
+        return [apprise_cmd]
 
     tab_id = _zellij_tab_for_pane(pane_id)
     cmd: list[str] = ["terminal-notifier", "-title", title, "-message", body]
@@ -221,7 +223,7 @@ def _build_local_notify_cmd(
         os.close(fd)
         os.chmod(path, 0o755)
         cmd += ["-execute", path]
-    return [cmd]
+    return [cmd, apprise_cmd]
 
 
 def send(
