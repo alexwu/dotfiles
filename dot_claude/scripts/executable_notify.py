@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Push notifications for Claude Code events via apprise."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
+from typing import Any
 
 RATE_LIMIT_SECONDS = 10
 
@@ -61,8 +66,66 @@ def get_terminal_pid() -> int | None:
     return None
 
 
+def _ghostty_focused_cwd() -> str:
+    """Get the working directory of Ghostty's focused terminal via AppleScript."""
+    script = """\
+tell application "Ghostty"
+    if not frontmost then return ""
+    set focusedWindow to front window
+    set activeTab to selected tab of focusedWindow
+    set activeTerm to focused terminal of activeTab
+    return working directory of activeTerm
+end tell"""
+    try:
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        return result.stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        return ""
+
+
+def _is_zellij_pane_focused() -> bool | None:
+    """Check if our Zellij pane is focused on the active tab. None if not in Zellij."""
+    pane_id = os.environ.get("ZELLIJ_PANE_ID")
+    if pane_id is None:
+        return None
+    try:
+        tab_result, panes_result = (
+            subprocess.run(
+                cmd, capture_output=True, text=True, timeout=2,
+            )
+            for cmd in (
+                ["zellij", "action", "current-tab-info"],
+                ["zellij", "action", "list-panes", "--state", "--tab", "--json"],
+            )
+        )
+        active_tab_id = None
+        for line in tab_result.stdout.strip().split("\n"):
+            if line.startswith("id:"):
+                active_tab_id = int(line.split(":")[1].strip())
+                break
+        if active_tab_id is None:
+            return None
+
+        for pane in json.loads(panes_result.stdout):
+            if pane.get("id") == int(pane_id) and not pane.get("is_plugin"):
+                return pane.get("is_focused", False) and pane.get("tab_id") == active_tab_id
+        return False
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError, ValueError):
+        return None
+
+
 def is_this_terminal_focused() -> bool:
     """Check if the specific terminal running this session is focused."""
+    # Zellij pane check — if our pane isn't focused, no need to check the terminal app
+    zellij_focused = _is_zellij_pane_focused()
+    if zellij_focused is False:
+        return False
+
     try:
         result = subprocess.run(
             ["aerospace", "list-windows", "--focused", "--json",
@@ -77,10 +140,12 @@ def is_this_terminal_focused() -> bool:
         focused_app = windows[0].get("app-name", "")
         focused_pid = windows[0].get("app-pid")
 
-        # For ghostty: just check if any ghostty window is focused
+        # For ghostty: match focused terminal's working directory via AppleScript
         bundle = os.environ.get("__CFBundleIdentifier", "")
         if bundle == "com.mitchellh.ghostty":
-            return focused_app == "ghostty"
+            if focused_app != "ghostty":
+                return False
+            return _ghostty_focused_cwd() == os.getcwd()
 
         # For kitty/wezterm: match the exact PID
         our_pid = get_terminal_pid()
@@ -109,7 +174,66 @@ def is_system_idle(threshold: int = 300) -> bool:
     return False
 
 
-def send(title: str, body: str, project: str, *, debug: bool = False) -> None:
+def _zellij_tab_for_pane(pane_id: str) -> int | None:
+    """Get the tab ID for a Zellij pane."""
+    try:
+        result = subprocess.run(
+            ["zellij", "action", "list-panes", "--tab", "--json"],
+            capture_output=True, text=True, timeout=2,
+        )
+        for pane in json.loads(result.stdout):
+            if pane.get("id") == int(pane_id) and not pane.get("is_plugin"):
+                return pane.get("tab_id")
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError, ValueError):
+        pass
+    return None
+
+
+def _build_local_notify_cmd(
+    title: str, body: str, subtitle: str,
+) -> list[list[str]]:
+    """Build the local notification command(s). Uses terminal-notifier with
+    click-to-focus when in Zellij, falls back to apprise otherwise."""
+    pane_id = os.environ.get("ZELLIJ_PANE_ID")
+    if pane_id is None:
+        apprise_title = f"{title} — {subtitle}" if subtitle else title
+        return [["apprise", "-t", apprise_title, "-b", body, "-i", "markdown"]]
+
+    tab_id = _zellij_tab_for_pane(pane_id)
+    cmd: list[str] = ["terminal-notifier", "-title", title, "-message", body]
+    if subtitle:
+        cmd += ["-subtitle", subtitle]
+    bundle = os.environ.get("__CFBundleIdentifier", "")
+    if bundle:
+        cmd += ["-activate", bundle]
+    if tab_id is not None:
+        session = os.environ.get("ZELLIJ_SESSION_NAME", "")
+        socket_dir = os.environ.get("ZELLIJ_SOCKET_DIR", "/tmp/zellij")
+        zellij = shutil.which("zellij") or "zellij"
+        script = (
+            f"#!/bin/sh\n"
+            f"export ZELLIJ_SOCKET_DIR={socket_dir}\n"
+            f"{zellij} -s {session} action go-to-tab-by-id {tab_id}\n"
+            f"{zellij} -s {session} action focus-pane-id terminal_{pane_id}\n"
+        )
+        fd, path = tempfile.mkstemp(prefix="zellij-focus-", suffix=".sh")
+        os.write(fd, script.encode())
+        os.close(fd)
+        os.chmod(path, 0o755)
+        cmd += ["-execute", path]
+    return [cmd]
+
+
+def send(
+    title: str,
+    body: str,
+    project: str,
+    *,
+    subtitle: str = "",
+    thread_id: str = "",
+    priority: str = "normal",
+    debug: bool = False,
+) -> None:
     log = os.path.expanduser("~/.claude/scripts/notify.log") if debug else None
 
     def _log(msg: str) -> None:
@@ -129,48 +253,116 @@ def send(title: str, body: str, project: str, *, debug: bool = False) -> None:
         _log(f"SUPPRESSED (terminal focused) {title}")
         return
 
-    result = subprocess.run(
-        ["apprise", "-t", title, "-b", body],
-        capture_output=True,
-        text=True,
-    )
-    _log(f"SENT {title} (apprise rc={result.returncode})")
+    local_procs = [
+        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        for cmd in _build_local_notify_cmd(title, body, subtitle)
+    ]
+
+    brrr_url = os.environ.get("BRRR_WEBHOOK_URL")
+    brrr_proc = None
+    if brrr_url:
+        brrr_payload: dict[str, Any] = {
+            "title": title,
+            "message": body,
+            "thread_id": thread_id or project,
+            "interruption_level": "time-sensitive" if priority == "high" else "active",
+            "image_url": "https://cdn.lulu.sh/images/notify/claude/luna-sfw-gemini-generated.png",
+        }
+        if subtitle:
+            brrr_payload["subtitle"] = subtitle
+        payload = json.dumps(brrr_payload).encode()
+        brrr_proc = subprocess.Popen(
+            ["curl", "-s", "-X", "POST", brrr_url,
+             "-H", "Content-Type: application/json",
+             "--data-binary", "@-"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if brrr_proc.stdin:
+            brrr_proc.stdin.write(payload)
+            brrr_proc.stdin.close()
+
+    local_rcs = [p.wait() for p in local_procs]
+    brrr_rc = brrr_proc.wait() if brrr_proc else None
+
+    _log(f"SENT {title} (local rc={local_rcs}, brrr rc={brrr_rc})")
     record_notification(project)
 
 
-def handle_stop(data: dict) -> None:
+def extract_question(tool_input: dict[str, Any]) -> str:
+    """Extract question text from AskUserQuestion input, checking multiple fields."""
+    questions = tool_input.get("questions", [])
+    if questions:
+        first = questions[0]
+        for key in ("question", "prompt", "message", "text"):
+            if val := first.get(key):
+                return str(val)
+    # Fallback: check top-level fields
+    for key in ("question", "prompt", "message", "text"):
+        if val := tool_input.get(key):
+            return str(val)
+    return "Question"
+
+
+def extract_options(tool_input: dict[str, Any]) -> list[str]:
+    """Extract option labels from AskUserQuestion input."""
+    questions = tool_input.get("questions", [])
+    if not questions:
+        return []
+    options = questions[0].get("options", [])
+    return [o.get("label", "") for o in options[:4] if isinstance(o, dict)]
+
+
+def handle_stop(data: dict[str, Any]) -> None:
     cwd = os.path.basename(data.get("cwd", ""))
+    session = data.get("session_id", "")
     message = data.get("last_assistant_message", "Task completed")
     # Strip action beats / italics for cleaner notifications
     lines = [
         line for line in message.split("\n")
         if line.strip() and not line.strip().startswith("*")
     ]
-    body = "\n".join(lines)[:300] if lines else "Task completed"
-    send(f"✅ {cwd}", body, cwd)
+    body = "\n".join(lines) if lines else "Task completed"
+    send("✅ Task Complete", body, cwd, subtitle=cwd, thread_id=session)
 
 
-def handle_pre_tool_use(data: dict) -> None:
+def handle_pre_tool_use(data: dict[str, Any]) -> None:
     tool = data.get("tool_name", "")
     cwd = os.path.basename(data.get("cwd", ""))
+    session = data.get("session_id", "")
 
     if tool == "AskUserQuestion":
-        questions = data.get("tool_input", {}).get("questions", [])
-        question = (
-            questions[0].get("question", "Question") if questions else "Question"
-        )
-        options = questions[0].get("options", []) if questions else []
-        parts = [question[:200]]
+        tool_input = data.get("tool_input", {})
+        question = extract_question(tool_input)
+        options = extract_options(tool_input)
+        parts = [question]
         if options:
-            opts = " | ".join(o.get("label", "") for o in options[:4])
-            parts.append(f"→ {opts}")
-        send(f"❓ {cwd}", "\n".join(parts), cwd)
+            parts.append(f"→ {' | '.join(options)}")
+        send(
+            "❓ Question", "\n".join(parts), cwd,
+            subtitle=cwd, thread_id=session, priority="high",
+        )
 
 
-def handle_notification(data: dict) -> None:
+NOTIFICATION_TITLES: dict[str, str] = {
+    "permission_prompt": "🔐 Needs Approval",
+    "idle_prompt": "⏸️ Waiting For Next Steps",
+    "auth_success": "🔑 Auth Complete",
+    "elicitation_dialog": "📋 Input Needed",
+}
+
+
+def handle_notification(data: dict[str, Any]) -> None:
     cwd = os.path.basename(data.get("cwd", ""))
+    session = data.get("session_id", "")
+    notification_type = data.get("notification_type", "")
+    title = NOTIFICATION_TITLES.get(notification_type, "⏳ Waiting")
     message = data.get("message", "Waiting for input")
-    send(f"⏳ {cwd}", message[:200], cwd)
+    send(
+        title, message, cwd,
+        subtitle=cwd, thread_id=session, priority="high",
+    )
 
 
 def main() -> None:

@@ -7,16 +7,49 @@ groups:
     exclusive: false
     members:
       - "sweepai/sweep-next-edit-1.5b"
+      - "henrik3/sweep-next-edit-v2-7B"
       - "qwen3.5-9b"
 
 models:
+  "Qwen-3.5-27B-Derestricted":
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen-3.5-27B-Derestricted-GGUF/Qwen-3.5-27B-Derestricted.Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen-3.5-27B-Derestricted-GGUF/Qwen-3.5-27B-Derestricted.mmproj-f16.gguf
+  "Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --temp 0.8 --top-p 0.95 --top-k 40 --repeat-penalty 1.02 -n 4096 --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5-GGUF/Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5.Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5-GGUF/Qwen3.5-9B-heretic-v2.BF16-mmproj.gguf
+  "gemma-4-31B-it":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
+    timeouts:
+      responseHeader: 120
+  "Dark-Nexus-24B-v2.0":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/ReadyArt/Dark-Nexus-24B-v2.0-GGUF/Dark-Nexus-24B-v2.0-Q5_K_M.gguf --no-webui
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  "Magidonia-24B-v4.3":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/TheDrummer/Magidonia-24B-v4.3-GGUF/Cydonia-24B-v4zk-Q5_K_M.gguf
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  "Broken-Tutu-24B-Unslop-v2.0":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/mradermacher/Broken-Tutu-24B-Unslop-v2.0-i1-GGUF/Broken-Tutu-24B-Unslop-v2.0.i1-Q5_K_M.gguf
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  "Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking-GGUF/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking.Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking-GGUF/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking.mmproj-f16.gguf
   "Qwen3-VL-32B-Instruct-heretic-v2":
     cmd: llama-server --port ${PORT} --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
   "sweepai/sweep-next-edit-1.5b":
-    cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --port ${PORT}
-  # "qwen3.5-9b":
-  #   cmd: mlx_lm.server --model "mlx-community/Qwen3.5-9B-4bit" --port ${PORT} --chat-template-args '{"enable_thinking":false}'
-  #   useModelName: "mlx-community/Qwen3.5-9B-4bit"
+    cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --port ${PORT} --no-webui
+  "henrik3/sweep-next-edit-v2-7B":
+    cmd: llama-server --port ${PORT} --model /Users/jamesbombeelu/.cache/huggingface/models/henrik3/sweep-next-edit-v2-7B-GGUF/q5_k_m.gguf --no-webui
+  "voyageai/voyage-4-nano":
+    cmd: llama-server --port ${PORT} -hf jsonMartin/voyage-4-nano-gguf -hff voyage-4-nano-f16.gguf --no-webui
+    useModelName: "jsonMartin/voyage-4-nano-gguf"
+
+  "zed-industries/zeta-2":
+    cmd: llama-server -hfr "bartowski/zed-industries_zeta-2-GGUF" -hff zed-industries_zeta-2-Q6_K_L.gguf --port ${PORT} --no-webui
+    useModelName: "bartowski/zed-industries_zeta-2-GGUF"
+
   "qwen3.5-9b":
     cmd: mlx_lm.server --model "mlx-community/Qwen3.5-9B-4bit" --port ${PORT} --chat-template-args '{"enable_thinking":false}' --log-level DEBUG
     useModelName: "mlx-community/Qwen3.5-9B-4bit"
