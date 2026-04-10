@@ -192,8 +192,8 @@ def _zellij_tab_for_pane(pane_id: str) -> int | None:
 def _build_local_notify_cmd(
     title: str, body: str, subtitle: str,
 ) -> list[list[str]]:
-    """Build the local notification command(s). Uses terminal-notifier with
-    click-to-focus when in Zellij, falls back to apprise otherwise."""
+    """Build the local notification command(s). Uses growlrrr with click-to-focus
+    when in Zellij, falls back to apprise otherwise."""
     apprise_title = f"{title} — {subtitle}" if subtitle else title
     apprise_cmd = ["apprise", "-t", apprise_title, "-b", body, "-i", "markdown"]
 
@@ -201,19 +201,20 @@ def _build_local_notify_cmd(
     if pane_id is None:
         return [apprise_cmd]
 
-    tab_id = _zellij_tab_for_pane(pane_id)
-    cmd: list[str] = ["terminal-notifier", "-title", title, "-message", body]
+    grrr = shutil.which("grrr") or "grrr"
+    cmd: list[str] = [grrr, "--appId", "Luna", "--title", title]
     if subtitle:
-        cmd += ["-subtitle", subtitle]
-    bundle = os.environ.get("__CFBundleIdentifier", "")
-    if bundle:
-        cmd += ["-activate", bundle]
+        cmd += ["--subtitle", subtitle]
+    tab_id = _zellij_tab_for_pane(pane_id)
     if tab_id is not None:
         session = os.environ.get("ZELLIJ_SESSION_NAME", "")
         socket_dir = os.environ.get("ZELLIJ_SOCKET_DIR", "/tmp/zellij")
         zellij = shutil.which("zellij") or "zellij"
+        bundle = os.environ.get("__CFBundleIdentifier", "")
+        activate = f"open -b {bundle}\n" if bundle else ""
         script = (
             f"#!/bin/sh\n"
+            f"{activate}"
             f"export ZELLIJ_SOCKET_DIR={socket_dir}\n"
             f"{zellij} -s {session} action go-to-tab-by-id {tab_id}\n"
             f"{zellij} -s {session} action focus-pane-id terminal_{pane_id}\n"
@@ -222,7 +223,11 @@ def _build_local_notify_cmd(
         os.write(fd, script.encode())
         os.close(fd)
         os.chmod(path, 0o755)
-        cmd += ["-execute", path]
+        cmd += ["--execute", path]
+    else:
+        cmd += ["--reactivate"]
+
+    cmd.append(body)
     return [cmd, apprise_cmd]
 
 
