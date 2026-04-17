@@ -20,3 +20,17 @@ mkdir -p "$HOME/.local/bin"
     echo "build-scripts: built $TARGET"
   fi
 }
+
+# ---- git-add-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/git_add_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/git_add_guard.nim" }}"
+  TARGET="$HOME/.local/bin/git-add-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping git-add-guard" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}

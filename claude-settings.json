@@ -1,8 +1,36 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "DISABLE_AUTOUPDATER": "1",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "0"
+  },
+  "permissions": {
+    "allow": [
+      "Read(/tmp/**)",
+      "Bash(gh issue view *)",
+      "Bash(gh pr view *)",
+      "mcp__plugin_github_github__issue_read",
+      "mcp__plugin_github_github__pull_request_read",
+      "Bash(ls *)",
+      "Bash(eza *)",
+      "Bash(tree *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(command -v *)",
+      "Bash(whoami)",
+      "Bash(date)",
+      "Bash(uname *)",
+      "Bash(df *)",
+      "Bash(du *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)"
+    ]
   },
   "includeCoAuthoredBy": false,
   "hooks": {
@@ -12,45 +40,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/scripts/prefer-rg.py"
+            "command": "/Users/jamesbombeelu/.local/bin/secret-guard"
           },
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/validate-git-add.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/scripts/notify.py PreToolUse"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/scripts/notify.py Stop"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "printf \"\\e]777;notify;%s;%s\\e\\\\\" \"Claude Code\" \"Awaiting your input\""
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/scripts/notify.py Notification"
+            "command": "/Users/jamesbombeelu/.local/bin/git-add-guard"
           }
         ]
       }
@@ -62,44 +56,78 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "ast-grep@ast-grep-marketplace": true,
     "agent-sdk-dev@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": true,
-    "hookify@claude-plugins-official": true,
-    "obsidian@obsidian-skills": false,
-    "gopls-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "xcsift@xcsift": true,
-    "code-review@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "github@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "linear@claude-plugins-official": true,
-    "mind@memvid": true,
-    "swift-lsp@claude-plugins-official": true,
-    "skill-codex@skill-codex": true,
     "basedpyright@claude-code-lsps": true,
-    "vtsls@claude-code-lsps": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "code-review@claude-code-plugins": true,
+    "codex@openai-codex": true,
+    "commit-commands@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "linear@claude-plugins-official": true,
+    "mcp-server-dev@claude-plugins-official": true,
+    "notion@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "railway@claude-plugins-official": true,
+    "ruby-lsp@claude-code-lsps": true,
+    "ruby-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "rust-analyzer@claude-code-lsps": true,
-    "ruby-lsp@claude-plugins-official": true,
-    "ruby-lsp@claude-code-lsps": true
+    "security-guidance@claude-plugins-official": true,
+    "skill-codex@skill-codex": true,
+    "skill-creator@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "telegram@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "vtsls@claude-code-lsps": true,
+    "xcsift@xcsift": true,
+    "clangd-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
+    "claude-code-lsps": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/Piebald-AI/claude-code-lsps.git"
+      }
+    },
+    "claude-code-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-code"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
     "skill-codex": {
       "source": {
         "source": "github",
         "repo": "skills-directory/skill-codex"
       }
     },
-    "claude-code-lsps": {
+    "xcsift": {
       "source": {
-        "source": "git",
-        "url": "https://github.com/Piebald-AI/claude-code-lsps.git"
+        "source": "github",
+        "repo": "ldomaradzki/xcsift"
+      }
+    },
+    "axiom-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "CharlesWiltgen/Axiom"
       }
     }
   },
+  "effortLevel": "medium",
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
