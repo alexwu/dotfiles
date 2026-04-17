@@ -11,5 +11,6 @@
   },
   "runtime": {
     "version": "LuaJIT"
-  }
+  },
+  "workspaceRoots": ["./lua"]
 }

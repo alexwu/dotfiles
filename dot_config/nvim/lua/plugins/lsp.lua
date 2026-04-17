@@ -1,12 +1,14 @@
+local utils = require("bombeelu.utils")
+
 return {
   {
     "williamboman/mason.nvim",
-    cmd = "Mason",
+    lazy = false,
     opts = {},
   },
   {
     "williamboman/mason-lspconfig.nvim",
-    event = "BufReadPre",
+    lazy = false,
     dependencies = {
       "williamboman/mason.nvim",
       "neovim/nvim-lspconfig",
@@ -19,8 +21,38 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    event = "BufReadPre",
-    config = function()
+    lazy = false,
+    opts = {
+      servers = {
+        "basedpyright",
+        "biome",
+        "denols",
+        "emmylua_ls",
+        "eslint",
+        "gdscript",
+        "html",
+        "just",
+        "markdown_oxide",
+        "oxlint",
+        "ruby_lsp",
+        "ruff",
+        "sorbet",
+        "sourcekit",
+        "sqruff",
+        "tailwindcss",
+        "taplo",
+        "ts_query_ls",
+        "ty",
+        "typos_lsp",
+        "vimdoc_ls",
+        "vtsls",
+        "yamlls",
+        "zk",
+        "zls",
+      },
+    },
+    opts_extend = { "servers" },
+    config = function(_, opts)
       -- LSP progress → native echo + statusline redraw
       vim.api.nvim_create_autocmd("LspProgress", {
         callback = function(ev)
@@ -75,43 +107,19 @@ return {
         end,
       })
 
-      -- Generic LSP servers
-      vim.lsp.enable("taplo")
-      vim.lsp.enable("yamlls")
-      vim.lsp.enable("zls")
-      vim.lsp.enable("markdown_oxide")
-      vim.lsp.enable("emmylua_ls")
-      vim.lsp.enable("sourcekit")
-      vim.lsp.enable("gdscript")
+      -- Per-server overrides live in `after/lsp/<name>.lua` — Neovim merges
+      -- those files with nvim-lspconfig's base config automatically.
 
-      vim.lsp.config("sqruff", {
-        root_markers = { ".sqruff" },
+      -- Defer enable until after startup completes. Running synchronously
+      -- inside the config function (or even via vim.schedule) races with
+      -- runtime setup and silently fails to register some servers (notably
+      -- emmylua_ls).
+      vim.api.nvim_create_autocmd("VimEnter", {
+        once = true,
+        callback = function()
+          vim.lsp.enable(opts.servers)
+        end,
       })
-      vim.lsp.enable("sqruff")
-
-      vim.lsp.config("typos_lsp", {
-        init_options = {
-          diagnosticSeverity = "Warning",
-        },
-      })
-      vim.lsp.enable("typos_lsp")
-
-      vim.lsp.enable("ruff")
-      vim.lsp.config("basedpyright", {
-        settings = {
-          pyright = {
-            -- Using Ruff's import organizer
-            disableOrganizeImports = true,
-          },
-          python = {
-            analysis = {
-              -- Ignore all files for analysis to exclusively use Ruff for linting
-              ignore = { "*" },
-            },
-          },
-        },
-      })
-      vim.lsp.enable("basedpyright")
 
       -- vim.lsp.inline_completion.enable()
       -- vim.lsp.config("copilot", {
@@ -146,56 +154,12 @@ return {
       --   end,
       -- })
       -- vim.lsp.enable("copilot")
-
-      -- LSP keymaps
-      local function hover()
-        local filetype = vim.filetype.match({ buf = 0 })
-        if vim.tbl_contains({ "vim", "help" }, filetype) then
-          vim.cmd("h " .. vim.fn.expand("<cword>"))
-        elseif vim.tbl_contains({ "man" }, filetype) then
-          vim.cmd("Man " .. vim.fn.expand("<cword>"))
-        -- elseif vim.fn.expand("%:t") == "Cargo.toml" then
-        --   require("crates").show_popup()
-        else
-          require("pretty_hover").hover()
-        end
-      end
-
-      set("i", "<C-y>", function()
-        if not vim.lsp.inline_completion.get() then
-          return "<C-y>"
-        end
-      end, { expr = true, desc = "Accept the current inline completion" })
-
-      set("n", "gd", function()
-        vim.lsp.buf.definition()
-      end, { silent = true, desc = "Go to definition" })
-
-      set("n", "grr", function()
-        vim.lsp.buf.references()
-      end, { desc = "Go to references" })
-
-      set("n", "gri", function()
-        vim.lsp.buf.implementation()
-      end, { desc = "Go to implementation" })
-
-      set("n", "grt", function()
-        vim.lsp.buf.type_definition()
-      end, { desc = "Go to type definition" })
-
-      set("n", "grx", function()
-        vim.lsp.codelens.run()
-      end, { desc = "Run code lens" })
-      set("n", "K", hover, { silent = true, desc = "Hover" })
-      set({ "n", "x" }, "gra", require("tiny-code-action").code_action, { desc = "Select a code action" })
     end,
   },
   {
     "rachartier/tiny-inline-diagnostic.nvim",
     event = "LspAttach",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     opts = {
       options = {
         show_source = { enabled = true },

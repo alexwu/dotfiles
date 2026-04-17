@@ -86,4 +86,53 @@ vim.api.nvim_create_user_command("Qa", "qa", {})
 vim.api.nvim_create_user_command("Wq", "wq", {})
 vim.api.nvim_create_user_command("W", "w", {})
 
+-- LSP mappings (always mapped regardless of plugin load state)
+local function hover()
+  local filetype = vim.filetype.match({ buf = 0 })
+  if vim.tbl_contains({ "vim", "help" }, filetype) then
+    vim.cmd("h " .. vim.fn.expand("<cword>"))
+  elseif filetype == "man" then
+    vim.cmd("Man " .. vim.fn.expand("<cword>"))
+  else
+    local ok, pretty_hover = pcall(require, "pretty_hover")
+    if ok then
+      pretty_hover.hover()
+    else
+      vim.lsp.buf.hover()
+    end
+  end
+end
+
+set("i", "<C-y>", function()
+  if not vim.lsp.inline_completion.get() then
+    return "<C-y>"
+  end
+end, { expr = true, desc = "Accept the current inline completion" })
+
+set("n", "gd", function()
+  vim.lsp.buf.definition()
+end, { silent = true, desc = "Go to definition" })
+
+set("n", "grr", function()
+  vim.lsp.buf.references()
+end, { desc = "Go to references" })
+
+set("n", "gri", function()
+  vim.lsp.buf.implementation()
+end, { desc = "Go to implementation" })
+
+set("n", "grt", function()
+  vim.lsp.buf.type_definition()
+end, { desc = "Go to type definition" })
+
+set("n", "grx", function()
+  vim.lsp.codelens.run()
+end, { desc = "Run code lens" })
+
+set("n", "K", hover, { silent = true, desc = "Hover" })
+
+set({ "n", "x" }, "gra", function()
+  require("tiny-code-action").code_action()
+end, { desc = "Select a code action" })
+
 return M

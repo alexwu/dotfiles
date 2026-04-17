@@ -1,7 +1,10 @@
+local utils = require("bombeelu.utils")
+
 return {
   {
     "saghen/blink.cmp",
     version = "*",
+    cond = utils.not_vscode,
     event = { "InsertEnter", "CmdlineEnter" },
     dependencies = { "rafamadriz/friendly-snippets" },
     opts_extend = {
@@ -21,6 +24,12 @@ return {
         ["<C-e>"] = { "cancel", "fallback" },
         ["<S-Tab>"] = { "select_prev", "fallback" },
         ["<Tab>"] = { "select_next", "fallback" },
+      },
+      cmdline = {
+        keymap = {
+          ["<Up>"] = { "select_prev", "fallback" },
+          ["<Down>"] = { "select_next", "fallback" },
+        },
       },
       completion = {
         accept = {
@@ -80,8 +89,6 @@ return {
   {
     "saghen/blink.indent",
     event = "BufReadPost",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
   },
 }

@@ -1,10 +1,12 @@
+local utils = require("bombeelu.utils")
+
 return {
   {
     "folke/which-key.nvim",
     event = "VeryLazy",
     opts = {
-      -- preset = "modern",
-      preset = "helix",
+      preset = "modern",
+      -- preset = "helix",
       spec = {
         {
           mode = { "n", "v" },
@@ -69,9 +71,7 @@ return {
     "lewis6991/gitsigns.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     event = "BufReadPre",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     opts = {
       sign_priority = 6,
       attach_to_untracked = true,
@@ -139,17 +139,13 @@ return {
   {
     "sindrets/diffview.nvim",
     cmd = { "DiffviewOpen", "DiffviewFileHistory" },
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
   },
   {
     "esmuellert/codediff.nvim",
     dependencies = { "MunifTanjim/nui.nvim" },
     lazy = false,
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     opts = {
       explorer = {
         view_mode = "tree",
@@ -171,17 +167,66 @@ return {
   },
 
   {
+    "MeanderingProgrammer/render-markdown.nvim",
+    ft = { "markdown", "codecompanion", "Avante" },
+    cond = utils.not_vscode,
+    dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-mini/mini.icons" },
+    opts = {
+      anti_conceal = { enabled = false },
+    },
+  },
+
+  {
     "vim-test/vim-test",
+    cond = utils.not_vscode,
     cmd = { "TestNearest", "TestFile", "TestSuite", "TestLast", "TestVisit" },
+    keys = {
+      { "<F7>", vim.cmd.TestNearest, desc = "Run nearest test (vim-test)" },
+      { "<F9>", vim.cmd.TestFile, desc = "Run all tests in file (vim-test)" },
+    },
+    config = function()
+      _G.snacks_test_strategy = function(cmd)
+        Snacks.terminal.open(cmd, {
+          interactive = false,
+          auto_close = false,
+          win = {
+            position = "float",
+            border = "rounded",
+            width = 0.9,
+            height = 0.9,
+            keys = {
+              q = "hide",
+            },
+          },
+        })
+      end
+
+      vim.cmd([[
+        function! SnacksTestStrategy(cmd)
+          let g:test_cmd = a:cmd
+          lua snacks_test_strategy(vim.g.test_cmd)
+        endfunction
+
+        let g:test#custom_strategies = {'snacks': function('SnacksTestStrategy')}
+      ]])
+
+      vim.g["test#strategy"] = "snacks"
+      vim.g["test#ruby#rspec#executable"] = "bundle exec rspec"
+      vim.g["test#ruby#rspec#options"] = {
+        file = "--format documentation --force-color",
+        suite = "--format documentation --force-color",
+        nearest = "--format documentation --force-color",
+      }
+      vim.g["test#javascript#jest#options"] = "--color=always"
+      vim.g["test#typescript#jest#options"] = "--color=always"
+    end,
   },
 
   -- Statusline
   {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     dependencies = { "nvim-mini/mini.icons" },
     config = function()
       local colors = {
@@ -338,9 +383,7 @@ return {
   {
     "folke/noice.nvim",
     event = "VeryLazy",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     dependencies = { "MunifTanjim/nui.nvim" },
     opts = {
       cmdline = {
@@ -418,17 +461,13 @@ return {
   {
     "stevearc/overseer.nvim",
     cmd = { "OverseerRun", "OverseerToggle" },
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     opts = {},
   },
 
   {
     "chrisgrieser/nvim-tinygit",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     config = function()
       require("tinygit").setup({
         commit = {

@@ -1,10 +1,10 @@
+local utils = require("bombeelu.utils")
+
 return {
   {
     "folke/snacks.nvim",
     lazy = false,
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     ---@type fun():snacks.Config
     opts = function()
       local in_git = Snacks.git.get_root() ~= nil
@@ -86,6 +86,7 @@ return {
         function()
           Snacks.terminal.toggle()
         end,
+        mode = { "n", "t" },
         desc = "Toggle Terminal (bottom)",
       },
       {
@@ -93,6 +94,7 @@ return {
         function()
           Snacks.terminal()
         end,
+        mode = { "n", "t" },
         desc = "Toggle Terminal (floating)",
       },
       {
@@ -100,12 +102,30 @@ return {
         function()
           Snacks.terminal()
         end,
+        mode = { "n", "t" },
         desc = "Toggle Terminal (floating)",
       },
       {
         "<leader><space>",
         function()
-          Snacks.picker.smart()
+          Snacks.picker.smart({
+            layout = {
+              layout = {
+                box = "horizontal",
+                width = 0.8,
+                min_width = 120,
+                height = 0.8,
+                {
+                  box = "vertical",
+                  border = true,
+                  title = "{title} {live} {flags}",
+                  { win = "list", border = "none" },
+                  { win = "input", height = 1, border = "top" },
+                },
+                { win = "preview", title = "{preview}", border = true, width = 0.5 },
+              },
+            },
+          })
         end,
         desc = "Files (smart)",
       },
@@ -203,9 +223,7 @@ return {
 
   {
     "dmtrKovalenko/fff.nvim",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    cond = utils.not_vscode,
     event = "VeryLazy",
     build = function()
       require("fff.download").download_or_build_binary()

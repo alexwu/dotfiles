@@ -85,3 +85,12 @@ vim.opt.completeopt = { "menu", "menuone", "noselect" }
 
 -- disable python 2
 vim.g.loaded_python_provider = 0
+
+-- Remove "How-to disable mouse" from right-click popup menu
+vim.api.nvim_create_autocmd("MenuPopup", {
+  once = true,
+  callback = function()
+    pcall(vim.cmd, "aunmenu PopUp.How-to\\ disable\\ mouse")
+    pcall(vim.cmd, "aunmenu PopUp.-2-")
+  end,
+})

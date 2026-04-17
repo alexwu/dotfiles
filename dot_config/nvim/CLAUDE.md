@@ -15,25 +15,49 @@ dot_config/nvim/
 ├── stylua.toml                       # StyLua formatter config for Lua files
 ├── .emmyrc.json                      # EmmyLua LSP config
 ├── .chezmoiignore                    # Chezmoi ignore rules
+├── after/
+│   └── lsp/                          # Per-server config overrides (merged by Neovim runtime)
+│       ├── basedpyright.lua
+│       ├── biome.lua
+│       ├── denols.lua
+│       ├── eslint.lua
+│       ├── ruby_lsp.lua
+│       ├── sorbet.lua
+│       ├── sqruff.lua
+│       ├── tailwindcss.lua
+│       ├── typos_lsp.lua
+│       └── vtsls.lua
+├── plugin/                           # Auto-loaded entry points (sourced at startup via rtp)
+│   ├── bombeelu-git.lua
+│   ├── bombeelu-lspinfo.lua          # Lazy-registers :LspInfo command
+│   ├── bombeelu-neovide.lua          # Guarded by vim.g.neovide
+│   ├── bombeelu-visual-surround.lua
+│   └── bombeelu-vscode.lua           # Guarded by vim.g.vscode
 ├── lua/
 │   ├── options.lua                   # Vim options and basic autocmds
 │   ├── mappings.lua                  # Global keymaps
 │   ├── bombeelu/                     # Custom modules (bombeelu namespace)
 │   │   ├── git.lua                   # Git base branch detection (tiered: PR cache → reflog → merge-base → default)
-│   │   └── visual-surround.lua       # Visual selection surround (parens, quotes, brackets, tags)
+│   │   ├── lspinfo.lua               # :LspInfo floating window implementation
+│   │   ├── neotest.lua               # Neotest command + jump keymaps (currently orphaned)
+│   │   ├── neovide.lua               # Neovide opacity, animations, <D-*> clipboard keymaps
+│   │   ├── utils.lua                 # Platform detection (is_mac, is_vscode, not_vscode, invert)
+│   │   ├── visual-surround.lua       # Visual selection surround (parens, quotes, brackets, tags)
+│   │   └── vscode.lua                # VSCode-embedded-Neovim keymaps
 │   └── plugins/                      # lazy.nvim plugin specs (auto-imported)
 │       ├── colorscheme.lua           # Colorscheme plugin
 │       ├── completion.lua            # Completion engine (blink.cmp)
 │       ├── editor.lua                # Editor utilities (mini.*, conform, gitsigns, etc.)
-│       ├── lsp.lua                   # LSP core: mason, lspconfig, diagnostics, generic servers
+│       ├── linter.lua                # nvim-lint with debounce, fallback, conditional linters
+│       ├── lsp.lua                   # LSP core: mason, lspconfig, diagnostics, servers list
 │       ├── picker.lua                # File/buffer pickers (fff.nvim, snacks)
 │       ├── treesitter.lua            # Treesitter config and modules
 │       ├── ui.lua                    # UI plugins (snacks.nvim, lualine, etc.)
-│       └── lang/                     # Language-specific LSP configurations
-│           ├── python.lua            # basedpyright + ruff
-│           ├── ruby.lua              # ruby_lsp + sorbet
-│           ├── typescript.lua        # vtsls + denols + biome
-│           └── web.lua               # eslint + tailwindcss + html
+│       └── lang/                     # Language/framework-specific plugins (NOT contributions to shared plugins)
+│           ├── just.lua              # nvim-justice
+│           ├── python.lua            # (stub — awaiting python-specific plugins)
+│           ├── rust.lua              # rustaceanvim (manages rust_analyzer internally)
+│           └── typescript.lua        # (stub — awaiting ts-specific plugins)
 └── queries/                          # Custom treesitter queries
     ├── bash/injections.scm
     ├── html/injections.scm
@@ -71,38 +95,13 @@ Multiple specs can reference the same plugin (e.g., `neovim/nvim-lspconfig` appe
 
 ## Adding a New LSP Server
 
-**Generic servers** (no custom config needed): Add to `lsp.lua` in the nvim-lspconfig config function:
+1. Add the server name to the `servers` list in the `neovim/nvim-lspconfig` spec in `lsp.lua` (alphabetical).
+2. If the server needs custom settings/root_markers/cmd, create `after/lsp/<server>.lua` returning the config table. Neovim deep-merges it with nvim-lspconfig's shipped `lsp/<server>.lua` automatically.
+3. Servers that bundle their own LSP management (e.g. rustaceanvim for rust_analyzer) should NOT be added to the `servers` list — they conflict.
 
-```lua
-vim.lsp.enable("server_name")
-```
+The `neovim/nvim-lspconfig` spec uses `opts = { servers = {...} } + opts_extend = { "servers" } + config = function(_, opts)` specifically to avoid the deprecated `require("lspconfig").setup(opts)` auto-call. Keep that structure — removing the `config` function triggers the deprecated path.
 
-**Servers with custom settings**: Add to `lsp.lua` or a `lang/*.lua` file:
-
-```lua
-vim.lsp.config("server_name", {
-  settings = { ... },
-  root_markers = { ... },
-})
-vim.lsp.enable("server_name")
-```
-
-**Language-specific servers**: Create or edit a file in `lua/plugins/lang/`. Use `ft` for lazy-loading by filetype:
-
-```lua
-return {
-  {
-    "neovim/nvim-lspconfig",
-    ft = { "language_name" },
-    config = function()
-      vim.lsp.config("server_name", { ... })
-      vim.lsp.enable("server_name")
-    end,
-  },
-}
-```
-
-Mason auto-enables all installed servers except those in the exclude list (`harper-ls`, `lua_ls`).
+Mason auto-enables installed servers except those in the exclude list (`harper_ls`, `lua_ls`).
 
 ## Dev Plugins
 
@@ -112,8 +111,15 @@ The `bu` library (`alexwu/bu`) provides `bu.keys` and `bu.nvim.repeatable` used 
 
 ## Custom Modules (`lua/bombeelu/`)
 
+Each module with side effects (autocmds, commands, keymaps) has an auto-loaded entry point in `plugin/bombeelu-<name>.lua` guarded by `vim.g.loaded_bombeelu_<name>`. Lightweight entries (e.g. `:LspInfo`) defer the main module `require` until invocation.
+
 - **`bombeelu.git`**: Tiered base branch detection for diff pickers. Async PR cache on `BufEnter` (5-min TTL), cleared on `DirChanged`. Tiers: PR base → reflog → merge-base scan (top 20) → default branch fallback.
 - **`bombeelu.visual-surround`**: Wraps visual selection in pairs. Keymaps: `(`, `{`, `[`, `q` (double quotes), `'`, `` ` ``, `t` (HTML tag prompt).
+- **`bombeelu.lspinfo`**: Floating-window `:LspInfo` reimplementation (the original command was removed from nvim-lspconfig). Filters servers by current filetype.
+- **`bombeelu.vscode`**: VSCode-embedded-Neovim keymaps. Guarded by `vim.g.vscode`.
+- **`bombeelu.neovide`**: Neovide-specific `vim.g.*` options and `<D-*>` system-clipboard bindings. Guarded by `vim.g.neovide`.
+- **`bombeelu.utils`**: Platform detection helpers. `utils.not_vscode` is used as `cond` on UI-heavy plugin specs.
+- **`bombeelu.neotest`**: `:Test` command + jump keymaps. Currently **orphaned** (not wired up from any `plugin/` file).
 
 ## Adding a New Formatter
 
@@ -189,6 +195,15 @@ Uses Neovim 0.12+'s builtin LSP configuration instead of lspconfig's legacy `.se
 - `vim.lsp.config("name", { ... })` to configure
 - `vim.lsp.enable("name")` to activate
 - Mason + mason-lspconfig auto-enables installed servers
+- Per-server overrides live in `after/lsp/<name>.lua` (preferred) rather than inline `vim.lsp.config()` calls
+
+### Lang Files Philosophy
+
+`lua/plugins/lang/<name>.lua` is for **language/framework-specific plugins** (e.g. rustaceanvim, nvim-justice). Contributions to shared plugins (conform formatters, blink sources, nvim-lint linters) live in the main plugin spec, not a lang file. The mergeable `opts + opts_extend` structure is kept on shared plugins in case future needs arise, but lang files don't actively use it. LSP server names live in `lsp.lua`'s central `servers` list — do not put them in lang files.
+
+### Plugin/ auto-load entries
+
+Custom bombeelu modules expose themselves via `plugin/bombeelu-<name>.lua` files that Neovim sources automatically from the runtime path. Each file has a `vim.g.loaded_bombeelu_<name>` guard at the top. Command registration defers `require("bombeelu.<name>")` to invocation time so the full module only loads when used.
 
 ### snacks.nvim as Hub
 

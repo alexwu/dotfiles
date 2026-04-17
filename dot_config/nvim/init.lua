@@ -16,7 +16,7 @@ vim.opt.rtp:prepend(lazypath)
 require("mappings")
 
 require("lazy").setup({
-  spec = { { import = "plugins" } },
+  spec = { { import = "plugins" }, { import = "plugins.lang" } },
   dev = { path = "~/Code/neovim/plugins", patterns = { "alexwu" } },
   install = { colorscheme = { "snazzy" } },
   checker = { enabled = false },
@@ -48,8 +48,5 @@ set(
   { desc = "Add a new line above the current line" }
 )
 
--- Visual surround (parens, quotes, brackets, tags)
-require("bombeelu.visual-surround").setup()
-
--- Git base branch detection (async PR cache + tiered fallbacks)
-require("bombeelu.git").setup()
+-- bombeelu modules (visual-surround, git, lspinfo, vscode, neovide) are
+-- auto-loaded from `plugin/bombeelu-*.lua`.

@@ -1,3 +1,5 @@
+local utils = require("bombeelu.utils")
+
 return {
   { "nvim-lua/plenary.nvim", lazy = true },
   { "alexwu/bu", dev = true },
@@ -247,17 +249,52 @@ return {
     end,
   },
 
+  -- yazi.nvim
+  {
+    "mikavilpas/yazi.nvim",
+    version = "*",
+    event = "VeryLazy",
+    cond = utils.not_vscode,
+    dependencies = {
+      { "nvim-lua/plenary.nvim", lazy = true },
+    },
+    keys = {
+      {
+        "<leader>-",
+        "<cmd>Yazi<cr>",
+        mode = { "n", "v" },
+        desc = "Open yazi at the current file",
+      },
+      {
+        "<leader>cw",
+        "<cmd>Yazi cwd<cr>",
+        desc = "Open yazi in nvim's working directory",
+      },
+      {
+        "<c-up>",
+        "<cmd>Yazi toggle<cr>",
+        desc = "Resume the last yazi session",
+      },
+    },
+    ---@type YaziConfig | {}
+    opts = {
+      open_for_directories = false,
+      keymaps = {
+        show_help = "<f1>",
+      },
+    },
+  },
+
   -- oil.nvim
   {
     "stevearc/oil.nvim",
-    cmd = "Oil",
-    cond = function()
-      return vim.g.vscode == nil
-    end,
+    lazy = false,
+    cond = utils.not_vscode,
     keys = {
       { "-", "<CMD>Oil<CR>", desc = "Open parent directory" },
     },
     opts = {
+      default_file_explorer = true,
       win_options = {
         signcolumn = "yes:2",
       },
@@ -286,44 +323,46 @@ return {
   {
     "stevearc/conform.nvim",
     lazy = false,
-    config = function()
-      require("conform").setup({
-        formatters_by_ft = {
-          ["markdown.mdx"] = { "prettier" },
-          c = { "clang_format" },
-          cmake = { "cmake_format" },
-          cpp = { "clang_format" },
-          css = { "prettier" },
-          eruby = { "rustywind" },
-          go = { "gofmt" },
-          graphql = { "prettier" },
-          gdscript = { "gdformat" },
-          handlebars = { "prettier" },
-          html = { "prettier" },
-          javascript = { "prettier" },
-          javascriptreact = { "prettier" },
-          json = { "biome", "prettier", stop_after_first = true },
-          jsonc = { "prettier" },
-          just = { "just" },
-          less = { "prettier" },
-          lua = { "stylua" },
-          liquid = { "prettier" },
-          markdown = { "prettier" },
-          python = { "ruff" },
-          ruby = { "rubyfmt", "syntax_tree", stop_after_first = true },
-          rust = { "rustfmt" },
-          scss = { "prettier" },
-          sql = { "sqruff" },
-          toml = { "taplo" },
-          typescript = { "biome", "prettier", stop_after_first = true },
-          typescriptreact = { "prettier" },
-          vue = { "prettier" },
-          yaml = { "prettier" },
-          swift = { "swift", "swiftformat", stop_after_first = true },
-          xml = { "xmlformatter" },
-          zig = { "zigfmt" },
-        },
-      })
+    opts = {
+      formatters_by_ft = {
+        ["markdown.mdx"] = { "oxfmt", "prettier" },
+        c = { "clang_format" },
+        cmake = { "cmake_format" },
+        cpp = { "clang_format" },
+        css = { "oxfmt", "prettier" },
+        eruby = { "rustywind" },
+        go = { "gofmt" },
+        graphql = { "prettier" },
+        gdscript = { "gdformat" },
+        handlebars = { "prettier" },
+        html = { "oxfmt", "prettier" },
+        javascript = { "oxfmt", "prettier" },
+        javascriptreact = { "oxfmt", "prettier" },
+        json = { "oxfmt", "prettier", stop_after_first = true },
+        jsonc = { "oxfmt", "prettier" },
+        just = { "just" },
+        less = { "prettier" },
+        lua = { "stylua" },
+        liquid = { "prettier" },
+        markdown = { "oxfmt", "prettier" },
+        nim = { "nph" },
+        python = { "ruff" },
+        ruby = { "rubyfmt", "syntax_tree", stop_after_first = true },
+        rust = { "rustfmt" },
+        scss = { "oxfmt", "prettier" },
+        sql = { "sqruff" },
+        toml = { "taplo" },
+        typescript = { "oxfmt", "biome", "prettier", stop_after_first = true },
+        typescriptreact = { "oxfmt", "prettier" },
+        vue = { "oxfmt", "prettier" },
+        yaml = { "oxfmt", "prettier" },
+        swift = { "swift", "swiftformat", stop_after_first = true },
+        xml = { "xmlformatter" },
+        zig = { "zigfmt" },
+      },
+    },
+    config = function(_, opts)
+      require("conform").setup(opts)
 
       vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
 
@@ -426,12 +465,21 @@ return {
     -- version = "*",
     lazy = false,
     build = "cd server && go build",
+    cond = utils.not_vscode,
     opts = {
+      ui = {
+        completions = {
+          fg_opacity = 0.8,
+        },
+      },
       provider = {
         type = "sweep",
+        -- type = "zeta",
         url = "http://localhost:8000",
-        model = "sweepai/sweep-next-edit-1.5b",
-
+        -- model = "sweepai/sweep-next-edit-1.5b",
+        model = "henrik3/sweep-next-edit-v2-7B",
+        -- model = "zed-industries/zeta-2",
+        -- max_tokens = 2048,
         -- type = "sweepapi",
         -- api_key_env = "SWEEPAPI_TOKEN",
       },
