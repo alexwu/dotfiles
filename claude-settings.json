@@ -40,11 +40,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/secret-guard"
+            "command": "/Users/jamesbombeelu/.local/bin/secret-guard",
+            "statusMessage": "Checking for sensitive paths..."
           },
           {
             "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/git-add-guard"
+            "command": "/Users/jamesbombeelu/.local/bin/git-add-guard",
+            "if": "Bash(git add *)",
+            "statusMessage": "Checking git add pattern..."
           }
         ]
       }
