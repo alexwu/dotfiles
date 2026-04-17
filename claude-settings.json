@@ -70,7 +70,6 @@
     "feature-dev@claude-plugins-official": true,
     "github@claude-plugins-official": true,
     "gopls-lsp@claude-plugins-official": true,
-    "hookify@claude-plugins-official": true,
     "linear@claude-plugins-official": true,
     "mcp-server-dev@claude-plugins-official": true,
     "notion@claude-plugins-official": true,
