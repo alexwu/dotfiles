@@ -12,3 +12,12 @@ claude-settings.json
 codex-config.toml
 mise-config.toml
 zed-settings.json
+
+# Claude Code project context (lives in source dir only)
+CLAUDE.md
+
+# Firecrawl scrape dumps
+.firecrawl/
+
+# Script sources (versioned in repo, built to ~/.local/bin/ — don't deploy the source tree)
+scripts/

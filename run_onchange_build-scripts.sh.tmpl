@@ -1,0 +1,22 @@
+#!/bin/bash
+# Rebuilds compiled binaries from scripts/ into ~/.local/bin/.
+# chezmoi re-runs this script whenever the rendered template changes;
+# source-file hashes below are what make the template change on edit.
+
+set -euo pipefail
+
+mkdir -p "$HOME/.local/bin"
+
+# ---- secret-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/secret_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/secret_guard.nim" }}"
+  TARGET="$HOME/.local/bin/secret-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping secret-guard" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}

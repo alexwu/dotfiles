@@ -165,25 +165,35 @@ then
   eval "$(fnox activate zsh)"
 fi
 
-# if (( $+commands[codex] ))
-# then
-  # alias claudex="OPENROUTER_API_KEY="$(op read "op://personal/Open Router API Key/credential" --no-newline)" codex --profile claude"
-# fi
+if [[ -d ${NIMBLE_DIR:-$HOME/.nimble}/bin ]]; then
+  path=(${NIMBLE_DIR:-$HOME/.nimble}/bin $path)
+fi
 
+# NOTE: zim-init.zsh runs compinit — anything depending on compdef must come after this line
 source $HOME/.zsh/zim-init.zsh
 
 # Override zim's completion format — fzf-tab can't parse zsh color codes
 zstyle ':completion:*:descriptions' format '[%d]'
 
 # NOTE: Load completions that depend on compdef AFTER zim initializes
-if (( $+commands[sk] ))
+# if (( $+commands[sk] ))
+# then
+#   eval "$(sk --shell zsh --shell-bindings)"
+# fi
+
+if (( $+commands[tv] ))
 then
-  eval "$(sk --shell zsh --shell-bindings)"
+  eval "$(tv init zsh)"
 fi
 
 if (( $+commands[carapace] ))
 then
   source <(carapace _carapace zsh)
+fi
+
+if (( $+commands[just] ))
+then
+  source <(JUST_COMPLETE=zsh just)
 fi
 
 if command -v ngrok &>/dev/null; then
@@ -200,13 +210,17 @@ if (( $+commands[zoxide] ))
 then
   function __zoxide_z_complete() {
     [[ "${#words[@]}" -eq "${CURRENT}" ]] || return 0
-    local -a paths entries
+    local -a paths entries local_dirs
     paths=("${(@f)$(zoxide query -l -- ${words[2,-1]} 2>/dev/null)}")
     local p short
     for p in "${paths[@]}"; do
       [[ -z "$p" ]] && continue
       short="${p/#$HOME/~}"
       entries+=("${p:t}:${short}")
+    done
+    local_dirs=( *(N/) )
+    for p in "${local_dirs[@]}"; do
+      entries+=("${p}:./${p}")
     done
     _describe 'zoxide directory' entries -U
     return 0
@@ -223,7 +237,7 @@ else
   eval "$(starship init zsh)"
 fi
 
-if (( $+commands[pokemon-colorscripts] ))
+if [[ -z $CLAUDECODE ]] && (( $+commands[pokemon-colorscripts] ))
 then
   pokemon-colorscripts -r --no-title
 fi
