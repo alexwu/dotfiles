@@ -35,6 +35,26 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- sec-guard (Nim, requires cligen) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/sec_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/sec_guard.nim" }}"
+  TARGET="$HOME/.local/bin/sec-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping sec-guard" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping sec-guard" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for sec-guard"
+      nimble install -y cligen >/dev/null
+    fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- notify (Nim, requires cligen) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/notify.nim") | sha256sum }}
 {

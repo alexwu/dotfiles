@@ -59,6 +59,17 @@
             "command": "/Users/jamesbombeelu/.local/bin/notify PreToolUse"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/sec-guard check",
+            "statusMessage": "Security check...",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "Stop": [
@@ -77,6 +88,17 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/notify Notification"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/sec-guard cleanup",
+            "timeout": 5
           }
         ]
       }
@@ -109,7 +131,7 @@
     "ruby-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "rust-analyzer@claude-code-lsps": true,
-    "security-guidance@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": false,
     "skill-codex@skill-codex": true,
     "skill-creator@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
