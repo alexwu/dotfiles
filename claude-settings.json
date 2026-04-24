@@ -6,6 +6,7 @@
     "DISABLE_AUTOUPDATER": "1",
     "ENABLE_CLAUDEAI_MCP_SERVERS": "0"
   },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Read(/tmp/**)",
@@ -32,7 +33,6 @@
       "Bash(git remote *)"
     ]
   },
-  "includeCoAuthoredBy": false,
   "hooks": {
     "PreToolUse": [
       {
@@ -48,6 +48,35 @@
             "command": "/Users/jamesbombeelu/.local/bin/git-add-guard",
             "if": "Bash(git add *)",
             "statusMessage": "Checking git add pattern..."
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/notify PreToolUse"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/notify Stop"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/notify Notification"
           }
         ]
       }
@@ -89,7 +118,8 @@
     "typescript-lsp@claude-plugins-official": true,
     "vtsls@claude-code-lsps": true,
     "xcsift@xcsift": true,
-    "clangd-lsp@claude-plugins-official": true
+    "clangd-lsp@claude-plugins-official": true,
+    "remember@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {
@@ -129,7 +159,8 @@
       }
     }
   },
-  "effortLevel": "medium",
+  "effortLevel": "xhigh",
+  "tui": "fullscreen",
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
