@@ -34,6 +34,8 @@
 - `run_onchange_install-packages.sh.tmpl` — runs `brew bundle` from the packages data; re-runs when packages.yaml changes
 - Neovim is installed as a **HEAD brew** (`neovim --HEAD`) — targets nightly builds
 - `empty_dot_hushlogin` — creates empty `~/.hushlogin` to suppress macOS login banner
+- `chezmoi destroy <target>` removes from BOTH source state and destination. `chezmoi forget` only drops from source state (leaves deployed file). Use `destroy` to fully retire a managed file.
+- `chezmoi apply` runs every changed template — if you only want one target rebuilt while other files are dirty, run the underlying command directly (e.g. `nim c -o:~/.local/bin/X scripts/.../X.nim`) and let the source hash sync on the next full apply.
 
 ## Shell (zsh)
 - Framework: **Zim** (`private_dot_zimrc`) — handles modules, compinit, completions
@@ -202,11 +204,15 @@
 - `run_onchange_build-scripts.sh.tmpl` — chezmoi rebuilds on source-hash change (`include … | sha256sum`), skips cleanly if compiler missing
 - `scripts/claude/secret_guard.nim` is a PreToolUse Bash hook that gates commands **reading content from** sensitive paths — not anything that merely mentions one. Splits the command on shell chaining (`|`, `;`, `&`, backtick, `$(`); for each segment, denies when the leading program is a content-reader (`cat`/`bat`/`rg`/`head`/`cp`/`curl`/`scp`/`openssl`/`jq`/`tar`/etc.) AND the segment mentions a sensitive path. Non-readers (`ls`/`eza`/`stat`/`echo`/`printf`/`git commit`/`git log`/…) pass through regardless of argument contents — that's why `git commit -m "…about .env…"` no longer false-positives. Sensitive paths covered: SSH keys, `.env`/`.envrc`, cloud creds, age/sops, rclone/ngrok/fnox/Copilot tokens, atuin sync key. Known miss: `ls ~/.ssh/ | xargs cat` — per-segment reasoning can't correlate listings with downstream readers (a full shell parser would be needed).
 - `scripts/claude/git_add_guard.nim` is a PreToolUse Bash hook that blocks bulk `git add` forms (`-A`, `--all`, `.`, `-u`, `--update`) to force explicit-path staging. Pass-through for `git add <path>`, `git add dir/`, `git add -p`, and non-`git add` commands. Trailing `(\s|$)` on each blocked pattern prevents `--all-hands` / `.bashrc` false-positives.
+- `scripts/claude/notify.nim` is a Stop/Notification/PreToolUse hook. cligen `dispatchMulti` dispatches on the first positional arg (`Stop`/`Notification`/`PreToolUse`). Backends are pluggable via a module-level `notifiers: array[N, Notifier]` — to add one, write a `proc(n: Notification): seq[seq[string]]` returning argv-lists (or `@[]` to decline) and append. `apprise` + `grrr` (zellij-only click-to-focus) are built-in.
+- `scripts/claude/sec_guard.nim` is a PreToolUse Edit/Write/MultiEdit hook (+ SessionEnd cleanup via cligen `dispatchMulti check|cleanup`). Nim port of the upstream `security-guidance` plugin (which is disabled in `enabledPlugins` in favor of this). 9 rules in a module-level `seq[Rule]`. Uses `permissionDecision: "ask"` by default (`SEC_GUARD_MODE=deny` for legacy blocking behavior). Session-scoped dedup via `~/.claude/security_warnings_state_<sid>.json`.
 
 ## Nim gotchas (this repo)
 - Source filenames must be valid Nim identifiers — underscores, not hyphens (`secret_guard.nim`, NOT `secret-guard.nim`). Binary output name (`-o:`) can still use hyphens.
 - `std/re` can't compile patterns at `const` time in Nim 2.2+ — use `let` for module-level regex
 - `nph` lives in `~/.nimble/bin/`; once zshrc is applied, it's on PATH via `path=(${NIMBLE_DIR:-$HOME/.nimble}/bin $path)`. `nimble shellenv` is project-scoped — NOT for rc-file use.
+- `std/md5` is deprecated in Nim 2.2+ (points at the `checksums` nimble pkg). Stdlib version still works — wrap the import in `{.push warning[Deprecated]: off.}` / `{.pop.}` if you don't want the extra dep.
+- For Nim CLIs with args/subcommands, use `cligen` (`dispatch` or `dispatchMulti`). Build stanza must `nimble install -y cligen` before `nim c` — see the `notify` stanza in `run_onchange_build-scripts.sh.tmpl` for the `nimble path cligen || nimble install` guard pattern.
 
 ## Claude Code hooks
 - Global settings at `~/.claude/settings.json` — NOT chezmoi-managed
@@ -214,3 +220,7 @@
 - Deny JSON: `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"…"}}`
 - **Gotcha:** inline test payloads containing sensitive strings (e.g. `echo '{"tool_input":{"command":"cat ~/.ssh/id_rsa"}}' | hook`) trip the hook because YOUR bash command contains the sensitive path. Put test payloads in a `/tmp/*.sh` script and `bash` it.
 - After editing settings.json, open `/hooks` or start a new session so the watcher picks up changes
+- Non-Bash events work too: `Stop`, `Notification`, `SubagentStop`, etc. — each is its own top-level key in `hooks`. `PreToolUse` accepts `matcher: "<tool name>"` for any tool (e.g. `"AskUserQuestion"`), not just `"Bash"`. Scope narrowly — without a matcher, the hook fires on every tool invocation.
+- **Gotcha:** `/plugin` disable rewrites `claude-settings.json` and can strip unrelated hook entries. Disabling `security-guidance` via `/plugin` also removed my Stop/Notification/AskUserQuestion notify hooks. Always `git diff claude-settings.json` after any `/plugin` action and restore anything that got wiped.
+- `PreToolUse` decision output in `hookSpecificOutput`: `permissionDecision: "allow" | "deny" | "ask"` + `permissionDecisionReason`. Plus `updatedInput: { ... }` to rewrite the tool call entirely (e.g. rewrite `grep` → `rg`). Use `"ask"` for advisory/reminder hooks; `"deny"` is a hard block that can even prevent writing documentation *about* the hook's own trigger patterns.
+- Per-hook settings.json fields: `if: "Edit(*.ts)"` (permission-rule-syntax filter for tool+path; tool name appears to be required, alternation like `Edit|Write(*.py)` unverified), `statusMessage: "..."` (custom spinner text), `timeout: 5` (override the 600 s default for hot-path hooks that should never legitimately hang).
