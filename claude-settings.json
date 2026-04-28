@@ -49,6 +49,9 @@
       "Bash(gh release create*)",
       "Bash(npm publish*)",
       "Bash(cargo publish*)"
+    ],
+    "deny": [
+      "Agent(Explore)"
     ]
   },
   "hooks": {
@@ -225,11 +228,12 @@
   },
   "effortLevel": "xhigh",
   "tui": "fullscreen",
+  "editorMode": "vim",
+  "verbose": true,
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
-  },
-  "editorMode": "vim",
-  "remoteControlAtStartup": true,
-  "agentPushNotifEnabled": true
+  }
 }

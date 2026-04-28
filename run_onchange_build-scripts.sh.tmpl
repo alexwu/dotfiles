@@ -35,6 +35,20 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- git-readonly-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/git_readonly_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/git_readonly_guard.nim" }}"
+  TARGET="$HOME/.local/bin/git-readonly-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping git-readonly-guard" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- sec-guard (Nim, requires cligen) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/sec_guard.nim") | sha256sum }}
 {
