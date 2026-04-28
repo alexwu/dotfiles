@@ -45,6 +45,7 @@
       "Bash(railway down*)",
       "Bash(railway service*)",
       "Bash(railway variables*)",
+      "Bash(railway volume*)",
       "Bash(gh release create*)",
       "Bash(npm publish*)",
       "Bash(cargo publish*)"
