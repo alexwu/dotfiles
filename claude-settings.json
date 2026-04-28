@@ -31,6 +31,23 @@
       "Bash(git show *)",
       "Bash(git branch *)",
       "Bash(git remote *)"
+    ],
+    "ask": [
+      "Bash(heroku run:*)",
+      "Bash(heroku ps:*)",
+      "Bash(heroku config:set*)",
+      "Bash(heroku pg:*)",
+      "Bash(heroku restart*)",
+      "Bash(heroku scale*)",
+      "Bash(railway run:*)",
+      "Bash(railway up*)",
+      "Bash(railway redeploy*)",
+      "Bash(railway down*)",
+      "Bash(railway service*)",
+      "Bash(railway variables*)",
+      "Bash(gh release create*)",
+      "Bash(npm publish*)",
+      "Bash(cargo publish*)"
     ]
   },
   "hooks": {
@@ -66,8 +83,8 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/sec-guard check",
-            "statusMessage": "Security check...",
-            "timeout": 5
+            "timeout": 5,
+            "statusMessage": "Security check..."
           }
         ]
       }
@@ -98,6 +115,29 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/sec-guard cleanup",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor session-start",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor prompt-submit",
             "timeout": 5
           }
         ]
@@ -141,7 +181,8 @@
     "vtsls@claude-code-lsps": true,
     "xcsift@xcsift": true,
     "clangd-lsp@claude-plugins-official": true,
-    "remember@claude-plugins-official": true
+    "remember@claude-plugins-official": true,
+    "coderabbit@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {
@@ -186,5 +227,8 @@
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
-  }
+  },
+  "editorMode": "vim",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true
 }
