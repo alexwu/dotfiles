@@ -48,7 +48,8 @@
       "Bash(railway volume*)",
       "Bash(gh release create*)",
       "Bash(npm publish*)",
-      "Bash(cargo publish*)"
+      "Bash(cargo publish*)",
+      "Bash(chezmoi apply*)"
     ],
     "deny": [
       "Agent(Explore)"
