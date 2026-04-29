@@ -206,6 +206,13 @@
 - `scripts/claude/git_add_guard.nim` is a PreToolUse Bash hook that blocks bulk `git add` forms (`-A`, `--all`, `.`, `-u`, `--update`) to force explicit-path staging. Pass-through for `git add <path>`, `git add dir/`, `git add -p`, and non-`git add` commands. Trailing `(\s|$)` on each blocked pattern prevents `--all-hands` / `.bashrc` false-positives.
 - `scripts/claude/git_readonly_guard.nim` is a PreToolUse Bash hook scoped via subagent frontmatter to `code-explorer` (NOT global). Splits the command on shell chaining (`|`, `;`, `&`, backtick, `$(`, newline); for each segment that starts with `git`, allows only the read-only verb allowlist (`log`, `diff`, `show`, `blame`, `status`, `reflog`, `shortlog`, `grep`, `ls-files`, `ls-tree`, `cat-file`, `rev-parse`, `rev-list`, `describe`, `name-rev`, `merge-base`); anything else returns `permissionDecision: "deny"`. Non-git segments pass through untouched. Compound commands like `true && git push` are caught because the splitter handles `&&`.
 
+## Custom skills
+- `dot_claude/skills/plan-mode-plans/` — base skill loaded automatically when entering plan mode (per `~/.claude/CLAUDE.md` rule). Defines the explore→clarify→draft→exit-plan-mode workflow with self-containment requirements.
+- `dot_claude/skills/plan-mode-plans-tdd/` — variant with TDD red-green-refactor steps.
+- `dot_claude/skills/plan-mode-plans-agent-teams/` — variant that dispatches parallel exploration via agent teams.
+- `dot_claude/skills/plan-mode-plans-agent-teams-tdd/` — combined TDD + agent-teams variant.
+- Each skill is a single `SKILL.md` file with frontmatter (`name`, `description`) plus the body. Loaded by Claude Code automatically when its description matches.
+
 ## Custom subagents
 - `dot_claude/agents/code-explorer.md` — local-codebase research. Sonnet, `tools: Read, Grep, Glob, Bash`, `memory: project`, preloads `ast-grep` skill, frontmatter PreToolUse hook on `Bash` matcher → `git-readonly-guard`. System prompt bans `find | xargs grep`, `| head -N` truncation, training-data recall.
 - `dot_claude/agents/github-explorer.md` — GitHub-only remote research (code, issues, PRs, releases, tags, commits). Sonnet, full GitHub MCP read-only allowlist + Read + Bash for `gh` CLI fallback, `memory: user`. System prompt bans `git clone` for exploration; non-GitHub repos get bounced back to `web-explorer`.
