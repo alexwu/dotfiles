@@ -32,6 +32,9 @@
       "Bash(git branch *)",
       "Bash(git remote *)"
     ],
+    "deny": [
+      "Agent(Explore)"
+    ],
     "ask": [
       "Bash(heroku run:*)",
       "Bash(heroku ps:*)",
@@ -49,10 +52,11 @@
       "Bash(gh release create*)",
       "Bash(npm publish*)",
       "Bash(cargo publish*)",
-      "Bash(chezmoi apply*)"
-    ],
-    "deny": [
-      "Agent(Explore)"
+      "Bash(chezmoi apply*)",
+      "Bash(chezmoi destroy*)",
+      "Bash(chezmoi purge*)",
+      "Bash(chezmoi forget*)",
+      "Bash(chezmoi init*)"
     ]
   },
   "hooks": {
@@ -236,5 +240,6 @@
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
-  }
+  },
+  "skipAutoPermissionPrompt": true
 }
