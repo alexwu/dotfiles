@@ -4,3 +4,37 @@
 
 [mgr]
 show_hidden = true
+
+# yazi matches `url` against the FULL path (`url.loc().encoded_bytes()` in
+# yazi-config/src/pattern.rs), so patterns without wildcards must equal the
+# full path verbatim. `**/justfile` lets the `**` absorb the directory
+# prefix; bare `justfile` would only match a file whose full URL is exactly
+# `justfile`.
+[plugin]
+prepend_previewers = [
+  { url = "*.md", run = 'faster-piper --rely-on-preloader' },
+  { url = "*.tar*", run = 'faster-piper --rely-on-preloader --format=url' },
+  { url = "*.txt.gz", run = 'faster-piper --rely-on-preloader' },
+  { url = "**/justfile", run = 'faster-piper --rely-on-preloader' },
+  { url = "**/.justfile", run = 'faster-piper --rely-on-preloader' },
+  { url = "*.just", run = 'faster-piper --rely-on-preloader' },
+]
+
+prepend_preloaders = [
+  { url = "*.md", run = 'faster-piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dracula -- "$1"' },
+  { url = "*.tar*", run = 'faster-piper -- tar tf "$1"' },
+  { url = "*.txt.gz", run = 'faster-piper -- gzip -dc "$1"' },
+  { url = "**/justfile", run = 'faster-piper -- just -g ts-hl "$1"' },
+  { url = "**/.justfile", run = 'faster-piper -- just -g ts-hl "$1"' },
+  { url = "*.just", run = 'faster-piper -- just -g ts-hl "$1"' },
+]
+
+[[plugin.prepend_fetchers]]
+id = "git"
+url = "*"
+run = "git"
+
+[[plugin.prepend_fetchers]]
+id = "git"
+url = "*/"
+run = "git"

@@ -1,0 +1,140 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Fetches & builds tree-sitter grammars via helix's grammar manager, then
+# symlinks each grammar into a tree-sitter-CLI-friendly layout.
+#
+# Why the symlinks: tree-sitter's `parser-directories` loader strictly
+# requires folders named `tree-sitter-<lang>` (see
+# crates/loader/src/loader.rs `parser_dir_name.starts_with("tree-sitter-")`),
+# but helix clones to bare `<lang>/`. The symlink loop bridges that gap.
+#
+# Idempotent: hx fetch/build are revision-aware and skip up-to-date grammars,
+# and the symlink refresh recreates the alias dir each run so removals
+# propagate when helix's languages.toml drops a grammar.
+
+set -euo pipefail
+
+if ! command -v hx >/dev/null 2>&1; then
+  echo "install-ts-grammars: hx not found on PATH, skipping" >&2
+  exit 0
+fi
+
+mkdir -p "$HOME/.config/helix"
+
+SOURCES_DIR="$HOME/.config/helix/runtime/grammars/sources"
+PARSERS_DIR="$HOME/.local/share/tree-sitter/parsers"
+
+# Self-healing fetch: helix's grammar fetcher uses `git fetch` against the
+# local origin, which goes stale when languages.toml swaps a grammar's source
+# repo (e.g. dannylongeuay/tree-sitter-go-template -> ngalaiko/...). On
+# failure we parse helix's "Failure N/M: <name> ..." lines, rm the affected
+# clones so the retry hits the clone path with the current URL.
+fetch_log=$(mktemp -t install-ts-grammars.XXXXXX)
+trap 'rm -f "$fetch_log"' EXIT
+
+run_fetch() {
+  hx --grammar fetch 2>&1 | tee "$fetch_log"
+  return "${PIPESTATUS[0]}"
+}
+
+parse_failures() {
+  rg --no-line-number -o '^Failure \d+/\d+: (\S+)' --replace '$1' "$1" || true
+}
+
+dump_clone_urls() {
+  # Re-run with GIT_TRACE=2 to surface the clone URLs being attempted for
+  # each grammar. Without this, a dead URL baked into helix's bundled
+  # languages.toml is invisible — no local origin to inspect after rm -rf.
+  echo "install-ts-grammars: capturing clone URLs via GIT_TRACE..." >&2
+  GIT_TRACE=2 hx --grammar fetch 2>&1 \
+    | rg -i 'git clone|^Failure ' \
+    | sed 's/^[0-9:.]* *[^:]*:[0-9]* *trace: */  /' >&2 || true
+}
+
+echo "install-ts-grammars: fetching grammars (incremental)..."
+if ! run_fetch; then
+  failures=$(parse_failures "$fetch_log")
+  if [[ -z "$failures" ]]; then
+    echo "install-ts-grammars: fetch failed, no recoverable failures detected" >&2
+    exit 1
+  fi
+
+  echo "install-ts-grammars: failed grammars: $(tr '\n' ' ' <<<"$failures")"
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    if [[ -d "$SOURCES_DIR/$name/.git" ]]; then
+      origin=$(git -C "$SOURCES_DIR/$name" remote get-url origin 2>/dev/null || echo "<unknown>")
+      echo "  $name: local origin was $origin (clearing for fresh clone)"
+    else
+      echo "  $name: no local clone present — fresh clone will be attempted"
+    fi
+    rm -rf "${SOURCES_DIR:?}/$name"
+  done <<<"$failures"
+
+  echo "install-ts-grammars: retrying fetch..."
+  if ! run_fetch; then
+    retry_failures=$(parse_failures "$fetch_log")
+    echo "install-ts-grammars: fetch STILL failing for: $(tr '\n' ' ' <<<"$retry_failures")" >&2
+    echo "install-ts-grammars: rm -rf did not help, suggests the bundled URL" >&2
+    echo "install-ts-grammars: itself is dead. Dumping attempted clone URLs:" >&2
+    dump_clone_urls
+    echo "install-ts-grammars: fix by adding a [[grammar]] override to" >&2
+    echo "  ~/.config/helix/languages.toml — see existing override file." >&2
+    exit 1
+  fi
+fi
+
+echo "install-ts-grammars: building grammars (incremental)..."
+hx --grammar build
+
+if [[ ! -d "$SOURCES_DIR" ]]; then
+  echo "install-ts-grammars: $SOURCES_DIR missing after fetch, bailing" >&2
+  exit 1
+fi
+
+# Symlink helix's runtime queries into each grammar source dir. Many
+# tree-sitter grammars (just, c-sharp, etc.) are parser-only — they don't
+# ship a queries/ subdir, expecting the editor to provide them. Tree-sitter
+# CLI auto-discovers <grammar>/queries/highlights.scm by convention, so
+# linking helix's queries makes `tree-sitter highlight` produce useful
+# output for these otherwise-bare grammars. CLI prints a soft warning about
+# the missing `highlights` field in tree-sitter.json — harmless.
+HELIX_QUERIES_DIR="$(brew --prefix helix 2>/dev/null)/libexec/runtime/queries"
+queries_linked=0
+queries_skipped_existing=0
+queries_skipped_no_helix=0
+if [[ -d "$HELIX_QUERIES_DIR" ]]; then
+  for src in "$SOURCES_DIR"/*/; do
+    [[ -d "$src" ]] || continue
+    src="${src%/}"
+    name=$(basename "$src")
+    if [[ -e "$src/queries" ]]; then
+      queries_skipped_existing=$((queries_skipped_existing + 1))
+      continue
+    fi
+    if [[ -d "$HELIX_QUERIES_DIR/$name" ]]; then
+      ln -sfn "$HELIX_QUERIES_DIR/$name" "$src/queries"
+      queries_linked=$((queries_linked + 1))
+    else
+      queries_skipped_no_helix=$((queries_skipped_no_helix + 1))
+    fi
+  done
+  echo "install-ts-grammars: queries — linked=$queries_linked, kept-own=$queries_skipped_existing, no-helix-queries=$queries_skipped_no_helix"
+else
+  echo "install-ts-grammars: helix queries dir not found at $HELIX_QUERIES_DIR — skipping query symlinks" >&2
+fi
+
+mkdir -p "$PARSERS_DIR"
+find "$PARSERS_DIR" -maxdepth 1 -type l -name 'tree-sitter-*' -delete
+
+count=0
+for src in "$SOURCES_DIR"/*/; do
+  [[ -d "$src" ]] || continue
+  src="${src%/}"
+  name=$(basename "$src")
+  ln -sf "$src" "$PARSERS_DIR/tree-sitter-$name"
+  count=$((count + 1))
+done
+
+echo "install-ts-grammars: linked $count grammars into $PARSERS_DIR"
+{{ end -}}

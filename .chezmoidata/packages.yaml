@@ -38,6 +38,7 @@ packages:
       - go
       - grex
       - harper
+      - helix
       - heroku
       - hexyl
       - hyperfine
@@ -110,7 +111,7 @@ packages:
     casks:
       - 1password
       - 1password-cli
-      - claude-code
+      - claude-code@latest
       - nikitabobko/tap/aerospace
       - arq
       - betterdisplay

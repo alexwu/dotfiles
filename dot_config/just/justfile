@@ -2,17 +2,199 @@ default:
     @just -g -l
 
 [group("mac")]
+[no-cd]
 remove-quarantine FILE:
     xattr -d com.apple.quarantine {{ FILE }}
 
 [group("docker")]
+[no-cd]
 docker-build COMPOSE:
     docker compose -f {{ COMPOSE }} up --build
 
 [group("docker")]
+[no-cd]
 docker-rebuild COMPOSE:
     docker compose down && docker compose -f {{ COMPOSE }} up --build
 
 [group("mcp")]
 mcp-inspector:
     bunx @modelcontextprotocol/inspector
+
+LLAMA_SWAP := "http://localhost:8000"
+
+[group("llm")]
+[doc("List models exposed by llama-swap")]
+llm-models:
+    xh -b GET {{ LLAMA_SWAP }}/v1/models
+
+LLM_DEFAULT_MODEL := "anthropic/claude-haiku-4.5"
+
+[group("llm")]
+[doc("Chat completion: just llm-chat [-m MODEL] [--stream] PROMPT...")]
+[arg("model", long, short="m")]
+[arg("stream", long, value="true")]
+llm-chat model=LLM_DEFAULT_MODEL stream="false" +prompt="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z {{ quote(prompt) }} ]]; then
+        echo "error: prompt required" >&2
+        exit 1
+    fi
+    body=$(jaq -n --arg m {{ quote(model) }} --arg p {{ quote(prompt) }} --argjson s {{ stream }} \
+        '{model: $m, messages: [{role: "user", content: $p}], stream: $s}')
+    if [[ "{{ stream }}" == "true" ]]; then
+        echo "$body" | xh --stream POST {{ LLAMA_SWAP }}/v1/chat/completions
+    else
+        echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
+    fi
+
+[group("llm")]
+[doc("Chat with prompt from stdin: cat file.txt | just llm-pipe [-m MODEL] [--stream]")]
+[arg("model", long, short="m")]
+[arg("stream", long, value="true")]
+llm-pipe model=LLM_DEFAULT_MODEL stream="false":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    prompt=$(cat)
+    body=$(jaq -n --arg m {{ quote(model) }} --arg p "$prompt" --argjson s {{ stream }} \
+        '{model: $m, messages: [{role: "user", content: $p}], stream: $s}')
+    if [[ "{{ stream }}" == "true" ]]; then
+        echo "$body" | xh --stream POST {{ LLAMA_SWAP }}/v1/chat/completions
+    else
+        echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
+    fi
+
+[group("llm")]
+[doc("Responses API: just llm-respond [-m MODEL] [--stream] PROMPT...")]
+[arg("model", long, short="m")]
+[arg("stream", long, value="true")]
+llm-respond model=LLM_DEFAULT_MODEL stream="false" +prompt="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z {{ quote(prompt) }} ]]; then
+        echo "error: prompt required" >&2
+        exit 1
+    fi
+    body=$(jaq -n --arg m {{ quote(model) }} --arg p {{ quote(prompt) }} --argjson s {{ stream }} \
+        '{model: $m, input: $p, stream: $s}')
+    if [[ "{{ stream }}" == "true" ]]; then
+        echo "$body" | xh --stream POST {{ LLAMA_SWAP }}/v1/responses
+    else
+        echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/responses
+    fi
+
+[group("llm")]
+[doc("Responses API with prompt from stdin: cat file.txt | just llm-respond-pipe [-m MODEL] [--stream]")]
+[arg("model", long, short="m")]
+[arg("stream", long, value="true")]
+llm-respond-pipe model=LLM_DEFAULT_MODEL stream="false":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    prompt=$(cat)
+    body=$(jaq -n --arg m {{ quote(model) }} --arg p "$prompt" --argjson s {{ stream }} \
+        '{model: $m, input: $p, stream: $s}')
+    if [[ "{{ stream }}" == "true" ]]; then
+        echo "$body" | xh --stream POST {{ LLAMA_SWAP }}/v1/responses
+    else
+        echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/responses
+    fi
+
+[group("llm")]
+[doc("Pick a model interactively and print the chosen id: just llm-pick [-p PICKER]")]
+[arg("picker", long, short="p")]
+llm-pick picker="choose":
+    xh -b GET {{ LLAMA_SWAP }}/v1/models | jaq -r '.data[].id' | {{ picker }}
+
+[group("llm")]
+[doc("Pick a model interactively, then chat: just llm-chat-pick [--stream] [-p PICKER] PROMPT...")]
+[arg("stream", long, value="true")]
+[arg("picker", long, short="p")]
+llm-chat-pick stream="false" picker="choose" +prompt="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z {{ quote(prompt) }} ]]; then
+        echo "error: prompt required" >&2
+        exit 1
+    fi
+    model=$(xh -b GET {{ LLAMA_SWAP }}/v1/models | jaq -r '.data[].id' | {{ picker }})
+    if [[ -z "$model" ]]; then
+        echo "cancelled" >&2
+        exit 1
+    fi
+    body=$(jaq -n --arg m "$model" --arg p {{ quote(prompt) }} --argjson s {{ stream }} \
+        '{model: $m, messages: [{role: "user", content: $p}], stream: $s}')
+    if [[ "{{ stream }}" == "true" ]]; then
+        echo "$body" | xh --stream POST {{ LLAMA_SWAP }}/v1/chat/completions
+    else
+        echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
+    fi
+
+[group("llm")]
+[doc("Unload all running llama-swap models")]
+llm-unload:
+    xh -b GET {{ LLAMA_SWAP }}/models/unload
+
+[group("llm")]
+[doc("Tail the llama-swap SSE event stream")]
+llm-events:
+    xh --stream GET {{ LLAMA_SWAP }}/api/events
+
+[group("llm")]
+[doc("Open the llama-swap web UI in browser")]
+llm-ui:
+    open {{ LLAMA_SWAP }}/ui/
+
+[group("llm")]
+[doc("Tail the llama-swap log file")]
+llm-log:
+    tail -f ~/.config/llama-swap/llama-swap.log
+
+[group("llm")]
+[doc("Restart the llama-swap launchd agent")]
+[confirm("Restart llama-swap? This will interrupt any running requests.")]
+llm-restart:
+    launchctl kickstart -k gui/$(id -u)/com.github.mostlygeek.llama-swap
+
+[group("tree-sitter")]
+[doc("Refresh tree-sitter grammars: hx fetch + build, then rebuild tree-sitter-<lang> symlinks")]
+ts-grammars-update:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    hx --grammar fetch
+    hx --grammar build
+    SOURCES_DIR="$HOME/.config/helix/runtime/grammars/sources"
+    PARSERS_DIR="$HOME/.local/share/tree-sitter/parsers"
+    mkdir -p "$PARSERS_DIR"
+    find "$PARSERS_DIR" -maxdepth 1 -type l -name 'tree-sitter-*' -delete
+    count=0
+    for src in "$SOURCES_DIR"/*/; do
+        [[ -d "$src" ]] || continue
+        src="${src%/}"
+        ln -sf "$src" "$PARSERS_DIR/tree-sitter-$(basename "$src")"
+        count=$((count + 1))
+    done
+    echo "linked $count grammars into $PARSERS_DIR"
+
+[group("tree-sitter")]
+[doc("List tree-sitter grammars currently linked for the CLI")]
+ts-grammars-list:
+    tree-sitter dump-languages | rg '^scope:'
+
+[group("tree-sitter")]
+[doc("Highlight FILE via tree-sitter, with explicit --scope for files the CLI can't auto-detect (extensionless or grammars with file-types: null in their tree-sitter.json). Falls back to plain auto-detection otherwise.")]
+[no-cd]
+ts-hl FILE:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    file="{{ FILE }}"
+    base=$(basename "$file")
+    export CLICOLOR_FORCE=1
+
+    # Add cases here as you find files the CLI can't auto-detect.
+    # The `[Jj]` form covers Justfile/justfile; the dotted forms cover
+    # .justfile/.Justfile (which globs in yazi don't match by default).
+    case "$base" in
+      [Jj]ustfile|.[Jj]ustfile|*.just) exec tree-sitter highlight --scope source.just "$file" ;;
+    esac
+
+    exec tree-sitter highlight "$file"

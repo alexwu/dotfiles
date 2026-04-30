@@ -1,0 +1,17 @@
+# Override helix's bundled grammar URLs.
+#
+# helix-loader's `merge_toml_values` keys [[grammar]] / [[language]] arrays
+# by the `name` field, so entries here REPLACE the bundled ones with the
+# same name (rather than appending duplicates).
+#
+# When to add an entry: helix releases sometimes ship a `languages.toml`
+# whose grammar URLs have rotted upstream (repo moved orgs, deleted, etc.).
+# Master branch fixes them but the released version stays broken until next
+# tag. Pinning a corrected source here unblocks `hx --grammar fetch` without
+# needing to track helix HEAD.
+
+# helix 25.07.1 ships dannylongeuay/tree-sitter-go-template (404 on GitHub).
+# Master swapped to ngalaiko/tree-sitter-go-template; rev pulled from there.
+[[grammar]]
+name = "gotmpl"
+source = { git = "https://github.com/ngalaiko/tree-sitter-go-template", rev = "ca26229bafcd3f37698a2496c2a5efa2f07e86bc" }
