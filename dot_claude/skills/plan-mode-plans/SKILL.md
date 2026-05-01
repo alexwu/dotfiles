@@ -291,13 +291,13 @@ After writing the draft to the plan file, run an independent audit via the `code
 - **Multi-file plans (agent-teams):** use `references/audit-prompt-multifile.md` as-is.
 - **TDD plans (any variant):** also append `references/audit-prompt-tdd-additions.md` to the base prompt before sending to the rescue agent.
 
-After audit clears, run the bundled sanity script:
+After audit clears, run the sanity gate:
 
 ```bash
-~/.claude/skills/plan-mode-plans/scripts/check-plan.sh <plan-file-or-directory>
+check-plan <plan-file-or-directory>
 ```
 
-This catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
+`check-plan` is a small Nim binary on PATH (built by chezmoi from `scripts/claude/check_plan.nim`). It catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
 
 ## Phase 5: Write and Exit
 

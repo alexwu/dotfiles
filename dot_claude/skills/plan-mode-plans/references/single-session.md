@@ -21,4 +21,4 @@ If the task grows mid-planning into something that touches 3+ independent areas,
 
 The base self-containment test from SKILL.md is sufficient. The only single-session-specific thing to verify:
 
-- The plan file passes `scripts/check-plan.sh <plan-path>` (Phase 4.5 invokes this; if it fails, fix the plan and re-audit).
+- The plan file passes `check-plan <plan-path>` (Phase 4.5 invokes this; if it fails, fix the plan and re-audit).
