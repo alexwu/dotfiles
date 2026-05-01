@@ -1,21 +1,12 @@
----
-name: plan-mode-plans-tdd
-description: Use when entering plan mode AND the user wants TDD-structured plans. Like plan-mode-plans but with steps formatted as red-green-refactor cycles including test code, expected failures, and minimal implementations.
----
+# TDD Cycles (variant reference)
 
-# Plan Mode Plans (TDD)
-
-## Overview
-
-Everything in `plan-mode-plans` applies — self-contained plans, deep exploration, clarification questions, code snippets, no open questions in Risks. **This skill only changes how the Steps section is structured:** each step becomes a TDD cycle.
+Loaded when the chosen variant has TDD enabled. Replaces the universal "Steps" section format in `SKILL.md` Phase 4 with red-green-refactor cycles, and adds TDD-specific exploration, rules, and self-containment checks.
 
 **Core TDD principle:** If you didn't watch the test fail, you don't know if it tests the right thing. No production code without a failing test first.
 
-**Follow all phases from `plan-mode-plans`** — Identify Scope, Deep Exploration, Clarify With User, Draft Plan, Write and Exit. This skill only replaces the Steps section format and adds TDD-specific exploration requirements.
+## Additional Exploration Requirements (Phase 2)
 
-## Additional Exploration Requirements
-
-During Phase 2, also investigate:
+Beyond the universal exploration in SKILL.md, also investigate:
 - **Test framework and runner** — what testing framework does the project use? What's the test command?
 - **Test file conventions** — where do tests live? Naming patterns? (`*.test.ts`, `*_test.go`, `tests/*.swift`, etc.)
 - **Test helpers and fixtures** — what utilities, factories, or helpers exist for tests?
@@ -23,7 +14,7 @@ During Phase 2, also investigate:
 
 ## Steps Section Format
 
-Instead of generic steps, each feature/change is a TDD cycle:
+Instead of the generic numbered steps in the base template, each feature/change is a TDD cycle:
 
 ````markdown
 ## Steps
@@ -121,7 +112,7 @@ Each cycle should produce a commit. Frequent, small commits.
 
 ## What the Test Snippets Must Show
 
-Same rules as `plan-mode-plans` code snippets — real code, not wishful thinking:
+Same rules as base-skill code snippets — real code, not wishful thinking:
 
 - Use actual function names, types, and test helpers found during exploration
 - Match the project's existing test style and conventions
@@ -151,6 +142,10 @@ Same rules as `plan-mode-plans` code snippets — real code, not wishful thinkin
 }
 ```
 
+## Verification Placement
+
+The base skill's required **Verification** section lives at the *end* of the plan, after all cycles complete. Per-cycle RED/GREEN verification is in-cycle and does NOT replace the final cross-cutting `coderabbit review --agent` pass — that runs once over the full diff after the last commit.
+
 ## Common Mistakes (TDD-specific)
 
 | Mistake | Fix |
@@ -162,12 +157,16 @@ Same rules as `plan-mode-plans` code snippets — real code, not wishful thinkin
 | GREEN implementation is over-engineered | Write the dumbest code that passes. Refactor later. |
 | Skipping commit between cycles | Each cycle = one commit. This is the checkpoint. |
 | Using mocks without user approval | No mocks unless the user explicitly says so. Check if the project uses request recording (VCR, OHHTTPStubs, etc.) instead. Ask during Phase 3 if unsure. |
+| Per-cycle test verification treated as a substitute for final CodeRabbit review | They're complementary. Cycles verify behavior; the final `coderabbit review --agent` pass catches cross-cutting issues (security, perf, anti-patterns) the per-test asserts can't see. |
+| Audit prompt missing TDD-specific checks | Append `audit-prompt-tdd-additions.md` to the base prompt before invoking the audit on a TDD plan. |
 
 ## Self-Containment Test (TDD addition)
 
-In addition to the standard self-containment test from `plan-mode-plans`, verify:
+In addition to the universal self-containment test in SKILL.md, verify:
 
 - Does each cycle include the exact test command to run?
 - Does each RED step include the expected failure message?
 - Could the executing session run each cycle mechanically without judgment calls?
 - Are test file paths and conventions consistent with what exploration found?
+- Did Phase 4.5 audit run, or was it explicitly skipped (with a note in Risks)?
+- Does the final Verification section call out `coderabbit review --agent` over the cumulative diff after all cycles?

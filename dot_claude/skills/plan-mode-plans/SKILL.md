@@ -1,6 +1,7 @@
 ---
 name: plan-mode-plans
-description: Use when entering plan mode (EnterPlanMode) to explore a codebase and write a specific, actionable implementation plan for user approval. Triggered by plan mode entry, multi-file changes, or architectural decisions.
+description: Use when entering plan mode (EnterPlanMode) to explore a codebase and write a specific, actionable implementation plan for user approval. Triggered by plan mode entry, multi-file changes, or architectural decisions. Covers single-session plans, TDD-structured plans, agent-team-driven multi-file plans, and combinations — variant selection is automatic based on task shape.
+
 ---
 
 # Plan Mode Plans
@@ -10,6 +11,23 @@ description: Use when entering plan mode (EnterPlanMode) to explore a codebase a
 Write specific, actionable, **self-contained** plans in plan mode. The plan must be usable by a fresh session with zero prior context — if you looked something up during exploration, the findings go **in the plan**.
 
 **Core principle:** Explore first, plan second. If you haven't read the files, you can't plan the changes. If the context isn't in the plan, it doesn't survive context clearing.
+
+## Variant Selection (read FIRST)
+
+This skill covers four variants. Pick based on the task shape, then load the matching reference files alongside this SKILL.md.
+
+| Task shape | TDD requested? | Variant | Load these references |
+|---|---|---|---|
+| 1–2 focused areas, single session | No | **Single** (default) | `references/single-session.md` |
+| 1–2 focused areas, single session | Yes | **TDD (single)** | `references/single-session.md` + `references/tdd-cycles.md` |
+| 3+ independent areas, agent team | No | **Agent Teams** | `references/agent-teams.md` |
+| 3+ independent areas, agent team | Yes | **Agent Teams + TDD** | `references/agent-teams.md` + `references/tdd-cycles.md` + `references/agent-teams-tdd.md` |
+
+How to decide:
+- **Areas**: count distinct subsystems / layers / domains the task touches based on initial read. 3+ → agent teams. (See `references/agent-teams.md` Decomposition Strategies for examples.)
+- **TDD**: load TDD references only if the user explicitly asked for TDD-structured plans, OR the project has strong TDD culture confirmed during exploration. Don't impose TDD on a project that doesn't already use it.
+
+If you're unsure, default to Single. Switch variants mid-planning if the task shape changes — it's cheaper to reload references than to write the wrong kind of plan.
 
 ## Process Flow
 
@@ -24,6 +42,9 @@ digraph plan_mode {
     "Draft plan" [shape=box];
     "Specific enough?" [shape=diamond];
     "Write to plan file" [shape=box];
+    "Codex audit (skip if opted out)" [shape=box];
+    "Findings to address?" [shape=diamond];
+    "Apply revisions" [shape=box];
     "ExitPlanMode" [shape=doublecircle];
 
     "Enter plan mode" -> "Identify scope";
@@ -37,7 +58,11 @@ digraph plan_mode {
     "Draft plan" -> "Specific enough?";
     "Specific enough?" -> "Deep exploration" [label="no — gaps found"];
     "Specific enough?" -> "Write to plan file" [label="yes"];
-    "Write to plan file" -> "ExitPlanMode";
+    "Write to plan file" -> "Codex audit (skip if opted out)";
+    "Codex audit (skip if opted out)" -> "Findings to address?";
+    "Findings to address?" -> "Apply revisions" [label="yes — pass 1 or 2"];
+    "Apply revisions" -> "Codex audit (skip if opted out)" [label="re-audit (max 2)"];
+    "Findings to address?" -> "ExitPlanMode" [label="clean or escalated"];
 }
 ```
 
@@ -61,6 +86,10 @@ Before reading anything, state:
 7. **Link the origin** — find the GitHub issue, PR, or conversation that motivated this work
 
 **Use parallel subagents** for independent exploration tasks (e.g., searching for types AND finding test files AND fetching library docs simultaneously). Prefer the focused explorers over `general-purpose`: `code-explorer` for local-codebase research, `github-explorer` for GitHub repos (code, issues, PRs, releases), `web-explorer` for library/framework/API docs and general web research. Each has tighter tool allowlists and discipline baked into its system prompt.
+
+**For agent-teams variants**, exploration happens via spawned teammates rather than the lead doing all the reads. See `references/agent-teams.md` for the spawn-prompt requirements, monitoring/synthesis loop, and the decomposition strategies for choosing teammate roles. The Phase 2 list above still applies — teammates follow it within their assigned areas.
+
+**For TDD variants**, also identify the test framework, runner, file conventions, and existing test helpers during exploration. See `references/tdd-cycles.md` Additional Exploration Requirements.
 
 ### Exploration Red Flags — Go Back and Read More
 
@@ -156,6 +185,14 @@ the executing session won't have your exploration context.]
 ## Risks
 - [Only things that are genuinely unknowable at planning time despite best-effort research]
 - [If assumption X is wrong, the fallback is Y]
+
+## Verification
+After implementation, verify before declaring done:
+- Run tests: `<exact test command from exploration>`
+- Run static review on the diff: `coderabbit review --agent` (or `cr review --agent`)
+  - Fix Critical and Warning findings before merge.
+  - If `coderabbit --version` fails or CodeRabbit isn't authenticated, skip with a note (CR is opt-in per project).
+- [Any domain-specific verification — e.g., `chezmoi apply` for dotfile changes, `xcodebuild build | xcsift` for iOS, `nph` for Nim formatting]
 ```
 
 **"Open Questions" belong in Phase 3, not here.** If you can ask the user about it, it's not a risk — it's an unanswered question you should have asked during clarification. Use AskUserQuestion in Phase 3 to resolve questions BEFORE drafting.
@@ -199,6 +236,10 @@ await createUser(validated.data);
 
 If a step involves creating or modifying code and has no snippet, the plan is incomplete.
 
+### Variant-Specific Steps Format
+
+The Steps section above (a flat numbered list) is the default for **Single** variants. For TDD variants, replace it with red-green-refactor cycles per `references/tdd-cycles.md` Steps Section Format. For Agent Teams variants, the plan is a directory with `index.md` + numbered section files instead of a single flat list — see `references/agent-teams.md` Multi-File Plan Output.
+
 ### Specificity Requirements
 
 | Vague (reject) | Specific (accept) |
@@ -229,6 +270,35 @@ If there are genuinely different approaches (not just one obvious path), present
 
 Don't force alternatives when there's clearly one right answer.
 
+## Phase 4.5: Independent Plan Audit (default-on)
+
+After writing the draft to the plan file, run an independent audit via the `codex:codex-rescue` agent before calling ExitPlanMode. This catches self-containment gaps and wrong assumptions a fresh-eyes second model spots that the drafter misses.
+
+**Bypass:** If the user said "skip audit" / "skip codex audit" / similar in this plan mode session, omit this phase and add a single line to the plan's Risks section: "Codex audit skipped per user request." The default behavior is to run the audit.
+
+**Procedure:**
+
+1. Spawn the rescue agent with the audit prompt below. Use the `Agent` tool with `subagent_type: "codex:codex-rescue"`. Phrase the prompt without `--write` keywords — the rescue agent strips routing flags from the task text, and read-only is the default codex behavior when no `--write` is requested by the caller.
+2. Read the findings. They come back as Codex stdout, severity-grouped per the rescue skill's output contract (Critical → Warning → Info).
+3. **Critical and Warning findings → revise the plan.** Edit the plan file directly (the only file editable in plan mode). Per `codex-result-handling`, do NOT auto-apply Codex's suggested fixes to source code — the audit reviews the plan, not the source.
+4. **After revisions, run the audit ONCE more** (cap at 2 total passes). If the second pass still surfaces Critical findings, escalate them to the user via AskUserQuestion before ExitPlanMode.
+5. If only Info findings remain, list them in the plan's Risks section as "Audit Info notes (non-blocking): ..." and proceed to Phase 5.
+6. If `codex:codex-rescue` is unavailable (not authenticated, runtime error, agent not registered), surface the failure to the user and offer to skip-with-note rather than retrying indefinitely.
+
+**Compose the audit prompt from references:**
+
+- **Single-file plans:** use `references/audit-prompt-single.md` as-is.
+- **Multi-file plans (agent-teams):** use `references/audit-prompt-multifile.md` as-is.
+- **TDD plans (any variant):** also append `references/audit-prompt-tdd-additions.md` to the base prompt before sending to the rescue agent.
+
+After audit clears, run the bundled sanity script:
+
+```bash
+~/.claude/skills/plan-mode-plans/scripts/check-plan.sh <plan-file-or-directory>
+```
+
+This catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
+
 ## Phase 5: Write and Exit
 
 1. Write the plan to the plan file (as specified by plan mode)
@@ -247,6 +317,7 @@ If the answer is no, the plan is missing context. Common gaps:
 - Assumptions that feel "obvious" because you just explored the code
 - Code snippets that reference functions or types you haven't verified exist
 - You consulted external docs but didn't link them in "Documentation Referenced"
+- You skipped Phase 4.5 without the user explicitly opting out, and the plan never got a second-opinion read
 
 ## Common Mistakes
 
@@ -267,3 +338,8 @@ If the answer is no, the plan is missing context. Common gaps:
 | No documentation links | If you consulted docs during exploration, link them in "Documentation Referenced" with what you learned |
 | "Open questions" in Risks section | If you could have asked the user or looked it up, it's not a risk. Go back to Phase 3 or Phase 2 |
 | Risks that are just unverified assumptions | "API might have rate limits" — go check the docs. Don't list it as a risk when 30 seconds of research would give you the answer |
+| Skipped Phase 4.5 audit on a non-trivial plan | Default is run. Only skip when user explicitly says so. Note the skip in Risks. |
+| Treated Codex audit findings as authoritative | Codex is a peer, not an oracle. Per `codex-result-handling`, evaluate findings critically before applying. |
+| Auto-applied Codex's source-code "fixes" during planning | The audit reviews the plan, not the source. Only edit the plan file in plan mode. |
+| Plan has no Verification section | Required. Without it, the executing session has no checkpoint after implementation. |
+| Audit loop without a cap | 2-pass cap is hard. After that, escalate remaining Critical findings to the user via AskUserQuestion. |
