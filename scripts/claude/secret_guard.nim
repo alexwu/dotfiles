@@ -61,7 +61,7 @@ let sensitivePath =
   | \.netrc\b                       # netrc credentials
   | \.npmrc\b                       # npm registry auth
   | \.pypirc\b                      # PyPI auth
-  | \.env(rc)?\b                    # .env / .envrc files
+  | \.env(rc)?(?!\.(example|sample|template|dist|tmpl))\b  # .env / .envrc — but not .env.example / .env.sample / .env.template / .env.dist / .env.tmpl
   | \.config/gh/hosts\b             # gh CLI tokens
   | github-copilot/apps\.json\b     # Copilot session tokens
   | atuin/key\b                     # atuin sync encryption key
