@@ -19,9 +19,10 @@
 ##
 ## Kill switch: `ENABLE_SECURITY_REMINDER=0` → immediate exit 0.
 ##
-## State file: `~/.claude/security_warnings_state_<session_id>.json`,
-## same path + format as upstream so a hot-swap mid-session doesn't lose
-## already-shown warnings. JSON array of `"<file_path>-<rule_name>"`.
+## State file: `~/.claude/security_warnings/<session_id>.json`. JSON array
+## of `"<file_path>-<rule_name>"`. Format matches upstream; only the path
+## differs (nested under a subdir to keep `~/.claude/` uncluttered).
+## Parent dir is created lazily by `saveState` on first warning.
 ##
 ## Extension: add a new rule by appending a `Rule` literal to the `rules`
 ## sequence below. For path-based rules, write a `proc (p: string): bool
@@ -178,11 +179,13 @@ Only use exec() if you absolutely need shell features and the input is guarantee
 ]
 
 # ---------------------------------------------------------------------------
-# State file (dedup) — same path + format as upstream
+# State file (dedup) — format matches upstream; nested under
+# ~/.claude/security_warnings/ to keep the top level uncluttered.
+# saveState creates the parent dir lazily.
 # ---------------------------------------------------------------------------
 
 proc stateFilePath(sessionId: string): string =
-  getHomeDir() / ".claude" / ("security_warnings_state_" & sessionId & ".json")
+  getHomeDir() / ".claude" / "security_warnings" / (sessionId & ".json")
 
 proc loadState(sessionId: string): HashSet[string] =
   result = initHashSet[string]()

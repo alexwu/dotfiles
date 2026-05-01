@@ -19,10 +19,11 @@
 ## Tuning:      `PERSONA_ANCHOR_FREQUENCY=N` → override default N=10 for
 ##              prompt-submit. session-start ignores this.
 ##
-## State file: `~/.claude/persona_anchor_state_<session_id>.json`
+## State file: `~/.claude/persona_anchor/<session_id>.json`
 ##   Shape: `{"count": <int>, "last_fired_at": "<iso8601>"}`
 ##   `last_fired_at` is set only on actual fires (not on every increment).
 ##   Survives `--resume`/`--continue` because session_id is stable.
+##   Parent dir is created lazily by `saveState` on first fire.
 ##
 ## Extension: edit `reminderText` below + rebuild via `chezmoi apply`. Keep
 ## under the 10K char `additionalContext` cap (current recap is ~1.5K).
@@ -56,12 +57,12 @@ type State = object
   lastFiredAt: string
 
 # ---------------------------------------------------------------------------
-# State file — same flat-layout convention as sec-guard's
-# `security_warnings_state_<sid>.json`.
+# State file — nested under ~/.claude/persona_anchor/ to keep the top level
+# uncluttered. saveState creates the parent dir lazily.
 # ---------------------------------------------------------------------------
 
 proc stateFilePath(sessionId: string): string =
-  getHomeDir() / ".claude" / ("persona_anchor_state_" & sessionId & ".json")
+  getHomeDir() / ".claude" / "persona_anchor" / (sessionId & ".json")
 
 proc loadState(sessionId: string): State =
   let path = stateFilePath(sessionId)
