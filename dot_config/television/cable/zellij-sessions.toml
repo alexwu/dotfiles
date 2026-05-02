@@ -1,0 +1,44 @@
+[metadata]
+name = "zellij-sessions"
+description = "Browse, attach, and create zellij sessions"
+requirements = ["zellij", "petname"]
+
+[source]
+command = "$HOME/.config/television/scripts/zellij-session list"
+
+[preview]
+command = "$HOME/.config/television/scripts/zellij-session preview '{}'"
+
+[ui]
+layout = "landscape"
+[ui.preview_panel]
+size = 55
+header = "Session: {}"
+border_type = "rounded"
+
+[keybindings]
+shortcut = "f5"
+enter = "actions:attach"
+ctrl-n = "actions:new"
+ctrl-d = "actions:delete"
+ctrl-k = "actions:kill"
+
+[actions.attach]
+description = "Attach to or switch to the selected session"
+command = "$HOME/.config/television/scripts/zellij-session attach '{}'"
+mode = "execute"
+
+[actions.new]
+description = "Create a new session"
+command = "$HOME/.config/television/scripts/zellij-session new"
+mode = "execute"
+
+[actions.delete]
+description = "Delete exited session"
+command = "$HOME/.config/television/scripts/zellij-session delete '{}'"
+mode = "fork"
+
+[actions.kill]
+description = "Kill a running session"
+command = "$HOME/.config/television/scripts/zellij-session kill '{}'"
+mode = "fork"

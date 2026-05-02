@@ -15,7 +15,7 @@
 
 # General settings
 # ----------------------------------------------------------------------------
-tick_rate = 50
+# tick_rate = 50
 default_channel = "files"
 # History settings
 # ---------------
@@ -236,7 +236,8 @@ fallback_channel = "files"
   "gzip",
   "gunzip",
   "xz",
-  "nvim"
+  "nvim",
+  "hx"
 ]
 "git-diff" = ["git add", "git restore"]
 "git-branch" = [

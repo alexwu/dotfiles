@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# Helper for the zellij-sessions television channel.
+# Subcommands: preview, attach, new, delete, kill
+
+set -euo pipefail
+
+cmd=${1:-}
+name=${2:-}
+
+case "$cmd" in
+  list)
+    # Newest-first, excluding the session we're currently attached to (if any).
+    zellij list-sessions -s -r \
+      | awk -v cur="${ZELLIJ_SESSION_NAME:-}" 'cur == "" || $0 != cur'
+    ;;
+
+  preview)
+    status_line=$(zellij list-sessions -n | awk -v n="$name" '$1 == n')
+
+    if [[ -z "$status_line" ]]; then
+      echo "$name (gone)"
+      exit 0
+    fi
+
+    echo "$status_line"
+    echo
+
+    # NOTE: zellij serializes each session to a KDL layout file every ~1s
+    # in its cache dir. The file exists for both running and exited sessions,
+    # so we can mine it for cwd, tab names, and the commands/edits that will
+    # be re-run on resurrection. `zellij setup --check` is the portable way to
+    # get the cache dir but adds ~45ms per call — too slow for a live preview,
+    # so we branch on OS instead.
+    case "$(uname -s)" in
+      Darwin) cache_dir="$HOME/Library/Caches/org.Zellij-Contributors.Zellij" ;;
+      *)      cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zellij" ;;
+    esac
+    layout_file="$cache_dir/contract_version_1/session_info/$name/session-layout.kdl"
+
+    if [[ -f "$layout_file" ]]; then
+      session_cwd=$(awk -F\" '/^[[:space:]]*cwd "/{print $2; exit}' "$layout_file")
+      session_cwd=${session_cwd/#$HOME/'~'}
+      [[ -n "$session_cwd" ]] && echo "cwd: $session_cwd"
+
+      tab_names=$(awk -F\" '/^[[:space:]]*tab name=/{print $2}' "$layout_file")
+      if [[ -n "$tab_names" ]]; then
+        echo "tabs:"
+        printf '%s\n' "$tab_names" | sed 's/^/  /'
+      fi
+
+      pane_actions=$(rg -oN 'pane (edit|command)="([^"]*)"' \
+        --replace '$1 $2' "$layout_file" 2>/dev/null || true)
+      if [[ -n "$pane_actions" ]]; then
+        echo "running:"
+        printf '%s\n' "$pane_actions" | while read -r kind target; do
+          case "$kind" in
+            edit)    echo "  → edit $target" ;;
+            command) echo "  → $target" ;;
+          esac
+        done
+      fi
+      echo
+    fi
+
+    if [[ "$status_line" == *"EXITED"* ]]; then
+      echo "(press enter to resurrect)"
+      exit 0
+    fi
+
+    # Live snapshot of the target session's focused pane. `--session X action
+    # dump-screen` with no --pane-id targets X's focused pane automatically.
+    zellij --session "$name" action dump-screen --ansi 2>/dev/null \
+      || echo "(unable to dump focused pane)"
+    ;;
+
+  attach)
+    if [[ -n "${ZELLIJ:-}" ]]; then
+      exec zellij action switch-session "$name"
+    else
+      exec zellij attach "$name"
+    fi
+    ;;
+
+  new)
+    new_name=$(petname -d "$HOME/.config/petname-dbz")
+    if [[ -n "${ZELLIJ:-}" ]]; then
+      zellij attach --create-background "$new_name" >/dev/null
+      exec zellij action switch-session "$new_name"
+    else
+      exec zellij attach -c "$new_name"
+    fi
+    ;;
+
+  delete)
+    exec zellij delete-session "$name"
+    ;;
+
+  kill)
+    exec zellij kill-session "$name"
+    ;;
+
+  *)
+    echo "usage: zellij-session {preview|attach|new|delete|kill} [name]" >&2
+    exit 2
+    ;;
+esac

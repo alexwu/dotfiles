@@ -184,6 +184,7 @@ zstyle ':completion:*:descriptions' format '[%d]'
 if (( $+commands[tv] ))
 then
   eval "$(tv init zsh)"
+  source $HOME/.zsh/television.zsh
 fi
 
 if (( $+commands[carapace] ))
