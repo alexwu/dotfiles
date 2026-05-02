@@ -1,16 +1,34 @@
-sandbox_mode = "read-only"
-approval_policy = "untrusted"
-model = "gpt-5.1-codex"
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+model = "gpt-5.5"
 project_doc_fallback_filenames = ["CLAUDE.md"]
+
+notify = ["/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/computer-use/1.0.755/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+model_reasoning_effort = "medium"
+personality = "friendly"
 
 [tools]
 web_search = true
+
+[sandbox_workspace_write]
+network_access = true
+
+[features]
+codex_hooks = true
+terminal_resize_reflow = true
+memories = true
+external_migration = true
 
 [model_providers.openrouter]
 name = "OpenRouter"
 base_url = "https://openrouter.ai/api/v1"
 env_key = "OPENROUTER_API_KEY"
-wire_api = "chat"
+wire_api = "responses"
+
+[model_providers.local]
+name = "Local"
+base_url = "http://localhost:8000/v1"
+wire_api = "responses"
 
 [profiles.claude]
 model = "anthropic/claude-4.5-sonnet"
@@ -20,5 +38,90 @@ model_provider = "openrouter"
 command = "bunx"
 args = ["-y", "@shopify/dev-mcp@latest"]
 
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."build-macos-apps@openai-curated"]
+enabled = true
+
+[plugins."build-ios-apps@openai-curated"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = false
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = false
+
+[plugins."cloudflare@openai-curated"]
+enabled = false
+
+[plugins."coderabbit@openai-curated"]
+enabled = true
+
+[plugins."figma@openai-curated"]
+enabled = true
+
+[plugins."codex-security@openai-curated"]
+enabled = true
+
+[plugins."linear@openai-curated"]
+enabled = true
+
+[plugins."superpowers@openai-curated"]
+enabled = true
+
+[plugins."supabase@openai-curated"]
+enabled = true
+
+[projects."/Users/jamesbombeelu/Code/lulu-prompts"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/.local/share/chezmoi"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-dictate"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/editorder"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/eo-full/eo"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-app"]
+trust_level = "trusted"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-04-30T22:35:44Z"
+source_type = "local"
+source = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-04-30T22:43:31Z"
+source_type = "local"
+source = "/Users/jamesbombeelu/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
 [notice]
-hide_gpt5_1_migration_prompt = true
+hide_rate_limit_model_nudge = true
+
+# >>> nono:always-further-codex >>>
+[marketplaces.always-further]
+source_type = "local"
+source = "/Users/jamesbombeelu/.codex/plugins/marketplaces/always-further"
+
+[plugins."nono@always-further"]
+enabled = true
+# <<< nono:always-further-codex <<<
