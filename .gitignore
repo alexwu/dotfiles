@@ -15,3 +15,8 @@ dot_config/zed/private_empty_dot_tmp*
 
 # Zellij claude mind data
 dot_config/zellij/.claude/
+
+# Firecrawl scrape dumps
+.firecrawl/
+
+__pycache__
