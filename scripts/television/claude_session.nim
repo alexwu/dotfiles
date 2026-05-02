@@ -1,16 +1,25 @@
-## tv-claude-session: Television channel backend for Claude Code sessions.
+## tv-claude-session: data backend for the `pick-claude-sessions` zsh
+## function. Originally backed a Television channel, but TV's
+## attach_to_tty gives bun-bundled claude a /dev/tty fd that kqueue
+## rejects on Darwin (oven-sh/bun#24158). We moved the picker out of TV
+## and into a small sk wrapper so claude inherits the user shell's
+## original pty slave fds, which kqueue accepts.
 ##
 ## Subcommands (cligen dispatchMulti):
 ##   list                  - emit one record per session, newest-first
 ##   preview <line>        - render preview pane for a highlighted line
-##   resume <line>         - cd to session cwd and exec `claude --resume`
-##   resume-zellij <line>  - open in a new zellij tab (falls back to resume)
+##   resume <line>         - emit `cd <cwd> && claude --resume <id>`
+##                           for the user shell to eval
+##   resume-zellij <line>  - emit `zellij action new-tab ...` for a new
+##                           zellij tab; falls back to resume otherwise
 ##   delete <line>         - rm the session jsonl after a /dev/tty confirm
-##   open <line>           - open the session jsonl in $EDITOR (default nvim)
+##   open <line>           - emit `$EDITOR <jsonl-path>` for shell eval
 ##
-## Source line format (column 1 is the action key):
-##   <short8>  <marker>  <MM-DD HH:MM>  <~/cwd>  <ai-title>
+## Source line format (last whitespace-delimited token is the action key):
+##   <marker>  <~/cwd>  <ai-title>  <MM-DD HH:MM>  <short8>
 ## marker is `●` if mtime is within ACTIVE_THRESHOLD_SEC, else a space.
+## cwd + title come first because that's what the user actually recognizes
+## when fuzzy-searching; the short-id is the action handle, not the label.
 
 import std/[algorithm, json, os, strutils, syncio, terminal, times]
 
@@ -35,8 +44,8 @@ type
 const
   ActiveThresholdSec = 300
   ShortIdLen = 8
-  PreviewMessageCount = 5
-  PreviewMessageMaxChars = 240
+  PreviewMessageCount = 30
+  PreviewMessageMaxChars = 360
 
 # ---------------------------------------------------------------- helpers
 
@@ -224,23 +233,26 @@ proc formatRecord(m: SessionMeta): string =
   let now = getTime().toUnix
   let active = (now - m.mtime) <= ActiveThresholdSec
   let marker = if active: "●" else: " "
-  let stamp = format(fromUnix(m.mtime), "MM-dd HH:mm", local())
+  let stamp = format(fromUnix(m.mtime), "MM-dd hh:mm tt", local())
   let cwdDisplay =
     if m.cwd.len == 0:
       "?"
     else:
       collapseHome(m.cwd)
   let title = if m.title.len == 0: "(untitled)" else: m.title
-  m.shortId & "  " & marker & "  " & stamp & "  " & cwdDisplay & "  " & title
+  marker & "  " & cwdDisplay & "  " & title & "  " & stamp & "  " & m.shortId
 
 proc parseShortIdFromLine(line: string): string =
+  ## The action key is the LAST whitespace-delimited token on the line.
+  ## Putting it last keeps the human-readable cwd + title up front for
+  ## fuzzy search; the id is just for action lookup.
   let trimmed = line.strip()
   if trimmed.len == 0:
     return ""
-  let parts = trimmed.splitWhitespace(maxsplit = 1)
+  let parts = trimmed.splitWhitespace
   if parts.len == 0:
     return ""
-  parts[0]
+  parts[^1]
 
 proc lookupFromArgs(args: seq[string]): SessionMeta =
   if args.len == 0:
@@ -296,10 +308,10 @@ proc preview(line: seq[string]) =
       "?"
     else:
       let dt = parseTimestamp(m.startedTs).inZone(local())
-      dt.format("yyyy-MM-dd HH:mm")
+      dt.format("yyyy-MM-dd hh:mm tt")
   let now = getTime().toUnix
   let lastDt = inZone(fromUnix(m.mtime), local())
-  let lastDisplay = lastDt.format("yyyy-MM-dd HH:mm")
+  let lastDisplay = lastDt.format("yyyy-MM-dd hh:mm tt")
   let age = now - m.mtime
   let lastSuffix =
     if age <= ActiveThresholdSec:
@@ -329,52 +341,28 @@ proc preview(line: seq[string]) =
       if msg.timestamp.len == 0:
         "--:--"
       else:
-        parseTimestamp(msg.timestamp).inZone(local()).format("HH:mm")
+        parseTimestamp(msg.timestamp).inZone(local()).format("hh:mm tt")
     var snippet = msg.text.replace("\n", " ").strip()
     snippet = truncateText(snippet, PreviewMessageMaxChars)
     echo ""
     echo "[" & role(msg.role) & " · " & dim(hhmm) & "] " & snippet
 
 proc emitResumeShell(m: SessionMeta) =
-  ## Emit a shell command for the user's shell to eval (TV runs the command
-  ## via shell -c, so $(...) and exec work as expected).
+  ## Emit `cd <cwd> && claude --resume <id>` for the user's shell to eval.
   ##
-  ## On macOS we wrap `claude` in `script -q /dev/null <cmd>` to allocate
-  ## a fresh pty for the child. TV's `mode = "execute"` opens `/dev/tty`
-  ## and dups it as the child's stdin/stdout/stderr — but bun's
-  ## tty.WriteStream constructor calls kqueue against its fd, and Darwin's
-  ## kqueue does not support /dev/tty fds at all. That's a confirmed bun
-  ## bug (https://github.com/oven-sh/bun/issues/24158, "confirmed bug" /
-  ## macOS / node:tty). script(1) hands claude a pty slave instead, which
-  ## kqueue is happy with.
-  ##
-  ## On Linux util-linux's `script` has different argument order than the
-  ## BSD script that ships with macOS, so we pick the right form per OS.
+  ## No `exec` — claude runs as a child of the interactive shell so the
+  ## user lands back at their prompt (in the session's cwd) after exit.
+  ## No script(1) wrapper either: when this is eval'd in the parent shell
+  ## claude inherits the shell's original pty slave fds, which bun's
+  ## kqueue accepts (the workaround was only needed when TV gave claude
+  ## dup'd /dev/tty fds — see oven-sh/bun#24158).
   if m.cwd.len == 0:
     quit("session has no recorded cwd: " & m.shortId, 1)
   if not dirExists(m.cwd):
     quit("session cwd no longer exists: " & m.cwd, 1)
-
-  # If a wrapper shell function exported TV_CLAUDE_LAST_CWD, drop the
-  # session cwd at that path so the parent shell can `cd` to it after
-  # claude exits. Opt-in — without the env var the write is skipped and
-  # nothing changes for direct CLI invocations.
-  let cwdFile = getEnv("TV_CLAUDE_LAST_CWD")
-  if cwdFile.len > 0:
-    try:
-      writeFile(cwdFile, m.cwd)
-    except CatchableError:
-      discard
-
   let qcwd = quoteShellPosix(m.cwd)
   let qid = quoteShellPosix(m.fullId)
-  when defined(macosx):
-    echo "cd " & qcwd & " && exec script -q /dev/null claude --resume " & qid
-  elif defined(linux):
-    let inner = "claude --resume " & m.fullId
-    echo "cd " & qcwd & " && exec script -q -c " & quoteShellPosix(inner) & " /dev/null"
-  else:
-    echo "cd " & qcwd & " && exec claude --resume " & qid
+  echo "cd " & qcwd & " && claude --resume " & qid
 
 proc resume(line: seq[string]) =
   emitResumeShell(lookupFromArgs(line))
@@ -395,8 +383,8 @@ proc resumeZellij(line: seq[string]) =
   let qname = quoteShellPosix(tabName)
   let qid = quoteShellPosix(m.fullId)
   # `zellij action new-tab` is fire-and-forget against the running zellij
-  # server, so this command exits immediately and TV's parent shell goes
-  # back to its prompt while the new tab spins up claude on its own pty.
+  # server. The new tab gets its own pty slave from zellij, which bun
+  # accepts — same reason the inline resume now works without script(1).
   echo "zellij action new-tab -c " & qcwd & " -n " & qname & " -- claude --resume " & qid
 
 proc deleteCmd(line: seq[string]) =
