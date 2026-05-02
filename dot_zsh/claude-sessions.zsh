@@ -6,23 +6,63 @@
 # so claude inherits our original pty slave fds and bun is happy.
 #
 # Bindings:
-#   enter   resume in this shell  (cd + claude --resume)
-#   ctrl-z  open in a new zellij tab (only meaningful inside zellij)
-#   ctrl-o  open the session jsonl in $EDITOR
-#   ctrl-d  delete the session jsonl + sidechain dir, then refresh the list
+#   enter     resume in this shell (cd + claude --resume)
+#   alt-f     resume + --fork-session  (branch into a new session id)
+#   alt-w     resume + --worktree      (open in a new git worktree)
+#   ctrl-z    open in a new zellij tab (only meaningful inside zellij)
+#   ctrl-o    open the session jsonl in $EDITOR
+#   ctrl-y    copy the full session UUID to the clipboard
+#   ctrl-d    delete the session jsonl + sidechain dir, then refresh
+#
+# Mechanism for fork/worktree: sk's `accept(<token>)` action prints the
+# token on the first line of stdout followed by the selected line, so the
+# function can dispatch to the right subcommand and eval its output back
+# in this shell (where claude needs to run).
 
 if (( $+commands[sk] )) && (( $+commands[tv-claude-session] )); then
   pick-claude-sessions() {
-    local sel
-    sel=$(tv-claude-session list | sk \
+    local clip
+    if (( $+commands[pbcopy] )); then
+      clip=pbcopy
+    elif (( $+commands[wl-copy] )); then
+      clip=wl-copy
+    elif (( $+commands[xclip] )); then
+      clip='xclip -selection clipboard'
+    else
+      clip='cat >/dev/null'
+    fi
+
+    local out
+    out=$(tv-claude-session list | sk \
       --ansi \
       --reverse \
-      --header 'pick a claude session  (enter=resume  ctrl-z=zellij tab  ctrl-o=open  ctrl-d=delete)' \
+      --header 'enter=resume  alt-f=fork  alt-w=worktree  ctrl-z=zellij  ctrl-o=jsonl  ctrl-y=yank id  ctrl-d=delete' \
       --preview 'tv-claude-session preview {}' \
       --preview-window 'right:60%:wrap' \
-      --bind 'ctrl-z:execute(eval "$(tv-claude-session resume-zellij {})")+abort' \
-      --bind 'ctrl-o:execute(eval "$(tv-claude-session open {})")' \
+      --bind 'alt-f:accept(fork)' \
+      --bind 'alt-w:accept(worktree)' \
+      --bind "ctrl-z:execute(eval \"\$(tv-claude-session resume-zellij {})\")+abort" \
+      --bind "ctrl-o:execute(eval \"\$(tv-claude-session open {})\")" \
+      --bind "ctrl-y:execute-silent(tv-claude-session id {} | $clip)" \
       --bind 'ctrl-d:execute(tv-claude-session delete {})+reload(tv-claude-session list)')
-    [[ -n "$sel" ]] && eval "$(tv-claude-session resume "$sel")"
+
+    [[ -z "$out" ]] && return 0
+
+    local nlines key sel
+    nlines=$(printf '%s' "$out" | grep -c '^')
+    if (( nlines == 1 )); then
+      eval "$(tv-claude-session resume "$out")"
+    else
+      key=${out%%$'\n'*}
+      sel=${out#*$'\n'}
+      case "$key" in
+        fork)     eval "$(tv-claude-session resume --fork "$sel")" ;;
+        worktree) eval "$(tv-claude-session resume --worktree "$sel")" ;;
+        *)
+          print -ru2 "pick-claude-sessions: unknown accept token '$key'"
+          return 1
+          ;;
+      esac
+    fi
   }
 fi

@@ -347,8 +347,13 @@ proc preview(line: seq[string]) =
     echo ""
     echo "[" & role(msg.role) & " · " & dim(hhmm) & "] " & snippet
 
-proc emitResumeShell(m: SessionMeta) =
+proc emitResumeShell(m: SessionMeta, fork = false, worktree = false) =
   ## Emit `cd <cwd> && claude --resume <id>` for the user's shell to eval.
+  ##
+  ## fork=true   appends --fork-session, branching the resumed session
+  ##             into a new session id without overwriting the original.
+  ## worktree=true appends --worktree, so claude resumes in a fresh git
+  ##             worktree rather than the original cwd's branch state.
   ##
   ## No `exec` — claude runs as a child of the interactive shell so the
   ## user lands back at their prompt (in the session's cwd) after exit.
@@ -362,10 +367,20 @@ proc emitResumeShell(m: SessionMeta) =
     quit("session cwd no longer exists: " & m.cwd, 1)
   let qcwd = quoteShellPosix(m.cwd)
   let qid = quoteShellPosix(m.fullId)
-  echo "cd " & qcwd & " && claude --resume " & qid
+  var cmd = "cd " & qcwd & " && claude --resume " & qid
+  if fork:
+    cmd &= " --fork-session"
+  if worktree:
+    cmd &= " --worktree"
+  echo cmd
 
-proc resume(line: seq[string]) =
-  emitResumeShell(lookupFromArgs(line))
+proc resume(line: seq[string], fork = false, worktree = false) =
+  emitResumeShell(lookupFromArgs(line), fork = fork, worktree = worktree)
+
+proc idCmd(line: seq[string]) =
+  ## Print the resolved full session UUID for the highlighted line.
+  ## Used by the picker's ctrl-y bind to pipe into pbcopy.
+  echo lookupFromArgs(line).fullId
 
 proc resumeZellij(line: seq[string]) =
   let m = lookupFromArgs(line)
@@ -432,4 +447,5 @@ when isMainModule:
     [resumeZellij, cmdName = "resume-zellij", positional = "line"],
     [deleteCmd, cmdName = "delete", positional = "line"],
     [openCmd, cmdName = "open", positional = "line"],
+    [idCmd, cmdName = "id", positional = "line"],
   )
