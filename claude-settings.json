@@ -182,7 +182,6 @@
     "rust-analyzer@claude-code-lsps": true,
     "security-guidance@claude-plugins-official": false,
     "skill-codex@skill-codex": true,
-    "skill-creator@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": true,
     "telegram@claude-plugins-official": true,
@@ -190,8 +189,10 @@
     "vtsls@claude-code-lsps": true,
     "xcsift@xcsift": true,
     "clangd-lsp@claude-plugins-official": true,
-    "remember@claude-plugins-official": true,
-    "coderabbit@claude-plugins-official": true
+    "remember@claude-plugins-official": false,
+    "coderabbit@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "nono@always-further": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {
@@ -229,17 +230,23 @@
         "source": "github",
         "repo": "CharlesWiltgen/Axiom"
       }
+    },
+    "ast-grep-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "ast-grep/agent-skill"
+      }
     }
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "tui": "fullscreen",
   "editorMode": "vim",
   "verbose": true,
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
-  },
-  "skipAutoPermissionPrompt": true
+  }
 }
