@@ -180,21 +180,33 @@ ts-grammars-update:
 ts-grammars-list:
     tree-sitter dump-languages | rg '^scope:'
 
-[group("tree-sitter")]
-[doc("Highlight FILE via tree-sitter, with explicit --scope for files the CLI can't auto-detect (extensionless or grammars with file-types: null in their tree-sitter.json). Falls back to plain auto-detection otherwise.")]
+[group("lumis")]
+[doc("Highlight FILE via lumis (snazzy theme); falls back to bat for filetypes lumis doesn't recognize.")]
 [no-cd]
-ts-hl FILE:
+hl FILE:
     #!/usr/bin/env bash
     set -euo pipefail
     file="{{ FILE }}"
-    base=$(basename "$file")
-    export CLICOLOR_FORCE=1
+    # lumis emits ANSI when it has a grammar; otherwise prints plaintext.
+    # Detect that and fall back to bat for richer language coverage.
+    tmp=$(mktemp)
+    trap 'rm -f "$tmp"' EXIT
+    lumis highlight -t snazzy "$file" 2>/dev/null > "$tmp" || true
+    if rg -q --max-count=1 $'\x1b\\[' "$tmp"; then
+        cat "$tmp"
+    else
+        exec bat --color=always --paging=never --style=plain "$file"
+    fi
 
-    # Add cases here as you find files the CLI can't auto-detect.
-    # The `[Jj]` form covers Justfile/justfile; the dotted forms cover
-    # .justfile/.Justfile (which globs in yazi don't match by default).
-    case "$base" in
-      [Jj]ustfile|.[Jj]ustfile|*.just) exec tree-sitter highlight --scope source.just "$file" ;;
-    esac
-
-    exec tree-sitter highlight "$file"
+[group("lumis")]
+[doc("Regenerate snazzy theme JSON for lumis. Re-adds to chezmoi source on success.")]
+lumis-regen-snazzy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out="$HOME/.local/share/lumis/themes/snazzy.json"
+    lumis themes generate \
+        -u https://github.com/alexwu/nvim-snazzy \
+        -c snazzy \
+        -s 'vim.pack.add({{{{ src = "https://github.com/rktjmp/lush.nvim" }}}}, { load = true, confirm = false }); vim.opt.runtimepath:prepend(vim.fn.stdpath("data") .. "/site/pack/core/opt/lush.nvim")' \
+        -o "$out"
+    chezmoi re-add "$out"

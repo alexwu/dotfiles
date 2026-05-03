@@ -1,0 +1,19 @@
+{
+  "extends": "default",
+  "meta": {
+    "name": "pi-delegate",
+    "description": "pi-mono coding agent delegation profile. Tight read-only base; callers layer on --read/--allow per invocation for the target dir."
+  },
+  "workdir": {
+    "access": "read"
+  },
+  "filesystem": {
+    "allow": [
+      "$HOME/.pi/agent"
+    ],
+    "read": [
+      "$HOME/.agents/skills",
+      "$HOME/.local/share/mise/installs/pi"
+    ]
+  }
+}

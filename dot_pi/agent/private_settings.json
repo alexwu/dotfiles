@@ -1,0 +1,10 @@
+{
+  "defaultModel": "gpt-5.1",
+  "defaultProvider": "github-copilot",
+  "defaultThinkingLevel": "medium",
+  "enableInstallTelemetry": false,
+  "lastChangelogVersion": "0.71.0",
+  "terminal": {
+    "showTerminalProgress": true
+  }
+}

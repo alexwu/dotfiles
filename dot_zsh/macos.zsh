@@ -13,13 +13,11 @@ fi
 
 fpath=(~/.zsh/completion $fpath)
 fpath+=~/.zfunc
-#
+fpath=(/Applications/growlrrr.app/Contents/Resources/completions $fpath)
+
 if type brew &>/dev/null
 then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
-#
-#   # autoload -Uz compinit
-#   # compinit
 fi
 
 if (( $+commands[fzf] ))
@@ -30,14 +28,10 @@ fi
 alias co="git checkout"
 alias obsidian="nvim ~/Obsidian/Default"
 
-# if (( $+commands[mise] ))
-# then
-  eval "$(mise activate zsh)"
-# fi
+eval "$(mise activate zsh)"
 
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
-source ~/.zsh/wezterm.sh
 source ~/.config/op/plugins.sh
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
@@ -52,6 +46,8 @@ export SSH_AUTH_SOCK=""~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/ag
 
 if (( $+commands[wezterm] ))
 then
+  source ~/.zsh/wezterm.sh
+
   # This script will open a new terminal for the selected project.
   # Terminal used: wezterm
 

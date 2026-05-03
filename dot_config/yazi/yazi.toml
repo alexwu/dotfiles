@@ -24,9 +24,9 @@ prepend_preloaders = [
   { url = "*.md", run = 'faster-piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dracula -- "$1"' },
   { url = "*.tar*", run = 'faster-piper -- tar tf "$1"' },
   { url = "*.txt.gz", run = 'faster-piper -- gzip -dc "$1"' },
-  { url = "**/justfile", run = 'faster-piper -- just -g ts-hl "$1"' },
-  { url = "**/.justfile", run = 'faster-piper -- just -g ts-hl "$1"' },
-  { url = "*.just", run = 'faster-piper -- just -g ts-hl "$1"' },
+  { url = "**/justfile", run = 'faster-piper -- just -g hl "$1"' },
+  { url = "**/.justfile", run = 'faster-piper -- just -g hl "$1"' },
+  { url = "*.just", run = 'faster-piper -- just -g hl "$1"' },
 ]
 
 [[plugin.prepend_fetchers]]

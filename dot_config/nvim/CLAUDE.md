@@ -28,6 +28,7 @@ dot_config/nvim/
 │       ├── typos_lsp.lua
 │       └── vtsls.lua
 ├── plugin/                           # Auto-loaded entry points (sourced at startup via rtp)
+│   ├── bombeelu-autocmds.lua
 │   ├── bombeelu-git.lua
 │   ├── bombeelu-lspinfo.lua          # Lazy-registers :LspInfo command
 │   ├── bombeelu-neovide.lua          # Guarded by vim.g.neovide

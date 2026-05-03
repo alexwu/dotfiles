@@ -34,9 +34,9 @@ gui:
   showCommandLog: true
   commandLogSize: 8
 git:
-  paging:
-    colorArg: always
-    useConfig: false
+  pagers:
+    - colorArg: always
+      useConfig: false
   commit:
     signOff: false
   merging:

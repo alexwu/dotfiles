@@ -287,8 +287,11 @@ return {
 
   -- oil.nvim
   {
-    "stevearc/oil.nvim",
+    -- "stevearc/oil.nvim",
+    "barrettruth/canola.nvim",
+    branch = "main",
     lazy = false,
+    name = "oil",
     cond = utils.not_vscode,
     keys = {
       { "-", "<CMD>Oil<CR>", desc = "Open parent directory" },
@@ -473,15 +476,12 @@ return {
         },
       },
       provider = {
-        type = "sweep",
-        -- type = "zeta",
+        -- type = "sweep",
+        type = "zeta-2",
         url = "http://localhost:8000",
         -- model = "sweepai/sweep-next-edit-1.5b",
-        model = "henrik3/sweep-next-edit-v2-7B",
-        -- model = "zed-industries/zeta-2",
-        -- max_tokens = 2048,
-        -- type = "sweepapi",
-        -- api_key_env = "SWEEPAPI_TOKEN",
+        -- model = "henrik3/sweep-next-edit-v2-7B",
+        model = "zed-industries/zeta-2",
       },
       keymaps = {
         -- accept = false,

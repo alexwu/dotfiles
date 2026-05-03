@@ -6,6 +6,11 @@
 	<string>com.github.mostlygeek.llama-swap</string>
 	<key>ProgramArguments</key>
 	<array>
+		<string>/opt/homebrew/bin/fnox</string>
+		<string>exec</string>
+		<string>-c</string>
+		<string>/Users/jamesbombeelu/.config/fnox/config.toml</string>
+		<string>--</string>
 		<string>/opt/homebrew/bin/llama-swap</string>
 		<string>-listen</string>
 		<string>localhost:8000</string>
@@ -16,7 +21,7 @@
 	<key>EnvironmentVariables</key>
 	<dict>
 		<key>PATH</key>
-		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<string>/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 	</dict>
 	<key>RunAtLoad</key>
 	<true/>

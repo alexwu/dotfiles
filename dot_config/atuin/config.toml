@@ -80,6 +80,14 @@ workspaces = true
 #   "^innocuous-cmd .*--secret=.+"
 # ]
 ctrl_n_shortcuts = true
+search_mode = "daemon-fuzzy"
 
 [sync]
 records = true
+
+[ai]
+enabled = true
+
+[daemon]
+enabled = true
+autostart = true

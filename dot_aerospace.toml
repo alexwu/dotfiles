@@ -130,10 +130,10 @@ alt-shift-f = 'fullscreen'
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
 
 # Workspace (M)ain
-alt-1 = 'workspace M'
-alt-m = 'workspace M'
-alt-shift-1 = 'move-node-to-workspace M'
-alt-shift-m = 'move-node-to-workspace M'
+alt-1 = 'workspace 1'
+alt-m = 'workspace 1'
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-m = 'move-node-to-workspace 1'
 
 # Workspace (N)otes
 alt-2 = 'workspace 2'
@@ -147,8 +147,10 @@ alt-7 = 'workspace 7'
 alt-8 = 'workspace 8'
 
 # Workspace (S)lack?
-alt-s = 'workspace S'
-alt-shift-s = 'move-node-to-workspace S'
+alt-s = 'workspace 0'
+alt-0 = 'workspace 0'
+alt-shift-s = 'move-node-to-workspace 0'
+alt-shift-0 = 'move-node-to-workspace 0'
 
 alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
@@ -214,27 +216,27 @@ run = 'layout floating'
 [[on-window-detected]]
 if.app-id = 'com.github.wez.wezterm'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace M'
+run = 'move-node-to-workspace 1'
 [[on-window-detected]]
 if.app-id = 'company.thebrowser.Browser'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace M'
+run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
 if.app-id = 'company.thebrowser.dia'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace M'
+run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
 if.app-id = 'com.figma.Desktop'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace M'
+run = 'move-node-to-workspace 1'
 
 # Slack
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace S'
+run = 'move-node-to-workspace 0'
 
 # Notes
 [[on-window-detected]]
@@ -264,6 +266,11 @@ if.app-id = 'com.apple.MobileSMS'
 run = 'move-node-to-workspace 4'
 [[on-window-detected]]
 if.app-id = 'org.whispersystems.signal-desktop-beta'
+# if.during-aerospace-startup = true
+run = 'move-node-to-workspace 4'
+
+[[on-window-detected]]
+if.app-id = 'org.whispersystems.signal-desktop'
 # if.during-aerospace-startup = true
 run = 'move-node-to-workspace 4'
 
@@ -331,7 +338,7 @@ if.app-id = 'com.flexibits.fantastical2.mac'
 run = 'layout floating'
 
 [workspace-to-monitor-force-assignment]
-M = 'main'     # Main monitor
+1 = 'main'     # Main monitor
 2 = 'main'     # Main monitor
 3 = 'main'     # Main monitor
 4 = 'main'     # Case insensitive regex substring
@@ -339,4 +346,4 @@ M = 'main'     # Main monitor
 6 = 'main'     # Case insensitive regex substring
 7 = 'main'     # Case insensitive regex substring
 8 = 'main'     # Case insensitive regex substring
-S = 'built-in'
+0 = 'built-in'

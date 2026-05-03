@@ -2,10 +2,12 @@ font-family = "Fira Code Retina"
 font-family = "FiraCode Nerd Font Mono Ret"
 font-size = 14.0
 theme = "Snazzy"
+background-opacity = 0.85
+background-blur = macos-glass-regular
 copy-on-select = true
 cursor-style = block
 cursor-style-blink = false
 auto-update-channel = tip
 keybind = super+`=toggle_quick_terminal
 keybind = super+w=close_surface
-keybind = shift+enter=text:\n
+keybind = alt+backspace=text:\x1b\x7f

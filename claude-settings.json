@@ -192,7 +192,8 @@
     "remember@claude-plugins-official": false,
     "coderabbit@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "nono@always-further": true
+    "nono@always-further": true,
+    "figma@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {

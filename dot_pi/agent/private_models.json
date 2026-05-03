@@ -1,0 +1,73 @@
+{
+  "providers": {
+    "llama-swap": {
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "api": "openai-completions",
+      "apiKey": "llama-swap",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "Qwen3.5-122B-A10B",
+          "name": "Qwen3.5 122B A10B (local)",
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "Qwen3.6-35B-A3B",
+          "name": "Qwen3.6 35B A3B (local)",
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "Qwen3.6-35B-A3B:thinking",
+          "name": "Qwen3.6 35B A3B thinking (local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "Qwen3.6-27B",
+          "name": "Qwen3.6 27B (local)",
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "Qwen3.6-27B:thinking",
+          "name": "Qwen3.6 27B thinking (local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "Qwen3.5-9B",
+          "name": "Qwen3.5 9B (local)",
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "Qwen3.5-9B:thinking",
+          "name": "Qwen3.5 9B thinking (local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 65536,
+          "maxTokens": 32768
+        },
+        {
+          "id": "mlx-community/Qwen3.5-9B-4bit",
+          "name": "Qwen3.5 9B 4bit MLX (local, always-on)",
+          "contextWindow": 32768,
+          "maxTokens": 8192
+        }
+      ]
+    }
+  }
+}

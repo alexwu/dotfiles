@@ -10,7 +10,7 @@
 # fi
 
 SID=$1
-visible_workspaces=$(aerospace list-workspaces --visible)
+visible_workspaces=$(aerospace list-workspaces --focused)
 visible=$(echo "$visible_workspaces" | grep -q "$SID" && echo "on" || echo "off")
 
 sketchybar --set $NAME icon.highlight=$visible label.highlight=$visible
