@@ -102,6 +102,17 @@
             "command": "/Users/jamesbombeelu/.local/bin/git-add-guard",
             "if": "Bash(git add *)",
             "statusMessage": "Checking git add pattern..."
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/truncation-guard",
+            "statusMessage": "Checking for output truncation..."
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/git-confirm-guard",
+            "if": "Bash(git *)",
+            "statusMessage": "Confirming git commit/push..."
           }
         ]
       },

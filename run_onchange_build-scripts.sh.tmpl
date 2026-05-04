@@ -49,6 +49,34 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- git-confirm-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/git_confirm_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/git_confirm_guard.nim" }}"
+  TARGET="$HOME/.local/bin/git-confirm-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping git-confirm-guard" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
+# ---- truncation-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/truncation_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/truncation_guard.nim" }}"
+  TARGET="$HOME/.local/bin/truncation-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping truncation-guard" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- sec-guard (Nim, requires cligen) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/sec_guard.nim") | sha256sum }}
 {
