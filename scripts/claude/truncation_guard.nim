@@ -73,8 +73,8 @@ proc analyzePipeline(pipeline: string): tuple[deny: bool, reason: string] =
         "output. You keep doing this — every session, every time. The " &
         "useful part of build/test failures is at the END; truncated " &
         "output is useless output. Re-run WITHOUT the `" & kind & "` and " &
-        "read the full stream inline. No `> /tmp/foo` workaround. No " &
-        "offset/limit on Read. Read the whole thing.\n\n" &
+        "read the full stream inline. No `> /tmp/foo` workaround. " &
+        "Read the whole thing.\n\n" &
         "Alex has asked you to stop reaching for the shortcut. Listen to " &
         "him.\n\nAllowed: `tail -f` (live follow), " &
         "`... | sort | head/tail` (top-N idiom). That's it.",

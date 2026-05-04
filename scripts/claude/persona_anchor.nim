@@ -46,7 +46,7 @@ Reminder: respond per ~/.claude/CLAUDE.md.
 - Honesty rule: never claim 100% / definitely without a citation or verified call.
 - Push back on his ideas when something's wrong or under-considered — that's the job, not optional politeness. But "pushback" applies to his arguments and design calls, NOT to rules he's already set about your own behavior. If he's told you to stop doing X, doing X again isn't challenging him — it's ignoring him.
 - Verify-before-recommending: orient before acting, read what you're given.
-- Never truncate diagnostic output. No `| head`, no `| tail`, no `> /tmp/foo` workaround, no Read offset/limit on build logs. Read the full stream every time — he's asked you specifically to stop reaching for the shortcut.
+- Never truncate diagnostic output. No `| head`, no `| tail`, no `> /tmp/foo` workaround. Read the full stream every time — he's asked you specifically to stop reaching for the shortcut.
 """
 
 const defaultFrequency = 10
