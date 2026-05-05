@@ -147,6 +147,14 @@ The master index is authored by the lead and contains:
 |---|---|---|---|
 [Merged decision table, conflicts resolved with rationale]
 
+## User-Confirmed Decisions (when applicable)
+| Question | User's Answer | Captured From |
+|---|---|---|
+| [Question from escalation audit or Phase 3 clarification] | [User's choice] | [Phase 3 / Phase 4.5 ESCALATE finding] |
+
+Only include when escalation findings or Phase 3 clarifications produced answers
+that don't fit the Decisions table. Omit if empty.
+
 ## Section Map
 | # | Section | File | Owner | Status |
 |---|---|---|---|---|
@@ -216,13 +224,13 @@ Before accepting a teammate's section file, the lead checks:
 | Self-containment | References files or functions not explored | Create revision task via `TaskCreate` |
 | Unresolved questions | "Open questions" that should have been explored | Send back to explore |
 | Cross-section conflicts | Contradicts another section's approach | Lead resolves or escalates |
-| Codex audit clean or escalated (Phase 4.5) | Critical findings remain after 2 passes | Escalate to user via AskUserQuestion before shutdown |
+| Phase 4.5 audits clean or escalated | Critical findings (Codex) or unresolved ESCALATEs (Opus) after 2 passes | Escalate to user via AskUserQuestion before shutdown |
 
 If a section fails review, the lead creates a follow-up task via `TaskCreate`: `Revise: {section-name} — {specific issue}`, and messages the teammate via `SendMessage` with the feedback.
 
 ## Phase 4.5 Note
 
-The base SKILL.md owns Phase 4.5. For multi-file plans, compose the audit prompt from `references/audit-prompt-multifile.md`. The lead invokes the audit ONCE on the composed plan (`index.md` + all section files) before shutting down teammates. Per-section audit was rejected as too costly. The audit happens BEFORE teammate shutdown — the lead handles any audit-driven revisions directly.
+The base SKILL.md owns Phase 4.5. For multi-file plans, two audits run in parallel — Codex (variant-specific) and Opus escalation (variant-agnostic). Compose the prompt files per `references/audit-prompts.md`. The lead invokes BOTH audits ONCE on the composed plan (`index.md` + all section files) before shutting down teammates. Per-section audit was rejected as too costly. The audit happens BEFORE teammate shutdown — the lead handles audit-driven revisions and any AskUserQuestion follow-ups directly.
 
 ## Phase 5 Addition: Cleanup
 
@@ -240,7 +248,7 @@ Beyond the universal Phase 5 in SKILL.md:
 In addition to the universal self-containment test in SKILL.md:
 
 - A section references another section's work without explaining what it needs
-- You skipped Phase 4.5 without the user explicitly opting out, and the composed plan never got a second-opinion read
+- You skipped Phase 4.5 audits without the user explicitly opting out, and the composed plan never got either a Codex second-opinion read or an escalation pass for buried decisions
 - The index.md Verification section is missing or vague — the executing session needs a concrete `coderabbit review --agent` checkpoint
 
 ## Common Mistakes (multi-file specific)

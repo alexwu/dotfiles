@@ -1,6 +1,6 @@
 ---
 name: plan-mode-plans
-description: Use when entering plan mode (EnterPlanMode) to explore a codebase and write a specific, actionable implementation plan for user approval. Triggered by plan mode entry, multi-file changes, or architectural decisions. Covers single-session plans, TDD-structured plans, agent-team-driven multi-file plans, and combinations — variant selection is automatic based on task shape.
+description: Use when entering plan mode (EnterPlanMode) to explore a codebase and write a specific, actionable implementation plan for user approval. Make sure to use this skill whenever the user enters plan mode, OR proactively when a task touches 3+ files, makes architectural choices, modifies subsystem boundaries, refactors across modules, or implements a feature spanning multiple layers — even if the user didn't explicitly say "plan". Covers single-session plans, TDD-structured plans, agent-team-driven multi-file plans, and combinations — variant selection is automatic based on task shape.
 
 ---
 
@@ -42,9 +42,9 @@ digraph plan_mode {
     "Draft plan" [shape=box];
     "Specific enough?" [shape=diamond];
     "Write to plan file" [shape=box];
-    "Codex audit (skip if opted out)" [shape=box];
+    "Run audits in parallel\n(Codex + Opus escalation)" [shape=box];
     "Findings to address?" [shape=diamond];
-    "Apply revisions" [shape=box];
+    "Address findings\n(revise / AskUserQuestion)" [shape=box];
     "ExitPlanMode" [shape=doublecircle];
 
     "Enter plan mode" -> "Identify scope";
@@ -58,10 +58,10 @@ digraph plan_mode {
     "Draft plan" -> "Specific enough?";
     "Specific enough?" -> "Deep exploration" [label="no — gaps found"];
     "Specific enough?" -> "Write to plan file" [label="yes"];
-    "Write to plan file" -> "Codex audit (skip if opted out)";
-    "Codex audit (skip if opted out)" -> "Findings to address?";
-    "Findings to address?" -> "Apply revisions" [label="yes — pass 1 or 2"];
-    "Apply revisions" -> "Codex audit (skip if opted out)" [label="re-audit (max 2)"];
+    "Write to plan file" -> "Run audits in parallel\n(Codex + Opus escalation)";
+    "Run audits in parallel\n(Codex + Opus escalation)" -> "Findings to address?";
+    "Findings to address?" -> "Address findings\n(revise / AskUserQuestion)" [label="yes — pass 1 or 2"];
+    "Address findings\n(revise / AskUserQuestion)" -> "Run audits in parallel\n(Codex + Opus escalation)" [label="re-audit (max 2)"];
     "Findings to address?" -> "ExitPlanMode" [label="clean or escalated"];
 }
 ```
@@ -103,7 +103,7 @@ Before reading anything, state:
 
 ## Phase 3: Clarify With the User
 
-**After exploration, ALWAYS ask clarifying questions before drafting.** Even if the task seems clear — exploration often reveals ambiguities, trade-offs, or assumptions worth verifying. It's cheaper to ask now than to rewrite the plan or waste an execution cycle.
+**Exploration almost always surfaces ambiguities, trade-offs, or assumptions worth verifying — assume there's something to clarify before drafting.** It's cheaper to ask now than to rewrite the plan or waste an execution cycle. If you're convinced there's nothing to ask, run the rejection test: "If the user rejects this plan, what's the most likely reason?" That reason is your question.
 
 **What to surface:**
 - **Ambiguities** — anything with multiple valid interpretations ("should this be a new component or extend the existing one?")
@@ -161,6 +161,15 @@ these choices obvious.
 | Decision | Options Considered | Chosen | Rationale |
 |---|---|---|---|
 | [e.g., State management] | [Redux, Zustand, Context] | [Zustand] | [Lightweight, fits existing patterns in `src/store/`] |
+
+## User-Confirmed Decisions (when applicable)
+| Question | User's Answer | Captured From |
+|---|---|---|
+| [Question from escalation audit or Phase 3 clarification] | [User's choice] | [Phase 3 / Phase 4.5 ESCALATE finding] |
+
+Only include this section when the user answered an AskUserQuestion (Phase 3 or
+Phase 4.5 ESCALATE) whose answer doesn't fit cleanly into the Decisions table
+above. Omit if empty.
 
 ## Files Affected
 - `exact/path/to/file.ts:45-67` — [what changes and why]
@@ -270,34 +279,36 @@ If there are genuinely different approaches (not just one obvious path), present
 
 Don't force alternatives when there's clearly one right answer.
 
-## Phase 4.5: Independent Plan Audit (default-on)
+## Phase 4.5: Independent Plan Audits (default-on)
 
-After writing the draft to the plan file, run an independent audit via the `codex:codex-rescue` agent before calling ExitPlanMode. This catches self-containment gaps and wrong assumptions a fresh-eyes second model spots that the drafter misses.
+After writing the draft to the plan file, run **two parallel audits** before calling ExitPlanMode. They review different things and shouldn't block each other:
 
-**Bypass:** If the user said "skip audit" / "skip codex audit" / similar in this plan mode session, omit this phase and add a single line to the plan's Risks section: "Codex audit skipped per user request." The default behavior is to run the audit.
+1. **Codex audit** (`codex:codex-rescue`) — fresh-eyes implementation review. Catches wrong code references, missing context, broken snippets, false assumptions about the code. Variant-specific prompt.
+2. **Opus escalation audit** (`general-purpose` agent with `model: "opus"`) — adversarial review focused on user-attention items. Catches accepted regressions, scope reductions, breaking changes, and decisions the planner made on the user's behalf without surfacing them. Variant-agnostic prompt.
+
+The two audits answer different questions. Codex asks "is this plan technically correct?" Escalation asks "did the planner sneak past anything the user must approve?" The escalation audit exists because the technical-correctness review tends to defer to the planner's framing of tradeoffs ("regression is fine because X") instead of escalating to the user.
+
+**Bypass:** If the user said "skip audit" / "skip audits" / "skip codex audit" / similar in this plan mode session, omit BOTH passes and add a single line to the plan's Risks section: "Plan audits skipped per user request." Default behavior is to run both.
 
 **Procedure:**
 
-1. Spawn the rescue agent with the audit prompt below. Use the `Agent` tool with `subagent_type: "codex:codex-rescue"`. Phrase the prompt without `--write` keywords — the rescue agent strips routing flags from the task text, and read-only is the default codex behavior when no `--write` is requested by the caller.
-2. Read the findings. They come back as Codex stdout, severity-grouped per the rescue skill's output contract (Critical → Warning → Info).
-3. **Critical and Warning findings → revise the plan.** Edit the plan file directly (the only file editable in plan mode). Per `codex-result-handling`, do NOT auto-apply Codex's suggested fixes to source code — the audit reviews the plan, not the source.
-4. **After revisions, run the audit ONCE more** (cap at 2 total passes). If the second pass still surfaces Critical findings, escalate them to the user via AskUserQuestion before ExitPlanMode.
-5. If only Info findings remain, list them in the plan's Risks section as "Audit Info notes (non-blocking): ..." and proceed to Phase 5.
-6. If `codex:codex-rescue` is unavailable (not authenticated, runtime error, agent not registered), surface the failure to the user and offer to skip-with-note rather than retrying indefinitely.
+1. Compose the prompts per `references/audit-prompts.md` — that file owns the (variant × TDD) → file composition table and the TDD-additions renumbering rules.
+2. **Spawn both audits in parallel** — single message, two `Agent` tool calls. Phrase the Codex prompt without `--write` keywords (the rescue agent strips routing flags; read-only is the codex default). The escalation audit uses `subagent_type: "general-purpose"` with `model: "opus"` — Opus tier matters here for spotting motivated reasoning, don't downgrade.
+3. Read both sets of findings.
+4. **Codex CRITICAL / WARNING findings → revise the plan.** Edit the plan file directly (the only file editable in plan mode). Per `codex-result-handling`, do NOT auto-apply Codex's suggested fixes to source code — the audit reviews the plan, not the source.
+5. **Escalation ESCALATE findings → use AskUserQuestion for each one** before ExitPlanMode. Do NOT silently fold them into the Risks section, do NOT rationalize them away, and do NOT batch them into a wall of questions — one AskUserQuestion per finding (or grouped tightly when they share an option set). After the user answers, capture the decision in the plan's Decisions table or, when answers don't fit existing decisions, in a `## User-Confirmed Decisions` section so a fresh session can see the user's sign-off.
+6. **Escalation VERIFY findings → mention briefly in your ExitPlanMode summary** so the user has visibility, but they're not blocking. Don't pre-emptively edit the plan based on them.
+7. **After revisions, re-run BOTH audits ONCE more** (cap at 2 total passes per audit). If the second pass still surfaces CRITICAL or unresolved ESCALATE findings, escalate to the user via AskUserQuestion before ExitPlanMode rather than starting a third pass.
+8. If only Info / OK / VERIFY findings remain, list any non-blocking items in the plan's Risks section as "Audit Info notes (non-blocking): ..." and proceed to Phase 5.
+9. **Partial-failure handling:** If only one audit agent is unavailable (auth error, runtime failure, agent not registered), proceed with the one that ran and note the partial coverage in the plan's Risks section ("Codex audit unavailable — escalation pass only" or vice versa). If both fail, surface to the user and offer to skip-with-note rather than retrying indefinitely.
 
-**Compose the audit prompt from references:**
-
-- **Single-file plans:** use `references/audit-prompt-single.md` as-is.
-- **Multi-file plans (agent-teams):** use `references/audit-prompt-multifile.md` as-is.
-- **TDD plans (any variant):** also append `references/audit-prompt-tdd-additions.md` to the base prompt before sending to the rescue agent.
-
-After audit clears, run the sanity gate:
+After both audits clear, run the sanity gate:
 
 ```bash
 check-plan <plan-file-or-directory>
 ```
 
-`check-plan` is a small Nim binary on PATH (built by chezmoi from `scripts/claude/check_plan.nim`). It catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
+`check-plan` is a small Nim binary on PATH (built by chezmoi from `scripts/claude/check_plan.nim`). It catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, escalation audit mention, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
 
 ## Phase 5: Write and Exit
 
@@ -318,28 +329,45 @@ If the answer is no, the plan is missing context. Common gaps:
 - Code snippets that reference functions or types you haven't verified exist
 - You consulted external docs but didn't link them in "Documentation Referenced"
 - You skipped Phase 4.5 without the user explicitly opting out, and the plan never got a second-opinion read
+- The escalation audit surfaced ESCALATE findings and you folded them into Risks instead of asking the user — every ESCALATE needs an AskUserQuestion before ExitPlanMode
 
 ## Common Mistakes
+
+### Exploration mistakes
 
 | Mistake | Fix |
 |---|---|
 | Start writing plan before exploring | Explore FIRST. Read files, trace code paths |
 | Reference files you haven't read | Read every file you mention in the plan |
+| Looked up docs but didn't inline findings | The executing session won't have your exploration context. Inline key syntax, signatures, and patterns |
+| Missing issue/PR links | Link the origin — the executing session needs to understand *why* this work exists |
+| No documentation links | If you consulted docs during exploration, link them in "Documentation Referenced" with what you learned |
+
+### Drafting mistakes
+
+| Mistake | Fix |
+|---|---|
 | Skip test strategy | Always include which test files and what coverage |
 | Overly long plans | Keep it concise. Steps should be scannable |
-| No risks section | Always flag unknowns and edge cases |
 | Plan says "update" without specifics | Name the function, line, and exact change |
-| Looked up docs but didn't inline findings | The executing session won't have your exploration context. Inline key syntax, signatures, and patterns |
-| No assumptions section | Always document what you assumed to be true and why |
-| No decision rationale | Always explain what options were considered and why the chosen approach won |
-| Missing issue/PR links | Link the origin — the executing session needs to understand *why* this work exists |
 | Steps describe code changes but have no snippets | Every code-changing step needs a concrete snippet showing the actual change |
 | Snippets contain placeholder comments | If you wrote `// handle errors here` instead of actual error handling, you haven't finished exploring |
-| No documentation links | If you consulted docs during exploration, link them in "Documentation Referenced" with what you learned |
+| No assumptions section | Always document what you assumed to be true and why |
+| No decision rationale | Always explain what options were considered and why the chosen approach won |
+| No risks section | Always flag unknowns and edge cases |
 | "Open questions" in Risks section | If you could have asked the user or looked it up, it's not a risk. Go back to Phase 3 or Phase 2 |
 | Risks that are just unverified assumptions | "API might have rate limits" — go check the docs. Don't list it as a risk when 30 seconds of research would give you the answer |
-| Skipped Phase 4.5 audit on a non-trivial plan | Default is run. Only skip when user explicitly says so. Note the skip in Risks. |
-| Treated Codex audit findings as authoritative | Codex is a peer, not an oracle. Per `codex-result-handling`, evaluate findings critically before applying. |
-| Auto-applied Codex's source-code "fixes" during planning | The audit reviews the plan, not the source. Only edit the plan file in plan mode. |
 | Plan has no Verification section | Required. Without it, the executing session has no checkpoint after implementation. |
-| Audit loop without a cap | 2-pass cap is hard. After that, escalate remaining Critical findings to the user via AskUserQuestion. |
+
+### Audit mistakes
+
+| Mistake | Fix |
+|---|---|
+| Skipped Phase 4.5 audits on a non-trivial plan | Default is to run BOTH audits. Only skip when user explicitly says so. Note the skip in Risks. |
+| Ran only the Codex audit, skipped the escalation pass | They review different things — Codex catches "wrong code", escalation catches "wrong decision the user didn't approve". Skipping escalation is how regressions silently ship. |
+| Treated audit findings as authoritative | Codex and the Opus auditor are peers, not oracles. Per `codex-result-handling`, evaluate findings critically before applying. |
+| Auto-applied source-code "fixes" from an audit | Both audits review the plan, not the source. Only edit the plan file in plan mode. |
+| Folded ESCALATE findings into the Risks section | The whole point of the escalation audit is to surface decisions the planner buried. Every ESCALATE finding requires AskUserQuestion before ExitPlanMode and the answer captured in Decisions. Don't accept the planner's framing of "this regression is fine." |
+| Spawned audits sequentially | They're independent reviews — spawn in a single message with two `Agent` tool calls so they run in parallel. |
+| Downgraded the escalation audit to Sonnet | Opus tier matters for spotting motivated reasoning and rationalized tradeoffs. Don't trade audit quality for tokens. |
+| Audit loop without a cap | 2-pass cap per audit is hard. After that, escalate remaining Critical / ESCALATE findings to the user via AskUserQuestion. |

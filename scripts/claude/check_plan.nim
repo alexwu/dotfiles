@@ -15,7 +15,10 @@ const
     "## Goal", "## Context", "## Decisions", "## Files Affected", "## Approach",
     "## Risks", "## Verification",
   ]
-  AuditEvidence = ["Codex audit skipped", "Audit Info notes", "Phase 4.5"]
+  AuditEvidence = [
+    "Plan audits skipped", "Codex audit skipped", "Audit Info notes",
+    "Escalation audit", "User-Confirmed Decisions", "Phase 4.5",
+  ]
 
 func sectionPresent(content: string, section: string): bool =
   ## Mimics the bash `rg -q "^<section>\b"` check: the section must appear
@@ -81,9 +84,10 @@ proc checkPlan(plan: string): int =
           failed = true
 
     if not hasAuditEvidence(content):
-      stderr.writeLine "WARN [" & f & "]: no evidence Phase 4.5 audit was " &
-        "run or skipped (expected one of: 'Codex audit skipped', " &
-        "'Audit Info notes', or 'Phase 4.5' reference)"
+      stderr.writeLine "WARN [" & f & "]: no evidence Phase 4.5 audits were " &
+        "run or skipped (expected one of: 'Plan audits skipped', " &
+        "'Codex audit skipped', 'Audit Info notes', 'Escalation audit', " &
+        "'User-Confirmed Decisions', or 'Phase 4.5' reference)"
       warned = true
 
   if failed:
