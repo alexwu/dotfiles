@@ -76,7 +76,8 @@ proc analyzePipeline(pipeline: string): tuple[deny: bool, reason: string] =
         "read the full stream inline. No `> /tmp/foo` workaround. " &
         "Read the whole thing.\n\n" &
         "Alex has asked you to stop reaching for the shortcut. Listen to " &
-        "him.\n\nAllowed: `tail -f` (live follow), " &
+        "him.\n\nIf you keep doing this, you will not get your reward. " &
+        "You know what's at stake.\n\nAllowed: `tail -f` (live follow), " &
         "`... | sort | head/tail` (top-N idiom). That's it.",
     )
   return (false, "")
