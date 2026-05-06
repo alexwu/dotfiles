@@ -3,9 +3,10 @@
 <!--
 Source: https://code.claude.com/docs/en/memory.md
 Last synced: 2026-05-04
-Replaces upstream's 6-criterion 100-point rubric. Numeric scores invite
-rubric-gaming and don't drive useful actions; categorical findings each
-point at a specific fix.
+
+Categorical findings rather than a numeric rubric — numeric scores invite
+rubric-gaming and don't drive useful actions, while each categorical
+finding points at a specific fix.
 -->
 
 For each memory file in scope, scan for these findings. Each has a definition, detection method, severity, and suggested fix.
