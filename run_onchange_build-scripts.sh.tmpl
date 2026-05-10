@@ -190,3 +190,23 @@ mkdir -p "$HOME/.local/bin"
     echo "build-scripts: built $TARGET"
   fi
 }
+
+# ---- llm (Nim, requires cligen) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/llm/llm.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/llm/llm.nim" }}"
+  TARGET="$HOME/.local/bin/llm"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping llm" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping llm" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for llm"
+      nimble install -y cligen >/dev/null
+    fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
