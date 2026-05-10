@@ -40,10 +40,13 @@ import std/[strutils, terminal, posix]
 
 import cligen
 
-const MaxArgBytes = 256_000
-  ## Conservative cap (~25% of macOS ``ARG_MAX`` ~= 1MiB) leaving headroom
-  ## for envp + other argv. Larger merged prompts get a clear error rather
-  ## than a cryptic ``execvp`` failure.
+const MaxArgBytes = 512_000
+  ## ~50% of macOS ``ARG_MAX`` (1 MiB), leaving ~500KB for envp + other argv.
+  ## Larger merged prompts get a clear error rather than ``execvp`` returning
+  ## ``E2BIG`` cryptically. If this becomes restrictive, the proper fix is to
+  ## switch the transport from argv to child-process stdin for codex/claude
+  ## (gemini still needs the prompt in argv) — that lifts the ceiling from
+  ## ``ARG_MAX`` to the model's context window.
 
 const CliModeDirective =
   "You are running as a non-interactive CLI tool for a one-shot query. " &
