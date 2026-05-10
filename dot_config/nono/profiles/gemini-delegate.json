@@ -1,0 +1,19 @@
+{
+  "extends": "default",
+  "meta": {
+    "name": "gemini-delegate",
+    "description": "Gemini CLI coding agent delegation profile. Read-only cwd by default; callers layer --allow . per invocation to upgrade for write work."
+  },
+  "workdir": {
+    "access": "read"
+  },
+  "filesystem": {
+    "allow": [
+      "$HOME/.gemini"
+    ],
+    "read": [
+      "$HOME/.agents/skills",
+      "$WORKDIR"
+    ]
+  }
+}

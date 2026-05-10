@@ -2,7 +2,7 @@
   "extends": "default",
   "meta": {
     "name": "pi-delegate",
-    "description": "pi-mono coding agent delegation profile. Tight read-only base; callers layer on --read/--allow per invocation for the target dir."
+    "description": "pi-mono coding agent delegation profile. Read-only cwd by default; callers layer --allow . per invocation to upgrade for write work."
   },
   "workdir": {
     "access": "read"
@@ -13,7 +13,8 @@
     ],
     "read": [
       "$HOME/.agents/skills",
-      "$HOME/.local/share/mise/installs/pi"
+      "$HOME/.local/share/mise/installs/pi",
+      "$WORKDIR"
     ]
   }
 }
