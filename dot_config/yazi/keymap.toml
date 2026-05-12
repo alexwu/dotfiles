@@ -1,4 +1,4 @@
-"$schema" = "https://yazi-rs.github.io/schemas/keymap.json"
+#:schema https://yazi-rs.github.io/schemas/keymap.json
 
 [[mgr.prepend_keymap]]
 on = "<Enter>"
@@ -11,7 +11,7 @@ on = "-"
 run = "leave"
 desc = "Back to the parent directory"
 
-[[manager.prepend_keymap]]
-on = ["s"]
+[[mgr.prepend_keymap]]
+on = "s"
 run = "plugin searchjump"
 desc = "searchjump mode"
