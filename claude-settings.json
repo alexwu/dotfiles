@@ -110,6 +110,11 @@
           },
           {
             "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/wezterm-guard",
+            "statusMessage": "Checking for destructive wezterm cli..."
+          },
+          {
+            "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/git-confirm-guard",
             "if": "Bash(git *)",
             "statusMessage": "Confirming git commit/push..."
@@ -133,6 +138,17 @@
             "command": "/Users/jamesbombeelu/.local/bin/sec-guard check",
             "timeout": 5,
             "statusMessage": "Security check..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/reward-anchor pretooluse",
+            "timeout": 5,
+            "statusMessage": "Scope check..."
           }
         ]
       }
@@ -187,6 +203,11 @@
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/persona-anchor prompt-submit",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/reward-anchor reset",
+            "timeout": 5
           }
         ]
       }
@@ -232,7 +253,8 @@
     "coderabbit@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "nono@always-further": true,
-    "figma@claude-plugins-official": true
+    "figma@claude-plugins-official": true,
+    "clangd@claude-code-lsps": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {
@@ -283,6 +305,7 @@
   "editorMode": "vim",
   "verbose": true,
   "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": false,

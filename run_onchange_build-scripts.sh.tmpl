@@ -77,6 +77,40 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- wezterm-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/wezterm_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/wezterm_guard.nim" }}"
+  TARGET="$HOME/.local/bin/wezterm-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping wezterm-guard" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
+# ---- wezrun (Nim, requires cligen) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/wezterm/wezrun.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/wezterm/wezrun.nim" }}"
+  TARGET="$HOME/.local/bin/wezrun"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping wezrun" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping wezrun" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for wezrun"
+      nimble install -y cligen >/dev/null
+    fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- sec-guard (Nim, requires cligen) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/sec_guard.nim") | sha256sum }}
 {
@@ -150,6 +184,26 @@ mkdir -p "$HOME/.local/bin"
   else
     if ! nimble path cligen >/dev/null 2>&1; then
       echo "build-scripts: installing cligen for persona-anchor"
+      nimble install -y cligen >/dev/null
+    fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
+# ---- reward-anchor (Nim, requires cligen) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/reward_anchor.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/reward_anchor.nim" }}"
+  TARGET="$HOME/.local/bin/reward-anchor"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping reward-anchor" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping reward-anchor" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for reward-anchor"
       nimble install -y cligen >/dev/null
     fi
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
