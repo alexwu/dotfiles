@@ -69,26 +69,6 @@ return {
         end,
       })
 
-      vim.diagnostic.config({
-        virtual_text = false,
-        underline = {
-          severity = vim.diagnostic.severity.ERROR,
-        },
-        signs = {
-          text = {
-            [vim.diagnostic.severity.ERROR] = " ✘",
-            [vim.diagnostic.severity.WARN] = " ",
-            [vim.diagnostic.severity.HINT] = " ",
-            [vim.diagnostic.severity.INFO] = " ",
-          },
-        },
-        float = {
-          show_header = false,
-          source = true,
-        },
-        update_in_insert = false,
-      })
-
       -- Enable LSP features when supported
       vim.api.nvim_create_autocmd("LspAttach", {
         callback = function(ev)

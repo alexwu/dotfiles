@@ -94,3 +94,23 @@ vim.api.nvim_create_autocmd("MenuPopup", {
     pcall(vim.cmd, "aunmenu PopUp.-2-")
   end,
 })
+
+vim.diagnostic.config({
+  virtual_text = false,
+  underline = {
+    severity = vim.diagnostic.severity.ERROR,
+  },
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = " ✘",
+      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.HINT] = " ",
+      [vim.diagnostic.severity.INFO] = " ",
+    },
+  },
+  float = {
+    show_header = false,
+    source = true,
+  },
+  update_in_insert = false,
+})
