@@ -158,6 +158,20 @@ return {
         desc = "Command history",
       },
       {
+        "<leader>fd",
+        function()
+          Snacks.picker.diagnostics_buffer()
+        end,
+        desc = "Command history",
+      },
+      {
+        "<leader>fD",
+        function()
+          Snacks.picker.diagnostics()
+        end,
+        desc = "Command history",
+      },
+      {
         "<leader>fh",
         function()
           Snacks.picker.help()
