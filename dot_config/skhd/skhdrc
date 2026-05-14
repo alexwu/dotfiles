@@ -1,1 +1,5 @@
 .define terminal_apps ["kitty", "wezterm", "terminal", "ghostty"]
+
+# Espanso snippet picker — pops a `choose` fuzzy picker over the focused app,
+# re-injects the picked snippet via `espanso match exec`. See ~/.local/bin/espick.
+ctrl + alt + cmd - s : /Users/jamesbombeelu/.local/bin/espick

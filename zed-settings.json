@@ -7,18 +7,36 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "agent_servers": {
+    "gemini": {
+      "type": "registry"
+    },
+    "codex-acp": {
+      "type": "registry"
+    },
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "outline_panel": {
+    "dock": "right"
+  },
+  "agent_ui_font_size": 15.0,
   "agent": {
+    "dock": "left",
     "button": false,
     "favorite_models": [],
     "model_parameters": []
   },
   "collaboration_panel": {
+    "dock": "right",
     "button": false
   },
   "status_bar": {
     "active_language_button": true
   },
   "project_panel": {
+    "dock": "right",
     "button": true
   },
   "diagnostics": {
@@ -39,6 +57,7 @@
     "trust_all_worktrees": true
   },
   "git_panel": {
+    "dock": "right",
     "tree_view": true
   },
   "ui_font_family": ".ZedSans",
@@ -48,7 +67,7 @@
     "dark": "Zed (Default)"
   },
   "ui_font_size": 16.0,
-  "agent_buffer_font_size": 14.0,
+  "agent_buffer_font_size": 13.0,
   "prettier": {
     "allowed": true
   },
@@ -64,6 +83,12 @@
     }
   },
   "edit_predictions": {
+    "provider": "zed",
+    "open_ai_compatible_api": {
+      "prompt_format": "qwen",
+      "api_url": "http://localhost:8000/v1/completions",
+      "model": "henrik3/sweep-next-edit-v2-7B"
+    },
     "mode": "subtle",
     "copilot": {
       "proxy": null,
@@ -76,7 +101,7 @@
   "telemetry": {
     "metrics": false
   },
-  "buffer_font_size": 16.0,
+  "buffer_font_size": 15.0,
   "buffer_font_family": "Fira Code",
   "buffer_font_fallbacks": ["FiraCode Nerd Font"],
   "vim_mode": true,

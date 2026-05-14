@@ -18,6 +18,7 @@ fpath=(/Applications/growlrrr.app/Contents/Resources/completions $fpath)
 if type brew &>/dev/null
 then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+  FPATH=$(brew --prefix)/share/zsh-abbr:$FPATH
 fi
 
 if (( $+commands[fzf] ))
@@ -91,5 +92,4 @@ export PATH="$PATH:/Users/jamesbombeelu/.lmstudio/bin"
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
 
-export KARAKEEP_API_KEY=REDACTED_KARAKEEP_KEY
 export KARAKEEP_SERVER_ADDR=https://keep.bombee.dev

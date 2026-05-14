@@ -24,8 +24,16 @@ models:
         "${MODEL_ID}:thinking":
           chat_template_kwargs:
             enable_thinking: true
+  "Mistral-Medium-3.5-128B":
+    # NOTE(alexwu): files live in the HF hub cache (no --local-dir on download).
+    # Snapshot hash c8f5b14... is the current main rev — update if re-downloaded.
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --model /Users/jamesbombeelu/.cache/huggingface/hub/models--unsloth--Mistral-Medium-3.5-128B-GGUF/snapshots/c8f5b1477e1b22cd2d819157d450f001f7047298/UD-Q4_K_XL/Mistral-Medium-3.5-128B-UD-Q4_K_XL-00001-of-00003.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/hub/models--unsloth--Mistral-Medium-3.5-128B-GGUF/snapshots/c8f5b1477e1b22cd2d819157d450f001f7047298/mmproj-F16.gguf
+    ttl: 600
+    timeouts:
+      responseHeader: 300
+
   "Qwen3.6-35B-A3B":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
     ttl: 600
     filters:
       setParamsByID:
@@ -49,15 +57,39 @@ models:
             enable_thinking: true
 
   "Qwen3.6-27B":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
     filters:
       setParamsByID:
         "${MODEL_ID}":
+          temperature: 0.7
+          top_p: 0.8
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: false
         "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.95
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: true
+  "Qwen3.6-27B-mlx":
+    # NOTE(alexwu): MLX-VLM port of Qwen3.6-27B (mlx-community 6-bit ≈ 22.8 GB).
+    # Separate entry from the GGUF version for A/B testing speed and quality.
+    # mlx_vlm.server has no --chat-template-args; thinking toggle must come via
+    # per-request `chat_template_kwargs` in the body if supported.
+    cmd: mlx_vlm.server --model mlx-community/Qwen3.6-27B-6bit --host 127.0.0.1 --port ${PORT} --max-kv-size 65536
+    useModelName: "mlx-community/Qwen3.6-27B-6bit"
+    checkEndpoint: /v1/models
+    ttl: 600
+    timeouts:
+      responseHeader: 300
+
   "Qwen3.5-9B":
     cmd: llama-server --port ${PORT} --ctx-size 65536 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.5-9B-GGUF/Qwen3.5-9B-UD-Q6_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.5-9B-GGUF/mmproj-F16.gguf
     filters:
@@ -199,6 +231,8 @@ peers:
     models:
       - Qwen3.5-27B-4bit
       - gemma-4-31b-it-4bit
+      - Qwen3-Coder-Next-MLX-6bit
+      - Qwen3.6-27B-UD-MLX-4bit
     timeouts:
       connect: 30
       keepalive: 30

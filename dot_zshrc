@@ -96,6 +96,7 @@ fi
 if (( $+commands[atuin] ))
 then
   eval "$(atuin init zsh)"
+  eval "$(atuin hex init)"
 fi
 
 if (( $+commands[just] ))
@@ -160,6 +161,13 @@ then
   alias zjn='zellij a -c "$(dbzname)"'
 fi
 
+# --- Zellij-tmux-shim (Claude Code agent teams in zellij) ---
+if [[ -n "$ZELLIJ" ]]; then
+  _shim="${XDG_DATA_HOME:-$HOME/.local/share}/zellij-tmux-shim/activate.sh"
+  [[ -f "$_shim" ]] && source "$_shim"
+  unset _shim
+fi
+
 if (( $+commands[fnox] ))
 then
   eval "$(fnox activate zsh)"
@@ -171,6 +179,10 @@ fi
 
 # NOTE: zim-init.zsh runs compinit — anything depending on compdef must come after this line
 source $HOME/.zsh/zim-init.zsh
+
+# NOTE: zsh-abbr must load after compinit AND after zsh-autosuggestions / zsh-syntax-highlighting
+# (both pulled in by zim's init.zsh) — it wraps their zle widgets.
+source /opt/homebrew/share/zsh-abbr/zsh-abbr.zsh
 
 # Override zim's completion format — fzf-tab can't parse zsh color codes
 zstyle ':completion:*:descriptions' format '[%d]'
@@ -235,6 +247,13 @@ then
   zstyle ':fzf-tab:complete:z:*' fzf-preview 'eza -1 --color=always $(zoxide query -- $word 2>/dev/null)'
 fi
 
+# --- LLM helpers ---
+
+# Thin shim — canonical impl lives in the global justfile (J llm-commit-message).
+# Forwards args (e.g. -p claude, -m Qwen3.6-27B) straight through.
+generate_commit_message() { J llm-commit-message "$@"; }
+
+export PATH="$HOME/.local/bin:$PATH" # wezcld
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
   [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

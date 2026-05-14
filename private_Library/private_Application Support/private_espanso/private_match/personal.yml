@@ -1,0 +1,50 @@
+# espanso match file — personal info & common paths
+#
+# Each match has two triggers: a `,,`-prefixed mnemonic and a `;;`-prefixed
+# right-hand-only alias (right pinky x2 + a right-hand letter). `search_terms`
+# are extra fuzzy-search keywords for the snippet picker.
+#
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+  - triggers: [",,email", ";;m"]
+    replace: "adwu@pm.me"
+    label: "Personal email — adwu@pm.me"
+    search_terms: [mail, proton, "personal address"]
+  - triggers: [",,workemail", ";;j"]
+    replace: "alex@cleverific.com"
+    label: "Work email — alex@cleverific.com"
+    search_terms: [mail, cleverific, "work address", job]
+  - triggers: [",,name", ";;n"]
+    replace: "Alex Wu"
+    search_terms: [fullname]
+  - triggers: [",,chez", ";;;"]
+    replace: "~/.local/share/chezmoi"
+    search_terms: [chezmoi, dotfiles, "dotfiles repo"]
+  - triggers: [",,bin", ";;/"]
+    replace: "~/.local/bin"
+    search_terms: ["local bin", path]
+
+  # ~/Code/lulu- — drop `app` / `select` / `dictate` after. `,,lulu` is the
+  # only existing trigger that's already fully right-hand (l-u-l-u), so it
+  # doesn't need a `;;` alias.
+  - trigger: ",,lulu"
+    replace: "~/Code/lulu-"
+    label: "Project path — ~/Code/lulu- (then app|select|dictate)"
+    search_terms: [project, code, lulu, path, repo]
+
+  - trigger: ",,dbzname"
+    replace: "{{name}}"
+    label: "DBZ pet name — e.g. gohan-saiyan"
+    search_terms: [petname, dragonball, dbz, random, "session name"]
+    vars:
+      - name: name
+        type: shell
+        params:
+          # Resolved mise install path — the `petname` shim under ~/.local/share/mise/shims
+          # needs mise's activation env, which `shell: sh` deliberately doesn't source
+          # (espanso's default interactive zsh shell sourced .zshrc and broke things — see
+          # config/default.yml). Absolute path to ~/.config/petname-dbz for the same reason.
+          cmd: "/Users/jamesbombeelu/.local/share/mise/installs/cargo-petname/latest/bin/petname -d /Users/jamesbombeelu/.config/petname-dbz"
+          shell: sh
+          trim: true

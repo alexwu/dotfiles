@@ -1,0 +1,26 @@
+# espanso match file — base
+#
+# Domain-specific snippets live in sibling files:
+#   dates.yml     — date / time / timestamp
+#   git.yml       — conventional-commit prefixes
+#   md.yml        — markdown scaffolding (code blocks, details, tables, links, …)
+#   personal.yml  — email, name, common paths
+#   work.yml      — Shopify dev stores + Shop.f(...) helpers
+#
+# Espanso loads every *.yml under match/ recursively, so this file can stay empty.
+#
+# A `,,,` text-trigger snippet picker was tried twice here and abandoned both
+# times — espanso's keystroke detector watches every app globally, so any way of
+# popping a picker FROM espanso opens the door to the picker's own keystrokes
+# (or its callback's) re-firing the match underneath. The first attempt shelled
+# out to Raycast and ran espanso's worker into a `capacity overflow` panic via
+# Raycast's callback; the second used a fire-and-forget `choose | espanso match
+# exec` pipeline and worked once, then broke on `,,,` typed into the picker
+# itself — even with a per-app `disable: true` filter for `choose`. The robust
+# answer is a hotkey-bound version of the same pipeline (see `espick` bound to
+# `⌃⌥⌘S` in skhd); espanso isn't involved in launching it, so it can't crash
+# espanso.
+#
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches: []

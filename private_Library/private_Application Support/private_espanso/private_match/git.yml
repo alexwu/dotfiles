@@ -1,0 +1,42 @@
+# espanso match file — git / conventional commits
+#
+# Each trigger expands to a Conventional-Commit prefix with the cursor placed
+# inside the scope parens, e.g. ",,feat" -> "feat(<cursor>): ".
+# `label` is the search-bar display; `search_terms` are extra search keywords
+# (every entry surfaces on "commit" via the label and on "conventional").
+#
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+  - trigger: ",,feat"
+    replace: "feat($|$): "
+    label: "feat(scope): — commit prefix"
+    search_terms: [conventional, feature]
+  - trigger: ",,fix"
+    replace: "fix($|$): "
+    label: "fix(scope): — commit prefix"
+    search_terms: [conventional, bugfix]
+  - trigger: ",,chore"
+    replace: "chore($|$): "
+    label: "chore(scope): — commit prefix"
+    search_terms: [conventional]
+  - trigger: ",,refactor"
+    replace: "refactor($|$): "
+    label: "refactor(scope): — commit prefix"
+    search_terms: [conventional]
+  - trigger: ",,docs"
+    replace: "docs($|$): "
+    label: "docs(scope): — commit prefix"
+    search_terms: [conventional, documentation]
+  - trigger: ",,perf"
+    replace: "perf($|$): "
+    label: "perf(scope): — commit prefix"
+    search_terms: [conventional, performance]
+  - trigger: ",,test"
+    replace: "test($|$): "
+    label: "test(scope): — commit prefix"
+    search_terms: [conventional, testing]
+  - trigger: ",,style"
+    replace: "style($|$): "
+    label: "style(scope): — commit prefix"
+    search_terms: [conventional, formatting]

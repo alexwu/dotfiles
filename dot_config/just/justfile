@@ -20,16 +20,28 @@ docker-rebuild COMPOSE:
 mcp-inspector:
     bunx @modelcontextprotocol/inspector
 
+[group("secrets")]
+[doc("Scan working tree for secrets via gitleaks (fast; no git-history walk).")]
+[no-cd]
+secrets-scan:
+    gitleaks detect --no-git --source . --verbose
+
+[group("secrets")]
+[doc("Scan full git history for secrets via gitleaks (paranoid pre-push check).")]
+[no-cd]
+secrets-scan-history:
+    gitleaks detect --source . --verbose
+
 LLAMA_SWAP := "http://localhost:8000"
 
-[group("llm")]
+[group("llama-swap")]
 [doc("List models exposed by llama-swap")]
 llm-models:
     xh -b GET {{ LLAMA_SWAP }}/v1/models
 
 LLM_DEFAULT_MODEL := "anthropic/claude-haiku-4.5"
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Chat completion: just llm-chat [-m MODEL] [--stream] PROMPT...")]
 [arg("model", long, short="m")]
 [arg("stream", long, value="true")]
@@ -48,7 +60,7 @@ llm-chat model=LLM_DEFAULT_MODEL stream="false" +prompt="":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
     fi
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Chat with prompt from stdin: cat file.txt | just llm-pipe [-m MODEL] [--stream]")]
 [arg("model", long, short="m")]
 [arg("stream", long, value="true")]
@@ -64,7 +76,7 @@ llm-pipe model=LLM_DEFAULT_MODEL stream="false":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
     fi
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Responses API: just llm-respond [-m MODEL] [--stream] PROMPT...")]
 [arg("model", long, short="m")]
 [arg("stream", long, value="true")]
@@ -83,7 +95,7 @@ llm-respond model=LLM_DEFAULT_MODEL stream="false" +prompt="":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/responses
     fi
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Responses API with prompt from stdin: cat file.txt | just llm-respond-pipe [-m MODEL] [--stream]")]
 [arg("model", long, short="m")]
 [arg("stream", long, value="true")]
@@ -99,13 +111,13 @@ llm-respond-pipe model=LLM_DEFAULT_MODEL stream="false":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/responses
     fi
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Pick a model interactively and print the chosen id: just llm-pick [-p PICKER]")]
 [arg("picker", long, short="p")]
 llm-pick picker="choose":
     xh -b GET {{ LLAMA_SWAP }}/v1/models | jaq -r '.data[].id' | {{ picker }}
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Pick a model interactively, then chat: just llm-chat-pick [--stream] [-p PICKER] PROMPT...")]
 [arg("stream", long, value="true")]
 [arg("picker", long, short="p")]
@@ -129,31 +141,68 @@ llm-chat-pick stream="false" picker="choose" +prompt="":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
     fi
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Unload all running llama-swap models")]
 llm-unload:
     xh -b GET {{ LLAMA_SWAP }}/models/unload
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Tail the llama-swap SSE event stream")]
 llm-events:
     xh --stream GET {{ LLAMA_SWAP }}/api/events
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Open the llama-swap web UI in browser")]
 llm-ui:
     open {{ LLAMA_SWAP }}/ui/
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Tail the llama-swap log file")]
 llm-log:
     tail -f ~/.config/llama-swap/llama-swap.log
 
-[group("llm")]
+[group("llama-swap")]
 [doc("Restart the llama-swap launchd agent")]
 [confirm("Restart llama-swap? This will interrupt any running requests.")]
 llm-restart:
     launchctl kickstart -k gui/$(id -u)/com.github.mostlygeek.llama-swap
+
+[group("llm")]
+[doc("Conventional Commit message for staged diff via `llm`: J llm-commit-message [-p PROVIDER] [-m MODEL]")]
+[arg("model", long, short="m")]
+[arg("provider", long, short="p")]
+[no-cd]
+llm-commit-message provider="codex" model="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z $(git diff --cached --stat 2>/dev/null) ]]; then
+        echo "llm-commit-message: nothing staged. Run 'git add <files>' first." >&2
+        exit 1
+    fi
+    args=(--provider {{ quote(provider) }})
+    if [[ -n {{ quote(model) }} ]]; then
+        args+=(--model {{ quote(model) }})
+    fi
+    git diff --cached | llm "${args[@]}" 'Write a single git commit message for this staged diff.
+
+    Format (Conventional Commits):
+    - Subject: `type(scope): Description`
+    - Type is one of: feat, fix, chore, docs, style, refactor, perf, test
+    - THIRD-PERSON SINGULAR PRESENT TENSE — `Adds`, `Fixes`, `Bumps`, `Reworks`, `Removes`.
+      NOT imperative — never `Add`, `Fix`, `Bump`, `Rework`, `Remove`.
+    - First letter of the Description capitalized
+    - No trailing period on the subject
+    - Subject under 72 chars
+    - Scope: short slug derived from the file paths / feature area in the diff
+    - Example: `feat(auth): Adds password reset functionality`
+
+    Body (optional, only when worth saying):
+    - Dry. List detailed changes factually.
+    - Do NOT "sell" the changes — no marketing language, no superlatives.
+    - Wrap at ~72 chars.
+    - Blank line between subject and body.
+
+    Output ONLY the commit message. No preamble, no code fences, no explanation.'
 
 [group("tree-sitter")]
 [doc("Refresh tree-sitter grammars: hx fetch + build, then rebuild tree-sitter-<lang> symlinks")]

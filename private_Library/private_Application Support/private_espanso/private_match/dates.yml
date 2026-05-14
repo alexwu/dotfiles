@@ -1,0 +1,42 @@
+# espanso match file — dates & timestamps
+#
+# Each match has two triggers: a `,,`-prefixed mnemonic and a `;;`-prefixed
+# right-hand-only alias. `label` overrides the search-bar display (otherwise
+# it'd show the raw `{{...}}` placeholder); `search_terms` are extra
+# fuzzy-search keywords.
+#
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+  # ISO date — 2026-05-12
+  - triggers: [",,date", ";;y"]
+    replace: "{{date}}"
+    label: "ISO date — e.g. 2026-05-12"
+    search_terms: [iso, "current date", year]
+    vars:
+      - name: date
+        type: date
+        params:
+          format: "%Y-%m-%d"
+
+  # 24-hour time — 14:30
+  - triggers: [",,time", ";;h"]
+    replace: "{{time}}"
+    label: "24-hour time — e.g. 14:30"
+    search_terms: [clock, "current time", hour]
+    vars:
+      - name: time
+        type: date
+        params:
+          format: "%H:%M"
+
+  # Full timestamp — 2026-05-12 14:30:05
+  - triggers: [",,now", ";;p"]
+    replace: "{{ts}}"
+    label: "Timestamp — e.g. 2026-05-12 14:30:05"
+    search_terms: [datetime, "current timestamp"]
+    vars:
+      - name: ts
+        type: date
+        params:
+          format: "%Y-%m-%d %H:%M:%S"

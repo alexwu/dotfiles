@@ -4,218 +4,163 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Experimental minimal Neovim configuration using Neovim 0.12+ nightly features:
-- **Builtin plugin manager**: Uses `vim.pack` (Neovim's new native plugin manager) instead of lazy.nvim/packer
-- **Breaking changes**: Based on nvim-treesitter's main branch with breaking changes
-- **Single-file config**: Entire configuration in `init.lua` (~1400 lines)
+Experimental Neovim configuration using Neovim 0.12+ nightly features:
+- **Builtin plugin manager**: Uses `vim.pack` (Neovim's native plugin manager) instead of lazy.nvim/packer
+- **Per-plugin layout**: `plugin/<name>.lua` per plugin (one `vim.pack.add` + `setup` per file). `init.lua` holds foundations only (~480 lines).
+- **Manual treesitter setup**: No `treesitter-modules.nvim`. Uses `vim.treesitter.start` + `nvim-treesitter.install` directly per the plugin author's own README recommendation.
+- **`vim.lsp.config()` + `vim.lsp.enable()`**: New builtin LSP config API. Per-server overrides live in `after/lsp/<name>.lua`.
 
 ## Requirements
 
 - Neovim 0.12+ nightly build
-- tree-sitter CLI (auto-installed on first run via brew/scoop/npm)
+- tree-sitter CLI (auto-installed by `plugin/nvim-treesitter.lua` via brew/scoop/npm)
+- `~/Code/neovim/plugins/bu/` checkout of the bu library (alexwu/bombeelu-tils on GitHub) — required by `bombeelu.autocmds`, `bombeelu.visual-surround`, and global keymaps in `init.lua`. `init.lua` rtp-prepends this path.
 
 ## Plugin Management with vim.pack
 
-This config uses Neovim's new builtin `vim.pack` API instead of external plugin managers.
+Each plugin lives in its own `plugin/<name>.lua`. Each file:
+1. (Optional) cond check using `bombeelu.utils.not_vscode` or similar
+2. `vim.pack.add({ { src = gh("user/repo"), ... } })` — `gh()` is a global helper from `init.lua`
+3. `require("...").setup({...})`
+4. Plugin-specific keymaps, commands, autocmds
 
-### Key Concepts
+**No `vim.g.loaded_<x>` guards on plugin specs** — `vim.pack.add` is idempotent and most setup() calls overwrite via augroups (`clear=true`) or `keymap.set` which replace not duplicate. Re-sourcing during dev iteration is desirable, not a footgun. Reserve guards for `plugin/bombeelu-<name>.lua` auto-loads (where re-running setup() would duplicate side effects).
 
-1. **Plugin specs** are defined as a Lua table in `init.lua:234-289`:
+### Loading order
+
+`plugin/*.lua` files source alphabetically after `init.lua` finishes. Three numeric-prefixed exceptions guarantee correct ordering:
+- `plugin/00-lush.lua` — colorscheme dependency, must come first
+- `plugin/01-snazzy.lua` — sets the colorscheme
+- `plugin/02-snacks.lua` — Snacks loaded early so any other plugin's setup() can rely on `Snacks` being globally available
+
+Other ordering deps work via natural alphabetical order: `mason` < `mason-lspconfig` < `nvim-lspconfig`.
+
+### URL helpers
+
+Defined globally in `init.lua` and exposed via `_G`:
+- `gh("user/repo")` → `"https://github.com/user/repo"`
+- `gl("user/repo")` → GitLab
+- `cb("user/repo")` → Codeberg
+
+### Adding a New Plugin
+
+1. Create `plugin/<name>.lua`:
 ```lua
-local plugins = {
-  { src = gh("user/repo"), name = "plugin-name", version = "main" },
-  { src = gh("user/repo"), cond = is_mac },
-}
+-- Optional cond
+local utils = require("bombeelu.utils")
+if not utils.not_vscode then return end
+
+vim.pack.add({ { src = gh("author/plugin-name") } })
+require("plugin-name").setup({ ... })
 ```
 
-2. **URL helpers**: `gh(repo)`, `gl(repo)`, `cb(repo)` generate full URLs from "user/repo" format
-
-3. **Conditional loading**: Use `cond` field with boolean or function:
-   - `cond = is_mac` - only on macOS
-   - `cond = invert(is_vscode)` - skip in VSCode
-   - Helper functions: `is_mac()`, `is_windows()`, `is_vscode()`, `invert(fn)`
-
-4. **Plugin loading**: `vim.pack.add()` called once with all plugins (`init.lua:313`)
-
-5. **Check if plugin is active**: Use `is_active("plugin-name")` helper function
+2. Run `:Pack update` to install.
 
 ### Plugin Management Commands
 
-```bash
-# Update all plugins
-:Pack update
-
-# Update specific plugin
-:Pack update <plugin-name>
-
-# View plugin info (opens split with details)
-:Pack info [plugin-name]
-:Pack get [plugin-name]
+```vim
+:Pack update [name]   " Update plugin(s)
+:Pack info [name]     " Show plugin info (path, rev, branches, tags)
+:Pack get [name]      " Same as info
+:checkhealth vim.pack " Verify plugin state
 ```
 
 ## Configuration Architecture
 
-All configuration is in `init.lua`, organized into sections with clear separators:
+### `init.lua` (foundations only)
 
-1. **Monkey patches** (lines 5-38): Workarounds for nightly bugs
-2. **Utils** (lines 41-61): Helper function `M.set()` for keymaps
-3. **Options** (lines 63-158): Vim options and basic autocmds
-4. **Plugin installation** (lines 160-313): `vim.pack.add()` with plugin specs
-5. **Plugin configurations** (lines 315+): Each plugin has dedicated section
+Sections, in order:
+1. **`vim.loader.enable()`** (line 1, ~30% startup speedup per echasnovski's vim.pack guide)
+2. Monkey patch for vim.system nil stdout/stderr bug in nightly builds
+3. `<leader>` set to space
+4. `M.set` keymap helper, `_G.set = M.set`
+5. **bu rtp prepend** for `~/Code/neovim/plugins/bu`
+6. Platform helpers via `require("bombeelu.utils")` (is_mac, is_vscode, invert, not_vscode)
+7. URL helpers (`gh`/`gl`/`cb`) and `is_active`, exposed as globals for plugin/* files
+8. **PackChanged hooks** (currently the fff.nvim binary build) — must register before any `plugin/*.lua` calls `vim.pack.add`
+9. Vim options (with `ch=2`, MenuPopup cleanup autocmd, yank highlight, completeopt, etc.)
+10. `vim.diagnostic.config()`
+11. Global keymaps: j/k smart, indent, ESC, save, F2/F3, alt-BS, Q, ]t/[t, scroll-half, treesitter `<CR>`/`<BS>`, `<C-y>` inline completion, gd/grr/gri/grt/grx/gra LSP keymaps, `K` smart hover dispatcher, `<A-o>`/`<A-O>` via `bu.keys.o/O`
+12. Custom commands (`Qa`, `Wq`, `W`)
+13. `:Pack` user command (Lazy.nvim-style management UI)
 
-### Adding a New Plugin
+### `lua/bombeelu/` modules
 
-1. Add to `plugins` table:
-```lua
-{ src = gh("user/plugin"), version = "main" }
-```
+| Module | Description |
+|---|---|
+| `autocmds` | LazyVim-derived autocmds: checktime, resize_splits, last_loc, close_with_q, man_unlisted, wrap_spell, json_conceal, auto_create_dir |
+| `git` | Tiered base branch detection (PR cache → reflog → merge-base → default). Async `gh` PR cache on BufEnter |
+| `lspinfo` | Floating-window `:LspInfo` reimplementation (the original was removed from nvim-lspconfig) |
+| `neotest` | `:Test` command + jump keymaps (wired by `plugin/neotest.lua`) |
+| `neovide` | Neovide GUI options + `<D-*>` clipboard keymaps. Guarded by `vim.g.neovide` |
+| `utils` | Platform detection (is_mac, is_vscode, is_windows, invert, not_vscode) |
+| `visual-surround` | Visual-mode surround shortcuts: `(`/`{`/`[`/`q`/`'`/`` ` ``/`t` |
+| `vscode` | VSCode-embedded-Neovim keymaps. Guarded by `vim.g.vscode` |
 
-2. Add configuration section after other plugin configs:
-```lua
--- ============================================================================
--- PLUGIN-NAME CONFIGURATION
--- ============================================================================
+### `plugin/bombeelu-*.lua` auto-loads
 
-require("plugin-name").setup({})
-```
+Each module with side effects (autocmds, commands, keymaps) has an auto-load entry guarded by `vim.g.loaded_bombeelu_<name>`. Lightweight entries (e.g. `:LspInfo`) defer the main module `require` until invocation.
 
-3. Run `:Pack update` to install
+`bombeelu.neotest` is wired from `plugin/neotest.lua` (after `require("neotest").setup(...)`) rather than from a `plugin/bombeelu-neotest.lua` — since `b` < `n` alphabetically, the bombeelu auto-load would source before neotest is on rtp.
 
-### Key Architectural Patterns
+### `after/lsp/` overrides
 
-**Conditional plugin loading**: Many plugins skip loading in VSCode using `cond = invert(is_vscode)`. This allows the same config to work in both Neovim and VSCode Neovim.
+Per-server `vim.lsp.config()` overrides. Auto-loaded by Neovim's runtime and deep-merged with nvim-lspconfig's shipped `lsp/<name>.lua`. Add a new server here:
 
-**LSP configuration**: Uses new `vim.lsp.config()` + `vim.lsp.enable()` API (lines 886-973) instead of lspconfig's `.setup()`.
-
-**Unified picker interface**: Custom `:Pick` command (lines 547-614) that works with both fff.nvim and Snacks.nvim pickers, providing a consistent interface regardless of which is active.
-
-**Helper functions for platform detection**: `is_mac()`, `is_windows()`, `is_vscode()` used throughout for conditional behavior.
+1. Create `after/lsp/<server>.lua` returning the config table
+2. Add the server name to the `servers` list in `plugin/nvim-lspconfig.lua`
 
 ## Custom Commands
 
-### File Pickers
 ```vim
-:Pick [picker-name]  " Unified picker interface
-                     " defaults to 'files', supports all Snacks pickers
-```
-
-### Formatting
-```vim
-:Format              " Format buffer with configured formatter
-:Format prettier     " Format with specific formatter
-<F8> / gq            " Format buffer (normal mode)
-<F8>                 " Format buffer (insert mode)
-```
-
-### Git
-```vim
-:Commit              " Smart commit (tinygit) - commits staged or all changes
-```
-
-### Plugin Management
-```vim
+:Pick [picker-name]  " Unified picker interface (defaults to "files", supports all Snacks pickers)
+:Format [formatter]  " Format buffer with configured formatter (or specific one)
+:Commit              " Smart commit (tinygit) — staged or all changes
 :Pack update [name]  " Update plugin(s)
 :Pack info [name]    " Show plugin info
-```
-
-### Common typo fixes
-```vim
+:Test                " Run nearest test (bombeelu.neotest)
 :W / :Wq / :Qa       " Auto-corrected to lowercase
 ```
 
-## Treesitter
+## Treesitter (manual setup, no wrapper plugin)
 
-Using nvim-treesitter **main branch** (breaking changes from v1.0):
-- Auto-installs missing parsers on buffer enter (`auto_install = true`)
-- Uses `treesitter-modules.nvim` for configuration
-- Install parsers: `:TSInstall <language>`
+Per the `treesitter-modules.nvim` README, post-0.12 incremental selection is native via `an`/`in` keymaps. `plugin/nvim-treesitter.lua` does the rest manually via `vim.treesitter.start(buf, lang)` (highlight), `vim.treesitter.foldexpr()` (fold), `nvim-treesitter.indentexpr()` (indent), and a FileType autocmd that auto-installs missing parsers.
 
-## LSP Setup
+The `<CR>`/`<BS>` bindings in `init.lua` use `vim.treesitter._select` (internal) with an LSP fallback — coexists with native `an`/`in`.
 
-This config uses the **new builtin LSP configuration API** (`vim.lsp.config()` + `vim.lsp.enable()`):
+## Lazy-load Patterns (DirChanged-deferred)
 
-```lua
-vim.lsp.config("server_name", {
-  settings = { ... }
-})
-vim.lsp.enable("server_name")
-```
+Some plugins should only load when the cwd contains a relevant project marker:
+- `plugin/nvim-vtsls.lua` — only loads when `tsconfig.json` is found
+- `plugin/xcodebuild.lua` — only loads when `*.xcodeproj`, `*.xcworkspace`, or `Package.swift` is found
 
-Enabled servers (lines 886-973):
-- TypeScript: `vtsls` or `denols` (based on root markers)
-- Python: `basedpyright` + `ruff`
-- Web: `html`, `tailwindcss`, `eslint`, `biome`
-- Others: `yamlls`, `taplo`, `zls`, `markdown_oxide`, `sourcekit`, `gdscript`, `sqruff`, `typos_lsp`
-
-Mason auto-enables all installed servers except: `harper-ls`, `lua_ls`.
+Each uses a `loaded` flag closure + a `DirChanged` autocmd to (re)check the marker. Keymap registration happens inside the `check()` function only after `vim.pack.add` returns. This mirrors the main lazy.nvim config's `init = function() ... require("lazy").load() end` pattern, but uses `vim.pack.add` (sync, idempotent) instead.
 
 ## File Structure
 
 ```
-init.lua       - Entire configuration (1400+ lines)
-filetype.lua   - Custom filetype detection
+init.lua                           # ~480 lines: foundations only
+filetype.lua                       # custom filetype detection (identical to dot_config/nvim/)
+queries/                           # custom treesitter queries (identical to dot_config/nvim/)
+lua/bombeelu/                      # custom modules (autocmds, git, lspinfo, neotest, neovide, utils, visual-surround, vscode)
+plugin/                            # plugin specs (one per plugin) + bombeelu-* auto-loads
+  00-lush.lua / 01-snazzy.lua / 02-snacks.lua    # numeric prefix for early load
+  bombeelu-*.lua                   # auto-loads for lua/bombeelu/ modules
+  <plugin>.lua × ~50               # vim.pack.add + setup per plugin
+after/lsp/                         # per-server LSP config overrides
 ```
 
 ## Development Workflow
 
-1. **Edit config**: Modify `init.lua`
-2. **Reload**: `:restart` or `:source %`
-3. **Update plugins**: `:Pack update`
-4. **View plugin info**: `:Pack info`
-5. **Install LSP servers**: `:Mason`
-6. **Install treesitter parsers**: `:TSInstall <lang>`
+1. **Edit config** under `dot_config/pack-nvim/` (chezmoi-managed source)
+2. **`chezmoi apply`** to deploy to `~/.config/pack-nvim/`
+3. **`stylua dot_config/pack-nvim/`** to format Lua files (mandatory before commit)
+4. **Launch**: `NVIM_APPNAME=pack-nvim nvim` (alias `envim`)
+5. **Update plugins**: `:Pack update`
+6. **Install LSP servers**: `:Mason`
+7. **Health check**: `:checkhealth vim.pack`
 
-## Important Implementation Details
+## Reference
 
-### Keymap Helper
-The `M.set()` function accepts single or multiple mappings:
-```lua
-set("n", { "<C-s>", "<D-s>" }, vim.cmd.write, { desc = "Save file" })
-```
-
-### Custom Scroll Implementation
-Custom half-page scroll (lines 724-745) that respects buffer boundaries instead of using `<C-d>`/`<C-u>`.
-
-### Snacks.nvim Integration
-Many features depend on Snacks.nvim:
-- Statuscolumn
-- Terminal toggles
-- Built-in pickers
-- Input prompts (inc-rename uses "snacks" input_buffer_type)
-
-Check if Snacks is active with `is_active("snacks.nvim")` before calling Snacks features.
-
-### Folding Configuration
-Uses treesitter-based folding:
-- `foldmethod = "expr"` with treesitter
-- `foldlevel = 99` (all folds open by default)
-- Custom fillchars for modern fold icons
-
-## Common Patterns
-
-### Adding Keymaps
-```lua
-set("n", "<leader>x", function() ... end, { desc = "Description" })
-set({ "n", "v" }, "key", "command", { silent = true })
-```
-
-### Checking Plugin Status
-```lua
-if is_active("plugin-name") then
-  -- Plugin-specific code
-end
-```
-
-### Formatter Configuration
-Add formatters in `conform.nvim` setup (lines 752-786):
-```lua
-formatters_by_ft = {
-  lua = { "stylua" },
-  typescript = { "biome", "prettier", stop_after_first = true },
-}
-```
-
-## Known Issues
-
-- **vim.system bug**: Lines 5-38 contain commented monkey patch for nil stdout/stderr bug in nightly builds
-- **nvim-treesitter main branch**: Breaking changes from v1.0, may have instability
+- [echasnovski — A guide to vim.pack](https://echasnovski.com/blog/2026-03-13-a-guide-to-vim-pack)
+- Main config (lazy.nvim) at `dot_config/nvim/` — feature-parity reference for porting

@@ -1,0 +1,76 @@
+# espanso match file — markdown scaffolding
+#
+# `$|$` marks where the cursor lands after expansion.
+# A handful of the highest-frequency entries (`cb`, `link`, `quote`) carry a
+# `;;`-prefixed right-hand-only alias as a second trigger. `label` is the
+# search-bar display (the raw `replace` is multi-line / full of cursor
+# markers); `search_terms` are extra fuzzy-search keywords.
+#
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+  # Fenced code block — cursor on the inner line
+  - triggers: [",,cb", ";;k"]
+    replace: |-
+      ```
+      $|$
+      ```
+    label: "Fenced code block (``` … ```)"
+    search_terms: [codeblock, snippet, kode]
+
+  # <details> disclosure block — cursor in the summary
+  - trigger: ",,details"
+    replace: |-
+      <details>
+      <summary>$|$</summary>
+
+      </details>
+    label: "<details> disclosure block"
+    search_terms: [disclosure, collapsible, spoiler, accordion, summary]
+
+  # Markdown link — cursor in the link text, drop the URL between the parens
+  - triggers: [",,link", ";;l"]
+    replace: "[$|$]()"
+    label: "Markdown link — [text](url)"
+    search_terms: [hyperlink, href, url]
+
+  # Task-list item
+  - trigger: ",,task"
+    replace: "- [ ] "
+    label: "Task-list item — - [ ] "
+    search_terms: [checkbox, todo, checklist]
+
+  # Markdown table — 2-column skeleton, cursor in the first header cell
+  - trigger: ",,table"
+    replace: |-
+      | $|$ |  |
+      | --- | --- |
+      |  |  |
+    label: "Markdown table (2-col skeleton)"
+    search_terms: [grid, columns]
+
+  # Blockquote — cursor after the marker
+  - triggers: [",,quote", ";;'"]
+    replace: "> "
+    label: "Blockquote — > "
+    search_terms: [blockquote, citation]
+
+  # Thematic break / horizontal rule
+  - trigger: ",,hr"
+    replace: "---"
+    label: "Horizontal rule — ---"
+    search_terms: [divider, "horizontal rule", "thematic break", separator]
+
+  # Markdown image — cursor in the alt text
+  - trigger: ",,img"
+    replace: "![$|$]()"
+    label: "Markdown image — ![alt](url)"
+    search_terms: [picture, screenshot, embed]
+
+  # GitHub-flavored callout / alert — cursor on the body line
+  - trigger: ",,note"
+    replace: |-
+      > [!NOTE]
+      > $|$
+    label: "Callout — > [!NOTE]"
+    search_terms: [callout, admonition, alert, aside]

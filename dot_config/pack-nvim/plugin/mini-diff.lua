@@ -1,0 +1,2 @@
+-- vim.pack.add({ { src = gh("nvim-mini/mini.diff") } })
+-- require("mini.diff").setup({})

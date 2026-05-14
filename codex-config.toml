@@ -3,9 +3,10 @@ approval_policy = "on-request"
 model = "gpt-5.5"
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
-notify = ["/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/computer-use/1.0.755/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 model_reasoning_effort = "medium"
 personality = "friendly"
+
+notify = ["/Users/jamesbombeelu/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [tools]
 web_search = true
@@ -14,10 +15,11 @@ web_search = true
 network_access = true
 
 [features]
-codex_hooks = true
+hooks = true
 terminal_resize_reflow = true
 memories = true
 external_migration = true
+goals = true
 
 [model_providers.openrouter]
 name = "OpenRouter"
@@ -48,9 +50,6 @@ enabled = true
 enabled = true
 
 [plugins."computer-use@openai-bundled"]
-enabled = true
-
-[plugins."browser-use@openai-bundled"]
 enabled = true
 
 [plugins."documents@openai-primary-runtime"]
@@ -101,13 +100,31 @@ trust_level = "trusted"
 [projects."/Users/jamesbombeelu/Code/lulu-app"]
 trust_level = "trusted"
 
+[projects."/Users/jamesbombeelu"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-code"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-nvim"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/.claude/projects/-Users-jamesbombeelu-Code-lulu-app"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-select"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
-last_updated = "2026-04-30T22:35:44Z"
+last_updated = "2026-05-08T18:55:41Z"
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-04-30T22:43:31Z"
+last_updated = "2026-05-08T09:42:58Z"
 source_type = "local"
 source = "/Users/jamesbombeelu/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -117,11 +134,54 @@ source = "/Users/jamesbombeelu/.cache/codex-runtimes/codex-primary-runtime/plugi
 [notice]
 hide_rate_limit_model_nudge = true
 
+[notice.external_config_migration_prompts]
+home_last_prompted_at = 1778651556
+
+[notice.external_config_migration_prompts.project_last_prompted_at]
+"/Users/jamesbombeelu" = 1778209978
+"/Users/jamesbombeelu/Code/lulu-nvim" = 1778278128
+"/Users/jamesbombeelu/Code/lulu-select" = 1778717183
+
+[hooks.state]
+
+[hooks.state."/Users/jamesbombeelu/.codex/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:e49240395571fa00471bd940a9c7de9e88bea485c8aa6c8530cebdce1753e1c0"
+
+[hooks.state."/Users/jamesbombeelu/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:8f0b35ed0e3553a863f8a803a6b93400a263b2b709ab78c275247eb4ad655b7a"
+
+[hooks.state."/Users/jamesbombeelu/.codex/hooks.json:pre_tool_use:0:1"]
+trusted_hash = "sha256:6a5945133fb6f2fe19b82e72a195b326acabdff197f0d789a108b3a1fb3e2d4e"
+
+[hooks.state."/Users/jamesbombeelu/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:56acfe911eec53753207580bfdaafb59b3e5e785942f45efa0a5b9c610ce7d9e"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-code/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:2ea033e883d96bf17502eabfcdd69d4cfa57aebfbe2677f23149847e97e126b0"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-nvim/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:241c704df659f6ba9884f40f24bdcfb0e567b9120c452cb153d85fb59e732047"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-nvim/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:2ea033e883d96bf17502eabfcdd69d4cfa57aebfbe2677f23149847e97e126b0"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-select/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:241c704df659f6ba9884f40f24bdcfb0e567b9120c452cb153d85fb59e732047"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-select/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:2ea033e883d96bf17502eabfcdd69d4cfa57aebfbe2677f23149847e97e126b0"
+
 # >>> nono:always-further-codex >>>
 [marketplaces.always-further]
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/plugins/marketplaces/always-further"
 
+[tui]
+status_line = ["model-with-reasoning", "current-dir", "model", "project-name", "git-branch", "context-remaining", "five-hour-limit"]
+
 [plugins."nono@always-further"]
+enabled = true
+
+[plugins."browser-use@openai-bundled"]
 enabled = true
 # <<< nono:always-further-codex <<<

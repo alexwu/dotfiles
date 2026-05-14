@@ -33,6 +33,7 @@ packages:
       - gh
       - git-delta
       - git-lfs
+      - gitleaks
       - glab
       - gnu-sed
       - go

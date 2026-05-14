@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# espick — fuzzy snippet picker over espanso's match list.
+#
+# Streams each espanso match into lulu-select as a JSONL item with a
+# baked-in `preview_cmd` that re-prints the snippet's `.replace` body
+# through `bat` for a styled preview. The chosen item's `value` (the
+# trigger string) is fed to `espanso match exec`, which fires the
+# expansion into whatever app was focused before the picker took focus.
+# Intended to be bound to a hotkey (see ~/.config/skhd/skhdrc).
+#
+# Optional arg: an initial query string to prefill the picker's filter.
+#
+# This exists because launching the picker from *inside* an espanso match
+# (a `,,,` text-trigger that shells out) reliably crashes the worker —
+# espanso's keystroke detector watches every app globally, so any way of
+# popping a picker from espanso opens the door to recursion / cascade.
+# Bound to a hotkey, espanso isn't the thing launching it, so the engine
+# never gets reentered. See match/base.yml for the long version.
+
+set -euo pipefail
+
+# GUI hotkey daemons (skhd, Hammerspoon, Raycast script commands) inherit
+# a minimal launchd PATH; lulu-select lives in ~/.local/bin, espanso/jaq/
+# bat live under /opt/homebrew/bin, all unfindable otherwise.
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+trigger=$(
+  espanso match list --json \
+    | jaq -c '.[] | .triggers[] as $t |
+        {
+          value: $t,
+          title: $t,
+          subtitle: (.label // ""),
+          preview_cmd: ("printf %s " + ((.replace // "") | @sh) +
+                        " | bat --color=always --style=plain --paging=never")
+        }' \
+    | lulu-select \
+        --input jsonl \
+        --prompt "snippet › " \
+        --query "${1:-}"
+) || exit 0  # `lulu-select` exits non-zero on Esc / cancel — quiet exit.
+
+[[ -n "$trigger" ]] && espanso match exec -t "$trigger"

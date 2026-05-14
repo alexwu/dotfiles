@@ -213,7 +213,7 @@ config.color_scheme = "Snazzy"
 config.font = wezterm.font_with_fallback({
 	{ family = "Fira Code", weight = 450 },
 	"codicon",
-	-- { family = "FiraCode Nerd Font Mono", weight = 450 },
+	{ family = "FiraCode Nerd Font Mono", weight = 450 },
 	{ family = "Maple Mono NF", weight = 450 },
 	{ family = "Nerd Font Symbols Font", weight = 450 },
 })
@@ -411,7 +411,7 @@ config.keys = {
 
 toggle_terminal.apply_to_config(config)
 
-config.max_fps = 120
+-- config.max_fps = 120
 config.window_close_confirmation = "NeverPrompt"
 config.unix_domains = {
 	{
@@ -420,7 +420,7 @@ config.unix_domains = {
 }
 -- config.enable_kitty_keyboard = true
 -- config.enable_csi_u_key_encoding = false
-config.window_background_opacity = 0.9
+config.window_background_opacity = 0.90
 config.macos_window_background_blur = 25
 config.front_end = "WebGpu"
 config.font_size = 14.0

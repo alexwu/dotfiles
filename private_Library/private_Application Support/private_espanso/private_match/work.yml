@@ -1,0 +1,34 @@
+# espanso match file — Shopify dev work
+#
+# Bare store domains, plus helpers that wrap a domain in Shop.f("…").
+# Workflow: type ",,shop=" then drop a store trigger inside the quotes,
+#   e.g.  ",,shop=" + ",,shopalex"  ->  shop = Shop.f("alex-cleverific-extensions-dev-store.myshopify.com")
+# `label` keeps the picker readable (store domains are long, the Ruby helpers
+# carry the `$|$` cursor marker); `search_terms` are extra search keywords.
+#
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+  # --- Store domains
+  - trigger: ",,shopalex"
+    replace: "alex-cleverific-extensions-dev-store.myshopify.com"
+    label: "Dev store — Alex (alex-cleverific-extensions-dev-store)"
+    search_terms: [shopify, myshopify, "dev store"]
+  - trigger: ",,shoplaura"
+    replace: "laura-cleverific2.myshopify.com"
+    label: "Dev store — Laura (laura-cleverific2)"
+    search_terms: [shopify, myshopify, "dev store"]
+  - trigger: ",,shopeo"
+    replace: "eo-integration-tests.myshopify.com"
+    label: "Dev store — EO integration tests"
+    search_terms: [shopify, myshopify, "integration tests"]
+
+  # --- Ruby helpers
+  - trigger: ",,shopf"
+    replace: 'Shop.f("$|$")'
+    label: 'Ruby — Shop.f("…")'
+    search_terms: [ruby, "shop helper"]
+  - trigger: ",,shop="
+    replace: 'shop = Shop.f("$|$")'
+    label: 'Ruby — shop = Shop.f("…")'
+    search_terms: [ruby, "shop assignment"]
