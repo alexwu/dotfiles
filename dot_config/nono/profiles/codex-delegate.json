@@ -1,0 +1,12 @@
+{
+  "extends": "codex",
+  "meta": {
+    "name": "codex-delegate",
+    "description": "Codex one-shot delegation profile for the llm wrapper's --sandbox mode. Extends the codex pack profile with read access to ~/.config/llm/schemas, since codex --output-schema reads the schema file by path inside the sandbox."
+  },
+  "filesystem": {
+    "read": [
+      "$HOME/.config/llm/schemas"
+    ]
+  }
+}

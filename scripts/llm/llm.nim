@@ -19,6 +19,7 @@
 ##   git diff --cached | llm --prompt-file commit-message
 ##   llm --provider codex --schema pretooluse "should this tool call be denied?"
 ##   llm --provider codex --image diagram.png "explain this architecture"
+##   llm --sandbox --provider gemini "summarize this paper" < paper.txt
 ##
 ## Extra inputs:
 ##   --system-prompt-file FILE  Markdown/text file layered onto the system
@@ -42,6 +43,17 @@
 ##     ``-i FILE``; pi takes an ``@FILE`` positional; gemini gets an ``@FILE``
 ##     mention appended to the prompt. claude -p has no tool-free image route —
 ##     passing --image to claude is a hard error.
+##   --sandbox  Run the chosen provider inside a `nono` sandbox
+##     (https://nono.sh) for defense-in-depth. The provider invocation is
+##     wrapped as ``nono run -s --allow-cwd --profile P -- <provider...>``,
+##     with P the per-provider profile (claude -> claude-code,
+##     codex -> codex-delegate, gemini -> gemini-delegate, pi -> pi-delegate).
+##     The profile's deny groups
+##     block credentials, keychains, and shell configs (incl. .env) at the
+##     kernel level, on top of the already tool-disabled / read-only provider
+##     modes. ``-s`` keeps nono's banner off stdout; ``--allow-cwd`` is required
+##     because nono will not prompt for CWD access non-interactively. Requires
+##     nono on PATH.
 ##
 ## Defaults (per provider):
 ##   claude   -p PROMPT_ARG --tools "" --output-format text
@@ -273,6 +285,28 @@ proc buildArgv(req: LlmRequest): seq[string] =
       " (expected claude | codex | gemini | pi)"
     quit(2)
 
+func sandboxProfileFor(provider: string): string =
+  ## The `nono` profile backing each provider under ``--sandbox``. claude uses
+  ## nono's package profile; codex, gemini, and pi use the user profiles in
+  ## ~/.config/nono/profiles. Every KnownProviders entry is covered — main
+  ## validates the provider before this runs, so a known provider always
+  ## resolves.
+  case provider
+  of "claude": "claude-code"
+  of "codex": "codex-delegate"
+  of "gemini": "gemini-delegate"
+  of "pi": "pi-delegate"
+  else: ""
+
+func wrapSandbox(argv: openArray[string], provider: string): seq[string] =
+  ## Prepend ``nono run`` so the provider executes inside a nono sandbox.
+  ## ``-s`` silences nono's banner/summary, which would otherwise corrupt the
+  ## one-shot answer on stdout; ``--allow-cwd`` is mandatory because nono
+  ## refuses to prompt for CWD access in non-interactive mode. The per-provider
+  ## profile carries the deny groups and the provider's own config dir.
+  @["nono", "run", "-s", "--allow-cwd", "--profile", sandboxProfileFor(provider), "--"] &
+    @argv
+
 proc dispatchProvider(argv: seq[string]) {.noreturn.} =
   ## Replace the current process with the chosen provider so its stdin, stdout,
   ## stderr, and exit code all pass through to the caller untouched. Piped
@@ -308,6 +342,7 @@ proc main(
     promptFile = "",
     schema = "",
     image: seq[string] = @[],
+    sandbox = false,
     prompt: seq[string],
 ): int =
   ## One-shot wrapper over claude -p / codex exec / gemini -p / pi -p.
@@ -351,6 +386,10 @@ proc main(
   if image.len > 0 and provider notin ImageProviders:
     stderr.writeLine "llm: --image is not supported by " & provider &
       " (use codex, gemini, or pi)"
+    return 2
+  if sandbox and findExe("nono").len == 0:
+    stderr.writeLine "llm: --sandbox requires the nono sandbox on PATH " &
+      "(https://nono.sh)"
     return 2
 
   if systemPromptFile.len > 0 and not fileExists(systemPromptFile):
@@ -400,7 +439,11 @@ proc main(
       "). Pipe large input via stdin instead of passing it as an argument."
     return 2
 
-  let argv = buildArgv(req)
+  let argv =
+    if sandbox:
+      wrapSandbox(buildArgv(req), provider)
+    else:
+      buildArgv(req)
   dispatchProvider(argv) # noreturn — control never reaches past this
 
 when isMainModule:
@@ -420,6 +463,9 @@ when isMainModule:
         "JSON Schema for structured output; a bare name resolves in " &
         "~/.config/llm/schemas (claude, codex only)",
       "image": "image file to attach, repeatable (codex, gemini, pi only)",
+      "sandbox":
+        "run the provider inside a nono sandbox for defense-in-depth " &
+        "(https://nono.sh)",
       "prompt": "prompt text (joined with spaces if multi-arg)",
     },
   )
