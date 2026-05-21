@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code PreToolUse hook output — codex strict variant",
+  "description": "Strict-subset version of ../pretooluse.schema.json, shaped for OpenAI strict structured output (codex 'exec --output-schema', and also accepted by claude '--json-schema'). Strict mode rules: every property is listed in 'required', every object is closed, and arbitrary-keys objects are forbidden. So optional fields are typed nullable (the model emits null when not applicable — strip null-valued keys before feeding the result to a hook), and the open-object 'updatedInput' field from the full schema is omitted entirely. Use the full ../pretooluse.schema.json for reference or with claude when you need updatedInput.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["hookSpecificOutput"],
+  "properties": {
+    "hookSpecificOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hookEventName",
+        "permissionDecision",
+        "permissionDecisionReason",
+        "additionalContext"
+      ],
+      "properties": {
+        "hookEventName": {
+          "type": "string",
+          "const": "PreToolUse",
+          "description": "Discriminator; must match the firing event."
+        },
+        "permissionDecision": {
+          "type": "string",
+          "enum": ["allow", "deny", "ask", "defer"],
+          "description": "allow: skip the permission prompt. deny: block the call. ask: prompt the user. defer: exit gracefully so the call can resume later. Across stacked hooks the precedence is deny > defer > ask > allow."
+        },
+        "permissionDecisionReason": {
+          "type": ["string", "null"],
+          "description": "For deny: shown to Claude. For allow/ask: shown to the user. null when not applicable — strip null keys before use. Always provide a string when permissionDecision is deny."
+        },
+        "additionalContext": {
+          "type": ["string", "null"],
+          "description": "Extra context delivered to Claude alongside the tool result, or null when none — strip null keys before use."
+        }
+      }
+    }
+  }
+}
