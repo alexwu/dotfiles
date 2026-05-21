@@ -34,6 +34,7 @@
 ##     checkout -- <path> | checkout .
 ##     restore (any form — destructive unless --staged-only, FP OK)
 ##     clean (any form — only -n is safe and rare in scripts)
+##     rm (any form — removes tracked files from the worktree and index)
 ##     push --force | --force-with-lease[=<ref>] | -f
 ##     push <remote> +<refspec>                     (force-push shorthand)
 ##     reflog expire | delete | clear
@@ -131,6 +132,11 @@ let tier2Patterns = [
 
   # clean — only -n is safe; ask on all
   re"""^git\s+clean(\s|$)""",
+
+  # rm — removes tracked files from the worktree and index; `--cached` only
+  # unstages, but per house style we ask on every form rather than carve out
+  # the safe sub-forms.
+  re"""^git\s+rm(\s|$)""",
 
   # force push (multiple flag forms)
   re"""^git\s+push\s+.*(\s)(--force|--force-with-lease(=\S+)?|-f)(\s|$)""",
