@@ -15,13 +15,31 @@
 ##   echo "hello" | llm "translate to french"
 ##   git diff | llm --provider claude "write a conventional commit message"
 ##   llm --provider gemini -m gemini-2.5-pro "summarize this paper" < paper.txt
+##   llm --system-prompt-file role.md "answer the question below"
+##   git diff --cached | llm --provider codex --schema commit.schema.json "..."
+##   llm --provider codex --image diagram.png "explain this architecture"
+##
+## Extra inputs:
+##   --system-prompt-file FILE  Markdown/text file layered onto the system
+##     prompt, on top of the built-in CLI-mode directive. Supported by every
+##     provider: claude & pi receive it via their ``--append-system-prompt``
+##     flag; codex & gemini have no such flag, so it is folded into the argv
+##     prompt instead.
+##   --schema FILE  JSON Schema file for structured output. claude reads the
+##     file and passes its contents to ``--json-schema``; codex passes the path
+##     to ``--output-schema``. gemini and pi have no structured-output
+##     mechanism — passing --schema to either is a hard error.
+##   --image FILE  Image to attach to the prompt (repeatable). codex uses
+##     ``-i FILE``; pi takes an ``@FILE`` positional; gemini gets an ``@FILE``
+##     mention appended to the prompt. claude -p has no tool-free image route —
+##     passing --image to claude is a hard error.
 ##
 ## Defaults (per provider):
 ##   claude   -p PROMPT_ARG --tools "" --output-format text
 ##            --no-session-persistence --append-system-prompt CLI_DIRECTIVE
 ##   codex    exec PROMPT_ARG -s read-only --skip-git-repo-check --ephemeral
 ##            --ignore-user-config   (wrapped via `sh -c 'exec codex … 2>/dev/null'`)
-##   gemini   -p PROMPT_ARG --approval-mode plan
+##   gemini   -p PROMPT_ARG --approval-mode plan --skip-trust
 ##   pi       -p PROMPT_ARG --provider llama-swap --model Qwen3.6-27B
 ##            --no-tools --no-session --mode text --no-skills --no-extensions
 ##            --no-prompt-templates --no-context-files
@@ -31,10 +49,12 @@
 ##            Always routes to local llama-swap; `--model` overrides the
 ##            default Qwen3.6-27B with another model from your llama-swap roster.
 ##
-## PROMPT_ARG = the CLI-mode directive, then a blank line, then the user's
-## positional prompt (or just the directive if the whole request arrived via
-## stdin). The directive tells the model to behave as a non-interactive CLI
-## (no preamble, no roleplay, no action beats) — this suppresses persona output
+## PROMPT_ARG = the CLI-mode directive, then (for codex/gemini) the
+## --system-prompt-file contents, then the user's positional prompt — each
+## separated by a blank line. When the whole request arrived via stdin, the
+## argv prompt is just the directive (plus the folded system prompt, if any).
+## The directive tells the model to behave as a non-interactive CLI (no
+## preamble, no roleplay, no action beats) — this suppresses persona output
 ## that otherwise leaks in from user-level CLAUDE.md / codex personality
 ## settings — and, when stdin is piped, notes whether the piped content lands
 ## before or after this message for that provider.
@@ -55,17 +75,27 @@
 ##     progressive answer-states to a non-TTY stdout, producing duplicated
 ##     output when piped. Will revisit upstream.
 
-import std/[strutils, terminal, posix]
+import std/[os, strutils, terminal, posix]
 
 import cligen
 
 const MaxPromptArgBytes = 512_000
-  ## Sanity cap on the argv-borne prompt (directive + positional prompt).
-  ## Piped input no longer travels through argv — it streams to the child's
+  ## Sanity cap on the argv-borne prompt material (directive + positional
+  ## prompt + --system-prompt-file contents + a claude --json-schema payload).
+  ## Piped input does NOT travel through argv — it streams to the child's
   ## stdin — so this only bites if you pass a huge string as the *positional*
-  ## prompt (``llm "$(cat huge)"``), where the shell would usually fail with
-  ## ``E2BIG`` first anyway. Over the cap → a clear error rather than a cryptic
-  ## ``execvp`` failure.
+  ## prompt (``llm "$(cat huge)"``) or hand over a giant system-prompt/schema
+  ## file. Over the cap → a clear error rather than a cryptic ``execvp``
+  ## failure.
+
+const KnownProviders = ["claude", "codex", "gemini", "pi"]
+  ## Providers the wrapper knows how to dispatch.
+
+const SchemaProviders = ["claude", "codex"]
+  ## Providers with a structured-output mechanism for ``--schema``.
+
+const ImageProviders = ["codex", "gemini", "pi"]
+  ## Providers with an image-input path for ``--image``.
 
 const CliModeDirective =
   "You are running as a non-interactive CLI tool for a one-shot query. " &
@@ -84,6 +114,18 @@ const StdinBeforeNote = " Any piped input precedes this message."
   ## Appended to the directive for stdin-first providers (gemini, pi), whose
   ## CLIs place the piped stdin before the positional prompt.
 
+type LlmRequest = object ## A fully resolved one-shot request, ready for ``buildArgv``.
+  provider: string
+  model: string ## ``--model`` override; "" leaves the provider default.
+  promptArg: string ## directive (+ folded system prompt) + positional prompt.
+  systemPrompt: string
+    ## --system-prompt-file contents, but only when the provider carries it via
+    ## a system-prompt flag (claude, pi). "" for codex/gemini — there it is
+    ## already folded into ``promptArg``.
+  schemaContent: string ## --schema file contents (claude path); "" otherwise.
+  schemaPath: string ## --schema file path (codex path); "" otherwise.
+  images: seq[string] ## --image file paths, in argv order.
+
 proc directiveFor(provider: string, stdinPiped: bool): string =
   ## CLI-mode directive, annotated (only when stdin is actually piped) with
   ## where the chosen child CLI places piped stdin relative to the argv prompt.
@@ -95,31 +137,40 @@ proc directiveFor(provider: string, stdinPiped: bool): string =
   of "gemini", "pi":
     CliModeDirective & StdinBeforeNote
   else:
-    CliModeDirective # unknown provider errors out later in buildArgv
+    CliModeDirective # unknown provider errors out earlier in main
 
-proc buildPromptArg(directive, userPrompt: string): string =
-  ## directive, then (if there's a positional prompt) a blank line and the
-  ## prompt. When the whole request arrived via stdin, the argv prompt is just
-  ## the directive — the piped content carries the question.
-  if userPrompt.len == 0:
-    directive
-  else:
-    directive & "\n\n" & userPrompt
+proc buildPromptArg(directive, systemPrompt, userPrompt: string): string =
+  ## The argv-borne prompt: the CLI-mode directive, then the system prompt
+  ## (passed non-empty only for providers that lack a system-prompt flag — see
+  ## ``main``), then the user's positional prompt. Empty pieces are dropped;
+  ## the rest are joined by a blank line.
+  var parts = @[directive]
+  if systemPrompt.len > 0:
+    parts.add(systemPrompt)
+  if userPrompt.len > 0:
+    parts.add(userPrompt)
+  parts.join("\n\n")
 
-proc buildArgv(provider, model, promptArg: string): seq[string] =
-  ## Pure-inference defaults per provider, with optional ``--model`` override.
-  ## ``promptArg`` is the directive (+ positional prompt) only — piped stdin is
-  ## NOT folded in here; it streams to the child's own stdin.
-  case provider
+proc buildArgv(req: LlmRequest): seq[string] =
+  ## Pure-inference defaults per provider, with the resolved request's optional
+  ## model, system prompt, schema, and images woven in. Piped stdin is NOT
+  ## folded in here; it streams to the child's own stdin.
+  case req.provider
   of "claude":
-    # --append-system-prompt layers the CLI directive above the user-level
-    # CLAUDE.md persona, which otherwise leaks action beats into the answer.
+    # --append-system-prompt layers the CLI directive (plus any
+    # --system-prompt-file contents) above the user-level CLAUDE.md persona,
+    # which otherwise leaks action beats into the answer.
+    var appendPrompt = CliModeDirective
+    if req.systemPrompt.len > 0:
+      appendPrompt &= "\n\n" & req.systemPrompt
     result = @[
-      "claude", "-p", promptArg, "--tools", "", "--output-format", "text",
-      "--no-session-persistence", "--append-system-prompt", CliModeDirective,
+      "claude", "-p", req.promptArg, "--tools", "", "--output-format", "text",
+      "--no-session-persistence", "--append-system-prompt", appendPrompt,
     ]
-    if model.len > 0:
-      result.add(@["--model", model])
+    if req.model.len > 0:
+      result.add(@["--model", req.model])
+    if req.schemaContent.len > 0:
+      result.add(@["--json-schema", req.schemaContent])
   of "codex":
     # codex exec puts the answer on stdout and EVERYTHING ELSE on stderr —
     # version banner, header block, prompt echo, <stdin> echo, hook events,
@@ -134,20 +185,31 @@ proc buildArgv(provider, model, promptArg: string): seq[string] =
     # that auto-loads the local CLAUDE.md). Auth still uses CODEX_HOME per
     # codex's docs, so subscription remains intact.
     var codexArgs = @[
-      promptArg, "-s", "read-only", "--skip-git-repo-check", "--ephemeral",
+      req.promptArg, "-s", "read-only", "--skip-git-repo-check", "--ephemeral",
       "--ignore-user-config",
     ]
-    if model.len > 0:
-      codexArgs.add(@["-m", model])
+    if req.model.len > 0:
+      codexArgs.add(@["-m", req.model])
+    if req.schemaPath.len > 0:
+      codexArgs.add(@["--output-schema", req.schemaPath])
+    for img in req.images:
+      codexArgs.add(@["-i", img])
     result =
       @["sh", "-c", "exec codex exec \"$@\" 2>/dev/null", "llm-codex-shim"] & codexArgs
   of "gemini":
     # NOTE(alexwu): gemini has no --ephemeral / --no-session flag; sessions
-    # always persist. --approval-mode plan keeps it read-only (verified
-    # empirically against gemini -p in Phase 4.5 Step 1).
-    result = @["gemini", "-p", promptArg, "--approval-mode", "plan"]
-    if model.len > 0:
-      result.add(@["-m", model])
+    # always persist. --approval-mode plan keeps it read-only; --skip-trust
+    # bypasses gemini's workspace-trust gate, which a non-interactive one-shot
+    # can never answer (without it gemini exits 55 in any untrusted directory).
+    # plan mode already blocks all writes / tool execution, so --skip-trust
+    # grants no capability. Images ride gemini's `@file` mention syntax appended
+    # to the prompt — gemini has no --image flag.
+    var promptArg = req.promptArg
+    for img in req.images:
+      promptArg &= " @" & img
+    result = @["gemini", "-p", promptArg, "--approval-mode", "plan", "--skip-trust"]
+    if req.model.len > 0:
+      result.add(@["-m", req.model])
   of "pi":
     # Defaults to the local `llama-swap` provider (configured in
     # ~/.pi/agent/models.json -> http://127.0.0.1:8000/v1) with Qwen3.6-27B.
@@ -170,15 +232,25 @@ proc buildArgv(provider, model, promptArg: string): seq[string] =
     if not isRust:
       result.add(@["--no-context-files"])  # TS-only flag
     ]#
-    let piModel = if model.len > 0: model else: "Qwen3.6-27B"
-    result = @[
-      "pi", "-p", promptArg, "--provider", "llama-swap", "--model", piModel,
-      "--no-tools", "--no-session", "--mode", "text", "--no-skills", "--no-extensions",
-      "--no-prompt-templates", "--no-context-files", "--append-system-prompt",
-      CliModeDirective,
-    ]
+    let piModel = if req.model.len > 0: req.model else: "Qwen3.6-27B"
+    var appendPrompt = CliModeDirective
+    if req.systemPrompt.len > 0:
+      appendPrompt &= "\n\n" & req.systemPrompt
+    # `@file` image mentions are positional args; pi's usage places them
+    # ahead of the message (`pi @img.png "question"`).
+    result = @["pi", "-p"]
+    for img in req.images:
+      result.add("@" & img)
+    result.add(req.promptArg)
+    result.add(
+      @[
+        "--provider", "llama-swap", "--model", piModel, "--no-tools", "--no-session",
+        "--mode", "text", "--no-skills", "--no-extensions", "--no-prompt-templates",
+        "--no-context-files", "--append-system-prompt", appendPrompt,
+      ]
+    )
   else:
-    stderr.writeLine "llm: unknown provider: " & provider &
+    stderr.writeLine "llm: unknown provider: " & req.provider &
       " (expected claude | codex | gemini | pi)"
     quit(2)
 
@@ -196,25 +268,84 @@ proc dispatchProvider(argv: seq[string]) {.noreturn.} =
   deallocCStringArray(cargs)
   quit(127)
 
-proc main(provider = "codex", model = "", prompt: seq[string]): int =
+proc main(
+    provider = "codex",
+    model = "",
+    systemPromptFile = "",
+    schema = "",
+    image: seq[string] = @[],
+    prompt: seq[string],
+): int =
   ## One-shot wrapper over claude -p / codex exec / gemini -p / pi -p.
   ##
   ## Piped stdin streams straight to the chosen provider's own stdin; only a
-  ## CLI-mode directive (+ the positional prompt) goes through argv. Dispatches
-  ## in pure-inference mode (tools disabled or sandbox-locked, session
-  ## persistence off where supported).
+  ## CLI-mode directive (+ optional system prompt + positional prompt) goes
+  ## through argv. Dispatches in pure-inference mode (tools disabled or
+  ## sandbox-locked, session persistence off where supported).
+  if provider notin KnownProviders:
+    stderr.writeLine "llm: unknown provider: " & provider &
+      " (expected claude | codex | gemini | pi)"
+    return 2
+
   let stdinPiped = not isatty(stdin)
   let userPrompt = prompt.join(" ").strip()
   if userPrompt.len == 0 and not stdinPiped:
     stderr.writeLine "llm: no prompt provided (pass as args or pipe via stdin)"
     return 2
-  let promptArg = buildPromptArg(directiveFor(provider, stdinPiped), userPrompt)
-  if promptArg.len > MaxPromptArgBytes:
-    stderr.writeLine "llm: prompt argument too large (" & $promptArg.len &
+
+  # Feature gaps are a hard error up front rather than a silent no-op.
+  if schema.len > 0 and provider notin SchemaProviders:
+    stderr.writeLine "llm: --schema is not supported by " & provider &
+      " (use claude or codex)"
+    return 2
+  if image.len > 0 and provider notin ImageProviders:
+    stderr.writeLine "llm: --image is not supported by " & provider &
+      " (use codex, gemini, or pi)"
+    return 2
+
+  if systemPromptFile.len > 0 and not fileExists(systemPromptFile):
+    stderr.writeLine "llm: system prompt file not found: " & systemPromptFile
+    return 2
+  if schema.len > 0 and not fileExists(schema):
+    stderr.writeLine "llm: schema file not found: " & schema
+    return 2
+  for img in image:
+    if not fileExists(img):
+      stderr.writeLine "llm: image file not found: " & img
+      return 2
+
+  let systemPrompt =
+    if systemPromptFile.len > 0:
+      readFile(systemPromptFile)
+    else:
+      ""
+
+  # codex & gemini have no system-prompt flag, so their system prompt is folded
+  # into the argv prompt; claude & pi receive it via --append-system-prompt.
+  let foldSysIntoPrompt = provider in ["codex", "gemini"]
+
+  var req = LlmRequest(provider: provider, model: model, images: image)
+  req.promptArg = buildPromptArg(
+    directiveFor(provider, stdinPiped),
+    (if foldSysIntoPrompt: systemPrompt else: ""),
+    userPrompt,
+  )
+  if not foldSysIntoPrompt:
+    req.systemPrompt = systemPrompt
+  if schema.len > 0:
+    if provider == "claude":
+      req.schemaContent = readFile(schema)
+    else:
+      req.schemaPath = schema # codex — validated against SchemaProviders above
+
+  let argvPromptBytes = req.promptArg.len + req.systemPrompt.len + req.schemaContent.len
+  if argvPromptBytes > MaxPromptArgBytes:
+    stderr.writeLine "llm: prompt material too large (" & $argvPromptBytes &
       " bytes; cap is " & $MaxPromptArgBytes &
       "). Pipe large input via stdin instead of passing it as an argument."
     return 2
-  let argv = buildArgv(provider, model, promptArg)
+
+  let argv = buildArgv(req)
   dispatchProvider(argv) # noreturn — control never reaches past this
 
 when isMainModule:
@@ -225,6 +356,10 @@ when isMainModule:
     help = {
       "provider": "claude | codex | gemini | pi (default: codex)",
       "model": "model override forwarded to backend as --model / -m",
+      "systemPromptFile":
+        "markdown/text file layered onto the system prompt (all providers)",
+      "schema": "JSON Schema file for structured output (claude, codex only)",
+      "image": "image file to attach, repeatable (codex, gemini, pi only)",
       "prompt": "prompt text (joined with spaces if multi-arg)",
     },
   )
