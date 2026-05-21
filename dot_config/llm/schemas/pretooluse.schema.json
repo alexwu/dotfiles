@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code PreToolUse hook output",
+  "description": "JSON a PreToolUse hook prints on stdout (exit 0) to decide a pending tool call. Exit 0 with no output leaves the normal permission flow untouched; this schema describes a hook that returns an explicit decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["hookSpecificOutput"],
+  "properties": {
+    "hookSpecificOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hookEventName", "permissionDecision"],
+      "properties": {
+        "hookEventName": {
+          "type": "string",
+          "const": "PreToolUse",
+          "description": "Discriminator; must match the firing event."
+        },
+        "permissionDecision": {
+          "enum": ["allow", "deny", "ask", "defer"],
+          "description": "allow: skip the permission prompt. deny: block the call. ask: prompt the user. defer: exit gracefully so the call can resume later. Across stacked hooks the precedence is deny > defer > ask > allow."
+        },
+        "permissionDecisionReason": {
+          "type": "string",
+          "description": "For deny: shown to Claude. For allow/ask: shown to the user. For defer: ignored. Provide this whenever permissionDecision is deny."
+        },
+        "updatedInput": {
+          "type": "object",
+          "description": "Optional. Replaces the ENTIRE tool input object, so include unchanged fields too. Ignored when permissionDecision is defer."
+        },
+        "additionalContext": {
+          "type": "string",
+          "description": "Optional extra context delivered to Claude alongside the tool result. Ignored when permissionDecision is defer."
+        }
+      }
+    },
+    "continue": {
+      "type": "boolean",
+      "description": "If false, Claude stops processing entirely after the hook runs. Overrides any event-specific decision."
+    },
+    "stopReason": {
+      "type": "string",
+      "description": "Message shown to the user when 'continue' is false. Not shown to Claude."
+    },
+    "suppressOutput": {
+      "type": "boolean",
+      "description": "If true, hides the hook's stdout from the transcript."
+    },
+    "systemMessage": {
+      "type": "string",
+      "description": "Warning message shown to the user."
+    },
+    "terminalSequence": {
+      "type": "string",
+      "description": "Terminal escape sequence Claude Code emits for the hook (OSC 0/1/2/9/99/777 and BEL only; anything else is ignored). Requires Claude Code v2.1.141+."
+    }
+  }
+}

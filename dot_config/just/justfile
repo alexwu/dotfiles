@@ -183,7 +183,7 @@ llm-commit-message provider="codex" model="":
     if [[ -n {{ quote(model) }} ]]; then
         args+=(--model {{ quote(model) }})
     fi
-    git diff --cached | llm "${args[@]}" --system-prompt-file ~/.config/llm/prompts/commit-message.md
+    git diff --cached | llm "${args[@]}" --prompt-file commit-message
 
 [group("tree-sitter")]
 [doc("Refresh tree-sitter grammars: hx fetch + build, then rebuild tree-sitter-<lang> symlinks")]

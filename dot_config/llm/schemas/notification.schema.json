@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code Notification hook output",
+  "description": "Notification hooks cannot block or alter the notification — they fire for side effects only. Output is limited to the universal fields shared by every hook event.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "continue": {
+      "type": "boolean",
+      "description": "If false, Claude stops processing entirely after the hook runs."
+    },
+    "stopReason": {
+      "type": "string",
+      "description": "Message shown to the user when 'continue' is false. Not shown to Claude."
+    },
+    "suppressOutput": {
+      "type": "boolean",
+      "description": "If true, hides the hook's stdout from the transcript."
+    },
+    "systemMessage": {
+      "type": "string",
+      "description": "Warning message shown to the user."
+    },
+    "terminalSequence": {
+      "type": "string",
+      "description": "Terminal escape sequence Claude Code emits for the hook (OSC 0/1/2/9/99/777 and BEL only; anything else is ignored). Requires Claude Code v2.1.141+."
+    }
+  }
+}

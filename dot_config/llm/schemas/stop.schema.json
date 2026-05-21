@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code Stop / SubagentStop hook output",
+  "description": "JSON a Stop or SubagentStop hook prints on stdout (exit 0). Can keep Claude (or a subagent) working instead of stopping. Claude Code force-ends the turn after 8 consecutive blocks. SubagentStop uses this same shape but does not support additionalContext.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "type": "string",
+      "const": "block",
+      "description": "Optional. Prevents Claude stopping; the turn continues. Omit to allow the stop."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Required when 'decision' is block. Tells Claude why to keep going and what to do next."
+    },
+    "continue": {
+      "type": "boolean",
+      "description": "If false, Claude stops processing entirely after the hook runs. Overrides 'decision'."
+    },
+    "stopReason": {
+      "type": "string",
+      "description": "Message shown to the user when 'continue' is false. Not shown to Claude."
+    },
+    "suppressOutput": {
+      "type": "boolean",
+      "description": "If true, hides the hook's stdout from the transcript."
+    },
+    "systemMessage": {
+      "type": "string",
+      "description": "Warning message shown to the user."
+    },
+    "terminalSequence": {
+      "type": "string",
+      "description": "Terminal escape sequence Claude Code emits for the hook (OSC 0/1/2/9/99/777 and BEL only; anything else is ignored). Requires Claude Code v2.1.141+."
+    }
+  }
+}

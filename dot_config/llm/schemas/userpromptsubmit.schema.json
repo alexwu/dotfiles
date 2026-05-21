@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code UserPromptSubmit hook output",
+  "description": "JSON a UserPromptSubmit hook prints on stdout (exit 0). Can block the submitted prompt, or inject context alongside it.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "type": "string",
+      "const": "block",
+      "description": "Optional. Blocks prompt processing and erases the prompt from context. Omit to let the prompt through."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Shown to the user when 'decision' is block; not added to context. Required when blocking."
+    },
+    "hookSpecificOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hookEventName"],
+      "properties": {
+        "hookEventName": {
+          "type": "string",
+          "const": "UserPromptSubmit",
+          "description": "Discriminator; must match the firing event."
+        },
+        "additionalContext": {
+          "type": "string",
+          "description": "Optional context added alongside the submitted prompt."
+        },
+        "sessionTitle": {
+          "type": "string",
+          "description": "Optional. Sets the session title."
+        },
+        "suppressOriginalPrompt": {
+          "type": "boolean",
+          "description": "When true and 'decision' is block, omits the original prompt text from the block message."
+        }
+      }
+    },
+    "continue": {
+      "type": "boolean",
+      "description": "If false, Claude stops processing entirely after the hook runs. Overrides any event-specific decision."
+    },
+    "stopReason": {
+      "type": "string",
+      "description": "Message shown to the user when 'continue' is false. Not shown to Claude."
+    },
+    "suppressOutput": {
+      "type": "boolean",
+      "description": "If true, hides the hook's stdout from the transcript."
+    },
+    "systemMessage": {
+      "type": "string",
+      "description": "Warning message shown to the user."
+    },
+    "terminalSequence": {
+      "type": "string",
+      "description": "Terminal escape sequence Claude Code emits for the hook (OSC 0/1/2/9/99/777 and BEL only; anything else is ignored). Requires Claude Code v2.1.141+."
+    }
+  }
+}

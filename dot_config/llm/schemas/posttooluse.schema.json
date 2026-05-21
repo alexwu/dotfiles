@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code PostToolUse hook output",
+  "description": "JSON a PostToolUse hook prints on stdout (exit 0). The tool has already run, so this cannot block it — it can add feedback or context, or rewrite the tool output.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "type": "string",
+      "const": "block",
+      "description": "Optional. Surfaces 'reason' to Claude as feedback next to the tool result. Claude still sees the original output. Omit for no feedback."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Shown to Claude when 'decision' is block."
+    },
+    "hookSpecificOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hookEventName"],
+      "properties": {
+        "hookEventName": {
+          "type": "string",
+          "const": "PostToolUse",
+          "description": "Discriminator; must match the firing event."
+        },
+        "additionalContext": {
+          "type": "string",
+          "description": "Optional extra context delivered to Claude alongside the tool result."
+        },
+        "updatedToolOutput": {
+          "type": "object",
+          "description": "Optional. Replaces the tool output; for built-in tools it must match that tool's output shape or it is ignored."
+        }
+      }
+    },
+    "continue": {
+      "type": "boolean",
+      "description": "If false, Claude stops processing entirely after the hook runs. Overrides any event-specific decision."
+    },
+    "stopReason": {
+      "type": "string",
+      "description": "Message shown to the user when 'continue' is false. Not shown to Claude."
+    },
+    "suppressOutput": {
+      "type": "boolean",
+      "description": "If true, hides the hook's stdout from the transcript."
+    },
+    "systemMessage": {
+      "type": "string",
+      "description": "Warning message shown to the user."
+    },
+    "terminalSequence": {
+      "type": "string",
+      "description": "Terminal escape sequence Claude Code emits for the hook (OSC 0/1/2/9/99/777 and BEL only; anything else is ignored). Requires Claude Code v2.1.141+."
+    }
+  }
+}

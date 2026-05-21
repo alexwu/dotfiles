@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claude Code SessionStart hook output",
+  "description": "JSON a SessionStart hook prints on stdout (exit 0). Injects context at the start of a session; it cannot block.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["hookSpecificOutput"],
+  "properties": {
+    "hookSpecificOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hookEventName"],
+      "properties": {
+        "hookEventName": {
+          "type": "string",
+          "const": "SessionStart",
+          "description": "Discriminator; must match the firing event."
+        },
+        "additionalContext": {
+          "type": "string",
+          "description": "Context added at the start of the conversation, before the first prompt. Multiple hooks' values are concatenated."
+        },
+        "initialUserMessage": {
+          "type": "string",
+          "description": "Optional. Becomes the first user message of the session (applies in non-interactive -p mode); creates a turn, unlike additionalContext."
+        },
+        "watchPaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional. Absolute paths to watch for FileChanged events for the rest of this session."
+        }
+      }
+    },
+    "continue": {
+      "type": "boolean",
+      "description": "If false, Claude stops processing entirely after the hook runs."
+    },
+    "stopReason": {
+      "type": "string",
+      "description": "Message shown to the user when 'continue' is false. Not shown to Claude."
+    },
+    "suppressOutput": {
+      "type": "boolean",
+      "description": "If true, hides the hook's stdout from the transcript."
+    },
+    "systemMessage": {
+      "type": "string",
+      "description": "Warning message shown to the user."
+    },
+    "terminalSequence": {
+      "type": "string",
+      "description": "Terminal escape sequence Claude Code emits for the hook (OSC 0/1/2/9/99/777 and BEL only; anything else is ignored). Requires Claude Code v2.1.141+."
+    }
+  }
+}

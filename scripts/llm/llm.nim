@@ -16,7 +16,8 @@
 ##   git diff | llm --provider claude "write a conventional commit message"
 ##   llm --provider gemini -m gemini-2.5-pro "summarize this paper" < paper.txt
 ##   llm --system-prompt-file role.md "answer the question below"
-##   git diff --cached | llm --provider codex --schema commit.schema.json "..."
+##   git diff --cached | llm --prompt-file commit-message
+##   llm --provider codex --schema pretooluse "should this tool call be denied?"
 ##   llm --provider codex --image diagram.png "explain this architecture"
 ##
 ## Extra inputs:
@@ -25,9 +26,17 @@
 ##     provider: claude & pi receive it via their ``--append-system-prompt``
 ##     flag; codex & gemini have no such flag, so it is folded into the argv
 ##     prompt instead.
-##   --schema FILE  JSON Schema file for structured output. claude reads the
-##     file and passes its contents to ``--json-schema``; codex passes the path
-##     to ``--output-schema``. gemini and pi have no structured-output
+##   --prompt-file NAME|FILE  Load the regular (positional) prompt from a file.
+##     A bare NAME resolves against ~/.config/llm/prompts with .md / .txt
+##     appended — so ``--prompt-file commit-message`` finds
+##     ~/.config/llm/prompts/commit-message.md. Joined before any positional
+##     prompt; for reusing saved prompts.
+##   --schema NAME|FILE  JSON Schema for structured output. A bare NAME (no
+##     path, no extension) resolves against ~/.config/llm/schemas — so
+##     ``--schema pretooluse`` finds ~/.config/llm/schemas/pretooluse.schema.json.
+##     A path or filename is taken as given, with .json / .schema.json appended
+##     when missing. claude reads the file into ``--json-schema``; codex passes
+##     the path to ``--output-schema``. gemini and pi have no structured-output
 ##     mechanism — passing --schema to either is a hard error.
 ##   --image FILE  Image to attach to the prompt (repeatable). codex uses
 ##     ``-i FILE``; pi takes an ``@FILE`` positional; gemini gets an ``@FILE``
@@ -96,6 +105,16 @@ const SchemaProviders = ["claude", "codex"]
 
 const ImageProviders = ["codex", "gemini", "pi"]
   ## Providers with an image-input path for ``--image``.
+
+const SchemaDir = ".config/llm/schemas"
+  ## ``--schema`` search dir, relative to ``$HOME``. A bare schema name (no
+  ## path, no extension) resolves here, so ``--schema pretooluse`` finds the
+  ## installed ``pretooluse.schema.json``.
+
+const PromptDir = ".config/llm/prompts"
+  ## ``--prompt-file`` search dir, relative to ``$HOME``. A bare prompt name
+  ## (no path, no extension) resolves here, so ``--prompt-file commit-message``
+  ## finds the installed ``commit-message.md``.
 
 const CliModeDirective =
   "You are running as a non-interactive CLI tool for a one-shot query. " &
@@ -268,10 +287,25 @@ proc dispatchProvider(argv: seq[string]) {.noreturn.} =
   deallocCStringArray(cargs)
   quit(127)
 
+proc resolveUnder(value, dir: string, exts: openArray[string]): string =
+  ## Resolve a file reference to a real path. Tries ``value`` as given and with
+  ## each extension in ``exts`` appended; then repeats that search inside
+  ## ``~/<dir>``. Returns the first hit, or "" when nothing matches — so a path
+  ## or filename works as given, while a bare name resolves against the install
+  ## dir with no path or extension. ``exts`` should include "" for the as-given
+  ## case. Backs both ``--schema`` (SchemaDir) and ``--prompt-file`` (PromptDir).
+  for base in [value, getHomeDir() / dir / value]:
+    for ext in exts:
+      let candidate = base & ext
+      if fileExists(candidate):
+        return candidate
+  ""
+
 proc main(
     provider = "codex",
     model = "",
     systemPromptFile = "",
+    promptFile = "",
     schema = "",
     image: seq[string] = @[],
     prompt: seq[string],
@@ -288,9 +322,25 @@ proc main(
     return 2
 
   let stdinPiped = not isatty(stdin)
-  let userPrompt = prompt.join(" ").strip()
+  var userPrompt = prompt.join(" ").strip()
+
+  if promptFile.len > 0:
+    let resolved = resolveUnder(promptFile, PromptDir, ["", ".md", ".txt"])
+    if resolved.len == 0:
+      stderr.writeLine "llm: prompt file not found: " & promptFile &
+        " (looked relative to the current directory and in ~/" & PromptDir &
+        ", with optional .md / .txt)"
+      return 2
+    let filePrompt = readFile(resolved).strip()
+    userPrompt =
+      if userPrompt.len > 0:
+        filePrompt & "\n\n" & userPrompt
+      else:
+        filePrompt
+
   if userPrompt.len == 0 and not stdinPiped:
-    stderr.writeLine "llm: no prompt provided (pass as args or pipe via stdin)"
+    stderr.writeLine "llm: no prompt provided " &
+      "(pass as args, --prompt-file, or pipe via stdin)"
     return 2
 
   # Feature gaps are a hard error up front rather than a silent no-op.
@@ -306,9 +356,14 @@ proc main(
   if systemPromptFile.len > 0 and not fileExists(systemPromptFile):
     stderr.writeLine "llm: system prompt file not found: " & systemPromptFile
     return 2
-  if schema.len > 0 and not fileExists(schema):
-    stderr.writeLine "llm: schema file not found: " & schema
-    return 2
+  var resolvedSchema = ""
+  if schema.len > 0:
+    resolvedSchema = resolveUnder(schema, SchemaDir, ["", ".json", ".schema.json"])
+    if resolvedSchema.len == 0:
+      stderr.writeLine "llm: schema not found: " & schema &
+        " (looked relative to the current directory and in ~/" & SchemaDir &
+        ", with optional .json / .schema.json)"
+      return 2
   for img in image:
     if not fileExists(img):
       stderr.writeLine "llm: image file not found: " & img
@@ -334,9 +389,9 @@ proc main(
     req.systemPrompt = systemPrompt
   if schema.len > 0:
     if provider == "claude":
-      req.schemaContent = readFile(schema)
+      req.schemaContent = readFile(resolvedSchema)
     else:
-      req.schemaPath = schema # codex — validated against SchemaProviders above
+      req.schemaPath = resolvedSchema # codex — passed to --output-schema
 
   let argvPromptBytes = req.promptArg.len + req.systemPrompt.len + req.schemaContent.len
   if argvPromptBytes > MaxPromptArgBytes:
@@ -358,7 +413,12 @@ when isMainModule:
       "model": "model override forwarded to backend as --model / -m",
       "systemPromptFile":
         "markdown/text file layered onto the system prompt (all providers)",
-      "schema": "JSON Schema file for structured output (claude, codex only)",
+      "promptFile":
+        "load the regular prompt from a file; a bare name resolves in " &
+        "~/.config/llm/prompts",
+      "schema":
+        "JSON Schema for structured output; a bare name resolves in " &
+        "~/.config/llm/schemas (claude, codex only)",
       "image": "image file to attach, repeatable (codex, gemini, pi only)",
       "prompt": "prompt text (joined with spaces if multi-arg)",
     },
