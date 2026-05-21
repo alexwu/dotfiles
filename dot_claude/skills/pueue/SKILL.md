@@ -58,6 +58,25 @@ Descriptors should be short, lowercase, hyphenated, and identify the *what*, not
 
 For the full surface (stash, enqueue, env set, parallel tweaks, all status JSON shapes), see `references/core-commands.md`.
 
+## Default to `--json` for status checks
+
+`pueue status` (no flags) prints the full human-readable table, which scales poorly: with 15+ tasks it produces a wall of multi-line wrapped columns where the field you actually wanted (current status of one task) is buried. **Default to `pueue status --json | jaq '...'`** to scope to specific task IDs and extract just the fields you need.
+
+Common patterns:
+
+```bash
+# Status of a single task
+pueue status --json | jaq '.tasks["12"] | {id, label, status: (.status | keys[0])}'
+
+# Status of several tasks at once
+pueue status --json | jaq '[.tasks["15"], .tasks["16"], .tasks["17"]] | map({id, label, status: (.status | keys[0])})'
+
+# All currently-running or queued tasks
+pueue status --json | jaq '[.tasks | to_entries[] | select(.value.status | type == "object" | not) | {id: .value.id, label: .value.label, status: .value.status}]'
+```
+
+Use `pueue status` (no flags) only when you genuinely want a wide overview. JSON shape edge cases (Done vs Running representation) are covered in `references/core-commands.md`.
+
 ## Cross-session discovery — picking up Claude's prior work
 
 When a fresh session starts and the user asks "what's running?" or "pick up where we left off", run:
@@ -98,6 +117,19 @@ In one reported field incident, agents restart-looping failed tasks grew 60 jobs
 Always use `pueue restart --in-place <id>` (short: `-i`) when retrying a single failed task. Never use `pueue restart --all-failed` without `--failed-in-group <name>` — it touches every failed task across all groups and can balloon the queue.
 
 Before restarting at all: read `pueue log <id> --full`. For more footguns (working directory, quoting, bare `&` detachment, no GUI/aliases, stdin handling), see `references/pitfalls-and-debugging.md`.
+
+## `--after` is a *success* dependency, not just ordering
+
+`pueue add --after <id>` makes the dependent job skip silently if the upstream fails or is killed — it goes to `Done: DependencyFailed`, never starts, produces no log file. `pueue status` shows it as "Done" with `result: DependencyFailed` buried in the JSON; the CLI text view does not loudly flag it.
+
+The default group is already `parallel=1`, so plain `pueue add` queues jobs serially in submission order. You don't need `--after` to make B follow A — you only need it if you want B to be **skipped** when A fails.
+
+**Rule of thumb:**
+
+- Sequence ("run these in order") → plain `pueue add`. Submission order + parallel=1 handles it.
+- Conditional skip ("don't bother with B if A failed") → `--after`. After A finishes, immediately verify with `pueue status --json` that nothing flipped to `DependencyFailed`.
+
+Real incident (2026-05-13): an agent chained 4→5→6 with `--after`. Job 4 had real failures; jobs 5 and 6 silently `DependencyFailed` and never ran. The gap shipped through to a CI failure 8 hours later. Treat `Done: DependencyFailed` as a class of failure to scan for after any `--after` chain, not silent success.
 
 ## When something breaks
 

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# zn — attach to a freshly-named zmx session.
+#
+# Companion to `dbzname`. On PATH so wezterm's split/tab spawn calls
+# can invoke it directly without sourcing zshrc.
+
+# GUI-launched callers (wezterm, etc.) inherit a minimal launchd PATH;
+# dbzname lives in ~/.local/bin, zmx in /opt/homebrew/bin.
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+exec zmx attach "$(dbzname)"

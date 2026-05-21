@@ -109,19 +109,12 @@ then
   alias must="mise run"
 fi
 
-if (( $+commands[petname] ))
-then
-  alias dbzname='petname -d ~/.config/petname-dbz'
-fi
-
 if (( $+commands[zmx] ))
 then
-  alias zn='zmx attach "$(dbzname)"'
-
   zmx-select() {
     local display
     display=$(zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients created dir; do
-      name=${name#name=}
+      name=${name##*name=}
       pid=${pid#pid=}
       clients=${clients#clients=}
       dir=${dir#start_dir=}
@@ -220,6 +213,13 @@ fi
 if (( $+commands[zellij] ))
 then
   [[ -f ~/.zfunc/_zellij ]] || zellij setup --generate-completion zsh > ~/.zfunc/_zellij
+fi
+
+# llm: _gnu_generic parses `llm --help` for option completion (cligen
+# single-dispatch program — complgen is dispatchMulti-only)
+if (( $+commands[llm] ))
+then
+  compdef _gnu_generic llm
 fi
 
 # Override zoxide: always show frecency-ranked results on tab

@@ -48,13 +48,23 @@ client:
   restart_in_place: true         # makes plain `pueue restart` safe by default
 
 daemon:
-  callback: 'osascript -e "display notification \"Task {{id}} {{result}}\" with title \"pueue\""'
+  # Cross-platform toast (apprise) + macOS Growl-style w/ click-to-reactivate (grrr).
+  # Two non-obvious requirements baked into this example:
+  #   1. Absolute paths. `brew services` launches pueued via launchd with a
+  #      minimal PATH (no /opt/homebrew/bin) — bare `apprise`/`grrr` won't
+  #      resolve. Alternative: set `daemon.env_vars.PATH` below.
+  #   2. Only the variables enumerated in `callbacks.rs` are valid; strict mode
+  #      is on. `{{label}}` and `{{enqueue}}` are NOT real (despite older docs).
+  #      `{{command}}` is the next-best identifier for the title.
+  # Chaining with `;` keeps the two backends independent (`&&` would skip the
+  # second if the first wasn't installed). Matches scripts/claude/notify.nim.
+  callback: '/opt/homebrew/bin/apprise -t "pueue {{id}}: {{result}}" -b "{{command}} (exit {{exit_code}})" -i markdown ; /opt/homebrew/bin/grrr --appId pueue --title "pueue {{id}}: {{result}}" --reactivate "{{command}} (exit {{exit_code}})"'
   callback_log_lines: 10         # how many tail lines exposed to {{output}}
   pause_group_on_failure: true   # auto-pause group on first failure
   compress_state_file: true      # zstd-compress state.json (~10:1)
 ```
 
-Callback template variables: `{{id}}`, `{{command}}`, `{{path}}`, `{{group}}`, `{{label}}`, `{{result}}`, `{{exit_code}}`, `{{enqueue}}`, `{{start}}`, `{{end}}`, `{{output}}`.
+Callback template variables (verified against pueue v4.0.4 `daemon/callbacks.rs`): `{{id}}`, `{{command}}`, `{{path}}`, `{{group}}`, `{{queued_count}}`, `{{stashed_count}}`, `{{result}}`, `{{exit_code}}`, `{{start}}`, `{{end}}`, `{{output}}`, `{{output_path}}`. Strict mode is on, so referencing anything else (e.g. `{{label}}`, `{{enqueue}}` — common older-doc claims that aren't in source) raises a `RenderError` and the callback never spawns; the failure shows up only in `/opt/homebrew/var/log/pueued.log`.
 
 ## Where data lives
 

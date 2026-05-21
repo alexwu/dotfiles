@@ -20,13 +20,13 @@ after-startup-command = [
 ]
 
 exec-on-workspace-change = [
-  '/bin/zsh',
-  '-c',
-  'open -g "raycast://extensions/jamesbombeelu/aerospace/focused-workspace?launchType=background&arguments=%7B%22workspace%22%3A%20%22$AEROSPACE_FOCUSED_WORKSPACE%22%7D"',
+  # '/bin/zsh',
+  # '-c',
+  # 'open -g "raycast://extensions/jamesbombeelu/aerospace/focused-workspace?launchType=background&arguments=%7B%22workspace%22%3A%20%22$AEROSPACE_FOCUSED_WORKSPACE%22%7D"',
 ]
 
 on-focus-changed = [
-  'exec-and-forget open -g raycast://extensions/jamesbombeelu/aerospace/focused-window?launchType=background',
+  # 'exec-and-forget open -g raycast://extensions/jamesbombeelu/aerospace/focused-window?launchType=background',
 ]
 on-focused-monitor-changed = []
 

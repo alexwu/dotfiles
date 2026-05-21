@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# dbzname — generate a Dragon Ball Z themed petname.
+#
+# Wraps `petname` with the custom adjective/noun word lists in
+# ~/.config/petname-dbz/. Used by `zn` (zmx) and `zjn` (zellij) to
+# spawn uniquely-named sessions. Lives on PATH so wezterm/zellij/etc.
+# can call it from non-interactive shells where zshrc aliases don't
+# exist.
+
+# GUI-launched callers (wezterm, etc.) inherit a minimal launchd PATH.
+# petname is mise-managed; its shim lives under ~/.local/share/mise/shims.
+PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+exec petname -d "$HOME/.config/petname-dbz" "$@"

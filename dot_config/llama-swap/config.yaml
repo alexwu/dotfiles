@@ -34,7 +34,7 @@ models:
 
   "Qwen3.6-35B-A3B":
     cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
-    ttl: 600
+    ttl: 6000
     filters:
       setParamsByID:
         "${MODEL_ID}":
@@ -86,7 +86,7 @@ models:
     cmd: mlx_vlm.server --model mlx-community/Qwen3.6-27B-6bit --host 127.0.0.1 --port ${PORT} --max-kv-size 65536
     useModelName: "mlx-community/Qwen3.6-27B-6bit"
     checkEndpoint: /v1/models
-    ttl: 600
+    ttl: 6000
     timeouts:
       responseHeader: 300
 
@@ -245,14 +245,20 @@ peers:
     apiKey: ${env.OPENROUTER_API_KEY}
     models:
       - anthropic/claude-opus-4.6
+      - anthropic/claude-opus-4.7
       - anthropic/claude-sonnet-4.6
       - anthropic/claude-haiku-4.5
-      - google/gemini-3.1-flash-lite-preview
-      - google/gemini-3.1-flash-image-preview
+      - google/gemini-3.1-flash-lite
+      - google/gemini-3.5-flash
       - google/gemini-3.1-pro-preview
       - google/gemini-3-pro-image-preview
+      - google/gemini-3.1-flash-image-preview
       - deepseek/deepseek-v3.2
-      - moonshotai/kimi-k2.5
+      - deepseek/deepseek-v4-flash
+      - deepseek/deepseek-v4-pro
+      - moonshotai/kimi-k2.6
+      - openai/gpt-chat-latest
+      - ~openai/gpt-latest
     timeouts:
       connect: 30
       keepalive: 30

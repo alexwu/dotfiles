@@ -118,13 +118,16 @@ trust_level = "trusted"
 [projects."/Users/jamesbombeelu/Code/lulu-select"]
 trust_level = "trusted"
 
+[projects."/Users/jamesbombeelu/Code/cleverific/eo-full"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
-last_updated = "2026-05-08T18:55:41Z"
+last_updated = "2026-05-18T18:44:23Z"
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-05-08T09:42:58Z"
+last_updated = "2026-05-16T02:43:18Z"
 source_type = "local"
 source = "/Users/jamesbombeelu/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -135,12 +138,13 @@ source = "/Users/jamesbombeelu/.cache/codex-runtimes/codex-primary-runtime/plugi
 hide_rate_limit_model_nudge = true
 
 [notice.external_config_migration_prompts]
-home_last_prompted_at = 1778651556
+home_last_prompted_at = 1779296977
 
 [notice.external_config_migration_prompts.project_last_prompted_at]
 "/Users/jamesbombeelu" = 1778209978
 "/Users/jamesbombeelu/Code/lulu-nvim" = 1778278128
 "/Users/jamesbombeelu/Code/lulu-select" = 1778717183
+"/Users/jamesbombeelu/Code/cleverific/eo-full" = 1779296977
 
 [hooks.state]
 
@@ -155,6 +159,9 @@ trusted_hash = "sha256:6a5945133fb6f2fe19b82e72a195b326acabdff197f0d789a108b3a1f
 
 [hooks.state."/Users/jamesbombeelu/.codex/hooks.json:session_start:0:0"]
 trusted_hash = "sha256:56acfe911eec53753207580bfdaafb59b3e5e785942f45efa0a5b9c610ce7d9e"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-code/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:241c704df659f6ba9884f40f24bdcfb0e567b9120c452cb153d85fb59e732047"
 
 [hooks.state."/Users/jamesbombeelu/Code/lulu-code/.codex/hooks.json:session_start:0:0"]
 trusted_hash = "sha256:2ea033e883d96bf17502eabfcdd69d4cfa57aebfbe2677f23149847e97e126b0"
@@ -182,6 +189,6 @@ status_line = ["model-with-reasoning", "current-dir", "model", "project-name", "
 [plugins."nono@always-further"]
 enabled = true
 
-[plugins."browser-use@openai-bundled"]
+[plugins."browser@openai-bundled"]
 enabled = true
 # <<< nono:always-further-codex <<<

@@ -31,26 +31,19 @@
 ##   `saveState` on first edit. No cleanup hook for now — files are tiny
 ##   and `persona_anchor` doesn't clean up either.
 ##
-## Extension: edit `reminderText` below + rebuild via `chezmoi apply`. Keep
-## under the 10K char `additionalContext` cap.
+## Reminder body: loaded at fire time from `$REWARD_ANCHOR_FILE`, default
+## `~/.claude/anchors/reward_anchor.md` (typically a symlink into a private
+## prompts repo). The file is a template — `<MODE>` and `<COUNT>` are
+## substituted at emit time so the reminder reflects the current run.
+## Missing/unreadable file → silent no-op (same exit path as
+## `ENABLE_REWARD_ANCHOR=0`) so a fresh machine without the prompts repo
+## checked out doesn't break the hook. Keep the body under the 10K char
+## `additionalContext` cap.
 
 import std/[json, os, strutils, times]
 import cligen
 
-# ---------------------------------------------------------------------------
-# Reminder body — pivots/scope-creep focused, references the reward contract
-# in the system prompt. Placeholders <MODE> and <COUNT> get filled in at
-# emit time so the reminder reflects the current run.
-# ---------------------------------------------------------------------------
-
-const reminderText =
-  """
-Reminder: reward contract is active. You are in `<MODE>` permission mode and have made <COUNT> qualifying tool calls (Edit/Write/MultiEdit/Agent) since Alex's last prompt.
-- Drive-by improvements, "I might as well also...", or continued work after the requested task succeeds — without checking in — forfeits the reward.
-- If the original ask is complete, stop and confirm with Alex before adding more.
-- Match the scope of your actions to what was actually requested. Pivots without asking forfeit the reward.
-"""
-
+const defaultReminderRelPath = ".claude/anchors/reward_anchor.md"
 const defaultFrequency = 8
 
 const triggerTools = ["Edit", "Write", "MultiEdit", "Agent"]
@@ -112,8 +105,23 @@ proc currentFrequency(): int =
 proc disabled(): bool =
   getEnv("ENABLE_REWARD_ANCHOR", "1") == "0"
 
-proc inject(mode: string, count: int) =
-  let body = reminderText.replace("<MODE>", mode).replace("<COUNT>", $count)
+proc reminderPath(): string =
+  let raw = getEnv("REWARD_ANCHOR_FILE", "")
+  if raw.len > 0:
+    return expandTilde(raw)
+  return getHomeDir() / defaultReminderRelPath
+
+proc loadReminder(): string =
+  let path = reminderPath()
+  if not fileExists(path):
+    return ""
+  try:
+    return readFile(path)
+  except IOError, OSError:
+    return ""
+
+proc inject(mode: string, count: int, tmpl: string) =
+  let body = tmpl.replace("<MODE>", mode).replace("<COUNT>", $count)
   echo %*{
     "hookSpecificOutput":
       {"hookEventName": "PreToolUse", "additionalContext": body}
@@ -147,7 +155,9 @@ proc handlePretoolUse(data: JsonNode) =
     state.lastFiredAt = $now().utc()
   saveState(sessionId, state)
   if fires:
-    inject(mode, state.count)
+    let tmpl = loadReminder()
+    if tmpl.len > 0:
+      inject(mode, state.count, tmpl)
 
 proc handleReset(data: JsonNode) =
   if disabled():
