@@ -211,6 +211,26 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- claude-statusline (Nim, requires json_serialization) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/statusline.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/statusline.nim" }}"
+  TARGET="$HOME/.local/bin/claude-statusline"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping claude-statusline" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping claude-statusline" >&2
+  else
+    if ! nimble path json_serialization >/dev/null 2>&1; then
+      echo "build-scripts: installing json_serialization for claude-statusline"
+      nimble install -y json_serialization >/dev/null
+    fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- heic-ai-rename (Nim) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/hazel/heic_ai_rename.nim") | sha256sum }}
 {
@@ -260,6 +280,20 @@ mkdir -p "$HOME/.local/bin"
       echo "build-scripts: installing cligen for llm"
       nimble install -y cligen >/dev/null
     fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
+# ---- inline-script-guard (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/inline_script_guard.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/inline_script_guard.nim" }}"
+  TARGET="$HOME/.local/bin/inline-script-guard"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping inline-script-guard" >&2
+  else
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
     echo "build-scripts: built $TARGET"
   fi

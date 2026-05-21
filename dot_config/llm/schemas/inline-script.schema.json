@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "inline-script-guard — inline script summary",
+  "description": "Structured summary of an inline Python or Ruby script embedded in a shell command. Produced by `llm` (codex --output-schema) for the inline-script-guard PreToolUse hook, which renders it into a permission prompt. Strict-mode shaped: every property required, object closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary",
+    "writes_files",
+    "deletes",
+    "network",
+    "spawns_processes",
+    "reads_sensitive",
+    "risk_notes"
+  ],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "One sentence, plain English: what the embedded script does."
+    },
+    "writes_files": {
+      "type": "boolean",
+      "description": "True if the script creates, modifies, or appends to any file."
+    },
+    "deletes": {
+      "type": "boolean",
+      "description": "True if the script removes files or directories, or truncates data."
+    },
+    "network": {
+      "type": "boolean",
+      "description": "True if the script opens sockets, makes HTTP(S) requests, or otherwise uses the network."
+    },
+    "spawns_processes": {
+      "type": "boolean",
+      "description": "True if the script shells out — os.system, subprocess, Kernel#system, %x, backticks, exec."
+    },
+    "reads_sensitive": {
+      "type": "boolean",
+      "description": "True if the script reads environment variables, credential files, SSH keys, or comparable secrets."
+    },
+    "risk_notes": {
+      "type": "string",
+      "description": "Anything else worth flagging before a human approves the command; empty string if nothing notable."
+    }
+  }
+}

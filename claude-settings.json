@@ -116,6 +116,11 @@
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/git-confirm-guard",
             "statusMessage": "Confirming git commit/push..."
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/inline-script-guard",
+            "statusMessage": "Checking for inline scripts..."
           }
         ]
       },
@@ -213,8 +218,10 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bunx -y ccstatusline@latest",
-    "padding": 0
+    "command": "~/.local/bin/claude-statusline",
+    "padding": 0,
+    "refreshInterval": 1,
+    "hideVimModeIndicator": true
   },
   "enabledPlugins": {
     "agent-sdk-dev@claude-plugins-official": true,
@@ -241,8 +248,8 @@
     "security-guidance@claude-plugins-official": false,
     "skill-codex@skill-codex": true,
     "superpowers@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
-    "telegram@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": false,
+    "telegram@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": true,
     "vtsls@claude-code-lsps": true,
     "xcsift@xcsift": true,
@@ -300,6 +307,7 @@
   },
   "effortLevel": "high",
   "tui": "fullscreen",
+  "theme": "auto",
   "editorMode": "vim",
   "verbose": true,
   "remoteControlAtStartup": true,
