@@ -19,6 +19,7 @@
 # toggle_key: ALT
 # You can also disable the toggle key completely with
 # toggle_key: OFF
+search_shortcut: off
 
 # --- Injection Backend
 
