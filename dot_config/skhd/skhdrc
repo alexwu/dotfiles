@@ -1,4 +1,43 @@
+.device q0max { vendor: 0x3434, product: 0xd030 }
+
+.alias $q0_num0 0x52
+.alias $q0_num1 0x53
+.alias $q0_num2 0x54
+.alias $q0_num3 0x55
+.alias $q0_num4 0x56
+.alias $q0_num5 0x57
+.alias $q0_num6 0x58
+.alias $q0_num7 0x59
+.alias $q0_num8 0x5b
+.alias $q0_num9 0x5c
+.alias $q0_num_clear 0x47
+.alias $q0_num_decimal 0x41
+.alias $q0_num_divide 0x4b
+.alias $q0_num_enter 0x4c
+.alias $q0_num_minus 0x4e
+.alias $q0_num_multiply 0x43
+.alias $q0_num_plus 0x45
+.alias $q0_delete 0x33
+.alias $q0_escape 0x35
+.alias $q0_fn_delete 0x75
+.alias $q0_mute 0x07
+.alias $q0_sound_down 0x01
+.alias $q0_sound_up 0x00
+.alias $q0_tab 0x30
+.alias $q0_unknown_nx 0x0a
+
 .define terminal_apps ["kitty", "wezterm", "terminal", "ghostty"]
+
+# Keychron Q0 Max numpad workspace launcher. These are the macOS virtual
+# keycodes reported by `skhd --observe`; skhd.zig only scopes `.remap` rules to
+# `.device`, and its current HID remap table does not include keypad sources.
+$q0_num1 : aerospace workspace 1
+$q0_num2 : aerospace workspace 2
+$q0_num3 : aerospace workspace 3
+$q0_num4 : aerospace workspace 4
+$q0_num5 : aerospace workspace 5
+$q0_num0 : aerospace workspace 0
+$q0_num_decimal : aerospace layout h_accordion h_tiles
 
 # Espanso snippet picker — pops a `choose` fuzzy picker over the focused app,
 # re-injects the picked snippet via `espanso match exec`. See ~/.local/bin/espick.
