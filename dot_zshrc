@@ -1,5 +1,16 @@
 export OS="$(uname -s)"
-if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
+
+# Prompt selection: starship in Warp (its UI doesn't play nicely with
+# p10k's instant-prompt cache) or when USE_STARSHIP is set; p10k
+# otherwise. Computed once so the instant-prompt block here and the
+# prompt-init block at the bottom of this file stay in sync.
+if [[ $TERM_PROGRAM == "WarpTerminal" || -n $USE_STARSHIP ]]; then
+  _prompt_choice=starship
+else
+  _prompt_choice=p10k
+fi
+
+if [[ $_prompt_choice == p10k ]]; then
   typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
   if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -254,12 +265,19 @@ fi
 generate_commit_message() { J llm-commit-message "$@"; }
 
 export PATH="$HOME/.local/bin:$PATH" # wezcld
-if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
+if [[ $_prompt_choice == p10k ]]; then
   (( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
   [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 else
+  # zim compiles .zimrc into a static init.zsh at build time, so p10k is
+  # loaded unconditionally before we get here. Strip its precmd/preexec
+  # hooks via array-filter (${array[@]:#pattern} keeps non-matching) so
+  # starship owns the prompt without interference.
+  precmd_functions=(${precmd_functions[@]:#_p9k_*})
+  preexec_functions=(${preexec_functions[@]:#_p9k_*})
   eval "$(starship init zsh)"
 fi
+unset _prompt_choice
 
 if [[ -z $CLAUDECODE ]] && (( $+commands[pokemon-colorscripts] ))
 then
