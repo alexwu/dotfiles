@@ -63,6 +63,7 @@ mutating.
 - Set a tab title (by tab or by any pane in it): `wezterm cli set-tab-title --tab-id 2 "api"` / `wezterm cli set-tab-title --pane-id 3 "api"`
 - Set a window title: `wezterm cli set-window-title --window-id 1 "My Project"`
 - Rename a workspace: `wezterm cli rename-workspace --workspace old new` (omit `--workspace` to rename the active one)
+- **Switching** the active workspace has no `wezterm cli` command — see `references/workspace-switching.md` for the `SetUserVar` OSC workaround.
 
 ## Interact
 

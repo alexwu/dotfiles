@@ -6,7 +6,8 @@
 ##
 ## Built-in backends:
 ##   - appriseNotifier — desktop toast via apprise CLI (always, if installed)
-##   - grrrNotifier    — growlrrr w/ click-to-focus (only when in Zellij)
+##   - grrrNotifier    — growlrrr (always, if installed); click-to-focus when
+##                       in Zellij or WezTerm, --reactivate otherwise
 ##
 ## To add a new backend:
 ##   1. Write a `proc fooNotifier(n: Notification): seq[seq[string]]`.
@@ -24,7 +25,7 @@
 ##   - called more than once per RateLimitSeconds for the same project
 ##   - the current terminal is focused AND user isn't idle
 
-import std/[json, os, osproc, strutils, times, tempfiles, streams]
+import std/[base64, json, os, osproc, strutils, times, tempfiles, streams]
 import cligen
 
 # std/md5 is deprecated in favor of the `checksums` nimble package, but it
@@ -196,10 +197,49 @@ proc zellijTabForPane(paneId: string): int =
       return pane{"tab_id"}.getInt(-1)
   -1
 
+proc weztermPaneInfo(paneId: string): tuple[tabId: int, workspace: string] =
+  ## Returns the WezTerm tab ID and workspace name hosting a pane.
+  ## tabId is -1 and workspace "" when the pane can't be found.
+  result = (tabId: -1, workspace: "")
+  let output = runCapture("wezterm", ["cli", "list", "--format", "json"])
+  let panes = tryParseJson(output)
+  if panes == nil or panes.kind != JArray:
+    return
+
+  let ourPaneId =
+    try:
+      parseInt(paneId)
+    except ValueError:
+      return
+
+  for pane in panes:
+    if pane.kind != JObject:
+      continue
+    if pane{"pane_id"}.getInt(-1) == ourPaneId:
+      return (tabId: pane{"tab_id"}.getInt(-1), workspace: pane{"workspace"}.getStr(""))
+
+proc weztermPaneIsFocused(paneId: string): bool =
+  ## Returns true iff our pane is WezTerm's focused pane — which implies its
+  ## tab and workspace are active too (there is only one focused pane).
+  ## Caller must verify $WEZTERM_PANE is set before calling.
+  let output = runCapture("wezterm", ["cli", "list-clients", "--format", "json"])
+  let clients = tryParseJson(output)
+  if clients == nil or clients.kind != JArray or clients.len == 0:
+    return false
+
+  let ourPaneId =
+    try:
+      parseInt(paneId)
+    except ValueError:
+      return false
+
+  clients[0]{"focused_pane_id"}.getInt(-1) == ourPaneId
+
 proc isTerminalFocused(): bool =
   ## Macos-specific. Returns true when the terminal running this session is
-  ## the frontmost focused app (per aerospace) AND, when in Zellij, our pane
-  ## is the focused one on the active tab.
+  ## the frontmost focused app (per aerospace) AND — in Zellij or WezTerm —
+  ## our pane is the focused one. A backgrounded pane/tab/workspace counts as
+  ## not focused, so the notification still fires.
   let zellijPaneId = getEnv("ZELLIJ_PANE_ID")
   if zellijPaneId.len > 0 and not zellijPaneIsFocused(zellijPaneId):
     return false
@@ -225,9 +265,17 @@ proc isTerminalFocused(): bool =
     return ghosttyFocusedCwd() == getCurrentDir()
 
   let ourPid = terminalPid()
-  if ourPid > 0:
-    return focusedPid == ourPid
-  false
+  if ourPid <= 0 or focusedPid != ourPid:
+    return false
+
+  # WezTerm: being the frontmost app isn't enough — the agent's pane must
+  # also be WezTerm's focused pane (which implies its tab and workspace are
+  # active). On another pane/tab/workspace the session is off-screen, so the
+  # notification should still fire.
+  let weztermPane = getEnv("WEZTERM_PANE")
+  if bundle == "com.github.wez.wezterm" and weztermPane.len > 0:
+    return weztermPaneIsFocused(weztermPane)
+  true
 
 proc systemIdle(threshold = IdleThresholdSeconds): bool =
   ## Parses `ioreg -c IOHIDSystem` for HIDIdleTime (ns) and compares to
@@ -279,6 +327,52 @@ proc buildZellijFocusScript(paneId: string, tabId: int): string =
   )
   path
 
+proc buildWeztermFocusScript(paneId: string, tabId: int, workspace: string): string =
+  ## Writes a shell script that brings WezTerm to the front, switches to the
+  ## target workspace, activates the tab, then focuses the pane. Returns the
+  ## path. Executable (0755).
+  ##
+  ## `wezterm cli` has no native workspace-switch command, so the workspace
+  ## hop rides the SetUserVar OSC bridge — a `user-var-changed` handler in
+  ## wezterm.lua calls SwitchToWorkspace. That handler only fires usefully
+  ## when the OSC lands in a pane belonging to the *currently active*
+  ## workspace, so the script resolves that pane's tty at click time rather
+  ## than baking the agent's own (likely backgrounded) pane.
+  let wezterm = findExe("wezterm")
+  let weztermBin = if wezterm.len > 0: wezterm else: "wezterm"
+
+  var content = "#!/bin/sh\nopen -b com.github.wez.wezterm\n"
+
+  if workspace.len > 0:
+    let jaq = findExe("jaq")
+    let jaqBin = if jaq.len > 0: jaq else: "jaq"
+    let payload = encode($(%*{"workspace": workspace}))
+    content.add(
+      "ws=$(" & weztermBin & " cli list-clients --format json | " & jaqBin &
+        " -r '.[0].workspace')\n" & "tty=$(" & weztermBin & " cli list --format json | " &
+        jaqBin & " -r --arg w \"$ws\" " &
+        "'[.[] | select(.workspace == $w) | .tty_name] | .[0] // \"\"')\n" &
+        "[ -n \"$tty\" ] && printf " & "'\\033]1337;SetUserVar=switch-workspace=" &
+        payload & "\\007' > \"$tty\"\n"
+    )
+
+  content.add(
+    weztermBin & " cli activate-tab --tab-id " & $tabId & "\n" & weztermBin &
+      " cli activate-pane --pane-id " & paneId & "\n"
+  )
+
+  let (file, path) = createTempFile("wezterm-focus-", ".sh")
+  file.write(content)
+  file.close()
+  setFilePermissions(
+    path,
+    {
+      fpUserRead, fpUserWrite, fpUserExec, fpGroupRead, fpGroupExec, fpOthersRead,
+      fpOthersExec,
+    },
+  )
+  path
+
 proc appriseNotifier(n: Notification): seq[seq[string]] =
   ## Standard desktop toast via apprise CLI. Unavailable if apprise is
   ## missing from PATH.
@@ -292,11 +386,11 @@ proc appriseNotifier(n: Notification): seq[seq[string]] =
   @[@["apprise", "-t", fullTitle, "-b", n.body, "-i", "markdown"]]
 
 proc grrrNotifier(n: Notification): seq[seq[string]] =
-  ## Growlrrr with click-to-focus. Zellij-only: uses the session's tab/pane
-  ## IDs to drop a shell script that jumps back to the right place on click.
-  let paneId = getEnv("ZELLIJ_PANE_ID")
-  if paneId.len == 0:
-    return @[]
+  ## Growlrrr. Fires for every notification (like apprise). Attaches a
+  ## click-to-focus script when running inside Zellij or WezTerm — both jump
+  ## to the right tab + pane; outside both, or when the pane can't be
+  ## resolved, it falls back to --reactivate. Unavailable only when grrr is
+  ## missing from PATH.
   let grrr = findExe("grrr")
   if grrr.len == 0:
     return @[]
@@ -306,12 +400,29 @@ proc grrrNotifier(n: Notification): seq[seq[string]] =
     cmd.add "--subtitle"
     cmd.add n.subtitle
 
-  let tabId = zellijTabForPane(paneId)
-  if tabId >= 0:
+  let zellijPane = getEnv("ZELLIJ_PANE_ID")
+  let zellijTab =
+    if zellijPane.len > 0:
+      zellijTabForPane(zellijPane)
+    else:
+      -1
+  if zellijTab >= 0:
     cmd.add "--execute"
-    cmd.add buildZellijFocusScript(paneId, tabId)
+    cmd.add buildZellijFocusScript(zellijPane, zellijTab)
   else:
-    cmd.add "--reactivate"
+    # Resolved lazily — skip the `wezterm cli list` subprocess when the
+    # Zellij branch already won (e.g. Zellij running inside WezTerm).
+    let weztermPane = getEnv("WEZTERM_PANE")
+    let (weztermTab, weztermWs) =
+      if weztermPane.len > 0:
+        weztermPaneInfo(weztermPane)
+      else:
+        (tabId: -1, workspace: "")
+    if weztermTab >= 0:
+      cmd.add "--execute"
+      cmd.add buildWeztermFocusScript(weztermPane, weztermTab, weztermWs)
+    else:
+      cmd.add "--reactivate"
 
   cmd.add n.body
   @[cmd]
