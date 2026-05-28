@@ -39,7 +39,9 @@ $q0_num5 : aerospace workspace 5
 $q0_num0 : aerospace workspace 0
 $q0_num_decimal : aerospace layout h_accordion h_tiles
 
-# Espanso snippet picker — pops a `choose` fuzzy picker over the focused app,
+# 0x4c | cmd
+
+# Espanso snippet picker — pops a `lulu-select` fuzzy picker over the focused app,
 # re-injects the picked snippet via `espanso match exec`. See ~/.local/bin/espick.
 ctrl + alt + cmd - s : /Users/jamesbombeelu/.local/bin/espick
 cmd - space : /Users/jamesbombeelu/.local/bin/lulu-select-meta
