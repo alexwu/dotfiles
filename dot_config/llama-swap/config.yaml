@@ -12,13 +12,14 @@ groups:
       - "zed-industries/zeta-2"
       - "zed-industries/zeta-2.1"
 
-  # Reserved slot for large workhorse models. One at a time within the group
-  # (`swap: true`), but smaller default-group models like zeta-2 / sweep
-  # variants cannot evict them (`persistent: true`), and loading a heavy
+  # Active-task workhorse tier. One member at a time within the group
+  # (`swap: true`), but small default-group churn (zeta-2 / sweep / one-off
+  # models) cannot evict them (`persistent: true`), and loading a workhorse
   # does not unload always-on (`exclusive: false`). TTL still applies as
   # the idle-eviction backstop — `persistent` only blocks other-group
-  # unloads, not the model's own ttl timer.
-  "heavy":
+  # unloads, not the model's own ttl timer. Reserve a separate "heavy"
+  # group later for the true heavyweights (122B / Mistral Medium).
+  "workhorse":
     swap: true
     exclusive: false
     persistent: true
