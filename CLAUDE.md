@@ -5,7 +5,7 @@ Reference docs for this repo are split across `.claude/rules/`:
 | File | Covers |
 |------|--------|
 | `chezmoi.md` | File naming, deployment commands, symlink targets, external repos, config registry |
-| `llm-local.md` | llama-swap, mlx-audio (WebSocket, multipart, uvicorn quirks) |
+| `llm-local.md` | llama-swap config + groups (always-on / workhorse), structured-output enforcement gaps (MLX, `/v1/responses`), mlx-audio |
 | `shell.md` | zsh/Zim, Atuin, FZF, Television, Just, 1Password |
 | `mise.md` | mise config, tool backends, Rust toolchain, tool list |
 | `git.md` | Git config (delta/difft/signing/LFS), Lazygit |
