@@ -9,6 +9,22 @@ groups:
       - "sweepai/sweep-next-edit-1.5b"
       - "henrik3/sweep-next-edit-v2-7B"
       - "qwen3.5-9b"
+      - "zed-industries/zeta-2"
+      - "zed-industries/zeta-2.1"
+
+  # Reserved slot for large workhorse models. One at a time within the group
+  # (`swap: true`), but smaller default-group models like zeta-2 / sweep
+  # variants cannot evict them (`persistent: true`), and loading a heavy
+  # does not unload always-on (`exclusive: false`). TTL still applies as
+  # the idle-eviction backstop — `persistent` only blocks other-group
+  # unloads, not the model's own ttl timer.
+  "heavy":
+    swap: true
+    exclusive: false
+    persistent: true
+    members:
+      - "Qwen3.6-27B"
+      - "Qwen3.6-35B-A3B"
 
 models:
   "Qwen3.5-122B-A10B":
@@ -58,6 +74,7 @@ models:
 
   "Qwen3.6-27B":
     cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
+    ttl: 6000
     filters:
       setParamsByID:
         "${MODEL_ID}":
@@ -153,6 +170,10 @@ models:
     cmd: llama-server -hfr "bartowski/zed-industries_zeta-2-GGUF" -hff zed-industries_zeta-2-Q6_K_L.gguf --port ${PORT} --no-webui
     useModelName: "bartowski/zed-industries_zeta-2-GGUF"
 
+  "zed-industries/zeta-2.1":
+    cmd: llama-server -hfr "mradermacher/zeta-2.1-GGUF" -hff zeta-2.1.Q6_K.gguf --port ${PORT} --no-webui
+    useModelName: "mradermacher/zeta-2.1-GGUF"
+
   "qwen3.5-9b":
     cmd: mlx_lm.server --model "mlx-community/Qwen3.5-9B-4bit" --port ${PORT} --chat-template-args '{"enable_thinking":false}' --log-level DEBUG
     useModelName: "mlx-community/Qwen3.5-9B-4bit"
@@ -246,6 +267,7 @@ peers:
     models:
       - anthropic/claude-opus-4.6
       - anthropic/claude-opus-4.7
+      - anthropic/claude-opus-4.8
       - anthropic/claude-sonnet-4.6
       - anthropic/claude-haiku-4.5
       - google/gemini-3.1-flash-lite
