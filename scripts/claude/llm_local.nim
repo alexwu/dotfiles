@@ -19,12 +19,20 @@
 ##              running indicator merged in from /running
 ##   running  — show currently-loaded models with state / backend / proxy
 ##
-## Resolution rules for `run` match the `llm` CLI:
-##   --schema      bare name → ~/.config/llm/schemas/<value>.schema.json
-##   --promptFile  bare name → ~/.config/llm/prompts/<value>.md
-##   Any value starting with `/`, `./`, or `../` is treated as an
-##   explicit path and used verbatim. Bare names may contain inner `/`
-##   to traverse subdirectories (e.g. `strict/pretooluse`).
+## Resolution and prompt-role semantics for `run` match the `llm` CLI exactly:
+##   --promptFile       USER prompt loaded from a file; joined ahead of the
+##                      positional prompt and piped stdin. A bare name resolves
+##                      under ~/.config/llm/prompts with .md / .txt appended.
+##   --systemPromptFile SYSTEM prompt (role:system); a literal path, no dir
+##                      resolution — same as `llm`'s `-s`.
+##   --schema           JSON Schema for structured output; a bare name resolves
+##                      under ~/.config/llm/schemas with .json / .schema.json.
+##   --image            image file attached as an OpenAI `image_url` data URI
+##                      (base64), repeatable. Needs an mmproj/vision model on
+##                      the server side; the user message `content` becomes a
+##                      `[{type:text}, {type:image_url}...]` array.
+## For all of the above, a value resolves relative to cwd first, then under the
+## install dir; both can take inner `/` to traverse subdirectories.
 ##
 ## --baseUrl is the llama-swap **server root** (default
 ## http://localhost:8000). OpenAI endpoints live under /v1/...; llama-swap
@@ -37,7 +45,7 @@
 ## caller's schema JsonNode verbatim, which is awkward with strongly-typed
 ## encode.
 
-import std/[httpclient, os, sets, strutils, terminal]
+import std/[base64, httpclient, os, sets, strutils, terminal]
 import std/json as stdjson
 import std/options as stdOptions
 import json_serialization
@@ -50,6 +58,8 @@ const
   DefaultTimeoutSecs = 60
   ListTimeoutSecs = 10
   ConfigSubpath = ".config/llm"
+  PromptExts = ["", ".md", ".txt"]
+  SchemaExts = ["", ".json", ".schema.json"]
 
 # Response decoding —– every field that upstream might omit is Option[T]
 # so an unexpected null / absent field surfaces as None at decode time,
@@ -119,27 +129,33 @@ proc die(msg: string, code: int = 1) {.noreturn.} =
   stderr.styledWriteLine(fgRed, "llm-local: ", resetStyle, msg)
   quit(code)
 
-proc resolveResource(value, subdir, suffix: string): string =
-  ## Resolve a `--schema` / `--promptFile` value to an on-disk path.
+proc resolveUnder(value, subdir: string, exts: openArray[string]): string =
+  ## Resolve a `--schema` / `--promptFile` reference, matching the `llm` CLI's
+  ## `resolveUnder`: try `value` (relative to cwd) and
+  ## `~/.config/llm/<subdir>/value`, each with every ext in `exts` appended.
+  ## First hit wins; "" when nothing matches (the caller emits the error). A
+  ## path or filename works as given; a bare name resolves against the install
+  ## dir. `exts` must include "" for the as-given case.
   if value.len == 0:
     return ""
-  let isExplicitPath =
-    value.startsWith("/") or value.startsWith("./") or value.startsWith("../")
-  if isExplicitPath:
-    if fileExists(value):
-      return value
-    die("file not found: " & value)
-  let home = getHomeDir()
-  let withSuffix = home / ConfigSubpath / subdir / (value & suffix)
-  if fileExists(withSuffix):
-    return withSuffix
-  let asSupplied = home / ConfigSubpath / subdir / value
-  if fileExists(asSupplied):
-    return asSupplied
-  die(
-    "cannot resolve " & subdir & " resource '" & value &
-      "' (looked at " & withSuffix & " and " & asSupplied & ")"
-  )
+  for base in [value, getHomeDir() / ConfigSubpath / subdir / value]:
+    for ext in exts:
+      let candidate = base & ext
+      if fileExists(candidate):
+        return candidate
+  ""
+
+proc mimeForImage(path: string): string =
+  ## Best-effort MIME from the file extension for the data URI. Unknown
+  ## extensions fall back to a generic type and let llama-server's mmproj
+  ## loader sniff the bytes.
+  case path.splitFile.ext.toLowerAscii
+  of ".png": "image/png"
+  of ".jpg", ".jpeg": "image/jpeg"
+  of ".webp": "image/webp"
+  of ".gif": "image/gif"
+  of ".bmp": "image/bmp"
+  else: "application/octet-stream"
 
 proc joinUrl(base, path: string): string =
   let b = base.strip(chars = {'/'}, leading = false)
@@ -190,6 +206,7 @@ proc run*(
     schema = "",
     promptFile = "",
     systemPromptFile = "",
+    image: seq[string] = @[],
     baseUrl = DefaultBaseUrl,
     temperature = DefaultTemperature,
     maxTokens = DefaultMaxTokens,
@@ -201,30 +218,70 @@ proc run*(
   if model.len == 0:
     die("--model is required (e.g. -m Qwen3.6-35B-A3B)")
 
-  # `systemPromptFile` is an alias for `promptFile`, matching the `llm`
-  # CLI's `-s/--systemPromptFile` flag. If both supplied, the alias wins.
-  let promptValue =
-    if systemPromptFile.len > 0: systemPromptFile
-    else: promptFile
-  let systemPath = resolveResource(promptValue, "prompts", ".md")
-  let schemaPath = resolveResource(schema, "schemas", ".schema.json")
+  # Resolution + prompt roles match the `llm` CLI exactly (see module doc):
+  #   --promptFile       → USER prompt (bare name resolves under prompts/)
+  #   --systemPromptFile → SYSTEM prompt (literal path, no dir resolution)
+  #   --schema           → bare name resolves under schemas/
+  let schemaPath = resolveUnder(schema, "schemas", SchemaExts)
+  if schema.len > 0 and schemaPath.len == 0:
+    die(
+      "schema not found: " & schema & " (looked relative to cwd and in ~/" &
+        ConfigSubpath & "/schemas, with optional .json / .schema.json)"
+    )
+
+  let promptPath = resolveUnder(promptFile, "prompts", PromptExts)
+  if promptFile.len > 0 and promptPath.len == 0:
+    die(
+      "prompt file not found: " & promptFile & " (looked relative to cwd and in ~/" &
+        ConfigSubpath & "/prompts, with optional .md / .txt)"
+    )
+
+  if systemPromptFile.len > 0 and not fileExists(systemPromptFile):
+    die("system prompt file not found: " & systemPromptFile)
+
+  for img in image:
+    if not fileExists(img):
+      die("image file not found: " & img)
 
   let systemContent =
-    if systemPath.len > 0: readFile(systemPath)
+    if systemPromptFile.len > 0: readFile(systemPromptFile)
     else: ""
 
-  # User content: positional args joined with spaces, plus stdin appended
-  # when piped. Matches the `llm` CLI convention.
+  # User text: --promptFile contents first (matching `llm`'s "file before
+  # positional"), then positional args, then piped stdin. Joined by blank
+  # lines; empty pieces dropped.
   var userParts: seq[string] = @[]
+  if promptPath.len > 0:
+    userParts.add(readFile(promptPath).strip())
   if prompt.len > 0:
-    userParts.add(prompt.join(" "))
+    userParts.add(prompt.join(" ").strip())
   if not stdin.isatty:
     let piped = stdin.readAll
     if piped.len > 0:
-      userParts.add(piped)
-  let userContent = userParts.join("\n").strip()
-  if userContent.len == 0:
-    die("no user prompt provided (pass positional args or pipe via stdin)")
+      userParts.add(piped.strip())
+  let userText = userParts.join("\n\n").strip()
+
+  if userText.len == 0 and image.len == 0:
+    die(
+      "no user prompt provided (pass positional args, --promptFile, " &
+        "-i/--image, or pipe via stdin)"
+    )
+
+  # User message content: a plain string when there are no images, or an
+  # OpenAI content-part array [text?, image_url...] when there are. llama-server
+  # honors data-URI image_url parts against an mmproj-equipped model (verified).
+  var userContent: JsonNode
+  if image.len > 0:
+    var parts = newJArray()
+    if userText.len > 0:
+      parts.add(%*{"type": "text", "text": userText})
+    for img in image:
+      let dataUri =
+        "data:" & mimeForImage(img) & ";base64," & base64.encode(readFile(img))
+      parts.add(%*{"type": "image_url", "image_url": {"url": dataUri}})
+    userContent = parts
+  else:
+    userContent = %userText
 
   var messages = newJArray()
   if systemContent.len > 0:
@@ -375,16 +432,19 @@ when isMainModule:
   dispatchMulti(
     [
       run,
-      short = {"model": 'm', "systemPromptFile": 's'},
+      positional = "prompt",
+      short = {"model": 'm', "systemPromptFile": 's', "image": 'i'},
       help = {
         "model":
           "model name as exposed by the local server (required, e.g. Qwen3.6-35B-A3B)",
         "schema":
           "JSON Schema for structured output; bare name resolves in ~/.config/llm/schemas",
         "promptFile":
-          "system-prompt file; bare name resolves in ~/.config/llm/prompts",
+          "USER prompt from a file; bare name resolves in ~/.config/llm/prompts (matches the `llm` CLI)",
         "systemPromptFile":
-          "alias for --promptFile, matches the `llm` CLI's -s/--systemPromptFile",
+          "SYSTEM prompt (role:system) from a literal file path; matches the `llm` CLI's -s",
+        "image":
+          "image file attached as an OpenAI image_url data URI, repeatable (needs an mmproj/vision model)",
         "baseUrl": "llama-swap server root (no /v1 suffix)",
         "temperature": "sampling temperature",
         "maxTokens": "completion-token cap",
