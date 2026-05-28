@@ -8,7 +8,7 @@ groups:
     members:
       - "sweepai/sweep-next-edit-1.5b"
       - "henrik3/sweep-next-edit-v2-7B"
-      - "qwen3.5-9b"
+      - "Qwen3.5-9B-MLX-4bit"
       - "zed-industries/zeta-2"
       - "zed-industries/zeta-2.1"
 
@@ -175,7 +175,7 @@ models:
     cmd: llama-server -hfr "mradermacher/zeta-2.1-GGUF" -hff zeta-2.1.Q6_K.gguf --port ${PORT} --no-webui
     useModelName: "mradermacher/zeta-2.1-GGUF"
 
-  "qwen3.5-9b":
+  "Qwen3.5-9B-MLX-4bit":
     cmd: mlx_lm.server --model "mlx-community/Qwen3.5-9B-4bit" --port ${PORT} --chat-template-args '{"enable_thinking":false}' --log-level DEBUG
     useModelName: "mlx-community/Qwen3.5-9B-4bit"
 
