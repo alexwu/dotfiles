@@ -16,6 +16,7 @@ function M.setup()
   vim.g.neovide_cursor_animate_command_line = false
   vim.g.neovide_scroll_animation_far_lines = 0
   vim.g.neovide_scroll_animation_length = 0.00
+  vim.g.neovide_progress_bar_enabled = true
 
   -- System clipboard copy/paste/cut bindings
   set({ "n", "x" }, "<D-c>", [["+y]], { desc = "Copy to system clipboard" })
