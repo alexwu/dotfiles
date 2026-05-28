@@ -42,6 +42,19 @@ const LlmTimeoutSecs = "30"
 # Fast-path: skip commands that don't mention head or tail at all.
 let mentionsHeadOrTail = re"\b(head|tail)\b"
 
+# `memo <cmd>` runs `<cmd>` and caches its full stdout/stderr; the
+# `--head N` / `--tail N` flags only bound the *display*, never the
+# cached stream. So a memo invocation is the opposite of truncation —
+# it's the recommended non-evasive replacement we tell people to use.
+# Match it at the fast-path level so we don't waste a classifier
+# round-trip just to land back at "use memo".
+let leadingMemo = re"^memo(\s|$)"
+
+# Leading `KEY=value` env-var prefixes — reused from sibling guards so
+# `MEMO=1 memo …` and `FOO=bar memo …` still get carved out.
+let envAssignPrefix =
+  re"""^\s*([A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|(?:\\.|\S)*)\s+)+"""
+
 proc timeoutBinary(): string =
   ## GNU coreutils `timeout`, or its Homebrew-prefixed `gtimeout`. "" when
   ## neither is on PATH — the call then runs unwrapped and the Claude Code
@@ -116,6 +129,13 @@ const DegradedReason =
   "container), use `memo <cmd> --tail N` instead — memo caches the full " &
   "output so it can be re-read via `memo show -- <cmd>`, no information lost."
 
+proc isMemoInvocation(cmd: string): bool =
+  ## True when the command's leading program is `memo` (env-prefixes
+  ## stripped first). Treat memo as always-allowed truncation since its
+  ## `--head` / `--tail` flags don't discard the underlying stream.
+  let stripped = cmd.strip().replace(envAssignPrefix, "")
+  stripped.contains(leadingMemo)
+
 proc main() =
   let payload = parseJson(stdin.readAll())
   let cmd = payload{"tool_input", "command"}.getStr("")
@@ -123,6 +143,8 @@ proc main() =
     return
   if not cmd.contains(mentionsHeadOrTail):
     return # fast path — no head/tail mentioned at all
+  if isMemoInvocation(cmd):
+    return # memo wraps full output in cache; --head/--tail are display only
 
   let (ok, raw) = classify(cmd)
   if not ok:
