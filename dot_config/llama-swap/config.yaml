@@ -221,30 +221,21 @@ models:
           chat_template_kwargs:
             enable_thinking: true
   "gemma-4-31B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
     timeouts:
       responseHeader: 120
-    # Gemma-4 thinking is disabled via chat_template_kwargs, NOT --reasoning off
-    # (unsloth docs: --reasoning off is unreliable for gemma-4). Injected per
-    # request through the JSON body. Sampling = Google's defaults (temp 1.0 /
-    # top_p 0.95 / top_k 64); note llm-local sends its own temperature per call,
-    # so --temp here is only the server fallback.
-    filters:
-      setParamsByID:
-        "${MODEL_ID}":
-          chat_template_kwargs:
-            enable_thinking: false
+    # NOTE(alexwu): --reasoning off is THE fix for gemma-4's peg-gemma4 thought-
+    # channel PEG-parser loop that wedges free-form generation (llama.cpp#21375,
+    # discussions/21338). Do NOT use --chat-template-kwargs enable_thinking:false
+    # instead — it has an inverted-guard bug in some builds and reintroduced the
+    # wedge. (setParamsByID is even worse: a per-request body rewrite that hung on
+    # system-prompt + multimodal requests.) Sampling = Google's gemma-4 defaults.
   # Stock (non-heretic) 26B MoE — the "regular 26b": fast (~4B active), accurate,
   # jailbreakable for free-form. Stock template; Q5_K_S + F32 mmproj (downloading).
   "gemma-4-26B-A4B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
     timeouts:
       responseHeader: 120
-    filters:
-      setParamsByID:
-        "${MODEL_ID}":
-          chat_template_kwargs:
-            enable_thinking: false
   # Abliterated dense twin of gemma-4-31B-it (mradermacher heretic, i1-Q4_K_M).
   # Candidate image-sort classifier — see the MoE-vs-dense × abliteration bake-off.
   "gemma-4-31B-it-heretic":
