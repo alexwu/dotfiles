@@ -1,4 +1,4 @@
-## image-sort — classify a Downloads image as luna / screenshot / other via
+## image-sort — classify a Downloads image as lulu / screenshot / other via
 ## `llm-local` vision, then rename + route it into a sorted folder tree.
 ## Designed for invocation from a Hazel rule (or run manually, per file).
 ##
@@ -16,11 +16,11 @@
 ## A single `llm-local --schema image-sort --promptFile image-sort` call
 ## returns { category, style, nsfw, name }. Routing under <root>:
 ##
-##   luna       -> Lulu/<style>/<name>.png          (nsfw -> Lulu/<style>/nsfw/)
+##   lulu       -> Lulu/<style>/<name>.png          (nsfw -> Lulu/<style>/nsfw/)
 ##   screenshot -> Screenshots/<name>.png
 ##   other      -> Other/<original-filename>         (moved as-is, not renamed)
 ##
-## For luna/screenshot the working PNG (sips-converted) lands at the
+## For lulu/screenshot the working PNG (sips-converted) lands at the
 ## destination and the original is moved to Trash. For other, the ORIGINAL
 ## file is moved verbatim (format + name preserved) — no conversion, no rename.
 ##
@@ -171,7 +171,7 @@ proc main() =
       createDir(dest)
       moveFile(input, final)
       stderr.writeLine("image-sort: " & input & " -> " & final & " [other]")
-  of "screenshot", "luna":
+  of "screenshot", "lulu":
     if slug.len == 0:
       fail("classifier returned empty/unusable name for " & category &
         " (raw: " & raw & ")")
