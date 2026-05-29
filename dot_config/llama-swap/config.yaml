@@ -137,12 +137,14 @@ models:
   # Mirrors the censored 35B-A3B flags (incl. --parallel 1 --cont-batching).
   # Weights via `pueue` (label claude: dl-qwen36-35b-a3b-heretic). Quant is
   # Q4_K_M (the repo has no Q4_K_XL; Q4_K_M is the matching bit-level).
-  # MTP: `--spec-type draft-mtp` ENABLED — this is the model #23636 benchmarks
-  # at 1.5-2x (55-78% acceptance), and draft-mtp is verified working on this
-  # llama.cpp build via the 27B-heretic sibling (~2x there). The ~1GB MTP heads
-  # load into VRAM either way. PENDING: this entry's weights are still
-  # downloading; confirm tok/s + acceptance on its own first load, and watch
-  # the #23636 large-ctx acceptance-collapse caveat at 262144.
+  # MTP: `--spec-type draft-mtp` ENABLED. Measured: loads clean (5.5s cold),
+  # 92-93 tok/s at ~38% draft acceptance (short ctx). Unlike the 27B's clean
+  # 2x, the MoE's draft-mtp gain is modest — its base rate is already ~80 tok/s
+  # (3B active), so speculative decoding has less to recover; I could not
+  # cleanly isolate the no-mtp baseline on this exact build (load flakiness).
+  # Kept because acceptance is healthy and the ~1GB MTP heads load into VRAM
+  # regardless (free). #23636 large-ctx acceptance-collapse caveat still
+  # applies at 262144 — drop the flag if long-fill captions regress.
   "Qwen3.6-35B-A3B-heretic":
     cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-mmproj-BF16.gguf
     ttl: 6000
