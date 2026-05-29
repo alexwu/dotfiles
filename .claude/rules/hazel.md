@@ -37,12 +37,22 @@ shell *had* `~/.local/bin`. Test hazel tools under the real minimal env:
   Root defaults to `~/Downloads/Images` (change the ONE path to relocate the whole
   library). Routing: `lulu → Lulu/<style>/<name>.png` (nsfw → `…/nsfw/`),
   `screenshot → Screenshots/<name>.png`, `other → Other/<original-name>` (verbatim,
-  no rename). HEIC/etc. normalize to a working PNG via `sips`; an **animated gif** is
-  classified off a `gif-mosaic` contact sheet (whole-animation view, not frame 1)
-  but **keeps its original `.gif`** in the library — the mosaic is only a proxy for
-  the model. Schema `image-sort` + prompt `image-sort` (both under `~/.config/llm`,
-  deliberately **uncommitted** — they carry reference-subject appearance text kept
-  out of this public repo).
+  no rename). Accepts HEIC/HEIF/JPG/JPEG/PNG/WEBP/**AVIF**/**SVG**/GIF + short
+  **videos** (MP4/MOV/M4V/WEBM/MKV). Each normalizes to a working PNG *only to
+  classify*, by kind: raster (heic/jpg/webp/avif/static-gif) → `sips`; `svg` →
+  `resvg` (pure-Rust rasterizer, brew dep); animated gif / video → a `gif-mosaic`
+  contact sheet (whole-animation view, not frame 1). **GIF / SVG / video keep their
+  ORIGINAL file** (animation / vector / clip preserved — the working PNG was just a
+  proxy); other raster lands as the converted `.png` and the original is trashed.
+  - **Videos go through gif-mosaic WITHOUT `--force`**, so its 200 MB / 5 min guard
+    rejects a full-length movie — which image-sort then **skips** (exit 0, file
+    untouched) rather than misfiling a feature film. Any unsupported extension is
+    likewise skipped with exit 0, never a hard `fail` — a `fail` would surface as
+    "Shell script failed" in Hazel and leave the file to be retried (the wrong
+    signal for "not my job"). `skip` vs `fail` is the deliberate split.
+  - Schema `image-sort` + prompt `image-sort` (both under `~/.config/llm`,
+    deliberately **uncommitted** — they carry reference-subject appearance text kept
+    out of this public repo).
   - **WARNING(alexwu):** if wired to a Hazel rule on `~/Downloads`, scope it to the
     **top level only** — with `<root>` inside Downloads it would re-process its own
     `Images/` subfolders in a loop. Moving `<root>` out of Downloads removes the

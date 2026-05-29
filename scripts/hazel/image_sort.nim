@@ -5,7 +5,9 @@
 ## Usage: image-sort [--dry-run|-n] <input-file> [root] [model]
 ##
 ## - --dry-run/-n: classify and print where the file WOULD go; move nothing.
-## - <input-file>: HEIC, HEIF, JPG, JPEG, PNG, WEBP, or GIF. Else errors out.
+## - <input-file>: HEIC, HEIF, JPG, JPEG, PNG, WEBP, AVIF, SVG, GIF, or a short
+##                 video (MP4/MOV/M4V/WEBM/MKV). Any other extension is skipped
+##                 (exit 0, file untouched) — never a hard error.
 ## - [root]:       destination root for the sorted tree. Defaults to
 ##                 ~/Downloads/Images. Change this ONE path to relocate the
 ##                 whole library later (e.g. into BombeeCloud).
@@ -20,16 +22,22 @@
 ##   screenshot -> Screenshots/<name>.png
 ##   other      -> Other/<original-filename>         (moved as-is, not renamed)
 ##
-## Inputs are normalized to a working PNG for the vision call: animated gifs
-## (frame count > 1) become a 4x3 mosaic of evenly-sampled frames via ffmpeg's
-## `tile` filter — so the model classifies off the whole animation, not just
-## frame 1 — while everything else is sips-converted. The working PNG is used
-## ONLY to classify. What actually lands in the library: a GIF keeps its
-## original .gif (animation preserved — the mosaic was just for the model),
-## renamed to <name>.gif; other lulu/screenshot inputs land as the converted
-## <name>.png and the original is trashed; `other` is moved verbatim (format +
-## name preserved). Animated gifs are mosaiced by the shared `gif-mosaic` tool
-## (ffmpeg/ffprobe); frame-count detection uses `magick`. All on PATH.
+## Inputs are normalized to a working PNG for the vision call, by kind:
+##   - png:            copied as-is
+##   - svg:            rasterized with `resvg` (pure-Rust, fast)
+##   - animated gif /
+##     short video:    a `gif-mosaic` contact sheet (evenly-sampled frames) so
+##                     the model classifies off the whole animation, not frame 1
+##   - other raster
+##     (heic/jpg/…/avif/static gif): `sips`-converted
+## The working PNG is used ONLY to classify. What actually lands in the library:
+## a GIF / SVG / video keeps its ORIGINAL file (animation, vector, or clip
+## preserved — the working PNG was just a proxy), renamed to <name>.<ext>;
+## other lulu/screenshot inputs land as the converted <name>.png and the
+## original is trashed; `other` is moved verbatim (format + name preserved).
+## Videos go through gif-mosaic WITHOUT --force, so its size/duration guard
+## rejects a full-length movie — which is then skipped, not misfiled. Frame-count
+## detection for gifs uses `magick`. All helpers resolve on PATH.
 ##
 ## WARNING(alexwu): if this is ever wired to a Hazel rule on ~/Downloads, scope
 ## the rule to the top level only — with <root> inside Downloads it would
@@ -45,7 +53,11 @@ const
   defaultModel = "Qwen3.6-35B-A3B-heretic"
   defaultRootRel = "Downloads/Images" # relative to $HOME
   knownStyles = ["realistic", "anime", "cartoon"]
-  imageExts = [".heic", ".heif", ".jpg", ".jpeg", ".png", ".webp", ".gif"]
+  videoExts = [".mp4", ".mov", ".m4v", ".webm", ".mkv"]
+  imageExts = [
+    ".heic", ".heif", ".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg", ".gif",
+    ".mp4", ".mov", ".m4v", ".webm", ".mkv",
+  ]
 
 type Classification = object
   ## Decoded `llm-local` structured output. Every field Option[T] so a
@@ -59,6 +71,15 @@ type Classification = object
 proc fail(msg: string) {.noreturn.} =
   stderr.writeLine "image-sort: " & msg
   quit(1)
+
+proc skip(msg: string) {.noreturn.} =
+  ## Exit 0 (success) without moving anything — so Hazel marks the file
+  ## processed and logs no failure, leaving it untouched in place. Used for
+  ## unsupported extensions and full-length videos the mosaic guard declines.
+  ## (A `fail` here would surface as "Shell script failed" in Hazel and leave
+  ## the file to be retried, which is the wrong signal for "not my job".)
+  stderr.writeLine "image-sort: " & msg
+  quit(0)
 
 proc run(cmd: string, args: openArray[string]): string =
   ## Run `cmd` with `args` (no shell). Returns trimmed stdout.
@@ -81,6 +102,18 @@ proc run(cmd: string, args: openArray[string]): string =
       else: output.strip()
     fail("`" & cmd & "` failed (exit " & $exitCode & "): " & detail)
   result = output.strip()
+
+proc tryRun(cmd: string, args: openArray[string]): bool =
+  ## Like `run`, but returns success/false instead of aborting on non-zero —
+  ## for a call whose failure is an expected signal rather than an error (a
+  ## full-length video tripping gif-mosaic's size/duration guard).
+  let p = startProcess(cmd, args = args, options = {poUsePath})
+  streams.close(p.inputStream)
+  discard streams.readAll(p.outputStream)
+  discard streams.readAll(p.errorStream)
+  let exitCode = p.waitForExit()
+  p.close()
+  exitCode == 0
 
 proc slugify(raw: string): string =
   ## Lowercase, drop a trailing `.png`, collapse runs of non-alnum to a single
@@ -157,7 +190,8 @@ proc main() =
     fail("not a file: " & input)
   let ext = input.splitFile().ext.toLowerAscii()
   if ext notin imageExts:
-    fail("unsupported extension '" & ext & "'")
+    skip("skipping unsupported extension '" & ext & "' (" &
+      input.extractFilename & ")")
 
   # Working PNG for the vision call. The model can't read HEIC, so normalize
   # to PNG via sips. An ANIMATED gif (frame count > 1) instead becomes a 4x3
@@ -167,15 +201,30 @@ proc main() =
   defer:
     removeDir(workDir)
   let workPng = workDir / "work.png"
-  let frames = if ext == ".gif": gifFrames(input) else: 1
-  let isMosaic = ext == ".gif" and frames > 1
+  let isVideo = ext in videoExts
+  let isAnimatedGif = ext == ".gif" and gifFrames(input) > 1
+  let useMosaic = isVideo or isAnimatedGif
   if ext == ".png":
     copyFile(input, workPng)
-  elif isMosaic:
-    # Delegate to the shared gif-mosaic tool — even-span sampling across the
-    # whole animation (--force: we've already decided to process this gif).
-    discard run("gif-mosaic", ["--force", "--output", workPng, input])
+  elif ext == ".svg":
+    # Rasterize the vector with resvg (pure-Rust, fast) just to classify it;
+    # the original .svg is what we keep (see keepOriginal below).
+    discard run("resvg", [input, workPng])
+  elif useMosaic:
+    # Animations/clips → a gif-mosaic contact sheet so the model sees the whole
+    # motion, not frame 1. Gifs are forced through (short by nature). Videos are
+    # NOT forced, so gif-mosaic's size/duration guard rejects a full movie —
+    # which we then skip rather than misfile a feature film into the library.
+    let args =
+      if isVideo: @["--output", workPng, input]
+      else: @["--force", "--output", workPng, input]
+    if not tryRun("gif-mosaic", args):
+      skip(
+        "skipping " & input.extractFilename & " — gif-mosaic declined it " &
+          "(looks like a full-length video over the size/duration guard, not a clip)"
+      )
   else:
+    # heic/heif/jpg/jpeg/webp/avif + static gif → sips raster → png.
     discard run("sips", ["-s", "format", "png", input, "--out", workPng])
 
   var llmArgs =
@@ -183,14 +232,14 @@ proc main() =
       "run", "-m", model, "--schema", "image-sort", "--promptFile", "image-sort",
       "-i", workPng,
     ]
-  if isMosaic:
+  if useMosaic:
     # The model is looking at a tiled grid — tell it to judge the content, not
     # the grid, so the name/category reflect the animation's actual subject.
     llmArgs.add(
-      "NOTE: the attached image is a 4x3 grid of frames sampled from an " &
-        "animated gif. Classify and name it by the animation's actual subject, " &
-        "treating the grid as one scene — do not call it a grid, mosaic, or " &
-        "contact sheet."
+      "NOTE: the attached image is a grid of frames sampled from an animation " &
+        "(gif or short video). Classify and name it by the animation's actual " &
+        "subject, treating the grid as one scene — do not call it a grid, " &
+        "mosaic, or contact sheet."
     )
   let raw = run("llm-local", llmArgs)
 
@@ -231,10 +280,11 @@ proc main() =
       dest = root / "Lulu" / styleDir
       if nsfw:
         dest = dest / "nsfw"
-    # Gifs keep their original file (the animation) — the working PNG/mosaic
-    # was only ever a classification proxy. Everything else lands as the
-    # sips-converted PNG and the original is trashed.
-    let keepOriginal = ext == ".gif"
+    # Gifs/videos/svg keep their original file — the working PNG (mosaic or
+    # resvg render) was only ever a classification proxy: a gif keeps its
+    # animation, a video its clip, an svg its vector. Everything else (raster:
+    # heic/jpg/webp/avif/…) lands as the sips-converted PNG, original trashed.
+    let keepOriginal = ext == ".gif" or ext == ".svg" or isVideo
     let outExt = if keepOriginal: ext else: ".png"
     let final = uniquePath(dest, slug, outExt)
     if dryRun:

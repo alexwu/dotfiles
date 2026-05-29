@@ -71,6 +71,7 @@ packages:
       - prettier
       - rage
       - railway
+      - resvg
       - ripgrep
       - rubyfmt
       - ruff
