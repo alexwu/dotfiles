@@ -1,22 +1,27 @@
-## heic-ai-rename — convert an image to PNG and rename via `pi -p` vision,
+## heic-ai-rename — convert an image to PNG and rename via `llm-local` vision,
 ## then move the result into a destination folder. Designed for invocation
 ## from a Hazel rule.
 ##
-## Usage: heic-ai-rename <input-file> <context-hint> <dest-folder> [model-spec]
+## Usage: heic-ai-rename <input-file> <context-hint> <dest-folder> [model]
 ##
 ## - <input-file>:   HEIC, HEIF, JPG, JPEG, or PNG. Other extensions error out.
 ## - <context-hint>: free-form string describing what these images are about.
 ##                   Biases the model toward more specific filenames, e.g.
 ##                   "Liquid Glass UI screenshot — iOS 26 design language".
 ## - <dest-folder>:  directory the renamed PNG ends up in. Created if missing.
-## - [model-spec]:   optional pi `--model` argument. Supports `provider/id`
-##                   form (e.g. `llama-swap/Qwen3.5-9B`, `anthropic/sonnet`)
-##                   and a trailing `:thinking` for thinking models.
-##                   Defaults to `llama-swap/Qwen3.5-9B`.
+## - [model]:        optional llama-swap model id passed to `llm-local -m`
+##                   (e.g. `Qwen3.5-9B`, `Qwen3.6-27B-heretic`). A trailing
+##                   `:thinking` selects the thinking alias — NOT recommended
+##                   here, this task wants a bare filename with no reasoning
+##                   trace. Defaults to `Qwen3.6-35B-A3B-heretic`: kept
+##                   resident in llama-swap's always-on group (zero cold-load
+##                   per Hazel fire) and uncensored (won't refuse to name an
+##                   NSFW input, unlike the censored small models).
 ##
 ## On success the original input is moved to Trash (via the `trash` CLI) or
 ## deleted if `trash` is not on PATH. HEIC/HEIF/JPEG inputs are converted to
-## PNG via `sips` before being shown to the model.
+## PNG via `sips` before being shown to the model. `llm-local` posts straight
+## to the local llama-swap OpenAI endpoint — no agentic-CLI spawn, no network.
 
 import std/[os, osproc, strutils, streams, tempfiles]
 
@@ -26,9 +31,11 @@ proc fail(msg: string) {.noreturn.} =
 
 proc run(cmd: string, args: openArray[string]): string =
   ## Run `cmd` with `args` (no shell). Returns trimmed stdout.
-  ## Closes the child's stdin immediately (EOF) so tools like `claude` don't
-  ## sit waiting on it. Drains stderr separately so a chatty stderr can't
-  ## fill its pipe and deadlock the child. Aborts with `fail` on non-zero.
+  ## Closes the child's stdin immediately (EOF) so tools that read stdin when
+  ## it isn't a TTY — `llm-local`, `claude`, `xh` — see EOF and read nothing
+  ## instead of blocking forever on a body that never arrives. Drains stderr
+  ## separately so a chatty stderr can't fill its pipe and deadlock the child.
+  ## Aborts with `fail` on non-zero.
   let p = startProcess(cmd, args = args, options = {poUsePath})
   p.inputStream.close()
   let output = p.outputStream.readAll()
@@ -60,7 +67,7 @@ proc slugify(raw: string): string =
   if result.len > 0 and result[^1] == '-':
     result.setLen(result.len - 1)
 
-const defaultModel = "llama-swap/Qwen3.5-9B"
+const defaultModel = "Qwen3.6-35B-A3B-heretic"
 
 proc main() =
   let args = commandLineParams()
@@ -102,12 +109,11 @@ proc main() =
       "e.g. safari-tab-bar-translucent-toolbar\n\n" &
     "Output ONLY the filename string. Nothing else."
 
-  let raw = run("pi",
-                ["-p", "--no-session", "--model", model,
-                 "@" & workPng, prompt])
+  let raw = run("llm-local",
+                ["run", "-m", model, "-i", workPng, prompt])
   let slug = slugify(raw)
   if slug.len == 0:
-    fail("pi returned empty/unusable name (raw: " & raw & ")")
+    fail("llm-local returned empty/unusable name (raw: " & raw & ")")
 
   var final = dest / (slug & ".png")
   var i = 2
