@@ -23,10 +23,12 @@
 ## Inputs are normalized to a working PNG for the vision call: animated gifs
 ## (frame count > 1) become a 4x3 mosaic of evenly-sampled frames via ffmpeg's
 ## `tile` filter — so the model classifies off the whole animation, not just
-## frame 1 — while everything else is sips-converted. For lulu/screenshot that
-## working PNG lands at the destination and the original is moved to Trash.
-## For other, the ORIGINAL file is moved verbatim (format + name preserved) —
-## no conversion, no rename. Animated-gif handling needs ffmpeg + magick on PATH.
+## frame 1 — while everything else is sips-converted. The working PNG is used
+## ONLY to classify. What actually lands in the library: a GIF keeps its
+## original .gif (animation preserved — the mosaic was just for the model),
+## renamed to <name>.gif; other lulu/screenshot inputs land as the converted
+## <name>.png and the original is trashed; `other` is moved verbatim (format +
+## name preserved). Animated-gif handling needs ffmpeg + magick on PATH.
 ##
 ## WARNING(alexwu): if this is ever wired to a Hazel rule on ~/Downloads, scope
 ## the rule to the top level only — with <root> inside Downloads it would
@@ -234,14 +236,22 @@ proc main() =
       dest = root / "Lulu" / styleDir
       if nsfw:
         dest = dest / "nsfw"
-    let final = uniquePath(dest, slug, ".png")
+    # Gifs keep their original file (the animation) — the working PNG/mosaic
+    # was only ever a classification proxy. Everything else lands as the
+    # sips-converted PNG and the original is trashed.
+    let keepOriginal = ext == ".gif"
+    let outExt = if keepOriginal: ext else: ".png"
+    let final = uniquePath(dest, slug, outExt)
     if dryRun:
       stderr.writeLine("image-sort [dry-run]: " & input & " -> " & final &
         " [" & category & "]")
     else:
       createDir(dest)
-      moveFile(workPng, final)
-      trashOrDelete(input)
+      if keepOriginal:
+        moveFile(input, final) # move the original gif, renamed; no trash
+      else:
+        moveFile(workPng, final)
+        trashOrDelete(input)
       stderr.writeLine("image-sort: " & input & " -> " & final & " [" & category & "]")
   else:
     fail("classifier returned unknown category '" & category & "' (raw: " & raw & ")")
