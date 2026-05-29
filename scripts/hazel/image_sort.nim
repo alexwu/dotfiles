@@ -28,7 +28,8 @@
 ## original .gif (animation preserved — the mosaic was just for the model),
 ## renamed to <name>.gif; other lulu/screenshot inputs land as the converted
 ## <name>.png and the original is trashed; `other` is moved verbatim (format +
-## name preserved). Animated-gif handling needs ffmpeg + magick on PATH.
+## name preserved). Animated gifs are mosaiced by the shared `gif-mosaic` tool
+## (ffmpeg/ffprobe); frame-count detection uses `magick`. All on PATH.
 ##
 ## WARNING(alexwu): if this is ever wired to a Hazel rule on ~/Downloads, scope
 ## the rule to the top level only — with <root> inside Downloads it would
@@ -171,15 +172,9 @@ proc main() =
   if ext == ".png":
     copyFile(input, workPng)
   elif isMosaic:
-    let step = max(1, frames div 12)
-    let vf = "select=not(mod(n\\," & $step & ")),scale=320:-1,tile=4x3"
-    discard run(
-      "ffmpeg",
-      [
-        "-y", "-hide_banner", "-loglevel", "error", "-i", input, "-vf", vf,
-        "-frames:v", "1", workPng,
-      ],
-    )
+    # Delegate to the shared gif-mosaic tool — even-span sampling across the
+    # whole animation (--force: we've already decided to process this gif).
+    discard run("gif-mosaic", ["--force", "--output", workPng, input])
   else:
     discard run("sips", ["-s", "format", "png", input, "--out", workPng])
 
