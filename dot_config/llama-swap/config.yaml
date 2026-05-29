@@ -11,6 +11,10 @@ groups:
       - "Qwen3.5-9B-MLX-4bit"
       - "zed-industries/zeta-2"
       - "zed-industries/zeta-2.1"
+      # Dictation-cleanup hot path (run multiple times/hour) — kept resident so
+      # every cleanup is instant, never paying the ~6s cold-load. ~24GB RSS /
+      # ~4GB phys; coexists with workhorse models (always-on is never evicted).
+      - "Qwen3.6-35B-A3B-heretic"
 
   # Active-task workhorse tier. One member at a time within the group
   # (`swap: true`), but small default-group churn (zeta-2 / sweep / one-off
@@ -27,7 +31,8 @@ groups:
       - "Qwen3.6-27B"
       - "Qwen3.6-35B-A3B"
       - "Qwen3.6-27B-heretic"
-      - "Qwen3.6-35B-A3B-heretic"
+      # NOTE: Qwen3.6-35B-A3B-heretic moved to always-on (dictation-cleanup
+      # hot path — needs to stay resident, not swap).
 
 models:
   "Qwen3.5-122B-A10B":
