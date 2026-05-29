@@ -484,7 +484,7 @@ return {
         url = "http://localhost:8000",
         -- model = "sweepai/sweep-next-edit-1.5b",
         -- model = "henrik3/sweep-next-edit-v2-7B",
-        model = "zed-industries/zeta-2",
+        model = "zed-industries/zeta-2.1",
       },
       keymaps = {
         -- accept = false,

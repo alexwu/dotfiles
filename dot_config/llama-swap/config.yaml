@@ -158,7 +158,12 @@ models:
           chat_template_kwargs:
             enable_thinking: true
   "Qwen3-VL-32B-Instruct-heretic-v2":
-    cmd: llama-server --port ${PORT} --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
+    # NOTE(alexwu): bare config let llama.cpp default to n_ctx 262144 × 4
+    # parallel slots → KV cache OOM (kIOGPUCommandBufferCallbackErrorOutOfMemory)
+    # the moment an image hit the compute buffer. Pin ctx + parallel 1 +
+    # quantized KV + flash-attn to match the other vision entries.
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
+    ttl: 6000
   "sweepai/sweep-next-edit-1.5b":
     cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --port ${PORT} --no-webui
   "henrik3/sweep-next-edit-v2-7B":
