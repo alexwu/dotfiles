@@ -20,9 +20,13 @@
 ##   screenshot -> Screenshots/<name>.png
 ##   other      -> Other/<original-filename>         (moved as-is, not renamed)
 ##
-## For lulu/screenshot the working PNG (sips-converted) lands at the
-## destination and the original is moved to Trash. For other, the ORIGINAL
-## file is moved verbatim (format + name preserved) — no conversion, no rename.
+## Inputs are normalized to a working PNG for the vision call: animated gifs
+## (frame count > 1) become a 4x3 mosaic of evenly-sampled frames via ffmpeg's
+## `tile` filter — so the model classifies off the whole animation, not just
+## frame 1 — while everything else is sips-converted. For lulu/screenshot that
+## working PNG lands at the destination and the original is moved to Trash.
+## For other, the ORIGINAL file is moved verbatim (format + name preserved) —
+## no conversion, no rename. Animated-gif handling needs ffmpeg + magick on PATH.
 ##
 ## WARNING(alexwu): if this is ever wired to a Hazel rule on ~/Downloads, scope
 ## the rule to the top level only — with <root> inside Downloads it would
@@ -108,6 +112,23 @@ proc trashOrDelete(path: string) =
   else:
     removeFile(path)
 
+proc gifFrames(path: string): int =
+  ## Frame count via `magick identify` — 1 for a still, or on any failure
+  ## (soft: a frame-count miss must never abort the sort). `magick identify`
+  ## prints one line per frame, so the line count is the frame count.
+  try:
+    let p = startProcess("magick", args = ["identify", path], options = {poUsePath})
+    streams.close(p.inputStream)
+    let outp = streams.readAll(p.outputStream)
+    discard streams.readAll(p.errorStream)
+    let code = p.waitForExit()
+    p.close()
+    if code != 0:
+      return 1
+    result = max(1, outp.strip().splitLines().len)
+  except CatchableError:
+    result = 1
+
 proc main() =
   # Hazel / launchd invoke us with a minimal PATH that omits ~/.local/bin,
   # where llm-local lives — prepend it so the vision call resolves regardless
@@ -135,23 +156,46 @@ proc main() =
   if ext notin imageExts:
     fail("unsupported extension '" & ext & "'")
 
-  # Working PNG for the vision call (the model can't read HEIC; normalize all).
+  # Working PNG for the vision call. The model can't read HEIC, so normalize
+  # to PNG via sips. An ANIMATED gif (frame count > 1) instead becomes a 4x3
+  # mosaic of ~12 evenly-sampled frames (ffmpeg `tile`), so the model sees the
+  # whole animation rather than just frame 1.
   let workDir = createTempDir("image-sort-", "")
   defer:
     removeDir(workDir)
   let workPng = workDir / "work.png"
+  let frames = if ext == ".gif": gifFrames(input) else: 1
+  let isMosaic = ext == ".gif" and frames > 1
   if ext == ".png":
     copyFile(input, workPng)
+  elif isMosaic:
+    let step = max(1, frames div 12)
+    let vf = "select=not(mod(n\\," & $step & ")),scale=320:-1,tile=4x3"
+    discard run(
+      "ffmpeg",
+      [
+        "-y", "-hide_banner", "-loglevel", "error", "-i", input, "-vf", vf,
+        "-frames:v", "1", workPng,
+      ],
+    )
   else:
     discard run("sips", ["-s", "format", "png", input, "--out", workPng])
 
-  let raw = run(
-    "llm-local",
-    [
+  var llmArgs =
+    @[
       "run", "-m", model, "--schema", "image-sort", "--promptFile", "image-sort",
       "-i", workPng,
-    ],
-  )
+    ]
+  if isMosaic:
+    # The model is looking at a tiled grid — tell it to judge the content, not
+    # the grid, so the name/category reflect the animation's actual subject.
+    llmArgs.add(
+      "NOTE: the attached image is a 4x3 grid of frames sampled from an " &
+        "animated gif. Classify and name it by the animation's actual subject, " &
+        "treating the grid as one scene — do not call it a grid, mosaic, or " &
+        "contact sheet."
+    )
+  let raw = run("llm-local", llmArgs)
 
   var c: Classification
   try:
