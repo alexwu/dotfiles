@@ -102,7 +102,8 @@ proc main() =
     "Context: " & context & "\n\n" &
     "Reply with EXACTLY ONE descriptive kebab-case filename. Constraints:\n" &
     "- Lowercase only\n" &
-    "- 30-70 characters\n" &
+    "- Aim for ~40 characters, 60 MAX — prefer the shortest name that stays " &
+      "specific; favor 3-6 words\n" &
     "- Hyphens between words; no spaces, no underscores\n" &
     "- No path, no file extension, no quotes, no markdown, no explanation\n" &
     "- If you can identify an app + component + relevant state, that's ideal: " &
