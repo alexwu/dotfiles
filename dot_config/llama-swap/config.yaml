@@ -102,15 +102,18 @@ models:
   # Abliterated ("heretic") twin of Qwen3.6-27B — uncensored vision + text.
   # Same flags/sampling as the censored 27B above; only the weights differ.
   # NOTE(alexwu): "Native MTP Preserved" is real — `--spec-type draft-mtp`
-  # ENABLED and verified: ~2x generation (13.2 → ~26 tok/s) at ~40-44% draft
-  # acceptance on a short-context prompt. The ~1GB MTP heads load into VRAM
-  # regardless, so this is free throughput. CAVEAT (ggml-org/llama.cpp#23636):
-  # acceptance can collapse near KV-slot boundaries at large ctx — verified
-  # only at short ctx; if long-fill captions stall or slow, drop the flag.
+  # ENABLED and verified: ~2x generation (13.2 → ~26 tok/s) at short ctx,
+  # matching unsloth's "dense models 1.4-2x with MTP" benchmark. n-max set to
+  # 2 per unsloth's recommendation (acceptance collapses past 2 draft tokens;
+  # was 3 — measured 40-44% accept then, re-check at 2). The ~1GB MTP heads
+  # load into VRAM regardless, so this is free throughput. CAVEAT
+  # (ggml-org/llama.cpp#23636): acceptance can collapse near KV-slot
+  # boundaries at large ctx — verified only at short ctx; drop the flag if
+  # long-fill captions stall. Ref: unsloth.ai/docs/models/qwen3.6 (MTP Guide).
   # Weights downloaded via `pueue` (label claude: dl-qwen36-27b-heretic-v2)
   # to ~/.cache/huggingface/models/llmfan46/.
   "Qwen3.6-27B-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-mmproj-BF16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 2 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-mmproj-BF16.gguf
     ttl: 6000
     filters:
       setParamsByID:
@@ -137,16 +140,17 @@ models:
   # Mirrors the censored 35B-A3B flags (incl. --parallel 1 --cont-batching).
   # Weights via `pueue` (label claude: dl-qwen36-35b-a3b-heretic). Quant is
   # Q4_K_M (the repo has no Q4_K_XL; Q4_K_M is the matching bit-level).
-  # MTP: `--spec-type draft-mtp` ENABLED. Measured: loads clean (5.5s cold),
-  # 92-93 tok/s at ~38% draft acceptance (short ctx). Unlike the 27B's clean
-  # 2x, the MoE's draft-mtp gain is modest — its base rate is already ~80 tok/s
-  # (3B active), so speculative decoding has less to recover; I could not
-  # cleanly isolate the no-mtp baseline on this exact build (load flakiness).
-  # Kept because acceptance is healthy and the ~1GB MTP heads load into VRAM
-  # regardless (free). #23636 large-ctx acceptance-collapse caveat still
-  # applies at 262144 — drop the flag if long-fill captions regress.
+  # MTP: `--spec-type draft-mtp` ENABLED (n-max 2 per unsloth). Measured:
+  # loads clean (5.5s cold), 92-93 tok/s at ~38% draft acceptance, uncensored
+  # vision confirmed. The MoE's gain is modest — unsloth benchmarks MoE MTP at
+  # 1.15-1.25x (vs dense 1.4-2x) because the 3B-active base is already ~80
+  # tok/s, so speculative decoding has little to recover. I couldn't cleanly
+  # isolate the no-mtp baseline here (load flakiness), but unsloth's figure
+  # matches the small gain. Kept: free (the ~1GB MTP heads load to VRAM
+  # regardless) and acceptance is healthy. #23636 large-ctx caveat applies at
+  # 262144. Ref: unsloth.ai/docs/models/qwen3.6 (MTP Guide).
   "Qwen3.6-35B-A3B-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-mmproj-BF16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 2 --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-mmproj-BF16.gguf
     ttl: 6000
     filters:
       setParamsByID:
