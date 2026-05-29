@@ -26,6 +26,8 @@ groups:
     members:
       - "Qwen3.6-27B"
       - "Qwen3.6-35B-A3B"
+      - "Qwen3.6-27B-heretic"
+      - "Qwen3.6-35B-A3B-heretic"
 
 models:
   "Qwen3.5-122B-A10B":
@@ -75,6 +77,64 @@ models:
 
   "Qwen3.6-27B":
     cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
+    ttl: 6000
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 0.7
+          top_p: 0.8
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: false
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.95
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: true
+
+  # Abliterated ("heretic") twin of Qwen3.6-27B — uncensored vision + text.
+  # Same flags/sampling as the censored 27B above; only the weights differ.
+  # NOTE(alexwu): MTP tensors in this GGUF are parsed-and-ignored by
+  # llama.cpp (no speculative-decoding path); harmless, no flag needed.
+  # Weights downloaded via `pueue` (label claude: dl-qwen36-27b-heretic-v2)
+  # to ~/.cache/huggingface/models/llmfan46/.
+  "Qwen3.6-27B-heretic":
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-mmproj-BF16.gguf
+    ttl: 6000
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 0.7
+          top_p: 0.8
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: false
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.95
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: true
+
+  # Abliterated ("heretic") twin of Qwen3.6-35B-A3B — uncensored vision + text.
+  # Mirrors the censored 35B-A3B flags (incl. --parallel 1 --cont-batching).
+  # Weights via `pueue` (label claude: dl-qwen36-35b-a3b-heretic). Quant is
+  # Q4_K_M (the repo has no Q4_K_XL; Q4_K_M is the matching bit-level).
+  "Qwen3.6-35B-A3B-heretic":
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-mmproj-BF16.gguf
     ttl: 6000
     filters:
       setParamsByID:
