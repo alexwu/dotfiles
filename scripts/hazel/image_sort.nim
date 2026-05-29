@@ -2,8 +2,9 @@
 ## `llm-local` vision, then rename + route it into a sorted folder tree.
 ## Designed for invocation from a Hazel rule (or run manually, per file).
 ##
-## Usage: image-sort <input-file> [root] [model]
+## Usage: image-sort [--dry-run|-n] <input-file> [root] [model]
 ##
+## - --dry-run/-n: classify and print where the file WOULD go; move nothing.
 ## - <input-file>: HEIC, HEIF, JPG, JPEG, PNG, WEBP, or GIF. Else errors out.
 ## - [root]:       destination root for the sorted tree. Defaults to
 ##                 ~/Downloads/Sorted. Change this ONE path to relocate the
@@ -15,7 +16,7 @@
 ## A single `llm-local --schema image-sort --promptFile image-sort` call
 ## returns { category, style, nsfw, name }. Routing under <root>:
 ##
-##   luna       -> Luna/<style>/<name>.png          (nsfw -> Luna/<style>/nsfw/)
+##   luna       -> Lulu/<style>/<name>.png          (nsfw -> Lulu/<style>/nsfw/)
 ##   screenshot -> Screenshots/<name>.png
 ##   other      -> Other/<original-filename>         (moved as-is, not renamed)
 ##
@@ -108,9 +109,13 @@ proc trashOrDelete(path: string) =
     removeFile(path)
 
 proc main() =
-  let args = commandLineParams()
+  var dryRun = false
+  var args: seq[string]
+  for a in commandLineParams():
+    if a == "--dry-run" or a == "-n": dryRun = true
+    else: args.add a
   if args.len < 1 or args.len > 3:
-    stderr.writeLine "usage: image-sort <input-file> [root] [model]"
+    stderr.writeLine "usage: image-sort [--dry-run|-n] <input-file> [root] [model]"
     quit(1)
   let
     input = args[0]
@@ -158,11 +163,14 @@ proc main() =
   of "other":
     # Move the ORIGINAL verbatim — no conversion, no rename.
     let dest = root / "Other"
-    createDir(dest)
     let (_, base, oext) = input.splitFile()
     let final = uniquePath(dest, base, oext)
-    moveFile(input, final)
-    stderr.writeLine("image-sort: " & input & " -> " & final & " [other]")
+    if dryRun:
+      stderr.writeLine("image-sort [dry-run]: " & input & " -> " & final & " [other]")
+    else:
+      createDir(dest)
+      moveFile(input, final)
+      stderr.writeLine("image-sort: " & input & " -> " & final & " [other]")
   of "screenshot", "luna":
     if slug.len == 0:
       fail("classifier returned empty/unusable name for " & category &
@@ -173,15 +181,18 @@ proc main() =
     else:
       let style = c.style.get("none")
       let styleDir = if style in knownStyles: style else: "misc"
-      dest = root / "Luna" / styleDir
+      dest = root / "Lulu" / styleDir
       if nsfw:
         dest = dest / "nsfw"
-    createDir(dest)
     let final = uniquePath(dest, slug, ".png")
-    moveFile(workPng, final)
-    trashOrDelete(input)
-    let tag = if category == "luna" and nsfw: "luna/nsfw" else: category
-    stderr.writeLine("image-sort: " & input & " -> " & final & " [" & tag & "]")
+    if dryRun:
+      stderr.writeLine("image-sort [dry-run]: " & input & " -> " & final &
+        " [" & category & "]")
+    else:
+      createDir(dest)
+      moveFile(workPng, final)
+      trashOrDelete(input)
+      stderr.writeLine("image-sort: " & input & " -> " & final & " [" & category & "]")
   else:
     fail("classifier returned unknown category '" & category & "' (raw: " & raw & ")")
 
