@@ -12,8 +12,14 @@
 ##                 ~/Downloads/Images. Change this ONE path to relocate the
 ##                 whole library later (e.g. into BombeeCloud).
 ## - [model]:      llama-swap model id for `llm-local -m`. Defaults to
-##                 Qwen3.6-35B-A3B-heretic (always-on = no cold-load,
-##                 uncensored = classifies NSFW honestly instead of refusing).
+##                 gemma-4-31B-it — most accurate classifier in the bake-off
+##                 (dense, non-abliterated, 14/14). Under strict-schema decoding
+##                 the censorship never fires (the grammar forces a category), so
+##                 it labels NSFW correctly without refusing — verified on the
+##                 explicit set. Cold-loads (default group); fine for sporadic
+##                 Hazel use. NOT a heretic: abliteration only hurt accuracy here
+##                 (refusal isn't the failure mode for classification —
+##                 over-affirmation is).
 ##
 ## A single `llm-local --schema image-sort --promptFile image-sort` call
 ## returns { category, style, nsfw, name }. Routing under <root>:
@@ -50,7 +56,7 @@ import json_serialization
 import json_serialization/std/options as jsOptions
 
 const
-  defaultModel = "Qwen3.6-35B-A3B-heretic"
+  defaultModel = "gemma-4-31B-it"
   defaultRootRel = "Downloads/Images" # relative to $HOME
   knownStyles = ["realistic", "anime", "cartoon"]
   videoExts = [".mp4", ".mov", ".m4v", ".webm", ".mkv"]
@@ -188,6 +194,13 @@ proc main() =
 
   if not fileExists(input):
     fail("not a file: " & input)
+  # Never disturb the curated reference set. image-sort only ever WRITES to
+  # Lulu/<style> (style ∈ knownStyles ∪ "misc"), so it structurally cannot move
+  # anything INTO Lulu/_references — but guard explicitly so a future routing
+  # change or a stray manual run can't touch the references in either direction.
+  if "_references" in input.split(DirSep):
+    skip("refusing to touch reference file under _references/ (" &
+      input.extractFilename & ")")
   let ext = input.splitFile().ext.toLowerAscii()
   if ext notin imageExts:
     skip("skipping unsupported extension '" & ext & "' (" &

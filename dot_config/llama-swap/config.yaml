@@ -215,6 +215,18 @@ models:
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
     timeouts:
       responseHeader: 120
+  # Abliterated dense twin of gemma-4-31B-it (mradermacher heretic, i1-Q4_K_M).
+  # Candidate image-sort classifier — see the MoE-vs-dense × abliteration bake-off.
+  "gemma-4-31B-it-heretic":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-31B-it-uncensored-heretic/gemma-4-31B-it-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-31B-it-uncensored-heretic/gemma-4-31B-it-uncensored-heretic.mmproj-f16.gguf
+    timeouts:
+      responseHeader: 120
+  # MoE twin (A4B ≈ 4B active, 26B total), "ultra" abliteration. The "worst
+  # corner" prediction — MoE *and* heavy abliteration — for the same bake-off.
+  "gemma-4-26B-A4B-it-heretic":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.mmproj-f16.gguf
+    timeouts:
+      responseHeader: 120
   "Dark-Nexus-24B-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/ReadyArt/Dark-Nexus-24B-v2.0-GGUF/Dark-Nexus-24B-v2.0-Q5_K_M.gguf --no-webui
     ttl: 28800
