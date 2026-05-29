@@ -70,6 +70,12 @@ proc slugify(raw: string): string =
 const defaultModel = "Qwen3.6-35B-A3B-heretic"
 
 proc main() =
+  # Hazel invokes us with a minimal PATH that omits ~/.local/bin, where
+  # llm-local lives — prepend it so the vision call resolves. (Was fine when
+  # this shelled out to `pi`, a mise shim already on the Hazel PATH.)
+  let localBin = getHomeDir() / ".local" / "bin"
+  putEnv("PATH", localBin & ":" & getEnv("PATH"))
+
   let args = commandLineParams()
   if args.len < 3 or args.len > 4:
     stderr.writeLine "usage: heic-ai-rename <input-file> <context-hint> <dest-folder> [model-spec]"

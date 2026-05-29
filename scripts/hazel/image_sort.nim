@@ -109,6 +109,12 @@ proc trashOrDelete(path: string) =
     removeFile(path)
 
 proc main() =
+  # Hazel / launchd invoke us with a minimal PATH that omits ~/.local/bin,
+  # where llm-local lives — prepend it so the vision call resolves regardless
+  # of the caller's environment.
+  let localBin = getHomeDir() / ".local" / "bin"
+  putEnv("PATH", localBin & ":" & getEnv("PATH"))
+
   var dryRun = false
   var args: seq[string]
   for a in commandLineParams():
