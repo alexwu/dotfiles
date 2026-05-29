@@ -15,6 +15,11 @@ groups:
       # every cleanup is instant, never paying the ~6s cold-load. ~24GB RSS /
       # ~4GB phys; coexists with workhorse models (always-on is never evicted).
       - "Qwen3.6-35B-A3B-heretic"
+      # image-sort default classifier (stock 26B MoE) — resident so the sorter
+      # never pays a cold-load swap (a wedged swap once hung a call ~10min;
+      # swap:false here means it never cold-loads again). 14/14 in the bake-off,
+      # ~2x faster than the 31B dense.
+      - "gemma-4-26B-A4B-it"
 
   # Active-task workhorse tier. One member at a time within the group
   # (`swap: true`), but small default-group churn (zeta-2 / sweep / one-off
@@ -31,6 +36,10 @@ groups:
       - "Qwen3.6-27B"
       - "Qwen3.6-35B-A3B"
       - "Qwen3.6-27B-heretic"
+      # Strongest gemma-4 classifier (dense) — on-demand fallback for max quality.
+      # image-sort defaults to the faster always-on stock 26B; load this when you
+      # want the 31B's headroom.
+      - "gemma-4-31B-it"
       # NOTE: Qwen3.6-35B-A3B-heretic moved to always-on (dictation-cleanup
       # hot path — needs to stay resident, not swap).
 
@@ -212,9 +221,30 @@ models:
           chat_template_kwargs:
             enable_thinking: true
   "gemma-4-31B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
     timeouts:
       responseHeader: 120
+    # Gemma-4 thinking is disabled via chat_template_kwargs, NOT --reasoning off
+    # (unsloth docs: --reasoning off is unreliable for gemma-4). Injected per
+    # request through the JSON body. Sampling = Google's defaults (temp 1.0 /
+    # top_p 0.95 / top_k 64); note llm-local sends its own temperature per call,
+    # so --temp here is only the server fallback.
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          chat_template_kwargs:
+            enable_thinking: false
+  # Stock (non-heretic) 26B MoE — the "regular 26b": fast (~4B active), accurate,
+  # jailbreakable for free-form. Stock template; Q5_K_S + F32 mmproj (downloading).
+  "gemma-4-26B-A4B-it":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
+    timeouts:
+      responseHeader: 120
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          chat_template_kwargs:
+            enable_thinking: false
   # Abliterated dense twin of gemma-4-31B-it (mradermacher heretic, i1-Q4_K_M).
   # Candidate image-sort classifier — see the MoE-vs-dense × abliteration bake-off.
   "gemma-4-31B-it-heretic":
