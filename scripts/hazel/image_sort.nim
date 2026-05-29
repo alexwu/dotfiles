@@ -7,7 +7,7 @@
 ## - --dry-run/-n: classify and print where the file WOULD go; move nothing.
 ## - <input-file>: HEIC, HEIF, JPG, JPEG, PNG, WEBP, or GIF. Else errors out.
 ## - [root]:       destination root for the sorted tree. Defaults to
-##                 ~/Downloads/Sorted. Change this ONE path to relocate the
+##                 ~/Downloads/Images. Change this ONE path to relocate the
 ##                 whole library later (e.g. into BombeeCloud).
 ## - [model]:      llama-swap model id for `llm-local -m`. Defaults to
 ##                 Qwen3.6-35B-A3B-heretic (always-on = no cold-load,
@@ -26,7 +26,7 @@
 ##
 ## WARNING(alexwu): if this is ever wired to a Hazel rule on ~/Downloads, scope
 ## the rule to the top level only — with <root> inside Downloads it would
-## otherwise re-process its own Sorted/ subfolders in a loop. Moving <root>
+## otherwise re-process its own Images/ subfolders in a loop. Moving <root>
 ## out of Downloads removes the hazard entirely.
 
 import std/[os, osproc, streams, strutils, tempfiles]
@@ -36,7 +36,7 @@ import json_serialization/std/options as jsOptions
 
 const
   defaultModel = "Qwen3.6-35B-A3B-heretic"
-  defaultRootRel = "Downloads/Sorted" # relative to $HOME
+  defaultRootRel = "Downloads/Images" # relative to $HOME
   knownStyles = ["realistic", "anime", "cartoon"]
   imageExts = [".heic", ".heif", ".jpg", ".jpeg", ".png", ".webp", ".gif"]
 
