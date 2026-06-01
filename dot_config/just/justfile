@@ -20,31 +20,40 @@ docker-rebuild COMPOSE:
 mcp-inspector:
     bunx @modelcontextprotocol/inspector
 
-[group("secrets")]
 [doc("Scan working tree for secrets via gitleaks (fast; no git-history walk).")]
+[group("secrets")]
 [no-cd]
 secrets-scan:
     gitleaks detect --no-git --source . --verbose
 
-[group("secrets")]
 [doc("Scan full git history for secrets via gitleaks (paranoid pre-push check).")]
+[group("secrets")]
 [no-cd]
 secrets-scan-history:
     gitleaks detect --source . --verbose
 
+[doc("Presence-check an EXPORTED env var by name without printing its value — outputs 'set' or 'unset'. Usage: just -g env-isset OPENROUTER_API_KEY")]
+[group("secrets")]
+[no-cd]
+env-isset name:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    var='{{ name }}'
+    if [ -n "${!var:-}" ]; then echo set; else echo unset; fi
+
 LLAMA_SWAP := "http://localhost:8000"
 
-[group("llama-swap")]
 [doc("List models exposed by llama-swap")]
+[group("llama-swap")]
 llm-models:
     xh -b GET {{ LLAMA_SWAP }}/v1/models
 
 LLM_DEFAULT_MODEL := "anthropic/claude-haiku-4.5"
 
-[group("llama-swap")]
+[arg("model", long="model", short="m")]
+[arg("stream", long="stream", value="true")]
 [doc("Chat completion: just llm-chat [-m MODEL] [--stream] PROMPT...")]
-[arg("model", long, short="m")]
-[arg("stream", long, value="true")]
+[group("llama-swap")]
 llm-chat model=LLM_DEFAULT_MODEL stream="false" +prompt="":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -60,10 +69,10 @@ llm-chat model=LLM_DEFAULT_MODEL stream="false" +prompt="":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
     fi
 
-[group("llama-swap")]
+[arg("model", long="model", short="m")]
+[arg("stream", long="stream", value="true")]
 [doc("Chat with prompt from stdin: cat file.txt | just llm-pipe [-m MODEL] [--stream]")]
-[arg("model", long, short="m")]
-[arg("stream", long, value="true")]
+[group("llama-swap")]
 llm-pipe model=LLM_DEFAULT_MODEL stream="false":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -76,10 +85,10 @@ llm-pipe model=LLM_DEFAULT_MODEL stream="false":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
     fi
 
-[group("llama-swap")]
+[arg("model", long="model", short="m")]
+[arg("stream", long="stream", value="true")]
 [doc("Responses API: just llm-respond [-m MODEL] [--stream] PROMPT...")]
-[arg("model", long, short="m")]
-[arg("stream", long, value="true")]
+[group("llama-swap")]
 llm-respond model=LLM_DEFAULT_MODEL stream="false" +prompt="":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -95,10 +104,10 @@ llm-respond model=LLM_DEFAULT_MODEL stream="false" +prompt="":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/responses
     fi
 
-[group("llama-swap")]
+[arg("model", long="model", short="m")]
+[arg("stream", long="stream", value="true")]
 [doc("Responses API with prompt from stdin: cat file.txt | just llm-respond-pipe [-m MODEL] [--stream]")]
-[arg("model", long, short="m")]
-[arg("stream", long, value="true")]
+[group("llama-swap")]
 llm-respond-pipe model=LLM_DEFAULT_MODEL stream="false":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -111,16 +120,16 @@ llm-respond-pipe model=LLM_DEFAULT_MODEL stream="false":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/responses
     fi
 
-[group("llama-swap")]
+[arg("picker", long="picker", short="p")]
 [doc("Pick a model interactively and print the chosen id: just llm-pick [-p PICKER]")]
-[arg("picker", long, short="p")]
+[group("llama-swap")]
 llm-pick picker="choose":
     xh -b GET {{ LLAMA_SWAP }}/v1/models | jaq -r '.data[].id' | {{ picker }}
 
-[group("llama-swap")]
+[arg("picker", long="picker", short="p")]
+[arg("stream", long="stream", value="true")]
 [doc("Pick a model interactively, then chat: just llm-chat-pick [--stream] [-p PICKER] PROMPT...")]
-[arg("stream", long, value="true")]
-[arg("picker", long, short="p")]
+[group("llama-swap")]
 llm-chat-pick stream="false" picker="choose" +prompt="":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -141,36 +150,36 @@ llm-chat-pick stream="false" picker="choose" +prompt="":
         echo "$body" | xh -b POST {{ LLAMA_SWAP }}/v1/chat/completions
     fi
 
-[group("llama-swap")]
 [doc("Unload all running llama-swap models")]
+[group("llama-swap")]
 llm-unload:
     xh -b GET {{ LLAMA_SWAP }}/models/unload
 
-[group("llama-swap")]
 [doc("Tail the llama-swap SSE event stream")]
+[group("llama-swap")]
 llm-events:
     xh --stream GET {{ LLAMA_SWAP }}/api/events
 
-[group("llama-swap")]
 [doc("Open the llama-swap web UI in browser")]
+[group("llama-swap")]
 llm-ui:
     open {{ LLAMA_SWAP }}/ui/
 
-[group("llama-swap")]
 [doc("Tail the llama-swap log file")]
+[group("llama-swap")]
 llm-log:
     tail -f ~/.config/llama-swap/llama-swap.log
 
-[group("llama-swap")]
-[doc("Restart the llama-swap launchd agent")]
 [confirm("Restart llama-swap? This will interrupt any running requests.")]
+[doc("Restart the llama-swap launchd agent")]
+[group("llama-swap")]
 llm-restart:
     launchctl kickstart -k gui/$(id -u)/com.github.mostlygeek.llama-swap
 
-[group("llm")]
+[arg("model", long="model", short="m")]
+[arg("provider", long="provider", short="p")]
 [doc("Conventional Commit message for staged diff via `llm`: J llm-commit-message [-p PROVIDER] [-m MODEL]")]
-[arg("model", long, short="m")]
-[arg("provider", long, short="p")]
+[group("llm")]
 [no-cd]
 llm-commit-message provider="codex" model="":
     #!/usr/bin/env bash
@@ -185,8 +194,85 @@ llm-commit-message provider="codex" model="":
     fi
     git diff --cached | llm "${args[@]}" --prompt-file commit-message
 
-[group("tree-sitter")]
+[arg("base", long="base", short="b")]
+[arg("model", long="model", short="m")]
+[arg("provider", long="provider", short="p")]
+[doc("PR description via `llm`. Local (HEAD vs auto-detected base) by default; pass a PR URL/number to run against a remote PR. Usage: J llm-pr-description [-p PROVIDER] [-m MODEL] [-b BASE] [PR_URL_OR_NUMBER]")]
+[group("llm")]
+[no-cd]
+llm-pr-description provider="codex" model="" base="" target="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    provider={{ quote(provider) }}
+    model={{ quote(model) }}
+    base_override={{ quote(base) }}
+    target={{ quote(target) }}
+
+    if [[ -n "$target" ]]; then
+        # Remote mode: fetch metadata + diff from GitHub via gh.
+        meta=$(gh pr view "$target" --json baseRefName,headRefOid,headRepositoryOwner,headRepository,commits 2>/dev/null) || {
+            echo "llm-pr-description: 'gh pr view $target' failed. Check the URL/number and that gh is authenticated." >&2
+            exit 1
+        }
+        repo=$(jaq -r '.headRepositoryOwner.login + "/" + .headRepository.name' <<<"$meta")
+        head_sha=$(jaq -r '.headRefOid' <<<"$meta")
+        base=$(jaq -r '.baseRefName' <<<"$meta")
+        commit_log=$(jaq -r '.commits[] | (.oid[0:7] + " " + .messageHeadline)' <<<"$meta")
+        diff=$(gh pr diff "$target")
+    else
+        # Local mode: HEAD vs base in the current repo.
+        if ! git rev-parse --git-dir >/dev/null 2>&1; then
+            echo "llm-pr-description: not a git repository. Pass a PR URL or number to run against a remote PR." >&2
+            exit 1
+        fi
+        if [[ -n "$base_override" ]]; then
+            base=$base_override
+        else
+            # Auto-detect default branch: prefer origin/HEAD, then main, then master.
+            base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||' || true)
+            if [[ -z "$base" ]]; then
+                for candidate in main master; do
+                    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+                        base=$candidate
+                        break
+                    fi
+                done
+            fi
+            if [[ -z "$base" ]]; then
+                echo "llm-pr-description: could not auto-detect base branch (tried origin/HEAD, main, master). Pass -b <branch>." >&2
+                exit 1
+            fi
+        fi
+        if ! git rev-parse --verify "$base" >/dev/null 2>&1; then
+            echo "llm-pr-description: base branch '$base' not found." >&2
+            exit 1
+        fi
+        if [[ -z "$(git log "$base..HEAD" --oneline 2>/dev/null)" ]]; then
+            echo "llm-pr-description: HEAD has no commits ahead of '$base'." >&2
+            exit 1
+        fi
+        head_sha=$(git rev-parse HEAD)
+        repo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+        commit_log=$(git log "$base..HEAD" --oneline)
+        diff=$(git diff "$base...HEAD")
+    fi
+
+    args=(--provider "$provider")
+    if [[ -n "$model" ]]; then
+        args+=(--model "$model")
+    fi
+
+    {
+        printf '<repo>%s</repo>\n' "$repo"
+        printf '<head_sha>%s</head_sha>\n' "$head_sha"
+        printf '<base_branch>%s</base_branch>\n\n' "$base"
+        printf '<commit_log>\n%s\n</commit_log>\n\n' "$commit_log"
+        printf '<diff>\n%s\n</diff>\n' "$diff"
+    } | llm "${args[@]}" --prompt-file pr-description
+
 [doc("Refresh tree-sitter grammars: hx fetch + build, then rebuild tree-sitter-<lang> symlinks")]
+[group("tree-sitter")]
 ts-grammars-update:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -205,13 +291,13 @@ ts-grammars-update:
     done
     echo "linked $count grammars into $PARSERS_DIR"
 
-[group("tree-sitter")]
 [doc("List tree-sitter grammars currently linked for the CLI")]
+[group("tree-sitter")]
 ts-grammars-list:
     tree-sitter dump-languages | rg '^scope:'
 
-[group("lumis")]
 [doc("Highlight FILE via lumis (snazzy theme); falls back to bat for filetypes lumis doesn't recognize.")]
+[group("lumis")]
 [no-cd]
 hl FILE:
     #!/usr/bin/env bash
@@ -228,8 +314,8 @@ hl FILE:
         exec bat --color=always --paging=never --style=plain "$file"
     fi
 
-[group("lumis")]
 [doc("Regenerate snazzy theme JSON for lumis. Re-adds to chezmoi source on success.")]
+[group("lumis")]
 lumis-regen-snazzy:
     #!/usr/bin/env bash
     set -euo pipefail

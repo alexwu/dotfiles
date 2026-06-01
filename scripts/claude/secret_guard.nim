@@ -18,6 +18,18 @@
 ## with a sensitive path arg). A full fix would need real shell-parsing;
 ## for an accident-preventing guardrail this is acceptable.
 ##
+## Second rule (env-var leakage): a printer (echo/printf/print) whose
+## arguments expand a secret-named variable in a value-emitting form
+## triggers `ask`. The ONLY presence-check form that never emits the
+## value is `${VAR:+word}` (and `${VAR+word}`); the `:-`/`:=`/`:?`/`}`
+## /`$VAR` forms all substitute the secret itself. That asymmetry is the
+## exact footgun this catches — `echo "${API_KEY:-no}"` prints the key.
+## Use `${VAR:+yes}` or `just -g env-isset VAR` instead. This rule is
+## `ask`, not `deny`: `curl -H "Bearer $API_KEY"` is untouched (curl is
+## not a printer), and a legit `printf '%s' "$TOKEN" > f` costs one
+## confirm. Known misses: `cat <<<"$KEY"`, `tee`, env-prefixed printers
+## (`LC_ALL=C echo …` is stripped; others are not).
+##
 ## Wire it up in ~/.claude/settings.json:
 ##   hooks.PreToolUse[].matcher = "Bash"
 ##   hooks.PreToolUse[].hooks[].command = "$HOME/.local/bin/secret-guard"
@@ -82,15 +94,45 @@ let sensitivePath =
 # independently.
 let shellChainingSplit = re"""[|;&`\n]+|\$\("""
 
-proc deny(reason: string) =
-  let decision = %*{
+# Programs whose job is to write their arguments to stdout. If one of
+# these expands a secret-named variable in a value-emitting form, the
+# secret lands in the transcript.
+let outputProgram = re"^\s*(?:echo|printf|print)(?:\s|$)"
+
+# Leading `KEY=value ` env-assignment prefixes — stripped before the
+# leading-program check so `LC_ALL=C echo …` is still classified as a
+# printer. (Matches the prefix-strip the other Bash guards use.)
+let envAssignPrefix = re"^\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+"
+
+# Substrings that mark a variable name as a secret.
+const SecretKw =
+  r"(?:API_?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PASSPHRASE|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIALS?|AUTH_?TOKEN)"
+
+# A secret-named expansion in a value-emitting form. Braced: the whole
+# name is consumed possessively (no backtracking into the name), then
+# the operator is required to be neither `+` nor `:+` — i.e. anything
+# except the two safe presence forms `${VAR+w}` / `${VAR:+w}`. Braceless
+# `$VAR` has no safe form (you can't write `:+` without braces) so any
+# braceless secret expansion matches.
+let secretEnvExpansion = re(
+  r"\$(?:\{(?=[A-Za-z0-9_]*" & SecretKw & r")[A-Za-z0-9_]++(?!\+)(?!:\+)" &
+    r"|(?=[A-Za-z0-9_]*" & SecretKw & r")[A-Za-z0-9_]+)"
+)
+
+proc emit(decision, reason: string) =
+  echo %*{
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
-      "permissionDecision": "deny",
+      "permissionDecision": decision,
       "permissionDecisionReason": reason,
     }
   }
-  echo decision
+
+proc deny(reason: string) =
+  emit("deny", reason)
+
+proc ask(reason: string) =
+  emit("ask", reason)
 
 proc main() =
   let payload = parseJson(stdin.readAll())
@@ -102,6 +144,16 @@ proc main() =
     if segment.contains(contentReader) and segment.contains(sensitivePath):
       deny(
         "secret-guard: `" & segment.strip() & "` reads content from a sensitive path"
+      )
+      return
+
+    let prog = segment.replace(envAssignPrefix, "")
+    if prog.contains(outputProgram) and segment.contains(secretEnvExpansion):
+      ask(
+        "secret-guard: `" & segment.strip() &
+          "` would print a secret-named variable. Only `${VAR:+yes}` (or " &
+          "`just -g env-isset VAR`) is value-safe — the `${VAR:-…}` / `${VAR}` " &
+          "/ `$VAR` forms all expand to the secret itself."
       )
       return
 
