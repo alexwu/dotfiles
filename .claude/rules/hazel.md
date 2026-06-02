@@ -32,12 +32,14 @@ shell *had* `~/.local/bin`. Test hazel tools under the real minimal env:
   (`trash` CLI) or deleted on success.
 
 - `scripts/hazel/image_sort.nim` (binary `image-sort`) — classify a Downloads image
-  as `lulu | screenshot | other` via `llm-local` structured output, then rename +
-  route it under a sorted tree. `image-sort [--dry-run|-n] <input> [root] [model]`.
+  as `lulu | screenshot | meme | wallpaper | other` via `llm-local` structured
+  output, then rename +
+  route it under a sorted tree. `image-sort [--dry-run|-n] [-m|--model <id>] <input> [root]`.
   Root defaults to `~/Downloads/Images` (change the ONE path to relocate the whole
   library). Routing: `lulu → Lulu/<style>/<name>.png` (nsfw → `…/nsfw/`),
-  `screenshot → Screenshots/<name>.png`, `other → Other/<original-name>` (verbatim,
-  no rename). Accepts HEIC/HEIF/JPG/JPEG/PNG/WEBP/**AVIF**/**SVG**/GIF + short
+  `screenshot → Screenshots/<name>.png`, `meme → Memes/<name>.png`,
+  `wallpaper → Wallpapers/<name>.png` (nsfw → `…/nsfw/`),
+  `other → Other/<original-name>` (verbatim, no rename). Accepts HEIC/HEIF/JPG/JPEG/PNG/WEBP/**AVIF**/**SVG**/GIF + short
   **videos** (MP4/MOV/M4V/WEBM/MKV). Each normalizes to a working PNG *only to
   classify*, by kind: raster (heic/jpg/webp/avif/static-gif) → `sips`; `svg` →
   `resvg` (pure-Rust rasterizer, brew dep); animated gif / video → a `gif-mosaic`
