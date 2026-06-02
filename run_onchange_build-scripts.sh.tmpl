@@ -49,29 +49,45 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
-# ---- git-confirm-guard (Nim) ----
+# ---- git-confirm-guard (Nim, requires json_serialization) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/git_confirm_guard.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/llm_decide.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/transcript.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/git_confirm_guard.nim" }}"
   TARGET="$HOME/.local/bin/git-confirm-guard"
 
   if ! command -v nim >/dev/null 2>&1; then
     echo "build-scripts: nim not found on PATH, skipping git-confirm-guard" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping git-confirm-guard" >&2
   else
+    if ! nimble path json_serialization >/dev/null 2>&1; then
+      echo "build-scripts: installing json_serialization for git-confirm-guard"
+      nimble install -y json_serialization >/dev/null
+    fi
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
     echo "build-scripts: built $TARGET"
   fi
 }
 
-# ---- truncation-guard (Nim) ----
+# ---- truncation-guard (Nim, requires json_serialization) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/truncation_guard.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/llm_decide.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/transcript.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/truncation_guard.nim" }}"
   TARGET="$HOME/.local/bin/truncation-guard"
 
   if ! command -v nim >/dev/null 2>&1; then
     echo "build-scripts: nim not found on PATH, skipping truncation-guard" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping truncation-guard" >&2
   else
+    if ! nimble path json_serialization >/dev/null 2>&1; then
+      echo "build-scripts: installing json_serialization for truncation-guard"
+      nimble install -y json_serialization >/dev/null
+    fi
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
     echo "build-scripts: built $TARGET"
   fi
@@ -373,15 +389,23 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
-# ---- inline-script-guard (Nim) ----
+# ---- inline-script-guard (Nim, requires json_serialization) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/inline_script_guard.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/llm_decide.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/transcript.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/inline_script_guard.nim" }}"
   TARGET="$HOME/.local/bin/inline-script-guard"
 
   if ! command -v nim >/dev/null 2>&1; then
     echo "build-scripts: nim not found on PATH, skipping inline-script-guard" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping inline-script-guard" >&2
   else
+    if ! nimble path json_serialization >/dev/null 2>&1; then
+      echo "build-scripts: installing json_serialization for inline-script-guard"
+      nimble install -y json_serialization >/dev/null
+    fi
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
     echo "build-scripts: built $TARGET"
   fi

@@ -5,6 +5,18 @@
 ## that should always be visible to the user. Extends the original commit/
 ## push-only coverage to the full set of destructive verbs.
 ##
+## LLM-decide gate: with ALLOW_LLM_DECIDE set, a flagged command is handed to
+## the shared `llm_decide.adjudicate` (with recent UNTRUSTED conversation as
+## context) which may return allow / ask / deny — so a destructive op the user
+## just authorized can skip the prompt. The static detection below stays as the
+## cheap pre-filter: the model only ever adjudicates a command this guard
+## already flagged. Gate UNSET → the static `ask` below, exactly as before.
+## Classifier unavailable (adjudicate → none) → the static `ask` (never a
+## silent allow on failure). Per-hook env: GIT_CONFIRM_GUARD_PROVIDER (default
+## codex), GIT_CONFIRM_GUARD_MODEL (default gpt-5.3-codex-spark),
+## GIT_CONFIRM_GUARD_DECISIONS (comma-separated; e.g. `ask,deny` forbids
+## auto-allow structurally; default {allow,deny,ask}).
+##
 ## ┌─────────────────────────────────────────────────────────────────────┐
 ## │ PREREQUISITE — the wiring in claude-settings.json must NOT use a    │
 ## │ narrow `if: "Bash(git *)"` filter, or env-prefixed forms like       │
@@ -83,7 +95,27 @@
 ##   echo '{"tool_input":{"command":"GIT_SEQUENCE_EDITOR=x git rebase -i HEAD~3"}}' \
 ##     | git-confirm-guard
 
-import std/[json, re, strutils]
+import std/[json, options, os, re, strutils]
+import ../lib/llm_decide
+
+const
+  ContextTurns = 6
+  TimeoutSecs = 30
+
+proc gateOn(): bool =
+  getEnv("ALLOW_LLM_DECIDE").len > 0
+
+proc classifierProvider(): string =
+  getEnv("GIT_CONFIRM_GUARD_PROVIDER", "codex")
+
+proc classifierModel(): string =
+  getEnv("GIT_CONFIRM_GUARD_MODEL", "gpt-5.3-codex-spark")
+
+proc allowedDecisions(): seq[string] =
+  for part in getEnv("GIT_CONFIRM_GUARD_DECISIONS", "").split(','):
+    let p = part.strip()
+    if p.len > 0:
+      result.add p
 
 # Fast-path: skip commands that don't mention `git` anywhere.
 let mentionsGit = re"\bgit\b"
@@ -166,16 +198,6 @@ let tier2Patterns = [
   re"""^git\s+rerere\s+(clear|forget|gc)(\s|$)""",
 ]
 
-proc askDecision(reason: string) =
-  let decision = %*{
-    "hookSpecificOutput": {
-      "hookEventName": "PreToolUse",
-      "permissionDecision": "ask",
-      "permissionDecisionReason": reason,
-    }
-  }
-  echo decision
-
 proc stripEnvPrefix(segment: string): string =
   ## Remove leading `KEY=value` env-var assignments so e.g.
   ## `GIT_SEQUENCE_EDITOR=/tmp/x git rebase -i HEAD~3` parses leading-token
@@ -218,11 +240,30 @@ proc main() =
     return
 
   let label = if matched.len == 1: "segment" else: "segments"
-  askDecision(
+  let askReason =
     "git-confirm-guard: confirm before running git " & label & ": " & matched.join(", ") &
-      ". These rewrite history, destroy local state, or publish to remote " &
-      "— every one requires explicit approval."
+    ". These rewrite history, destroy local state, or publish to remote " &
+    "— every one requires explicit approval."
+
+  if not gateOn():
+    emit("ask", askReason)
+    return
+
+  let decision = adjudicate(
+    cmd,
+    "git-confirm-classify",
+    provider = classifierProvider(),
+    model = classifierModel(),
+    transcriptPath = payload{"transcript_path"}.getStr(""),
+    contextTurns = ContextTurns,
+    allowedDecisions = allowedDecisions(),
+    timeoutSecs = TimeoutSecs,
   )
+  if decision.isNone:
+    emit("ask", askReason) # classifier unavailable → current static behavior
+    return
+  let d = decision.get
+  emit(d.permissionDecision, d.reason, d.additionalContext)
 
 when isMainModule:
   main()

@@ -3,10 +3,10 @@
 ## Blocks commands that truncate diagnostic output via `head` / `tail` when
 ## the upstream is expensive (build, test, network, container ops). Allows
 ## truncation when the upstream is cheap (CLI help, listings, search results,
-## small file reads). The decision is made by `llm` (codex provider, spark
-## model) against the strict PreToolUse schema — the prompt at
-## `truncation-classify` encodes the cheap/expensive taxonomy and tells the
-## model to deny by default.
+## small file reads). The decision goes through the shared
+## `llm_decide.adjudicate` (codex provider, spark model) against the strict
+## PreToolUse schema — the prompt at `truncation-classify` encodes the
+## cheap/expensive taxonomy and tells the model to deny by default.
 ##
 ## Why an LLM and not regex: every regex carve-out we ship breeds the next
 ## "but my command is special" excuse. The reflex to truncate `cargo test`,
@@ -14,10 +14,15 @@
 ## handing the decision to a small fast model removes the bypass surface that
 ## a regex policy invites and lets the prompt evolve without a redeploy.
 ##
-## Fail-closed: a missing / errored / unparseable `llm` response degrades to
-## `deny` with a memo recommendation, not allow. The reward contract here is
-## "no truncation without proof it's cheap"; an unavailable classifier is no
-## proof.
+## Always-on (NOT gated on ALLOW_LLM_DECIDE) — classification is this hook's
+## whole job. Fail-closed: a missing / errored / unparseable classifier
+## response (adjudicate → none) degrades to `deny` with a memo recommendation,
+## not allow. The reward contract here is "no truncation without proof it's
+## cheap"; an unavailable classifier is no proof.
+##
+## Tunable via env (defaults preserve prior behavior): TRUNCATION_GUARD_PROVIDER
+## (default codex), TRUNCATION_GUARD_MODEL (default gpt-5.3-codex-spark),
+## TRUNCATION_GUARD_DECISIONS (comma-separated; default {allow,deny,ask}).
 ##
 ## Wire it up in ~/.claude/settings.json alongside the other Bash guards:
 ##   hooks.PreToolUse[].matcher = "Bash"
@@ -32,9 +37,10 @@
 ##   echo '{"tool_input":{"command":"cargo test | head -20"}}' \
 ##     | truncation-guard
 
-import std/[json, os, osproc, re, streams, strutils]
+import std/[json, options, os, re, strutils]
+import ../lib/llm_decide
 
-const LlmTimeoutSecs = "30"
+const TimeoutSecs = 30
   ## Wall-clock cap on the `llm` round-trip via `timeout(1)`. Spark is fast;
   ## 30s is enough headroom for a cold start on a slow link without holding
   ## the Bash call hostage. On timeout the hook degrades to a deny.
@@ -55,71 +61,17 @@ let leadingMemo = re"^memo(\s|$)"
 let envAssignPrefix =
   re"""^\s*([A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|(?:\\.|\S)*)\s+)+"""
 
-proc timeoutBinary(): string =
-  ## GNU coreutils `timeout`, or its Homebrew-prefixed `gtimeout`. "" when
-  ## neither is on PATH — the call then runs unwrapped and the Claude Code
-  ## hook timeout is the only backstop.
-  result = findExe("timeout")
-  if result.len == 0:
-    result = findExe("gtimeout")
+proc classifierProvider(): string =
+  getEnv("TRUNCATION_GUARD_PROVIDER", "codex")
 
-proc classify(cmd: string): tuple[ok: bool, raw: string] =
-  ## Pipe the whole command to `llm` for a PreToolUse-shaped decision. `ok`
-  ## is false on any failure — non-zero exit, timeout, missing binary — so
-  ## the caller can degrade to a deny.
-  const llmArgs = [
-    "llm",
-    "--model",
-    "gpt-5.3-codex-spark",
-    "--schema",
-    "strict/pretooluse",
-    "--promptFile",
-    "truncation-classify",
-  ]
-  let tb = timeoutBinary()
-  let argv =
-    if tb.len > 0:
-      @[tb, LlmTimeoutSecs] & @llmArgs
-    else:
-      @llmArgs
-  try:
-    let p = startProcess(argv[0], args = argv[1 .. ^1], options = {poUsePath})
-    p.inputStream.write(cmd)
-    p.inputStream.close()
-    let raw = p.outputStream.readAll()
-    let code = p.waitForExit()
-    p.close()
-    (code == 0, raw)
-  except CatchableError:
-    (false, "")
+proc classifierModel(): string =
+  getEnv("TRUNCATION_GUARD_MODEL", "gpt-5.3-codex-spark")
 
-proc stripNulls(node: JsonNode) =
-  ## The strict schema types optional fields as nullable; the model emits null
-  ## when not applicable and the per-schema convention is to strip null keys
-  ## before forwarding to the hook consumer.
-  if node.kind != JObject:
-    return
-  var keysToDrop: seq[string]
-  for k, v in node.pairs:
-    case v.kind
-    of JNull:
-      keysToDrop.add(k)
-    of JObject:
-      stripNulls(v)
-    else:
-      discard
-  for k in keysToDrop:
-    node.delete(k)
-
-proc emitDeny(reason: string) =
-  let decision = %*{
-    "hookSpecificOutput": {
-      "hookEventName": "PreToolUse",
-      "permissionDecision": "deny",
-      "permissionDecisionReason": reason,
-    }
-  }
-  echo decision
+proc allowedDecisions(): seq[string] =
+  for part in getEnv("TRUNCATION_GUARD_DECISIONS", "").split(','):
+    let p = part.strip()
+    if p.len > 0:
+      result.add p
 
 const DegradedReason =
   "truncation-guard: the spark classifier was unavailable (failed, timed " &
@@ -146,28 +98,20 @@ proc main() =
   if isMemoInvocation(cmd):
     return # memo wraps full output in cache; --head/--tail are display only
 
-  let (ok, raw) = classify(cmd)
-  if not ok:
-    emitDeny(DegradedReason)
+  let decision = adjudicate(
+    cmd,
+    "truncation-classify",
+    provider = classifierProvider(),
+    model = classifierModel(),
+    contextTurns = 0,
+    allowedDecisions = allowedDecisions(),
+    timeoutSecs = TimeoutSecs,
+  )
+  if decision.isNone:
+    emit("deny", DegradedReason)
     return
-
-  var j: JsonNode
-  try:
-    j = parseJson(raw.strip())
-  except CatchableError:
-    emitDeny(DegradedReason)
-    return
-
-  stripNulls(j)
-
-  # Defensive: if the model emits something that isn't a recognized decision,
-  # treat it as a classifier failure and fall back to deny.
-  let decision = j{"hookSpecificOutput", "permissionDecision"}.getStr("")
-  if decision notin ["allow", "deny", "ask"]:
-    emitDeny(DegradedReason)
-    return
-
-  echo j
+  let d = decision.get
+  emit(d.permissionDecision, d.reason, d.additionalContext)
 
 when isMainModule:
   main()

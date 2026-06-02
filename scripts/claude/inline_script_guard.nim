@@ -13,9 +13,17 @@
 ## with that summary attached. The model only ever explains; it never decides.
 ## The human always confirms.
 ##
-## An `llm` failure or timeout still produces `ask`, with an
-## "explanation unavailable" note — a detected inline script is never silently
-## allowed.
+## LLM-decide gate: with ALLOW_LLM_DECIDE set, the explain-then-ask flow is
+## replaced by the shared `llm_decide.adjudicate` (with recent UNTRUSTED
+## conversation as context) returning allow / ask / deny — so a trivially-safe
+## inline script the user authorized can skip the prompt. The new
+## `inline-script-classify` prompt folds a what-it-does summary into the
+## decision reason, so the explanation survives on the ask/deny paths.
+## Classifier unavailable (adjudicate → none) → a plain `ask` (never a silent
+## allow on failure). Per-hook env: INLINE_SCRIPT_GUARD_PROVIDER (default
+## codex), INLINE_SCRIPT_GUARD_MODEL (default "" = codex default model),
+## INLINE_SCRIPT_GUARD_DECISIONS (comma-separated; e.g. `ask,deny` forbids
+## auto-allow structurally; default {allow,deny,ask}).
 ##
 ## Detection is a yes/no test, not an extraction. Per shell-chaining segment:
 ## the leading program is `python` / `ruby` (any version suffix) AND the
@@ -45,11 +53,32 @@
 ##   echo '{"tool_input":{"command":"python3 -c \"import os\""}}' \
 ##     | inline-script-guard
 
-import std/[json, os, osproc, re, streams, strutils]
+import std/[json, options, os, osproc, re, streams, strutils]
+import ../lib/llm_decide
 
 const LlmTimeoutSecs = "60"
-  ## Wall-clock cap on the `llm` round-trip, via `timeout(1)`. codex is slow,
-  ## but inline scripts are rare; on timeout the hook degrades to a plain ask.
+  ## Wall-clock cap on the gate-OFF `explainScript` round-trip, via
+  ## `timeout(1)`. codex is slow, but inline scripts are rare; on timeout the
+  ## hook degrades to a plain ask.
+
+const
+  ContextTurns = 6
+  TimeoutSecs = 60 ## gate-ON adjudicate cap (seconds, int).
+
+proc gateOn(): bool =
+  getEnv("ALLOW_LLM_DECIDE").len > 0
+
+proc classifierProvider(): string =
+  getEnv("INLINE_SCRIPT_GUARD_PROVIDER", "codex")
+
+proc classifierModel(): string =
+  getEnv("INLINE_SCRIPT_GUARD_MODEL", "") # "" = codex default model
+
+proc allowedDecisions(): seq[string] =
+  for part in getEnv("INLINE_SCRIPT_GUARD_DECISIONS", "").split(','):
+    let p = part.strip()
+    if p.len > 0:
+      result.add p
 
 # Fast-path: skip commands that don't mention an interpreter at all.
 let mentionsInterp = re"\b(?:python|ruby)"
@@ -93,7 +122,7 @@ proc timeoutBinary(): string =
 proc explainScript(cmd: string): tuple[ok: bool, raw: string] =
   ## Pipe the whole command to `llm` for a structured summary. `ok` is false on
   ## any failure — non-zero exit, timeout, missing binary — so the caller can
-  ## degrade to a plain ask.
+  ## degrade to a plain ask. Used only on the gate-OFF path.
   const llmArgs =
     ["llm", "--schema", "inline-script", "--prompt-file", "inline-script-explain"]
   let tb = timeoutBinary()
@@ -150,16 +179,6 @@ proc summaryReason(raw: string): string =
     "\n\nInline interpreter scripts are opaque to the shell guards — review " &
     "before allowing."
 
-proc askDecision(reason: string) =
-  let decision = %*{
-    "hookSpecificOutput": {
-      "hookEventName": "PreToolUse",
-      "permissionDecision": "ask",
-      "permissionDecisionReason": reason,
-    }
-  }
-  echo decision
-
 const DegradedReason =
   "inline-script-guard: this Bash command runs an inline Python/Ruby script. " &
   "The automatic explanation was unavailable (the llm call failed or timed " &
@@ -176,13 +195,33 @@ proc main() =
   if not hasInlineScript(cmd):
     return # interpreter mentioned, but not as an inline script
 
-  let (ok, raw) = explainScript(cmd)
-  if ok:
-    let reason = summaryReason(raw)
-    if reason.len > 0:
-      askDecision(reason)
-      return
-  askDecision(DegradedReason) # detected, but no usable explanation
+  if not gateOn():
+    # current behavior: explain, then always ask
+    let (ok, raw) = explainScript(cmd)
+    if ok:
+      let reason = summaryReason(raw)
+      if reason.len > 0:
+        emit("ask", reason)
+        return
+    emit("ask", DegradedReason) # detected, but no usable explanation
+    return
+
+  # gated: let the model decide allow/ask/deny, summary folded into the reason
+  let decision = adjudicate(
+    cmd,
+    "inline-script-classify",
+    provider = classifierProvider(),
+    model = classifierModel(),
+    transcriptPath = payload{"transcript_path"}.getStr(""),
+    contextTurns = ContextTurns,
+    allowedDecisions = allowedDecisions(),
+    timeoutSecs = TimeoutSecs,
+  )
+  if decision.isNone:
+    emit("ask", DegradedReason)
+    return
+  let d = decision.get
+  emit(d.permissionDecision, d.reason, d.additionalContext)
 
 when isMainModule:
   main()
