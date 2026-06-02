@@ -6,7 +6,7 @@
 ## overrides transcript auto-detection (hooks pass the payload transcript_path);
 ## `--include-tool-results` keeps tool-result noise (and tool-only turns).
 
-import std/[json, options, strutils]
+import std/[json, options, strutils, times]
 import ../lib/transcript
 import cligen
 
@@ -60,9 +60,57 @@ proc allTurns(path = "", json = false, include_tool_results = false) =
   let turns = parseTranscript(resolvePath(path), include_tool_results)
   emit(turns, json)
 
+func humanSize(n: BiggestInt): string =
+  const Units = ["B", "K", "M", "G", "T"]
+  if n < 1024:
+    return $n & "B"
+  var size = n.float
+  var i = 0
+  while size >= 1024 and i < Units.high:
+    size /= 1024
+    inc i
+  formatFloat(size, ffDecimal, 1) & Units[i]
+
+proc parseBound(s, which: string): Option[Time] =
+  ## --since/--until value (full ISO or YYYY-MM-DD) → Time; none when empty.
+  ## A bare date is local midnight. Exits 1 on a malformed value.
+  if s.len == 0:
+    return none(Time)
+  for fmt in ["yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd"]:
+    try:
+      return some(parse(s, fmt).toTime)
+    except TimeParseError:
+      discard
+  stderr.writeLine("convo list: bad --" & which & " (use YYYY-MM-DD): " & s)
+  quit(1)
+
+proc rowsToJson(rows: seq[TranscriptInfo]): JsonNode =
+  result = newJArray()
+  for r in rows:
+    result.add %*{
+      "project": r.project,
+      "sessionId": r.sessionId,
+      "path": r.path,
+      "modified": r.modified.local.format("yyyy-MM-dd'T'HH:mm:sszzz"),
+      "size": r.size,
+    }
+
+proc list(project = "", since = "", until = "", json = false) =
+  ## List Claude Code transcripts across all projects (newest first).
+  let rows =
+    listTranscripts(project, parseBound(since, "since"), parseBound(until, "until"))
+  if json:
+    echo rowsToJson(rows)
+    return
+  for r in rows:
+    echo r.modified.local.format("yyyy-MM-dd HH:mm") & "  " & align(
+      humanSize(r.size), 8
+    ) & "  " & r.sessionId & "  " & r.project
+
 when isMainModule:
   dispatchMulti(
     [lastUser, cmdName = "last-user"],
     [recent, cmdName = "recent"],
     [allTurns, cmdName = "all"],
+    [list, cmdName = "list"],
   )

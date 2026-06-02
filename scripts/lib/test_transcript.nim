@@ -21,6 +21,16 @@ proc writeFixture(): string =
   result = getTempDir() / "convo_fixture_test.jsonl"
   writeFile(result, Fixture.strip() & "\n")
 
+proc setupListProjects(home: string) =
+  let a = home / ".claude" / "projects" / "-proj-alpha"
+  let b = home / ".claude" / "projects" / "-proj-beta"
+  createDir(a)
+  createDir(b)
+  writeFile(a / "aaa.jsonl", "{}\n")
+  writeFile(b / "bbb.jsonl", "{}\n")
+  setLastModificationTime(a / "aaa.jsonl", fromUnix(1_000_000))
+  setLastModificationTime(b / "bbb.jsonl", fromUnix(2_000_000))
+
 suite "transcript":
   let path = writeFixture()
 
@@ -82,3 +92,55 @@ suite "transcript":
     removeDir(tmpHome)
 
   removeFile(path)
+
+suite "listTranscripts":
+  test "enumerates all projects, newest mtime first":
+    let home = getTempDir() / "convo_list_all"
+    removeDir(home)
+    setupListProjects(home)
+    let prev = getEnv("HOME")
+    putEnv("HOME", home)
+    let rows = listTranscripts()
+    putEnv("HOME", prev)
+    check rows.len == 2
+    check rows[0].sessionId == "bbb" # newer mtime first
+    check rows[1].sessionId == "aaa"
+    check rows[0].project == "-proj-beta"
+    check rows[0].size == 3 # "{}\n"
+    removeDir(home)
+
+  test "project filter keeps only matching slugs":
+    let home = getTempDir() / "convo_list_filter"
+    removeDir(home)
+    setupListProjects(home)
+    let prev = getEnv("HOME")
+    putEnv("HOME", home)
+    let rows = listTranscripts("alpha")
+    putEnv("HOME", prev)
+    check rows.len == 1
+    check rows[0].project == "-proj-alpha"
+    removeDir(home)
+
+  test "since/until bound by mtime":
+    let home = getTempDir() / "convo_list_time"
+    removeDir(home)
+    setupListProjects(home)
+    let prev = getEnv("HOME")
+    putEnv("HOME", home)
+    let onlyNew = listTranscripts("", some(fromUnix(1_500_000)), none(Time))
+    let onlyOld = listTranscripts("", none(Time), some(fromUnix(1_500_000)))
+    putEnv("HOME", prev)
+    check onlyNew.len == 1
+    check onlyNew[0].sessionId == "bbb"
+    check onlyOld.len == 1
+    check onlyOld[0].sessionId == "aaa"
+    removeDir(home)
+
+  test "missing projects root yields empty":
+    let home = getTempDir() / "convo_list_empty_xyz"
+    removeDir(home)
+    let prev = getEnv("HOME")
+    putEnv("HOME", home)
+    let rows = listTranscripts()
+    putEnv("HOME", prev)
+    check rows.len == 0

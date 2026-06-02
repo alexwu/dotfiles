@@ -13,7 +13,7 @@
 ## fields. `message.content` is a union (JSON string OR array of content blocks),
 ## captured raw as Option[JsonString] and re-decoded by first char.
 
-import std/[options, os, strutils, times]
+import std/[algorithm, options, os, strutils, times]
 import json_serialization
 import json_serialization/std/options as jsOptions
 
@@ -182,6 +182,45 @@ proc recentTurns*(turns: openArray[Turn], n: int): seq[Turn] =
     return @[]
   let start = max(0, turns.len - n)
   turns[start .. ^1]
+
+type TranscriptInfo* = object
+  project*: string ## Claude Code project dir slug (see projectSlug)
+  sessionId*: string ## transcript filename stem (the session UUID)
+  path*: string ## absolute path to the .jsonl
+  modified*: Time ## file mtime — the list's time signal
+  size*: BiggestInt ## file size in bytes
+
+proc listTranscripts*(
+    projectFilter = "", since = none(Time), until = none(Time)
+): seq[TranscriptInfo] =
+  ## Every transcript under ~/.claude/projects/<slug>/*.jsonl, newest mtime first.
+  ## projectFilter (non-empty) keeps only slugs containing it. since/until bound
+  ## the mtime (inclusive). Missing projects root → empty seq (best-effort).
+  result = @[]
+  let root = getHomeDir() / ".claude" / "projects"
+  if not dirExists(root):
+    return
+  for projDir in walkDirs(root / "*"):
+    let slug = lastPathPart(projDir)
+    if projectFilter.len > 0 and not slug.contains(projectFilter):
+      continue
+    for file in walkFiles(projDir / "*.jsonl"):
+      let mt = getLastModificationTime(file)
+      if since.isSome and mt < since.get:
+        continue
+      if until.isSome and mt > until.get:
+        continue
+      result.add TranscriptInfo(
+        project: slug,
+        sessionId: file.splitFile.name,
+        path: file,
+        modified: mt,
+        size: getFileSize(file),
+      )
+  result.sort(
+    proc(a, b: TranscriptInfo): int =
+      cmp(b.modified, a.modified)
+  )
 
 proc currentTranscriptPath*(cwd = getCurrentDir()): Option[string] =
   ## Best-effort discovery: newest *.jsonl under ~/.claude/projects/<slug>/.
