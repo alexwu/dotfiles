@@ -20,10 +20,13 @@
 ## `inline-script-classify` prompt folds a what-it-does summary into the
 ## decision reason, so the explanation survives on the ask/deny paths.
 ## Classifier unavailable (adjudicate → none) → a plain `ask` (never a silent
-## allow on failure). Per-hook env: INLINE_SCRIPT_GUARD_PROVIDER (default
-## codex), INLINE_SCRIPT_GUARD_MODEL (default "" = codex default model),
+## allow on failure). Per-hook env: INLINE_SCRIPT_GUARD_PROVIDER (default lu —
+## local llama-swap via the `lu` CLI; set =codex to route cloud),
+## INLINE_SCRIPT_GUARD_MODEL (default Qwen3.6-35B-A3B),
 ## INLINE_SCRIPT_GUARD_DECISIONS (comma-separated; e.g. `ask,deny` forbids
-## auto-allow structurally; default {allow,deny,ask}).
+## auto-allow structurally; default {allow,deny,ask}). NOTE: these tune only the
+## gate-ON adjudicate path; the gate-OFF explain-then-ask flow (`explainScript`
+## below) is hardcoded to cloud `llm` and is unaffected by these.
 ##
 ## Detection is a yes/no test, not an extraction. Per shell-chaining segment:
 ## the leading program is `python` / `ruby` (any version suffix) AND the
@@ -69,10 +72,14 @@ proc gateOn(): bool =
   getEnv("ALLOW_LLM_DECIDE").len > 0
 
 proc classifierProvider(): string =
-  getEnv("INLINE_SCRIPT_GUARD_PROVIDER", "codex")
+  getEnv("INLINE_SCRIPT_GUARD_PROVIDER", "lu")
 
 proc classifierModel(): string =
-  getEnv("INLINE_SCRIPT_GUARD_MODEL", "") # "" = codex default model
+  # Provider-aware default: local Qwen only when routing to `lu`. A bare
+  # INLINE_SCRIPT_GUARD_PROVIDER=codex rollback falls back to "" (codex picks its
+  # own model) rather than passing the llama name to codex (→ none → fallback).
+  let dflt = if classifierProvider() == "lu": "Qwen3.6-35B-A3B" else: ""
+  getEnv("INLINE_SCRIPT_GUARD_MODEL", dflt)
 
 proc allowedDecisions(): seq[string] =
   for part in getEnv("INLINE_SCRIPT_GUARD_DECISIONS", "").split(','):

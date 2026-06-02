@@ -37,8 +37,10 @@
 ## (irreversible/destructive-remote) commands through that narrowing automatically,
 ## so the worst ops can never auto-allow regardless of the conversation.
 ##
-## NOTE: `llm --schema` is supported only by codex/claude; routing a guard's
-## *_PROVIDER to pi/gemini makes `llm` exit nonzero → `none` (→ fallback).
+## NOTE: cloud `llm --schema` is supported only by codex/claude; the local route
+## uses `lu -P llama` (provider == "lu"), which honors --schema strict on the
+## resident llama-swap model — see luArgv. Routing a guard's *_PROVIDER to llm's
+## pi/gemini still exits nonzero → `none` (→ fallback).
 
 import std/[json, options, os, osproc, streams, strutils]
 import ./transcript
@@ -165,19 +167,53 @@ proc writeConstrainedSchema(allowed: openArray[string]): string =
     return ""
   path
 
+const DefaultLocalModel = "Qwen3.6-35B-A3B"
+  ## Local llama-swap classifier (always-on group; resident, no cold-load). Used
+  ## by the `lu` path when the caller passes no explicit model.
+
+proc llmArgv(schemaRef, promptName, provider, model: string): seq[string] =
+  ## Today's `llm` form (codex/claude). `llm` resolves the bare schema/prompt
+  ## names under ~/.config/llm itself.
+  result =
+    @["llm", "--provider", provider, "--schema", schemaRef, "--prompt-file", promptName]
+  if model.len > 0:
+    result.add @["--model", model]
+
+proc luArgv*(schemaRef, promptName, model: string): seq[string] =
+  ## Local `lu` form. Unlike `llm`, lu honors --schema on the local llama provider
+  ## — the whole reason the guards can run locally. Schema/prompt MUST be absolute:
+  ## a bare or slash-bearing name (e.g. "strict/pretooluse") resolves under
+  ## lulu-agent's OWN config dir, not ~/.config/llm. --no-context-files is
+  ## MANDATORY: without it lu discovers and splices the cwd's CLAUDE.md/AGENTS.md
+  ## into the system prompt — an injection vector for a guard. --ephemeral leaves
+  ## no session file (this fires on every command); --max-turns 1 means the agent
+  ## loop can never dispatch a tool (schema mode one-shots anyway).
+  let absSchema =
+    if schemaRef.isAbsolute:
+      schemaRef
+    else:
+      getHomeDir() / ".config" / "llm" / "schemas" / (schemaRef & ".schema.json")
+  let absPrompt = getHomeDir() / ".config" / "llm" / "prompts" / (promptName & ".md")
+  let m = if model.len > 0: model else: DefaultLocalModel
+  @[
+    "lu", "-P", "llama", "-m", m, "--schema", absSchema, "--prompt-file", absPrompt,
+    "--no-context-files", "--ephemeral", "--max-turns", "1",
+  ]
+
 proc runLlm(
     payload, schemaRef, promptName, provider, model: string, timeoutSecs: int
 ): tuple[ok: bool, raw: string] =
-  var llmArgs =
-    @["llm", "--provider", provider, "--schema", schemaRef, "--prompt-file", promptName]
-  if model.len > 0:
-    llmArgs.add @["--model", model]
+  let baseArgs =
+    if provider == "lu":
+      luArgv(schemaRef, promptName, model)
+    else:
+      llmArgv(schemaRef, promptName, provider, model)
   let tb = timeoutBinary()
   let argv =
     if tb.len > 0:
-      @[tb, $timeoutSecs] & llmArgs
+      @[tb, $timeoutSecs] & baseArgs
     else:
-      llmArgs
+      baseArgs
   try:
     let p = startProcess(argv[0], args = argv[1 .. ^1], options = {poUsePath})
     p.inputStream.write(payload)

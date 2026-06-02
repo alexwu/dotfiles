@@ -13,7 +13,8 @@
 ## already flagged. Gate UNSET → the static `ask` below, exactly as before.
 ## Classifier unavailable (adjudicate → none) → the static `ask` (never a
 ## silent allow on failure). Per-hook env: GIT_CONFIRM_GUARD_PROVIDER (default
-## codex), GIT_CONFIRM_GUARD_MODEL (default gpt-5.3-codex-spark),
+## lu — local llama-swap via the `lu` CLI; set =codex to route cloud),
+## GIT_CONFIRM_GUARD_MODEL (default Qwen3.6-35B-A3B),
 ## GIT_CONFIRM_GUARD_DECISIONS (comma-separated; e.g. `ask,deny` forbids
 ## auto-allow structurally; default {allow,deny,ask}).
 ##
@@ -106,10 +107,15 @@ proc gateOn(): bool =
   getEnv("ALLOW_LLM_DECIDE").len > 0
 
 proc classifierProvider(): string =
-  getEnv("GIT_CONFIRM_GUARD_PROVIDER", "codex")
+  getEnv("GIT_CONFIRM_GUARD_PROVIDER", "lu")
 
 proc classifierModel(): string =
-  getEnv("GIT_CONFIRM_GUARD_MODEL", "gpt-5.3-codex-spark")
+  # Provider-aware default: the local Qwen only when routing to `lu`. A bare
+  # GIT_CONFIRM_GUARD_PROVIDER=codex rollback must NOT inherit the llama model
+  # name (codex would reject it → none → fallback); fall back to "" so the cloud
+  # provider picks its own default.
+  let dflt = if classifierProvider() == "lu": "Qwen3.6-35B-A3B" else: ""
+  getEnv("GIT_CONFIRM_GUARD_MODEL", dflt)
 
 proc allowedDecisions(): seq[string] =
   for part in getEnv("GIT_CONFIRM_GUARD_DECISIONS", "").split(','):
