@@ -309,6 +309,30 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- banana (Nim, requires cligen + json_serialization; -d:ssl for HTTPS) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/llm/banana.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/llm/banana.nim" }}"
+  TARGET="$HOME/.local/bin/banana"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping banana" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping banana" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for banana"
+      nimble install -y cligen >/dev/null
+    fi
+    if ! nimble path json_serialization >/dev/null 2>&1; then
+      echo "build-scripts: installing json_serialization for banana"
+      nimble install -y json_serialization >/dev/null
+    fi
+    nim c -d:release -d:ssl --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- tv-claude-session (Nim, requires cligen) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/television/claude_session.nim") | sha256sum }}
 {
@@ -358,6 +382,31 @@ mkdir -p "$HOME/.local/bin"
   if ! command -v nim >/dev/null 2>&1; then
     echo "build-scripts: nim not found on PATH, skipping inline-script-guard" >&2
   else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
+# ---- convo (Nim, requires cligen + json_serialization) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/convo.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/transcript.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/convo.nim" }}"
+  TARGET="$HOME/.local/bin/convo"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping convo" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping convo" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for convo"
+      nimble install -y cligen >/dev/null
+    fi
+    if ! nimble path json_serialization >/dev/null 2>&1; then
+      echo "build-scripts: installing json_serialization for convo"
+      nimble install -y json_serialization >/dev/null
+    fi
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
     echo "build-scripts: built $TARGET"
   fi

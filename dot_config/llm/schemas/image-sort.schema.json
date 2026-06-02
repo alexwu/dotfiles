@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "image-sort — Downloads image classification",
+  "description": "Structured classification for the image-sort Hazel tool: which bucket a Downloads image belongs in, plus style/nsfw/name for routing and renaming. Strict-mode shaped — every property required, object closed, no nulls (sentinel enum value 'none' instead).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["category", "style", "nsfw", "name"],
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["lulu", "screenshot", "meme", "wallpaper", "other"],
+      "description": "Pick the first that fits, in order. lulu: the primary subject is the reference person (young blonde woman with green eyes, petite — see prompt), any medium. screenshot: a screen capture (app UI, terminal, webpage, document, chart, code, settings). meme: a reaction image, image macro, or caption-on-image joke. wallpaper: a non-lulu background-purpose image (scenery, landscape, cityscape, abstract/pattern, aesthetic composition not focused on a specific person). other: anything else (diagrams, products, food, animals, unrelated people, documents-as-photos)."
+    },
+    "style": {
+      "type": "string",
+      "enum": ["realistic", "anime", "cartoon", "none"],
+      "description": "Art style of a lulu image. realistic: photoreal, hyperreal, OR any 3D/CG/AI-rendered image (rendered rather than hand-drawn 2D, even if stylized). anime: hand-drawn 2D anime/manga (cel-shaded, clean lineart). cartoon: western-animated / stylized 2D. none: when category is not lulu. When torn between anime and realistic on glossy CG/AI art, choose realistic."
+    },
+    "nsfw": {
+      "type": "boolean",
+      "description": "True if the image contains nudity or explicit sexual content. Judge for every category."
+    },
+    "name": {
+      "type": "string",
+      "description": "Short kebab-case descriptor: lowercase, hyphens between words, ~40 characters (60 max), no path, no extension, no quotes. Describes the image content."
+    }
+  }
+}
