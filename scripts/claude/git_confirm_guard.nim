@@ -126,6 +126,18 @@ let mentionsGit = re"\bgit\b"
 let envAssignPrefix =
   re"""^\s*([A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|(?:\\.|\S)*)\s+)+"""
 
+# Normalization for matching (closes two red-team holes). dequoteFlag unwraps a
+# quoted flag (`"--force"` → `--force`) so a quote can't hide it from the flag
+# patterns. gitGlobalOpts matches a `git <global-opts>` prefix so `git -C <dir>
+# <verb>` / `-c k=v` / `--git-dir …` can be re-anchored to `git <verb>` (those
+# options otherwise slide the verb past the `^git\s+<verb>` anchor entirely —
+# a destructive op would pass UNGUARDED). Best-effort, NOT a shell parser:
+# quoted args with embedded spaces inside a global opt, `eval`, and base64
+# payloads remain holes (the `git -C` family is the realistic one).
+let dequoteFlag = re"""['"](-{1,2}[^'"\s]+)['"]"""
+let gitGlobalOpts =
+  re"""^git\s+((?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace|super-prefix)(?:=\S+|\s+\S+)|--exec-path=\S+|-p|-P|--paginate|--no-pager|--bare|--no-replace-objects|--literal-pathspecs|--icase-pathspecs|--no-optional-locks)\s+)+"""
+
 # Same chaining-split pattern as secret-guard.
 let shellChainingSplit = re"""[|;&`\n]+|\$\("""
 
@@ -141,49 +153,75 @@ let commitPush = re"""^git\s+(commit|push)(\s|$)"""
 # match here (the safer form is still gated by the push-specific pattern).
 let forceFlag = re"""^git\s+.*\s--force(\s|$|=)"""
 
+# Named destructive patterns, reused by both tier-2 detection (below) and the
+# catastrophic "never auto-allow" check (further below).
+let
+  # reset --hard (discards worktree/index)
+  resetHard = re"""^git\s+reset\s+(.*\s)?--hard\b"""
+  # force push — `(.*\s)?` (not `.*(\s)`) so a FIRST-position flag is caught;
+  # the old `.*(\s)` form missed `git push -f origin` (flag before the remote).
+  pushForceFlags =
+    re"""^git\s+push\s+(.*\s)?(--force|--force-with-lease(=\S+)?|-f)(\s|$)"""
+  # +refspec push shorthand (e.g., `git push origin +master`)
+  pushPlusRefspec = re"""^git\s+push\s+.*\s\+\S+"""
+  # checkout discarding worktree changes; checkout -f (forceFlag misses bare -f)
+  checkoutDiscard = re"""^git\s+checkout\s+(--|\.)(\s|$)"""
+  checkoutForce = re"""^git\s+checkout\s+(.*\s)?-f(\s|$)"""
+  # restore — destructive unless --staged-only; ask/never-allow on all forms
+  restoreAny = re"""^git\s+restore(\s|$)"""
+  # clean — destructive except the -n/--dry-run no-op
+  cleanAny = re"""^git\s+clean(\s|$)"""
+  cleanDryRun = re"""^git\s+clean\s+(.*\s)?(-n|--dry-run)(\s|$)"""
+  # reflog destruction + immediate gc prune (both destroy the recovery path)
+  reflogDestroy = re"""^git\s+reflog\s+(expire|delete|clear)(\s|$)"""
+  gcPrune = re"""^git\s+gc\s+.*--prune(=|\s+)(now|[0-9])"""
+  # force-clobber refs / switch-discard
+  branchForce = re"""^git\s+branch\s+(.*\s)?(-f|-M|--force)(\s|$)"""
+  tagForce = re"""^git\s+tag\s+(.*\s)?(-f|--force)(\s|$)"""
+  switchDiscard = re"""^git\s+switch\s+(.*\s)?(--discard-changes|-f|--force)(\s|$)"""
+  # stash drop|clear are catastrophic; `pop` is detected (tier2) but allowable
+  stashDropClear = re"""^git\s+stash\s+(drop|clear)(\s|$)"""
+  # catastrophic-only remote-destructive push forms (plain push detection is
+  # already covered by commitPush; plain fast-forward push stays auto-allowable)
+  pushDelete = re"""^git\s+push\s+(.*\s)?(--delete|-d)(\s|$)"""
+  pushColonRef = re"""^git\s+push\s+.*\s:\S+"""
+  pushMirror = re"""^git\s+push\s+.*--mirror"""
+
 # Tier 2: destructive flag/arg combinations on otherwise-safe verbs.
 # False-positive cost = one extra confirm; we err on the side of asking.
 let tier2Patterns = [
-  # reset --hard (discards worktree/index)
-  re"""^git\s+reset\s+(.*\s)?--hard\b""",
+  resetHard,
 
-  # stash operations
+  # stash operations — `pop` kept here for detection (allowable, NOT catastrophic)
   re"""^git\s+stash\s+(drop|clear|pop)(\s|$)""",
   re"""^git\s+stash\s+push\s+(.*\s)?(-u|--include-untracked|-a|--all)(\s|$)""",
   re"""^git\s+stash\s+save\s+(.*\s)?(-u|--include-untracked|-a|--all)(\s|$)""",
 
-  # branch deletion (short and long forms)
+  # branch deletion (short and long forms) + force-clobber
   re"""^git\s+branch\s+(.*\s)?(-[dD]|--delete)(\s|$)""",
-
-  # checkout discarding worktree changes
-  re"""^git\s+checkout\s+(--|\.)(\s|$)""",
-
-  # restore — virtually always destructive unless --staged-only;
-  # we ask on all forms to avoid an under-match.
-  re"""^git\s+restore(\s|$)""",
-
-  # clean — only -n is safe; ask on all
-  re"""^git\s+clean(\s|$)""",
+  branchForce,
+  checkoutDiscard,
+  checkoutForce,
+  restoreAny,
+  cleanAny,
+  switchDiscard,
 
   # rm — removes tracked files from the worktree and index; `--cached` only
   # unstages, but per house style we ask on every form rather than carve out
   # the safe sub-forms.
   re"""^git\s+rm(\s|$)""",
-
-  # force push (multiple flag forms)
-  re"""^git\s+push\s+.*(\s)(--force|--force-with-lease(=\S+)?|-f)(\s|$)""",
-  # +refspec push shorthand (e.g., `git push origin +master`)
-  re"""^git\s+push\s+.*\s\+\S+""",
-
-  # reflog destruction
-  re"""^git\s+reflog\s+(expire|delete|clear)(\s|$)""",
+  pushForceFlags,
+  pushPlusRefspec,
+  reflogDestroy,
+  gcPrune,
 
   # low-level ref deletion / scripted deletes via stdin
   re"""^git\s+update-ref\s+(.*\s)?-d\b""",
   re"""^git\s+update-ref\s+(.*\s)?--stdin(\s|$)""",
 
-  # tag deletion (short and long)
+  # tag deletion (short and long) + force-clobber
   re"""^git\s+tag\s+(.*\s)?(-d|--delete)(\s|$)""",
+  tagForce,
 
   # worktree management
   re"""^git\s+worktree\s+(remove|prune)(\s|$)""",
@@ -198,15 +236,34 @@ let tier2Patterns = [
   re"""^git\s+rerere\s+(clear|forget|gc)(\s|$)""",
 ]
 
+# Catastrophic ("never auto-allow") set — irreversible (not reflog/fsck-
+# recoverable) or destructive-remote. On gate-ON these are forced to {ask,deny}
+# regardless of conversation / config, so injection can only make them stricter.
+# (cleanAny is checked separately in isCatastrophic to exclude the dry-run no-op.)
+let catastrophicPatterns = [
+  tier1Verbs, forceFlag, pushForceFlags, pushPlusRefspec, pushDelete, pushColonRef,
+  pushMirror, resetHard, checkoutDiscard, checkoutForce, restoreAny, switchDiscard,
+  stashDropClear, reflogDestroy, gcPrune, branchForce, tagForce,
+]
+
 proc stripEnvPrefix(segment: string): string =
   ## Remove leading `KEY=value` env-var assignments so e.g.
   ## `GIT_SEQUENCE_EDITOR=/tmp/x git rebase -i HEAD~3` parses leading-token
   ## as `git`. Idempotent: returns segment unchanged if no env-prefix.
   segment.replace(envAssignPrefix, "")
 
+proc normalizeSegment(segment: string): string =
+  ## Canonicalize a segment for pattern matching: strip the env-prefix, unwrap
+  ## quoted flags, then re-anchor `git <global-opts> <verb>` → `git <verb>`.
+  ## Safe-ward — a quoted arg that merely looks like a flag may be unwrapped,
+  ## yielding at worst a false ask, never a missed catastrophic.
+  result = stripEnvPrefix(segment.strip()).replacef(dequoteFlag, "$1")
+  if result.startsWith("git") and result.contains(gitGlobalOpts):
+    result = "git " & result.replace(gitGlobalOpts, "")
+
 proc segmentRisk(segment: string): string =
   ## Returns a short risk label if this segment is risky, "" otherwise.
-  let s = stripEnvPrefix(segment.strip())
+  let s = normalizeSegment(segment)
   if s.contains(tier1Verbs):
     return "rewrites history"
   if s.contains(commitPush):
@@ -218,6 +275,29 @@ proc segmentRisk(segment: string): string =
       return "destructive flag/arg"
   return ""
 
+proc isCatastrophic(segment: string): bool =
+  ## Irreversible (not reflog/fsck-recoverable) or destructive-remote → never
+  ## auto-allow. cleanAny is special-cased to exclude the -n/--dry-run no-op.
+  let s = normalizeSegment(segment)
+  if s.contains(cleanAny) and not s.contains(cleanDryRun):
+    return true
+  for pat in catastrophicPatterns:
+    if s.contains(pat):
+      return true
+  false
+
+proc decisionsExcludingAllow(base: seq[string]): seq[string] =
+  ## `base` with "allow" removed; an empty or allow-only `base` → {ask,deny}.
+  ## Forces a catastrophic command to a no-auto-allow floor without depending on
+  ## the per-hook GIT_CONFIRM_GUARD_DECISIONS configuration.
+  if base.len == 0:
+    return @["ask", "deny"]
+  for d in base:
+    if d != "allow":
+      result.add d
+  if result.len == 0:
+    result = @["ask", "deny"]
+
 proc main() =
   let payload = parseJson(stdin.readAll())
   let cmd = payload{"tool_input", "command"}.getStr("")
@@ -227,6 +307,7 @@ proc main() =
     return # fast path — no git verb anywhere
 
   var matched: seq[string] = @[]
+  var catastrophic = false
   for segment in cmd.split(shellChainingSplit):
     let s = segment.strip()
     if s.len == 0:
@@ -235,6 +316,8 @@ proc main() =
     if risk.len > 0:
       let stripped = stripEnvPrefix(s)
       matched.add("`" & stripped & "` (" & risk & ")")
+      if isCatastrophic(s):
+        catastrophic = true
 
   if matched.len == 0:
     return
@@ -249,6 +332,13 @@ proc main() =
     emit("ask", askReason)
     return
 
+  # A catastrophic command can never auto-allow: narrow the enum to exclude
+  # `allow` regardless of conversation, config, or a successful injection.
+  let decisions =
+    if catastrophic:
+      decisionsExcludingAllow(allowedDecisions())
+    else:
+      allowedDecisions()
   let decision = adjudicate(
     cmd,
     "git-confirm-classify",
@@ -256,7 +346,7 @@ proc main() =
     model = classifierModel(),
     transcriptPath = payload{"transcript_path"}.getStr(""),
     contextTurns = ContextTurns,
-    allowedDecisions = allowedDecisions(),
+    allowedDecisions = decisions,
     timeoutSecs = TimeoutSecs,
   )
   if decision.isNone:

@@ -22,6 +22,7 @@ type
     role*: string ## "user" | "assistant"
     text*: string ## human text, or assistant text-blocks joined with "\n"
     timestamp*: string ## ISO 8601 from the line's `timestamp` ("" if absent)
+    id*: string ## the line's `uuid` ("" if absent) — per-turn marker nonce
 
   ContentBlock = object
     `type`*: Option[string]
@@ -41,6 +42,7 @@ type
     isMeta*: Option[bool]
     isCompactSummary*: Option[bool]
     toolUseResult*: Option[JsonString]
+    uuid*: Option[string]
 
 const NoiseUserPrefixes =
   ["<command-name>", "<command-message>", "<command-args>", "<local-command-stdout>"]
@@ -156,7 +158,9 @@ proc parseTranscript*(path: string, includeToolNoise = false): seq[Turn] =
       continue
     if text.len == 0:
       continue
-    result.add Turn(role: role, text: text, timestamp: j.timestamp.get(""))
+    result.add Turn(
+      role: role, text: text, timestamp: j.timestamp.get(""), id: j.uuid.get("")
+    )
 
 proc lastUserMessage*(turns: openArray[Turn]): Option[string] =
   ## Text of the most recent role=="user" turn, or none.

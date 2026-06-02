@@ -2,7 +2,7 @@ import std/[options, os, sequtils, strutils, times, unittest]
 import ./transcript
 
 const Fixture = """
-{"type":"user","isSidechain":false,"timestamp":"t1","message":{"role":"user","content":"hello there"}}
+{"type":"user","isSidechain":false,"timestamp":"t1","uuid":"u-1","message":{"role":"user","content":"hello there"}}
 {"type":"assistant","isSidechain":false,"timestamp":"t2","message":{"role":"assistant","content":[{"type":"text","text":"hi"},{"type":"tool_use","name":"Bash"}]}}
 {"type":"user","isSidechain":false,"toolUseResult":{"ok":1},"message":{"role":"user","content":[{"type":"tool_result","content":"cmd output"}]}}
 {"type":"user","isSidechain":false,"message":{"role":"user","content":"<command-name>/compact</command-name>"}}
@@ -47,6 +47,10 @@ suite "transcript":
     check turns[1].text == "hi"
     check turns[2].text == "second question"
     check turns[3].text == "last thing"
+
+  test "parseTranscript captures the line uuid as Turn.id":
+    let turns = parseTranscript(path)
+    check turns[0].id == "u-1"
 
   test "lastUserMessage returns the final user turn":
     check lastUserMessage(parseTranscript(path)) == some("last thing")
