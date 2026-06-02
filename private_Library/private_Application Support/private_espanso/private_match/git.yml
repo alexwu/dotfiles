@@ -40,3 +40,8 @@ matches:
     replace: "style($|$): "
     label: "style(scope): — commit prefix"
     search_terms: [conventional, formatting]
+  - trigger: ",,pr"
+    replace: "gh pr create -d -a @me $|$"
+    label: "Create draft PR"
+    search_terms:
+      - gh

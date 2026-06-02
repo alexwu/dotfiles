@@ -6,11 +6,7 @@ groups:
     swap: false
     exclusive: false
     members:
-      - "sweepai/sweep-next-edit-1.5b"
-      - "henrik3/sweep-next-edit-v2-7B"
       - "Qwen3.5-9B-MLX-4bit"
-      - "zed-industries/zeta-2"
-      - "zed-industries/zeta-2.1"
       # Dictation-cleanup hot path (run multiple times/hour) — kept resident so
       # every cleanup is instant, never paying the ~6s cold-load. ~24GB RSS /
       # ~4GB phys; coexists with workhorse models (always-on is never evicted).
@@ -20,9 +16,33 @@ groups:
       # swap:false here means it never cold-loads again). 14/14 in the bake-off,
       # ~2x faster than the 31B dense.
       - "gemma-4-26B-A4B-it"
+      # EXPERIMENT(alexwu): 31B dense moved here from workhorse to gauge the
+      # always-resident perf impact (instant availability, no cold-load) against
+      # the unified-memory cost of co-residing permanently with the 26B MoE +
+      # 35B heretic (swap:false → all three held at once). Revert to workhorse
+      # if the memory pressure isn't worth the instant access.
+      - "gemma-4-31B-it"
+
+  # Code-completion / next-edit models — one resident at a time (`swap: true`):
+  # you drive a single completion provider at a time (Zed's zeta OR Sweep), so
+  # they trade the one slot instead of all sitting resident. `persistent: true`
+  # keeps the active one from eviction by default-group one-offs mid-edit;
+  # `exclusive: false` so loading one never disturbs always-on / workhorse.
+  # CAVEAT(alexwu): if you ever run Zed AND a Sweep-backed editor at the SAME
+  # time, swap:true makes them thrash (each load evicts the other) — flip this
+  # group to swap:false then so all four can co-reside.
+  "code-completion":
+    swap: true
+    exclusive: false
+    persistent: true
+    members:
+      - "sweepai/sweep-next-edit-1.5b"
+      - "henrik3/sweep-next-edit-v2-7B"
+      - "zed-industries/zeta-2"
+      - "zed-industries/zeta-2.1"
 
   # Active-task workhorse tier. One member at a time within the group
-  # (`swap: true`), but small default-group churn (zeta-2 / sweep / one-off
+  # (`swap: true`), but small default-group churn (one-off / default-group
   # models) cannot evict them (`persistent: true`), and loading a workhorse
   # does not unload always-on (`exclusive: false`). TTL still applies as
   # the idle-eviction backstop — `persistent` only blocks other-group
@@ -36,12 +56,6 @@ groups:
       - "Qwen3.6-27B"
       - "Qwen3.6-35B-A3B"
       - "Qwen3.6-27B-heretic"
-      # Strongest gemma-4 classifier (dense) — on-demand fallback for max quality.
-      # image-sort defaults to the faster always-on stock 26B; load this when you
-      # want the 31B's headroom.
-      - "gemma-4-31B-it"
-      # NOTE: Qwen3.6-35B-A3B-heretic moved to always-on (dictation-cleanup
-      # hot path — needs to stay resident, not swap).
 
 models:
   "Qwen3.5-122B-A10B":
@@ -246,6 +260,23 @@ models:
   # corner" prediction — MoE *and* heavy abliteration — for the same bake-off.
   "gemma-4-26B-A4B-it-heretic":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.mmproj-f16.gguf
+    timeouts:
+      responseHeader: 120
+  # gemma-4 E4B-it — instruction-tuned "edge" variant (Per-Layer-Embeddings /
+  # MatFormer, ~4B effective). Official ggml-org GGUF. Lightweight candidate for a
+  # fast FIRST-PASS classifier ahead of the 26B, AND it does AUDIO: the bf16 mmproj
+  # is a COMBINED vision+audio projector (llama.cpp PR #21421 — gemma-4 Conformer
+  # audio encoder). bf16 mmproj is REQUIRED for audio — f16/Q8 garble the audio
+  # conformer (ClippableLinear precision: cos-sim 0.999→0.685 by layer 11).
+  # Flags: --reasoning off (gemma thought-channel wedge fix; no-op if E4B has none)
+  # + --jinja (model's own chat template, needed for the multimodal -it template)
+  # + Google's gemma sampling. AUDIO via llama-server = the `image_url` content
+  # part with a data:audio/wav;base64 URL (NOT OpenAI input_audio), audio placed
+  # BEFORE text, 16kHz, 30s chunks. Default group — promote to always-on if it
+  # earns the router job. (Earlier mradermacher `gemma-4-E4B` was the BASE model —
+  # wrong for both classify and audio; replaced with this -it build.)
+  "gemma-4-E4B-it":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/ggml-org/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ggml-org/gemma-4-E4B-it-GGUF/mmproj-gemma-4-E4B-it-bf16.gguf
     timeouts:
       responseHeader: 120
   "Dark-Nexus-24B-v2.0":

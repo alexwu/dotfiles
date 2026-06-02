@@ -9,6 +9,15 @@ local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.
 local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
 local toggle_terminal = wezterm.plugin.require("https://github.com/zsh-sage/toggle_terminal.wez")
 
+-- Every new window/tab/split auto-attaches to a fresh zmx session via `zn`
+-- (~/.local/bin/zn). When the session exits, fall back to an interactive
+-- login zsh so the pane stays usable instead of closing.
+--
+-- Absolute path is required: wezterm spawns a non-login non-interactive
+-- zsh that never sources .zshrc/.zprofile, so ~/.local/bin isn't on PATH.
+local zn_path = wezterm.home_dir .. "/.local/bin/zn"
+local zmx_cmd = { "zsh", "-c", zn_path .. "; exec zsh -l" }
+
 ---@class WeztermConfig
 local config = {}
 if wezterm.config_builder then
@@ -201,12 +210,15 @@ wezterm.on("user-var-changed", function(window, pane, name, value)
 				name = cmd_context.workspace,
 				spawn = {
 					cwd = cmd_context.cwd,
+					args = zmx_cmd,
 				},
 			}),
 			pane
 		)
 	end
 end)
+
+config.default_prog = zmx_cmd
 
 config.color_scheme = "Snazzy"
 
@@ -241,7 +253,8 @@ config.keys = {
 			if #panes == 1 then
 				pane:split({
 					direction = "Right",
-					size = 0.33,
+					size = 0.50,
+					args = zmx_cmd,
 				})
 			elseif not panes[1].is_zoomed then
 				panes[1].pane:activate()
@@ -259,6 +272,7 @@ config.keys = {
 			SplitPane = {
 				direction = "Down",
 				size = { Percent = 50 },
+				command = { args = zmx_cmd },
 				-- top_level = true,
 			},
 		}),
@@ -296,6 +310,7 @@ config.keys = {
 					direction = "Down",
 					size = 0.33,
 					top_level = true,
+					args = zmx_cmd,
 				})
 			elseif not panes[1].is_zoomed then
 				panes[1].pane:activate()
@@ -344,6 +359,7 @@ config.keys = {
 					window:perform_action(
 						act.SwitchToWorkspace({
 							name = line,
+							spawn = { args = zmx_cmd },
 						}),
 						pane
 					)
