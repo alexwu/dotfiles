@@ -17,9 +17,9 @@
 # Raycast's callback; the second used a fire-and-forget `choose | espanso match
 # exec` pipeline and worked once, then broke on `,,,` typed into the picker
 # itself — even with a per-app `disable: true` filter for `choose`. The robust
-# answer is a hotkey-bound version of the same pipeline (see `espick` bound to
-# `⌃⌥⌘S` in skhd); espanso isn't involved in launching it, so it can't crash
-# espanso.
+# answer is a hotkey-bound version of the same pipeline (see the `snippets`
+# Lens, `lulu-select snippets`, bound to `⌃⌥⌘S` in skhd); espanso isn't
+# involved in launching it, so it can't crash espanso.
 #
 # yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
 
