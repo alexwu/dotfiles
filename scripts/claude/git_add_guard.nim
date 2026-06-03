@@ -18,6 +18,8 @@
 ##   hooks.PreToolUse[].hooks[].command = "$HOME/.local/bin/git-add-guard"
 
 import std/[json, re]
+import ../lib/ast_bash
+import ast_guard_rules
 
 # Fast-path: only inspect commands that actually invoke `git add`.
 let gitAddPrefix = re"\bgit\s+add(\s|$)"
@@ -45,6 +47,11 @@ proc deny(reason: string) =
   }
   echo decision
 
+proc regexDetects(cmd: string): bool =
+  ## Fallback path: the original whole-command regex. Used ONLY when ast-grep is
+  ## unavailable (AstGrepError) so behavior degrades to exactly the pre-AST guard.
+  cmd.contains(bulkStagingArgs)
+
 proc main() =
   let payload = parseJson(stdin.readAll())
   let cmd = payload{"tool_input", "command"}.getStr("")
@@ -54,7 +61,14 @@ proc main() =
   if not cmd.contains(gitAddPrefix):
     return
 
-  if cmd.contains(bulkStagingArgs):
+  # AST primary: a bare `.` / `-A` etc. must be an actual argument word, so
+  # `echo "git add ."` (the bulk args live in a string) no longer false-denies.
+  let bulk =
+    try:
+      firedRuleIds(combined("git-add"), cmd).len > 0
+    except AstGrepError:
+      regexDetects(cmd)
+  if bulk:
     deny(
       "git-add-guard: bulk staging (-A/--all/./-u/--update) is blocked. " &
         "Name files explicitly (`git add <path>`) or use `git add -p`."

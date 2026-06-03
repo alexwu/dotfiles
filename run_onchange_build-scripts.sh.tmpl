@@ -23,6 +23,8 @@ mkdir -p "$HOME/.local/bin"
 
 # ---- git-add-guard (Nim) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/git_add_guard.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/ast_bash.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/claude/ast_guard_rules.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/git_add_guard.nim" }}"
   TARGET="$HOME/.local/bin/git-add-guard"
@@ -53,6 +55,8 @@ mkdir -p "$HOME/.local/bin"
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/git_confirm_guard.nim") | sha256sum }}
 # lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/llm_decide.nim") | sha256sum }}
 # lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/transcript.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/ast_bash.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/claude/ast_guard_rules.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/git_confirm_guard.nim" }}"
   TARGET="$HOME/.local/bin/git-confirm-guard"
@@ -95,6 +99,8 @@ mkdir -p "$HOME/.local/bin"
 
 # ---- wezterm-guard (Nim) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/wezterm_guard.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/ast_bash.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/claude/ast_guard_rules.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/wezterm_guard.nim" }}"
   TARGET="$HOME/.local/bin/wezterm-guard"

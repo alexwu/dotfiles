@@ -96,8 +96,10 @@
 ##   echo '{"tool_input":{"command":"GIT_SEQUENCE_EDITOR=x git rebase -i HEAD~3"}}' \
 ##     | git-confirm-guard
 
-import std/[json, options, os, re, strutils]
+import std/[json, options, os, re, sequtils, strutils, tables]
 import ../lib/llm_decide
+import ../lib/ast_bash
+import ast_guard_rules
 
 const
   ContextTurns = 6
@@ -324,6 +326,22 @@ proc main() =
       matched.add("`" & stripped & "` (" & risk & ")")
       if isCatastrophic(s):
         catastrophic = true
+
+  # Union (AST ∪ regex): tree-sitter-bash catches nested/quoted forms the regex
+  # split misses — e.g. `echo $(git push --force)`, where the split on `$(`
+  # leaves `git push --force)` and `--force)` fails the right-boundary. Strictly
+  # additive: only ADDS a catch or escalates `catastrophic` (never removes one).
+  # On AstGrepError the regex result above stands — exactly the pre-AST behavior.
+  try:
+    let astFired = firedRuleIds(combined("git-confirm"), cmd)
+    if astFired.len > 0:
+      if matched.len == 0: # regex missed it (nested/exotic form) — surface it
+        let labels = astFired.mapIt(ruleMeta.getOrDefault(it).label).deduplicate
+        matched.add("`" & cmd.strip() & "` (" & labels.join(", ") & ", via ast)")
+      if astFired.anyIt(ruleMeta.getOrDefault(it).catastrophic):
+        catastrophic = true
+  except AstGrepError:
+    discard
 
   if matched.len == 0:
     return

@@ -30,6 +30,8 @@
 ##     | wezterm-guard
 
 import std/[json, re, strutils]
+import ../lib/ast_bash
+import ast_guard_rules
 
 # Fast-path: skip commands that never mention wezterm.
 let mentionsWezterm = re"\bwezterm\b"
@@ -67,6 +69,17 @@ proc isRiskyWeztermKill(segment: string): bool =
   let s = strippedSegment(segment)
   s.contains(leadingWezterm) and s.contains(cliWord) and s.contains(killSubcommand)
 
+proc regexDetects(cmd: string): bool =
+  ## Fallback path: the original per-segment regex detection. Used ONLY when
+  ## ast-grep is unavailable (AstGrepError) so behavior degrades to exactly the
+  ## pre-AST guard — never fail-open on a missing binary.
+  for segment in cmd.split(shellChainingSplit):
+    if segment.strip().len == 0:
+      continue
+    if isRiskyWeztermKill(segment):
+      return true
+  false
+
 proc main() =
   let payload = parseJson(stdin.readAll())
   let cmd = payload{"tool_input", "command"}.getStr("")
@@ -75,23 +88,22 @@ proc main() =
   if not cmd.contains(mentionsWezterm):
     return # fast path — no wezterm anywhere
 
-  var matched: seq[string] = @[]
-  for segment in cmd.split(shellChainingSplit):
-    if segment.strip().len == 0:
-      continue
-    if isRiskyWeztermKill(segment):
-      matched.add("`" & strippedSegment(segment) & "`")
-
-  if matched.len == 0:
+  # AST primary (structural — ignores `kill-pane` inside a quoted string,
+  # catches it inside `$(...)`); regex fallback only if ast-grep errors.
+  let risky =
+    try:
+      firedRuleIds(combined("wezterm"), cmd).len > 0
+    except AstGrepError:
+      regexDetects(cmd)
+  if not risky:
     return
 
-  let label = if matched.len == 1: "command" else: "commands"
   askDecision(
-    "wezterm-guard: confirm before running destructive WezTerm " & label & ": " &
-      matched.join(", ") & ". `kill-pane` destroys a pane immediately with no " &
-      "prompt; without `--pane-id` it kills the *current* pane — which is Claude " &
-      "Code's own shell when it runs inside WezTerm. Only proceed if closing a " &
-      "pane is exactly what was requested."
+    "wezterm-guard: confirm before running a destructive WezTerm `kill-*` " &
+      "command: `" & cmd.strip() & "`. `kill-pane` destroys a pane immediately " &
+      "with no prompt; without `--pane-id` it kills the *current* pane — which " &
+      "is Claude Code's own shell when it runs inside WezTerm. Only proceed if " &
+      "closing a pane is exactly what was requested."
   )
 
 when isMainModule:
