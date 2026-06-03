@@ -20,3 +20,7 @@ dot_config/zellij/.claude/
 .firecrawl/
 
 __pycache__
+
+# Compiled Nim test binaries (built in-place by `nim c -r`; .nim sources stay tracked)
+scripts/**/test_*
+!scripts/**/test_*.nim
