@@ -1,19 +1,24 @@
 ---
-description: Refactor an oversized CLAUDE.md by extracting sections into .claude/rules/ files (with paths: scoping where appropriate)
+description: Refactor an oversized CLAUDE.md by extracting sections into .claude/rules/ files; if the real source of truth is AGENTS.md, decompose it spatially into nested per-directory AGENTS.md files instead
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
-argument-hint: <path-to-CLAUDE.md> (defaults to ./CLAUDE.md)
+argument-hint: <path to CLAUDE.md or AGENTS.md> (defaults to ./CLAUDE.md)
 ---
 
 <!--
 Source doc: https://code.claude.com/docs/en/memory.md
 Sibling skill (provides the rubrics this command consults at runtime):
   ~/.claude/skills/claude-md-improver/
+AGENTS.md spec (nested-files model; no import/include syntax, no rules dir):
+  https://agents.md/
+  https://developers.openai.com/codex/guides/agents-md
 Last synced: 2026-05-04
 -->
 
 Decompose a CLAUDE.md that's grown too large by extracting sections into `.claude/rules/` files. Pairs with the `claude-md-improver` skill (which flags candidates) — this command is the actual refactor.
 
 Target: project root CLAUDE.md drops to ≤80 lines and serves as an index; long sections live in path-scoped rules.
+
+**Two modes.** Many repos keep their real instructions in an `AGENTS.md` (the cross-agent convention) and expose only a thin `CLAUDE.md` that `@AGENTS.md`-imports it. Decompose detects this in Step 1.5 and branches: **CLAUDE.md mode** (extract → `.claude/rules/`, the default) or **AGENTS.md mode** (split → nested per-directory `AGENTS.md` files). The two are not interchangeable — AGENTS.md content must never land in `.claude/rules/` (Claude-only; every other agent would lose it).
 
 ## Argument
 
@@ -31,7 +36,27 @@ wc -l "$TARGET"
 
 Then `Read` the full file. Don't truncate.
 
-If under 200 lines and fewer than 5 H2 sections, push back: "This file is X lines / N sections — decomposition probably isn't worth it. Want to proceed anyway?"
+## Step 1.5: Identify the source of truth
+
+Before measuring anything, figure out *which file actually holds the instructions*. A thin `CLAUDE.md` that only imports `AGENTS.md` is not a small file with nothing to do — its content lives in AGENTS.md, which decomposes by different rules.
+
+```bash
+# Does the target just import AGENTS.md? (thin-shell pattern)
+rg -n '^@AGENTS\.md' "$TARGET"
+# Is there an AGENTS.md at the project root, and how big is it?
+[ -f ./AGENTS.md ] && wc -l ./AGENTS.md
+```
+
+Pick the mode:
+
+| Situation | Mode |
+|---|---|
+| `TARGET` is a normal CLAUDE.md carrying its own content | **CLAUDE.md mode** — continue to Step 2 |
+| `TARGET` is a thin shell whose only real line is `@AGENTS.md` (the bulk lives in AGENTS.md), **or** `TARGET` is itself an `AGENTS.md` | **AGENTS.md mode** — jump to the "AGENTS.md mode" section below; skip Steps 2–6 |
+
+Do **not** dismiss a thin `@AGENTS.md` CLAUDE.md as "too small, nothing to do." The content isn't missing — redirect to AGENTS.md mode.
+
+In CLAUDE.md mode only: if the target is under 200 lines and fewer than 5 H2 sections, push back: "This file is X lines / N sections — decomposition probably isn't worth it. Want to proceed anyway?"
 
 ## Step 2: Section inventory
 
@@ -154,6 +179,37 @@ After apply:
 
 Report a one-line summary: "Decomposed CLAUDE.md from N→M lines, extracted X rule files (Y scoped, Z unscoped), W skill stubs, and moved K personal lines to CLAUDE.local.md."
 
+## AGENTS.md mode
+
+`AGENTS.md` is the cross-agent instructions convention — read by Codex, Cursor, Aider, and by Claude Code via an `@AGENTS.md` import. It does **not** decompose the way CLAUDE.md does, because the spec is built on different mechanics:
+
+- **No import / include syntax.** There is no `@path` directive in AGENTS.md — `@import` is Claude-Code-specific. Other agents read AGENTS.md raw and would never follow it.
+- **No rules directory.** There is no `.agents/rules/` analog to `.claude/rules/`.
+- **The only native split is spatial:** nested `AGENTS.md` files, one per directory. Agents walk from the repo root down to the working directory, concatenate each `AGENTS.md` they pass (one per directory), and the **closest file wins** on conflicts. (Codex stops loading once the combined size hits `project_doc_max_bytes` — 32 KiB by default.)
+
+### Hard guard — never do this
+
+**Do NOT extract AGENTS.md content into `.claude/rules/`.** Those files load for Claude Code *only*; every other agent reading AGENTS.md would silently lose the content, breaking the entire point of a shared source of truth. `.claude/rules/` is exclusively a CLAUDE.md-mode target. If you catch yourself proposing a `.claude/rules/<topic>.md` while in AGENTS.md mode, stop.
+
+### How to decompose an AGENTS.md
+
+Decomposition here is *spatial*, not modular. For each H2 section, ask: **does this only matter inside one directory/subtree?**
+
+| Section character | Fate |
+|---|---|
+| Directory-scoped (a package's build dance, conventions specific to one crate/module) | Move to `<that-dir>/AGENTS.md`. Closest-wins makes it override root guidance for that subtree. |
+| Cross-cutting / global (architecture overview, repo-wide invariants, commit conventions) | **Stays in the root `AGENTS.md`.** There is no global-but-fragmented option — global content has nowhere else to live. |
+
+A root AGENTS.md that's mostly cross-cutting laws therefore **can't meaningfully shrink** — and that's correct, not a failure. Only pull a section into a nested file when its content genuinely belongs to that directory.
+
+### When AGENTS.md mode is a no-op
+
+If the AGENTS.md is (a) comfortably under the 32 KiB cap / ~200 lines, or (b) mostly global content with little that's directory-scopable, say so and stop. Don't manufacture nested files to hit a line target — scattering global laws across directories makes them *harder* to find, not easier.
+
+### Apply
+
+Same discipline as CLAUDE.md mode: show the plan (which sections move to which `<dir>/AGENTS.md`, which stay at root) and get approval before writing. Preserve the root `# <title>` heading and any maintainer comments. After applying, confirm no content was lost — every moved section lands in exactly one nested file, and the root still reads coherently with the directory-specific parts removed.
+
 ## Pitfalls to avoid
 
 - **Don't lose content silently.** Every removed line from the root must land somewhere or be explicitly dropped with the user's sign-off.
@@ -161,6 +217,7 @@ Report a one-line summary: "Decomposed CLAUDE.md from N→M lines, extracted X r
 - **Don't fabricate skill bodies.** If a section was a procedure, extract it as a skill stub with the original section content; don't try to flesh it into a "proper" skill in this pass.
 - **Don't decompose what's already small.** Push back when called on a tidy CLAUDE.md.
 - **Preserve maintainer comments.** HTML comments at the top of CLAUDE.md (source pointers, last-synced dates) stay at root.
+- **Don't shred AGENTS.md into `.claude/rules/`.** That surface is Claude-Code-only; other agents reading AGENTS.md would lose the content silently. AGENTS.md decomposes spatially into nested per-directory files (see "AGENTS.md mode"), never into rules.
 
 ## Notes for the agent
 
