@@ -42,5 +42,9 @@ $q0_num_decimal : aerospace layout h_accordion h_tiles
 # Espanso snippet picker — pops a `lulu-select` fuzzy picker over the focused app,
 # re-injects the picked snippet via `espanso match exec`. See ~/.local/bin/espick.
 ctrl + alt + cmd - s : /Users/jamesbombeelu/.local/bin/espick
-cmd - space : /Users/jamesbombeelu/.local/bin/lulu-select-meta
-cmd + alt - e : /Users/jamesbombeelu/.local/bin/lulu-select-emoji
+
+# Lens front-door (lulu-select-1ry): the daemon resolves these TOML recipes from
+# ~/.local/share/lulu-select/lenses/ instead of the standalone launcher scripts.
+# Requires a `just install` to have seeded the built-in lenses (incl. meta.toml).
+cmd - space : /Users/jamesbombeelu/.local/bin/lulu-select meta
+cmd + alt - e : /Users/jamesbombeelu/.local/bin/lulu-select emoji
