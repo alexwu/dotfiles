@@ -156,16 +156,6 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/notify Stop"
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "hooks": [

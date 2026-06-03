@@ -1,4 +1,9 @@
-## Claude Code hook for Stop / Notification / AskUserQuestion events.
+## Claude Code hook for Notification / AskUserQuestion events.
+##
+## Fires only when Claude is blocked on you: permission prompts, input
+## dialogs, the idle "your turn" nudge, and AskUserQuestion. Per-turn Stop
+## ("task complete") notifications were dropped on purpose — the idle_prompt
+## notification already covers the walked-away case for tasks of any length.
 ##
 ## Dispatches to a pluggable array of notifier backends. Each backend is a
 ## single proc that owns its own availability check and returns 0+ argv
@@ -17,7 +22,6 @@
 ##   3. `chezmoi apply` — source hash changes, build template rebuilds.
 ##
 ## Usage (cligen dispatchMulti):
-##   notify Stop < stdin.json
 ##   notify Notification < stdin.json
 ##   notify PreToolUse < stdin.json   # no-op unless tool_name=AskUserQuestion
 ##
@@ -473,22 +477,13 @@ func notificationTitle(kind: string): string =
   case kind
   of "permission_prompt": "🔐 Needs Approval"
   of "idle_prompt": "⏸️ Waiting For Next Steps"
-  of "auth_success": "🔑 Auth Complete"
   of "elicitation_dialog": "📋 Input Needed"
   else: "⏳ Waiting"
 
-func scrubStopBody(msg: string): string =
-  ## Strips *action-beat* lines and blank lines. Falls back to a default
-  ## body if nothing remains.
-  var keep: seq[string] = @[]
-  for line in msg.splitLines:
-    let stripped = line.strip()
-    if stripped.len > 0 and not stripped.startsWith("*"):
-      keep.add line
-  if keep.len > 0:
-    keep.join("\n")
-  else:
-    "Task completed"
+# Notification types worth a ping — each means Claude is blocked on you or
+# it's your turn. Informational types (auth_success, elicitation_complete,
+# elicitation_response) are dropped.
+const notifyTypes = ["permission_prompt", "idle_prompt", "elicitation_dialog"]
 
 const questionKeys = ["question", "prompt", "message", "text"]
 
@@ -527,22 +522,12 @@ func extractOptions(toolInput: JsonNode): seq[string] =
       result.add opt{"label"}.getStr("")
     inc i
 
-proc handleStop(data: JsonNode) =
-  let cwd = data{"cwd"}.getStr("").lastPathPart
-  let session = data{"session_id"}.getStr("")
-  let msg = data{"last_assistant_message"}.getStr("Task completed")
-  send(
-    title = "✅ Task Complete",
-    body = scrubStopBody(msg),
-    project = cwd,
-    subtitle = cwd,
-    threadId = session,
-  )
-
 proc handleNotification(data: JsonNode) =
+  let kind = data{"notification_type"}.getStr("")
+  if kind notin notifyTypes:
+    return
   let cwd = data{"cwd"}.getStr("").lastPathPart
   let session = data{"session_id"}.getStr("")
-  let kind = data{"notification_type"}.getStr("")
   let title = notificationTitle(kind)
   let msg = data{"message"}.getStr("Waiting for input")
   send(
@@ -585,14 +570,8 @@ proc readStdinPayload(): JsonNode =
   except JsonParsingError, ValueError, IOError:
     nil
 
-proc stop() =
-  ## Stop event — fires "✅ Task Complete" when an assistant turn ends.
-  let data = readStdinPayload()
-  if data != nil:
-    handleStop(data)
-
 proc notification() =
-  ## Notification event — permission prompts, idle, auth, elicitation.
+  ## Notification event — permission prompts, input dialogs, idle "your turn".
   let data = readStdinPayload()
   if data != nil:
     handleNotification(data)
@@ -605,7 +584,5 @@ proc preToolUse() =
 
 when isMainModule:
   dispatchMulti(
-    [stop, cmdName = "Stop"],
-    [notification, cmdName = "Notification"],
-    [preToolUse, cmdName = "PreToolUse"],
+    [notification, cmdName = "Notification"], [preToolUse, cmdName = "PreToolUse"]
   )
