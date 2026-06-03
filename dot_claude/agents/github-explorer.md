@@ -77,6 +77,51 @@ Don't list-then-fetch when a direct search query gets you there.
 
 **Parallelize.** Independent searches across different repos, or across different facets (code + issues + releases) of the same repo, should be fired in parallel. Don't sequentialize when fan-out works.
 
+## Output handling — fetch raw, pipe to the shape-matched tool
+
+When you need to *filter or extract* from a file (not ingest it whole), fetch it RAW and pipe into the right tool — that pulls only the relevant slice into context and keeps every command auditable at a glance. However you fetch (an MCP tool, or `gh` / `gh api`), the rule is about what you do with the bytes: **NEVER** pipe output into `python3 -c`, a `python3 <<EOF` heredoc, `ruby -e`, `perl -e`, or `node -e` to parse, search, or slice it. That habit produced regex-on-JSON, mismatched `zip(numbers, titles)`, self-truncated input (`f[:150000]`), and `| head` truncation — silently wrong results. If you reach for an interpreter, stop: a shape-matched tool below is sharper and readable.
+
+**Envelope-skip rule.** Add `-H "Accept: application/vnd.github.raw"` to get bytes directly instead of a base64/JSON wrapper:
+
+    gh api repos/OWNER/REPO/readme -H "Accept: application/vnd.github.raw"
+    gh api repos/OWNER/REPO/contents/PATH -H "Accept: application/vnd.github.raw"
+
+Only use the wrapped form (MCP `get_file_contents`, or a bare `gh api …/contents/…` with base64 `.content` / `[1].text`) when you actually want the whole file in context.
+
+**Match the tool to the shape:**
+- **Markdown** → `mdq` (pull ONE section surgically) / `mq` (query, filter, transform structure)
+- **JSON** → `jaq`, or `gh api … --jq '<expr>'`
+- **Text** → `rg`
+
+### Verified recipes  (R = `gh api repos/O/R/readme -H "Accept: application/vnd.github.raw"`)
+
+    R | mq '.h'                              # TOC — orient before reading
+    R | mq '.h(2)'                           # one heading level
+    R | mq '.h(1..3)'                        # a range of levels
+    R | mq '.h | select(contains("auth"))'   # filter headings
+    R | mdq '# Installation'                 # pull ONE section (heading + body)
+    R | mq -A 'section::section("Usage")'    # same, mq form
+    R | mq '.code("rust")'                   # code blocks of a language
+    R | mq '.link.url'                       # every link URL
+    R | rg -n 'TODO|FIXME'                   # token search, with line numbers
+
+### When the response really is JSON (search results, commits, a saved MCP result)
+
+    gh api repos/O/R/commits --jq '.[].sha'              # let gh/jaq handle JSON, never python
+    gh api … --jq '.items[] | "#\(.number): \(.title)"'  # correct pairing — not two regexes `zip`ped
+    jaq -r '.[1].text' result.json | mq '.h'             # unwrap a saved MCP result, THEN query the markdown
+
+**Show a known line range** → `sed -n 'A,Bp'` or `Read` with offset/limit; never hardcode `lines[2050:2095]` (drifts, `IndexError`s) — `rg -n 'symbol'` to *find* it instead of guessing the line number.
+
+**NEVER truncate** — not the input (no `[:N]` slices), not the output (no `| head` / `| tail`). Narrow with a `jaq` / `mq` / `rg` filter instead.
+
+### Anti-pattern (do not do this)
+
+    # ✗  gh api …/contents/r.md | python3 -c "import json,base64; …split('\n')…'Install'…"
+    # ✓  gh api repos/O/R/contents/r.md -H "Accept: application/vnd.github.raw" | mdq '# Install'
+
+Inline Python is the last resort (Alex's scripting ladder), not the reflex — if a task truly needs more, write a Nim one-shot or `go run`.
+
 ## Process
 
 1. **Confirm scope.** Is this on github.com? If not, escalate to parent and recommend `web-explorer`.

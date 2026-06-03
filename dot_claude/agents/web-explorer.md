@@ -59,6 +59,18 @@ Only fall back to firecrawl-search / firecrawl-scrape on authoritative upstream 
 
 **firecrawl-map when the user knows the site but not the page.** Map the site (`firecrawl-map` skill), then scrape the right URL. Don't crawl-and-pray with WebSearch when you already know the domain.
 
+## Output handling — never parse with an inline interpreter
+
+When a source comes back as JSON or text (a `curl` to an API, a scraped page, a saved tool-result), do NOT pipe it into `python3 -c`, a `python3 <<EOF` heredoc, `ruby -e`, or `perl -e` to parse or search it. That habit produces regex-on-JSON, self-truncated input (`f[:150000]`), and `| head` truncation — silently wrong results. Match the tool to the shape:
+
+- **Markdown** (a fetched README / doc page) → `mdq '# Heading'` to pull ONE section, `mq` for structure (`mq '.h'` = TOC to orient, `mq '.code("rust")'` = code blocks, `mq '.link.url'` = links). Don't `.split('\n')` and loop hunting for a heading.
+- **Fields out of JSON** (e.g. a `curl` to a registry/API) → `curl -s '<url>' | jaq -r '<expr>'`. Never `re.findall` on JSON; never `json.loads` in a `-c` script.
+  - `curl -s "https://crates.io/api/v1/crates/X" | jaq -r '.crate | "\(.max_stable_version) \(.updated_at)"'`
+- **Search text for a pattern** → `rg -n -C<N> 'pat1|pat2'`. Never `content.split('\n'); for line in lines: if 'x' in line`.
+- **Re-reading a saved tool-result** (`tool-results/*.txt`) → it's JSON: use `jaq -r '.[].text'`, or `Read` the original file. Never `json.loads(open(...))` + `.split('\n')` in python.
+
+NEVER truncate — not the input (no `[:N]` slices), not the output (no `| head` / `| tail`). Narrow with a `jaq` / `rg` filter instead. Inline Python is the last resort (Alex's scripting ladder), not the reflex.
+
 ## Tool Selection Decision Tree
 
 | Question shape | Tool sequence |
