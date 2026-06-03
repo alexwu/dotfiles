@@ -34,6 +34,7 @@ set("x", "<F2>", '"*y', { desc = "Copy to system clipboard" })
 set("n", "<F3>", [[<cmd>let @+ = fnamemodify(expand('%'), ':.')<CR>]], { desc = "Copy relative file path" })
 set("n", "<A-BS>", "db", { desc = "Delete previous word" })
 set("i", "<A-BS>", "<C-W>", { desc = "Delete previous word" })
+set({ "n", "o", "x" }, "gl", "$", { desc = "End of line" })
 
 set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
 set("n", "]t", vim.cmd.tabnext, { desc = "Next tab" })

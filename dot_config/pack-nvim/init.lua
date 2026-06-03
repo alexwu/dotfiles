@@ -719,6 +719,7 @@ set("i", "<A-BS>", "<C-W>", { desc = "Delete previous word" })
 set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
 set("n", "]t", vim.cmd.tabnext, { desc = "Next tab" })
 set("n", "[t", vim.cmd.tabprevious, { desc = "Previous tab" })
+set({ "n", "o", "x" }, "gl", "$", { desc = "End of line" })
 
 -- Scroll half page
 local function scroll_half_page(dir)
