@@ -16,6 +16,23 @@ paths:
 - Listens on `localhost:8000` (set in the LaunchAgent argv). OpenAI-compat endpoints live under `/v1/...`; llama-swap admin endpoints (`/running`, `/health`, `/logs`, `/upstream/:model_id`, `/metrics`) sit at the root.
 - `~/.local/bin/llm-local` is the in-house wrapper for talking to it without going through codex/claude/gemini/pi CLIs — see `claude-scripts.md` for the binary, this file for the server-side facts.
 
+## llama-swap management routes
+Route table confirmed against `mostlygeek/llama-swap` `internal/server/server.go` + `api.go` (server v217, build 2026-05-22). Lifecycle-relevant subset:
+
+| Method | Path | Effect |
+|---|---|---|
+| `GET` | `/unload` | unload **all** models (plain-text `OK`); legacy |
+| `POST` | `/api/models/unload` | unload all (JSON `{"msg":"ok"}`); UI-facing |
+| `POST` | `/api/models/unload/{model...}` | unload **one** model; name is a path segment (slashes OK), no body |
+| `GET` | `/running` | list non-stopped processes (`{running:[{model,state,cmd,proxy,ttl,name,description}]}`) |
+| `GET` | `/v1/models` | OpenAI model listing (all configured + peers) |
+| `ANY` | `/upstream/{model}/{path...}` | pass-through to the model's own process; resolves the model from the path prefix, strips `/upstream/<model>` before forwarding |
+| `GET` | `/health`, `/metrics`, `/api/version` | diagnostics (`/metrics` is Prometheus; `/api/version` → `{version,commit,build_date}`) |
+| `GET` | `/logs`, `/logs/stream[/proxy\|/upstream\|/{model}]` | combined/streamed log tail (`?no-history` skips the backlog) |
+
+- **No native load/preload route.** A model loads only on-demand (first inference request) or via config `hooks.on_startup.preload`. The runtime substitute is `GET /upstream/<model>/health` — proxying *any* request through `/upstream/<model>` forces the swap-in, and `/health` is the cheapest (no token generation, no chat-template). llama-swap holds the request open through the cold-load, so it doubles as a wait-until-ready barrier. This is exactly what `llm-local load` does.
+- Unloading is **not destructive** beyond freeing the resident process — the model reloads on its next request. A default-group load (e.g. `Qwen3.5-9B`) won't evict `always-on` / `workhorse` / `code-completion` residents (group-pressure rules above), so it's safe to load a throwaway model alongside the working set.
+
 ## llama-swap groups
 Three orthogonal group flags govern how models share VRAM (schema defaults `swap: true`, `exclusive: true`, `persistent: false`). A model can only be in one group; `groups` and `matrix` are mutually exclusive (this repo uses `groups`).
 

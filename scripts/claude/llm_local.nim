@@ -18,6 +18,11 @@
 ##   models   — list models llama-swap exposes via /v1/models, with a
 ##              running indicator merged in from /running
 ##   running  — show currently-loaded models with state / backend / proxy
+##   load     — force a model to load via /upstream/<model>/health (llama-swap
+##              has no native preload endpoint; the proxy ping blocks until the
+##              cold-load finishes, so it doubles as a wait-until-ready barrier)
+##   unload   — stop one model (POST /api/models/unload/<model>) or every
+##              running model (--all → GET /unload)
 ##
 ## Resolution and prompt-role semantics for `run` match the `llm` CLI exactly:
 ##   --promptFile       USER prompt loaded from a file; joined ahead of the
@@ -45,7 +50,7 @@
 ## caller's schema JsonNode verbatim, which is awkward with strongly-typed
 ## encode.
 
-import std/[base64, httpclient, os, sets, strutils, terminal]
+import std/[base64, httpclient, os, sets, strutils, terminal, times]
 import std/json as stdjson
 import std/options as stdOptions
 import json_serialization
@@ -170,6 +175,19 @@ proc httpGetRaw(url: string, timeoutSecs: int): HttpResult =
     client.close()
   try:
     let resp = client.get(url)
+    return (resp.status.startsWith("200"), resp.body, resp.status)
+  except CatchableError as e:
+    return (false, e.msg, "")
+
+proc httpPostRaw(url: string, timeoutSecs: int, body = ""): HttpResult =
+  ## POST counterpart to httpGetRaw. The unload routes take no body; the empty
+  ## default still sends the JSON content-type llama-swap's handlers expect.
+  let client = newHttpClient(timeout = timeoutSecs * 1000)
+  defer:
+    client.close()
+  client.headers = newHttpHeaders({"Content-Type": "application/json"})
+  try:
+    let resp = client.request(url, httpMethod = HttpPost, body = body)
     return (resp.status.startsWith("200"), resp.body, resp.status)
   except CatchableError as e:
     return (false, e.msg, "")
@@ -427,6 +445,63 @@ proc runningCmd*(json = false, baseUrl = DefaultBaseUrl) =
       echo "  desc     " & r.description.get
     echo ""
 
+proc stateOf(baseUrl, model: string): string =
+  ## Best-effort current state of `model` from /running; "?" if unreachable or
+  ## the model isn't listed (e.g. already evicted).
+  result = "?"
+  let (ok, body, _) = httpGetRaw(joinUrl(baseUrl, "running"), ListTimeoutSecs)
+  if not ok:
+    return
+  var parsed: RunningResponse
+  try:
+    parsed = Json.decode(body, RunningResponse, allowUnknownFields = true)
+  except CatchableError:
+    return
+  if parsed.running.isNone:
+    return
+  for r in parsed.running.get:
+    if r.model.isSome and r.model.get == model:
+      return r.state.get("?")
+
+proc load*(baseUrl = DefaultBaseUrl, timeoutSecs = 300, model: seq[string] = @[]) =
+  ## Force one or more models to load. llama-swap exposes no preload route, so
+  ## we proxy a /health ping through /upstream/<model>, which swaps the model in
+  ## and holds the request open until it is ready — making the GET both the
+  ## trigger and the wait-until-ready barrier. Each model is loaded in turn.
+  if model.len == 0:
+    die("at least one model is required (e.g. llm-local load Qwen3.6-35B-A3B)")
+  for m in model:
+    let url = joinUrl(baseUrl, "upstream/" & m & "/health")
+    let started = epochTime()
+    let (ok, body, status) = httpGetRaw(url, timeoutSecs)
+    let elapsed = epochTime() - started
+    if not ok:
+      die("load " & m & " failed: " & status & "\n" & body)
+    echo "▶ " & m & "  loaded in " & formatFloat(elapsed, ffDecimal, 1) &
+      "s  (state: " & stateOf(baseUrl, m) & ")"
+
+proc unload*(all = false, baseUrl = DefaultBaseUrl, model: seq[string] = @[]) =
+  ## Stop running models. `--all` stops every process (GET /unload); otherwise
+  ## each named model is unloaded via POST /api/models/unload/<model>. Models
+  ## reload on their next request, so this only frees memory — it is not
+  ## destructive to anything but the in-flight resident state.
+  if all:
+    if model.len > 0:
+      die("--all unloads everything; don't also pass model names")
+    let (ok, body, status) = httpGetRaw(joinUrl(baseUrl, "unload"), ListTimeoutSecs)
+    if not ok:
+      die("unload --all failed: " & status & "\n" & body)
+    echo "unloaded all models"
+    return
+  if model.len == 0:
+    die("pass model name(s) to unload, or --all to unload every running model")
+  for m in model:
+    let url = joinUrl(baseUrl, "api/models/unload/" & m)
+    let (ok, body, status) = httpPostRaw(url, ListTimeoutSecs)
+    if not ok:
+      die("unload " & m & " failed: " & status & "\n" & body)
+    echo "unloaded " & m
+
 when isMainModule:
   import cligen
   dispatchMulti(
@@ -465,6 +540,23 @@ when isMainModule:
       cmdName = "running",
       help = {
         "json": "dump the raw /running response instead of the table",
+        "baseUrl": "llama-swap server root (no /v1 suffix)",
+      },
+    ],
+    [
+      load,
+      positional = "model",
+      help = {
+        "baseUrl": "llama-swap server root (no /v1 suffix)",
+        "timeoutSecs":
+          "max seconds to wait for the cold-load (the proxy ping blocks until ready)",
+      },
+    ],
+    [
+      unload,
+      positional = "model",
+      help = {
+        "all": "unload every running model (GET /unload) instead of named ones",
         "baseUrl": "llama-swap server root (no /v1 suffix)",
       },
     ],
