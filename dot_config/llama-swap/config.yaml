@@ -94,6 +94,10 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: false
+            # preserve past <think> blocks across multi-turn lu tool loops —
+            # cures cross-turn amnesia + restores 100% KV-cache prefix hits.
+            # No-op for single-turn classify/dictation/vision (no history).
+            preserve_thinking: true
         "${MODEL_ID}:thinking":
           temperature: 1.0
           top_p: 0.95
@@ -103,6 +107,7 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: true
+            preserve_thinking: true
 
   "Qwen3.6-27B":
     cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
@@ -118,6 +123,10 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: false
+            # preserve past <think> blocks across multi-turn lu tool loops —
+            # cures cross-turn amnesia + restores 100% KV-cache prefix hits.
+            # No-op for single-turn classify/dictation/vision (no history).
+            preserve_thinking: true
         "${MODEL_ID}:thinking":
           temperature: 1.0
           top_p: 0.95
@@ -127,6 +136,7 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: true
+            preserve_thinking: true
 
   # Abliterated ("heretic") twin of Qwen3.6-27B — uncensored vision + text.
   # Same flags/sampling as the censored 27B above; only the weights differ.
@@ -157,6 +167,10 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: false
+            # preserve past <think> blocks across multi-turn lu tool loops —
+            # cures cross-turn amnesia + restores 100% KV-cache prefix hits.
+            # No-op for single-turn classify/dictation/vision (no history).
+            preserve_thinking: true
         "${MODEL_ID}:thinking":
           temperature: 1.0
           top_p: 0.95
@@ -166,6 +180,7 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: true
+            preserve_thinking: true
 
   # Abliterated ("heretic") twin of Qwen3.6-35B-A3B — uncensored vision + text.
   # Mirrors the censored 35B-A3B flags (incl. --parallel 1 --cont-batching).
@@ -194,6 +209,10 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: false
+            # preserve past <think> blocks across multi-turn lu tool loops —
+            # cures cross-turn amnesia + restores 100% KV-cache prefix hits.
+            # No-op for single-turn classify/dictation/vision (no history).
+            preserve_thinking: true
         "${MODEL_ID}:thinking":
           temperature: 1.0
           top_p: 0.95
@@ -203,6 +222,7 @@ models:
           repetition_penalty: 1.0
           chat_template_kwargs:
             enable_thinking: true
+            preserve_thinking: true
   "Qwen3.6-27B-mlx":
     # NOTE(alexwu): MLX-VLM port of Qwen3.6-27B (mlx-community 6-bit ≈ 22.8 GB).
     # Separate entry from the GGUF version for A/B testing speed and quality.
