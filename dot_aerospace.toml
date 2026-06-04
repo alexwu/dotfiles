@@ -17,6 +17,9 @@ after-startup-command = [
   # so it won't be run twice on AeroSpace restart
   # 'exec-and-forget /opt/homebrew/bin/sketchybar',
   # 'exec-and-forget /opt/homebrew/bin/borders active_color=0xff5af78e inactive_color=0xff494d64 width=5.0 hidpi=on',
+  # Launch the gh-dash Ghostty and pin it to workspace D (global justfile
+  # recipe; `just` is on PATH via [exec.env-vars] below).
+  'exec-and-forget just -g launch-dash',
 ]
 
 exec-on-workspace-change = [
@@ -67,6 +70,14 @@ gaps.outer.top = 8
 # - 'smart' means some "smart logic". Currently, 3 and less windows will get 'tiles' layout,
 #   4 and more will get 'accordion' layout. 'smart' can change its behavior in future versions
 non-empty-workspaces-root-containers-layout-on-startup = 'smart'
+
+# Environment for exec-and-forget / after-startup-command. Guarantee Homebrew
+# is on PATH so `just` (and the aerospace CLI it calls) resolve at login.
+# See: https://nikitabobko.github.io/AeroSpace/guide#exec-env-vars
+[exec]
+inherit-env-vars = true
+[exec.env-vars]
+PATH = '/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}'
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#binding-modes
@@ -151,6 +162,9 @@ alt-s = 'workspace 0'
 alt-0 = 'workspace 0'
 alt-shift-s = 'move-node-to-workspace 0'
 alt-shift-0 = 'move-node-to-workspace 0'
+
+alt-d = 'workspace D'
+alt-shift-d = 'move-node-to-workspace D'
 
 alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
@@ -320,6 +334,13 @@ run = 'layout floating'
 [[on-window-detected]]
 if.app-id = 'dev.warp.Warp-Stable'
 run = 'move-node-to-workspace 3'
+
+# gh dash launches with --title="GitHub Dash"; this title-specific rule must stay
+# above the generic Ghostty rule below (first matching callback wins).
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+if.window-title-regex-substring = 'GitHub Dash'
+run = 'move-node-to-workspace D'
 
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'

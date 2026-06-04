@@ -326,3 +326,40 @@ lumis-regen-snazzy:
         -s 'vim.pack.add({{{{ src = "https://github.com/rktjmp/lush.nvim" }}}}, { load = true, confirm = false }); vim.opt.runtimepath:prepend(vim.fn.stdpath("data") .. "/site/pack/core/opt/lush.nvim")' \
         -o "$out"
     chezmoi re-add "$out"
+
+[doc("Launch the gh-dash Ghostty window and pin it to workspace D. Run at login by AeroSpace's after-startup-command, or by hand: J launch-dash")]
+[group("aerospace")]
+launch-dash:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bundle_id='com.mitchellh.ghostty'
+    title='GitHub Dash'
+    target_ws='D'
+
+    # All Ghostty window-ids currently titled "$title".
+    list_dash() {
+        aerospace list-windows --monitor all --app-bundle-id "$bundle_id" \
+            --format '%{window-id}|%{window-title}' \
+            | awk -F'|' -v t="$title" '$2 ~ t {print $1}' || true
+    }
+
+    # Snapshot existing dash windows so we move the one we launch, not a stray.
+    before=$(list_dash)
+
+    open -na Ghostty.app --args \
+        --config-file="$HOME/.config/ghostty/dashboard.ghostty" \
+        --title="$title" -e gh dash
+
+    # AeroSpace's on-window-detected title rule is a fast path but races
+    # Ghostty's title-set against the AX observer (~2/3 hit rate); poll for the
+    # newly-created window by id and move it so placement is deterministic.
+    # Idempotent: if the rule already put it on D, the move no-ops.
+    for _ in $(seq 1 50); do
+        new=$(awk 'NR==FNR{seen[$0]=1; next} !($0 in seen){print; exit}' \
+            <(printf '%s\n' "$before") <(list_dash))
+        if [[ -n "$new" ]]; then
+            aerospace move-node-to-workspace "$target_ws" --window-id "$new"
+            break
+        fi
+        sleep 0.1
+    done

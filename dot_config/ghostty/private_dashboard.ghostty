@@ -7,8 +7,10 @@ background-blur = macos-glass-regular
 copy-on-select = true
 cursor-style = block
 cursor-style-blink = false
-auto-update-channel = tip
-keybind = super+`=toggle_quick_terminal
-keybind = super+w=close_surface
-keybind = alt+backspace=text:\x1b\x7f
-quick-terminal-position = center
+
+confirm-close-surface = false
+keybind = cmd+t=unbind
+keybind = cmd+shift+t=unbind
+keybind = cmd+d=unbind
+keybind = cmd+shift+d=unbind
+command-palette-entry =
