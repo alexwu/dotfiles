@@ -298,6 +298,42 @@ models:
     cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/ggml-org/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ggml-org/gemma-4-E4B-it-GGUF/mmproj-gemma-4-E4B-it-bf16.gguf
     timeouts:
       responseHeader: 120
+  # Dense 12B "Unified" omni GGUF — text + image + AUDIO from ONE file set. The
+  # only DENSE gemma-4 that does audio (E2B/E4B/12B do audio; 26B-MoE & 31B are
+  # vision-only). "Unified" = encoder-free: raw image patches and audio waveforms
+  # project straight into the decoder via lightweight linear layers — NOT the E4B
+  # Conformer audio encoder, so E4B's "bf16-mmproj-required, f16 garbles audio"
+  # finding does NOT transfer 1:1. Picked F32 mmproj anyway: gemma-4 audio is
+  # precision-sensitive and F32 strictly dominates bf16 (+34MB only), matching the
+  # 31B/26B F32 mmproj convention — removes all audio-precision doubt for free.
+  # Q6_K weights (9.8GB). Flags mirror the gemma family: --reasoning off (peg-gemma4
+  # thought-channel wedge fix, see 31B NOTE) + Google's gemma sampling. --jinja is
+  # REQUIRED here (multimodal -it chat template + audio path; README mandates it).
+  # AUDIO via llama-server: an `input_audio` content part (data + format:wav), 16kHz
+  # MONO wav, audio placed AFTER text, 30s max chunk. (Differs from the older E4B
+  # recipe — image_url data:audio URL, audio BEFORE text — this newer unified arch
+  # uses the OpenAI-style input_audio part instead.) Weights via `pueue` (label
+  # claude: dl-gemma4-12b-it-q6k). Default group — promote to always-on if it earns
+  # a router/audio job. Ref: hf.co/unsloth/gemma-4-12b-it-GGUF.
+  # BINARY OVERRIDE: this entry calls the explicit mise llama-server (build 9518)
+  # instead of bare `llama-server`, because Homebrew's stock binary is pinned at
+  # 9430 which dies on the gemma4uv projector ("unknown projector type: gemma4uv",
+  # llama.cpp#24120). The gemma4uv loader landed in b9503; 9518 has it. Rest of the
+  # fleet still resolves bare `llama-server` → Homebrew 9430. Revert this to bare
+  # once `brew info llama.cpp` stable is ≥ 9493 (mise install is the "for now" path).
+  # STATUS: TEXT + AUDIO + VISION all verified working (2026-06-04). The 12B AUDIO
+  # loop (llama.cpp#24138 — infinite reasoning-token spiral on our exact F32 mmproj)
+  # only bites with thinking ENABLED; this entry's `--reasoning off` sidesteps it.
+  # Verified on a 7s clip: BOTH transcription AND comprehension returned
+  # finish_reason=stop, clean bounded output, no loop. VISION: described a synthetic
+  # shapes+text image accurately, OCR correct, NO #24146 <unused49> garbage. CAVEAT:
+  # long audio untested (the #24138 report used a 12-min clip) — re-test before
+  # trusting long inputs; if a long clip spirals, that's the bug resurfacing.
+  "gemma-4-12b-it":
+    cmd: /Users/jamesbombeelu/.local/share/mise/installs/github-ggml-org-llama-cpp/latest/llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q6_K.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/mmproj-F32.gguf
+    ttl: 6000
+    timeouts:
+      responseHeader: 120
   "Dark-Nexus-24B-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/ReadyArt/Dark-Nexus-24B-v2.0-GGUF/Dark-Nexus-24B-v2.0-Q5_K_M.gguf --no-webui
     ttl: 28800

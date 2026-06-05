@@ -1,0 +1,30 @@
+// Dashboard zellij config — separate from the daily config.kdl. Loaded via:
+//   zellij --config ~/.config/zellij/dashboard.config.kdl --layout dashboard
+// Adds tab-nav keybinds on top of zellij defaults. Starts unlocked; the kitty
+// keyboard protocol is on so Ctrl+Tab and Super(Cmd)+N actually reach zellij.
+// Ghostty must also free Cmd+1-9 (see ghostty/private_dashboard.ghostty).
+
+keybinds {
+    normal {
+        bind "Ctrl Tab" { GoToNextTab; }
+        bind "Ctrl Shift Tab" { GoToPreviousTab; }
+        bind "Super 1" { GoToTab 1; }
+        bind "Super 2" { GoToTab 2; }
+        bind "Super 3" { GoToTab 3; }
+        bind "Super 4" { GoToTab 4; }
+        bind "Super 5" { GoToTab 5; }
+        bind "Super 6" { GoToTab 6; }
+        bind "Super 7" { GoToTab 7; }
+        bind "Super 8" { GoToTab 8; }
+        bind "Super 9" { GoToTab 9; }
+        // Universal vim-style pane nav (matches wezterm/kitty/nvim Ctrl+hjkl).
+        bind "Ctrl h" { MoveFocusOrTab "Left"; }
+        bind "Ctrl j" { MoveFocus "Down"; }
+        bind "Ctrl k" { MoveFocus "Up"; }
+        bind "Ctrl l" { MoveFocusOrTab "Right"; }
+    }
+}
+
+support_kitty_keyboard_protocol true
+default_mode "normal"
+pane_frames false

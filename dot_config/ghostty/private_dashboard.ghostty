@@ -1,9 +1,6 @@
 font-family = "Fira Code Retina"
 font-family = "FiraCode Nerd Font Mono Ret"
 font-size = 14.0
-theme = "Snazzy"
-background-opacity = 0.85
-background-blur = macos-glass-regular
 copy-on-select = true
 cursor-style = block
 cursor-style-blink = false
@@ -13,4 +10,14 @@ keybind = cmd+t=unbind
 keybind = cmd+shift+t=unbind
 keybind = cmd+d=unbind
 keybind = cmd+shift+d=unbind
+# Free Cmd+1-9 (default goto_tab) so they pass through to zellij tab nav.
+keybind = cmd+1=unbind
+keybind = cmd+2=unbind
+keybind = cmd+3=unbind
+keybind = cmd+4=unbind
+keybind = cmd+5=unbind
+keybind = cmd+6=unbind
+keybind = cmd+7=unbind
+keybind = cmd+8=unbind
+keybind = cmd+9=unbind
 command-palette-entry =

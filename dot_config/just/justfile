@@ -363,3 +363,41 @@ launch-dash:
         fi
         sleep 0.1
     done
+
+[doc("Launch the zellij dashboard wall (btm + agent-sessions + pueue + gh-dash) and pin it to workspace D. By hand: J launch-dashboard")]
+[group("aerospace")]
+launch-dashboard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bundle_id='com.mitchellh.ghostty'
+    title='GitHub Dash'
+    target_ws='D'
+
+    list_dash() {
+        aerospace list-windows --monitor all --app-bundle-id "$bundle_id" \
+            --format '%{window-id}|%{window-title}' \
+            | awk -F'|' -v t="$title" '$2 ~ t {print $1}' || true
+    }
+
+    # Snapshot existing dash windows so we move the one we launch, not a stray.
+    before=$(list_dash)
+
+    # Login shell (zsh -lc) so the panes inherit a full PATH even when this is
+    # invoked from AeroSpace's minimal-env after-startup-command. `exec` so the
+    # window closes cleanly when zellij exits. Bare `--layout dashboard` resolves
+    # from ~/.config/zellij/layouts/; do NOT add `--session` (it turns --layout
+    # into a tab-add against a non-existent session).
+    open -na Ghostty.app --args \
+        --config-file="$HOME/.config/ghostty/dashboard.ghostty" \
+        --title="$title" \
+        -e zsh -lc 'exec zellij --config "$HOME/.config/zellij/dashboard.config.kdl" --layout dashboard'
+
+    for _ in $(seq 1 50); do
+        new=$(awk 'NR==FNR{seen[$0]=1; next} !($0 in seen){print; exit}' \
+            <(printf '%s\n' "$before") <(list_dash))
+        if [[ -n "$new" ]]; then
+            aerospace move-node-to-workspace "$target_ws" --window-id "$new"
+            break
+        fi
+        sleep 0.1
+    done

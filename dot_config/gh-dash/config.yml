@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=https://gh-dash.dev/schema.json
+prSections:
+  - title: Work · My PRs
+    filters: is:open author:@me org:cleverific
+  - title: Work · Needs Review
+    filters: is:open review-requested:@me org:cleverific
+  - title: Work · Involved
+    filters: is:open involves:@me -author:@me org:cleverific
+  - title: Personal · My PRs
+    filters: is:open author:@me user:alexwu
+  - title: Personal · Needs Review
+    filters: is:open review-requested:@me user:alexwu
+  - title: Personal · Involved
+    filters: is:open involves:@me -author:@me user:alexwu
+issuesSections:
+  - title: Work · My Issues
+    filters: is:open author:@me org:cleverific
+  - title: Work · Assigned
+    filters: is:open assignee:@me org:cleverific
+  - title: Work · Involved
+    filters: is:open involves:@me -author:@me org:cleverific
+  - title: Personal · My Issues
+    filters: is:open author:@me user:alexwu
+  - title: Personal · Assigned
+    filters: is:open assignee:@me user:alexwu
+  - title: Personal · Involved
+    filters: is:open involves:@me -author:@me user:alexwu
+notificationsSections:
+  - title: All
+    filters: ""
+  - title: Created
+    filters: reason:author
+  - title: Participating
+    filters: reason:participating
+  - title: Mentioned
+    filters: reason:mention
+  - title: Review Requested
+    filters: reason:review-requested
+  - title: Assigned
+    filters: reason:assign
+  - title: Subscribed
+    filters: reason:subscribed
+  - title: Team Mentioned
+    filters: reason:team-mention
+repo:
+  branchesRefetchIntervalSeconds: 30
+  prsRefetchIntervalSeconds: 60
+defaults:
+  preview:
+    open: true
+    width: 0.45
+  prsLimit: 20
+  prApproveComment: LGTM
+  issuesLimit: 20
+  notificationsLimit: 20
+  view: prs
+  layout:
+    prs:
+      updatedAt:
+        width: 5
+      createdAt:
+        width: 5
+      repo:
+        width: 20
+      author:
+        width: 15
+      authorIcon:
+        hidden: false
+      assignees:
+        width: 20
+        hidden: true
+      base:
+        width: 15
+        hidden: true
+      lines:
+        width: 15
+    issues:
+      updatedAt:
+        width: 5
+      createdAt:
+        width: 5
+      repo:
+        width: 15
+      creator:
+        width: 10
+      creatorIcon:
+        hidden: false
+      assignees:
+        width: 20
+        hidden: true
+  refetchIntervalMinutes: 30
+keybindings: {}
+repoPaths: {}
+theme:
+  ui:
+    sectionsShowCount: true
+    table:
+      showSeparator: true
+      compact: false
+pager:
+  diff: ""
+confirmQuit: false
+showAuthorIcons: true
+smartFilteringAtLaunch: true
+includeReadNotifications: true
