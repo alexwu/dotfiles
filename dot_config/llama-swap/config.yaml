@@ -6,7 +6,6 @@ groups:
     swap: false
     exclusive: false
     members:
-      - "Qwen3.5-9B-MLX-4bit"
       # Dictation-cleanup hot path (run multiple times/hour) — kept resident so
       # every cleanup is instant, never paying the ~6s cold-load. ~24GB RSS /
       # ~4GB phys; coexists with workhorse models (always-on is never evicted).
@@ -54,7 +53,6 @@ groups:
     persistent: true
     members:
       - "Qwen3.6-27B"
-      - "Qwen3.6-35B-A3B"
       - "Qwen3.6-27B-heretic"
       - "Qwen3.6-35B-A3B-heretic"
 

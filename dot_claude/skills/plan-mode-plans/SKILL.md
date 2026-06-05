@@ -73,6 +73,8 @@ Before reading anything, state:
 - **Where** it likely lives (educated guess from project structure)
 - **What you don't know** yet (explicit unknowns)
 
+**If the architecture, component boundaries, and build order aren't settled yet, you skipped the design phase.** This skill is *convergent* — it turns a settled design into a file-level plan. It assumes the goal, the architecture (components, source of truth, interfaces), the build sequence, and the non-goals are already decided. A buildable-but-undesigned idea ("I want to build a clipboard-history app with one source of truth and multiple clients") belongs in `super-brainstorming` first: that's where architecture, the data model, sequencing, and blind spots get worked out. Brainstorming hands its settled design here; if it ran, fold that recap straight into the Goal / Context / Decisions / Approach sections instead of re-deriving it. The clarification in Phase 3 below is for *code-level* ambiguities surfaced by exploration — not for "what's the architecture", which should already be answered.
+
 ## Phase 2: Deep Exploration
 
 **Minimum exploration before writing any plan:**
