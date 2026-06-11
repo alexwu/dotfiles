@@ -15,8 +15,14 @@ local toggle_terminal = wezterm.plugin.require("https://github.com/zsh-sage/togg
 --
 -- Absolute path is required: wezterm spawns a non-login non-interactive
 -- zsh that never sources .zshrc/.zprofile, so ~/.local/bin isn't on PATH.
+-- Full homebrew-zsh path matters beyond execution: wezterm copies this
+-- argv0 into every pane's SHELL env var, and atuin's pty-proxy respawns
+-- whatever $SHELL says. A bare "zsh" resolves through the minimal launchd
+-- PATH to Apple /bin/zsh, whose exec-time env is hidden from `ps eww` —
+-- breaking zmx-env/zmx-ps session inspection.
 local zn_path = wezterm.home_dir .. "/.local/bin/zn"
-local zmx_cmd = { "zsh", "-c", zn_path .. "; exec zsh -l" }
+local zsh = "/opt/homebrew/bin/zsh"
+local zmx_cmd = { zsh, "-c", zn_path .. "; exec " .. zsh .. " -l" }
 
 ---@class WeztermConfig
 local config = {}
