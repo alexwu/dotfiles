@@ -368,9 +368,9 @@ launch-dash:
 # Each profile dir holds keyN.txt (DuckyScript source) + keyN.dsb (compiled
 # bytecode the device actually runs) + config.txt (labels/colors). The device
 # executes the .dsb, so a .txt edit MUST be recompiled or the change is ignored.
-# Compiler: github.com/duckypad/DuckStack (needs Python 3.10+). Override the path
-# with $DUCKYPAD_COMPILER.
-DUCKYPAD_COMPILER := env('DUCKYPAD_COMPILER', home_directory() / "Code/DuckStack/ds_compiler/dsvm_make_bytecode.py")
+# Compiler: github.com/duckypad/DuckStack (needs Python 3.10+), auto-cloned to
+# ~/.local/opt/DuckStack by chezmoi (.chezmoiexternal.toml). Override with $DUCKYPAD_COMPILER.
+DUCKYPAD_COMPILER := env('DUCKYPAD_COMPILER', home_directory() / ".local/opt/DuckStack/ds_compiler/dsvm_make_bytecode.py")
 
 [doc("Print the mounted duckyPad SD card path (detected by its dpp_config.txt serial signature, not a hardcoded volume name).")]
 [group("duckypad")]

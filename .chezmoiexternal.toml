@@ -9,3 +9,9 @@
     type = "git-repo"
     url = "https://gitlab.com/phoneybadger/pokemon-colorscripts.git"
     refreshPeriod = "168h"
+
+# DuckStack: duckyScript -> .dsb compiler used by the `J duckypad-*` recipes.
+[".local/opt/DuckStack"]
+    type = "git-repo"
+    url = "https://github.com/duckypad/DuckStack.git"
+    refreshPeriod = "168h"
