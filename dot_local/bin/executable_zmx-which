@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# zmx-which — which zmx session is each Claude agent running in?
+#
+# Cross-links `claude agents --json` pids to zmx sessions by reading each
+# agent's exec-time env snapshot (KERN_PROCARGS2 via `ps eww`) for ZMX_SESSION.
+# Works because claude is a third-party binary; Apple platform binaries hide
+# their env (see zmx-env).
+#
+# Usage: zmx-which                 # full agent -> session table
+#        zmx-which <session|pid>   # rows matching one session name or agent pid
+
+set -uo pipefail
+export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}")"
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+filter="${1:-}"
+b=$'\e[1m'; dim=$'\e[2m'; rst=$'\e[0m'
+
+# session -> clients count, for the attach-state column
+declare -A CLIENTS
+while IFS=$'\t' read -r n c; do
+  [[ -n "${n:-}" ]] && CLIENTS[$n]=$c
+done < <(zmx list 2>/dev/null | awk -F'\t' '{
+    delete a
+    for (i=1; i<=NF; i++) {
+      n = index($i, "="); if (n == 0) continue
+      k = substr($i, 1, n-1); gsub(/^[^a-z_]+/, "", k)
+      a[k] = substr($i, n+1)
+    }
+    if (a["name"] != "") print a["name"] "\t" a["clients"]
+  }')
+
+printf '%s%-6s %-12s %-8s %-40s %-3s %s%s\n' "$b" PID KIND STATUS SESSION CL CWD "$rst"
+claude agents --json 2>/dev/null \
+  | jaq -r '.[] | select(.pid != null) | [(.pid|tostring), .kind, (.status // .state // "?"), .cwd] | @tsv' \
+  | while IFS=$'\t' read -r apid akind ast acwd; do
+      zs=$(ps eww -p "$apid" 2>/dev/null | rg -o -m1 'ZMX_SESSION=[^ ]+' | cut -d= -f2)
+      if [[ -n "$filter" && "$zs" != "$filter" && "$apid" != "$filter" ]]; then continue; fi
+      cl="-"
+      [[ -n "$zs" ]] && cl="${CLIENTS[$zs]:--}"
+      printf '%-6s %-12s %-8s %-40s %-3s %s%s%s\n' \
+        "$apid" "$akind" "$ast" "${zs:--}" "$cl" "$dim" "$acwd" "$rst"
+    done

@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# zmx-env — show env vars of the processes running inside a zmx session.
+#
+# Env comes from the kernel's exec-time snapshot (KERN_PROCARGS2 via `ps eww`):
+#   - it reflects the env AT EXEC TIME, not live mutations since
+#   - Apple platform binaries (/bin/zsh, /bin/sh, ...) hide theirs entirely;
+#     third-party processes (claude, node, codex, ...) show theirs
+#
+# Usage: zmx-env <session> [rg-pattern]...
+#        zmx-env demon-shuu ZMX_ CLAUDE_ WEZTERM_   # patterns are OR'd
+
+set -uo pipefail
+export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}")"
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+session="${1:-}"
+if [[ -z "$session" ]]; then
+  echo "usage: zmx-env <session> [rg-pattern]..." >&2
+  exit 2
+fi
+shift
+rg_args=()
+for p in "$@"; do rg_args+=(-e "$p"); done
+
+b=$'\e[1m'; dim=$'\e[2m'; rst=$'\e[0m'
+
+daemon=$(zmx list 2>/dev/null | awk -F'\t' -v want="$session" '{
+    delete a
+    for (i=1; i<=NF; i++) {
+      n = index($i, "="); if (n == 0) continue
+      k = substr($i, 1, n-1); gsub(/^[^a-z_]+/, "", k)
+      a[k] = substr($i, n+1)
+    }
+    if (a["name"] == want) { print a["pid"]; exit }
+  }')
+if [[ -z "$daemon" ]]; then
+  echo "zmx-env: no session named '$session'" >&2
+  exit 1
+fi
+
+snapshot=$(ps -axo pid=,ppid=,comm=)
+
+# All descendant pids of the daemon, breadth-first, as "pid<TAB>name" lines.
+descendants=$(awk -v root="$daemon" '
+  {
+    pid=$1; ppid=$2; comm=$3
+    for (i=4; i<=NF; i++) comm = comm " " $i
+    kids[ppid] = kids[ppid] " " pid; name[pid] = comm
+  }
+  END {
+    n = split(kids[root], q, " ")
+    for (qi=1; qi<=n; qi++) if (q[qi] != "") queue[++tail] = q[qi]
+    while (head < tail) {
+      p = queue[++head]
+      print p "\t" name[p]
+      m = split(kids[p], q2, " ")
+      for (qi=1; qi<=m; qi++) if (q2[qi] != "") queue[++tail] = q2[qi]
+    }
+  }' <<< "$snapshot")
+
+if [[ -z "$descendants" ]]; then
+  echo "session '$session' (daemon $daemon) has no running processes"
+  exit 0
+fi
+
+while IFS=$'\t' read -r pid name; do
+  printf '%s== %s %s (%s)%s\n' "$b" "$session" "$pid" "$name" "$rst"
+  # ps eww line: PID TT STAT TIME COMMAND VAR=v VAR=v ... — tokens matching
+  # NAME= start a var; bare tokens are continuations of a space-containing value.
+  env_out=$(ps eww -p "$pid" 2>/dev/null | awk 'NR > 1 {
+      cur = ""
+      for (i=5; i<=NF; i++) {
+        if ($i ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { if (cur != "") print cur; cur = $i }
+        else if (cur != "") cur = cur " " $i
+      }
+      if (cur != "") print cur
+    }' | sort)
+  if (( ${#rg_args[@]} > 0 )); then
+    env_out=$(printf '%s\n' "$env_out" | rg -i "${rg_args[@]}" || true)
+  fi
+  if [[ -z "$env_out" ]]; then
+    printf '%s(no env visible — exec-time snapshot unavailable; Apple platform binaries hide theirs)%s\n' "$dim" "$rst"
+  else
+    printf '%s\n' "$env_out"
+  fi
+  echo
+done <<< "$descendants"

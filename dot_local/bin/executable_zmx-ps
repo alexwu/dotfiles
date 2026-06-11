@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# zmx-ps — every zmx session as JSON: session info, descendant processes,
+# and a busy/idle verdict. The `zmx list --json` that zmx doesn't have.
+#
+# Schema per session:
+#   { name, pid, clients, created, age_s, start_dir, current,
+#     state: "busy"|"idle", busy_with: <comm>|null,
+#     procs: [ { pid, etime, cpu, rss_kb, command } ] }
+#
+# "busy" = any descendant that isn't shell/atuin-pty-proxy infrastructure.
+#
+# Usage: zmx-ps [filters]
+#   --name RE        session name matches RE (case-insensitive)
+#   --dir RE         start_dir matches RE
+#   --hosting RE     any descendant command matches RE (e.g. claude, codex)
+#   --detached       clients == 0          --attached   clients > 0
+#   --busy           working procs exist   --idle       infrastructure only
+#   --names          print matching session names only (for xargs)
+#
+# Examples:
+#   zmx-ps --detached --idle --names | xargs zmx kill
+#   zmx-ps --hosting claude | jaq -r '.[] | "\(.name)\t\(.procs | length) procs"'
+#   zmx-ps | jaq '[.[] | select(.age_s > 86400*5)]'
+
+set -uo pipefail
+export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}")"
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+f_name="" f_dir="" f_hosting="" f_attach="" f_state="" names_only=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --name)     f_name="${2:?--name needs a pattern}"; shift 2 ;;
+    --dir)      f_dir="${2:?--dir needs a pattern}"; shift 2 ;;
+    --hosting)  f_hosting="${2:?--hosting needs a pattern}"; shift 2 ;;
+    --detached) f_attach="detached"; shift ;;
+    --attached) f_attach="attached"; shift ;;
+    --busy)     f_state="busy"; shift ;;
+    --idle)     f_state="idle"; shift ;;
+    --names)    names_only=1; shift ;;
+    -h|--help)  awk 'NR > 1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "$0"; exit 0 ;;
+    *) echo "zmx-ps: unknown flag '$1' (see --help)" >&2; exit 2 ;;
+  esac
+done
+
+# One pass: snapshot (space-split) + parsed sessions (TSV), emitting
+#   S <name> <pid> <clients> <created> <dir> <current>
+#   P <session> <pid> <etime> <cpu> <rss> <command>
+tagged=$(awk '
+  NR == FNR {
+    pid=$1; ppid=$2; et=$3; cpu=$4; rss=$5
+    cmd=$6; for (i=7; i<=NF; i++) cmd = cmd " " $i
+    kids[ppid] = kids[ppid] " " pid
+    info[pid] = pid "\t" et "\t" cpu "\t" rss "\t" cmd
+    next
+  }
+  {
+    split($0, f, "\t")  # name pid clients created dir current
+    print "S\t" $0
+    head = tail = 0; delete queue
+    n = split(kids[f[2]], q, " ")
+    for (qi=1; qi<=n; qi++) if (q[qi] != "") queue[++tail] = q[qi]
+    while (head < tail) {
+      p = queue[++head]
+      print "P\t" f[1] "\t" info[p]
+      m = split(kids[p], q2, " ")
+      for (qi=1; qi<=m; qi++) if (q2[qi] != "") queue[++tail] = q2[qi]
+    }
+  }' \
+  <(ps -axo pid=,ppid=,etime=,%cpu=,rss=,command=) \
+  <(zmx list 2>/dev/null | awk -F'\t' '{
+      cur = ($0 ~ /^→/) ? 1 : 0
+      delete a
+      for (i=1; i<=NF; i++) {
+        n = index($i, "="); if (n == 0) continue
+        k = substr($i, 1, n-1); gsub(/^[^a-z_]+/, "", k)
+        a[k] = substr($i, n+1)
+      }
+      if (a["name"] != "")
+        print a["name"] "\t" a["pid"] "\t" a["clients"] "\t" a["created"] "\t" a["start_dir"] "\t" cur
+    }'))
+
+out=$(printf '%s\n' "$tagged" | jaq -R -s \
+  --arg now "$(date +%s)" \
+  --arg name "$f_name" --arg dir "$f_dir" --arg hosting "$f_hosting" \
+  --arg attach "$f_attach" --arg state "$f_state" '
+  def base: (split(" ") | .[0]) | (split("/") | .[-1]) | ltrimstr("-");
+  def infra: . as $c | ($c | base) as $b
+    | (["sh","bash","zsh","fish","dash"] | index($b) != null)
+      or ($b == "atuin" and ($c | contains("pty-proxy")));
+  (split("\n") | map(select(length > 0) | split("\t"))) as $rows
+  | ($rows | map(select(.[0] == "P") | {
+      session: .[1], pid: (.[2] | tonumber), etime: .[3],
+      cpu: (.[4] | tonumber), rss_kb: (.[5] | tonumber),
+      command: (.[6:] | join("\t"))
+    })) as $procs
+  | $rows
+  | map(select(.[0] == "S")
+    | { name: .[1], pid: (.[2] | tonumber), clients: (.[3] | tonumber),
+        created: (.[4] | tonumber), start_dir: .[5], current: (.[6] == "1") }
+    | .age_s = (($now | tonumber) - .created)
+    | . as $s
+    | .procs = ($procs | map(select(.session == $s.name) | del(.session)))
+    | (.procs | map(select((.command | infra) | not))) as $work
+    | .state = (if ($work | length) > 0 then "busy" else "idle" end)
+    | .busy_with = (if ($work | length) > 0 then ($work[0].command | base) else null end))
+  | map(select($name == "" or (.name | test($name; "i"))))
+  | map(select($dir == "" or (.start_dir | test($dir; "i"))))
+  | map(select($attach == "" or
+      (if $attach == "detached" then .clients == 0 else .clients > 0 end)))
+  | map(select($state == "" or .state == $state))
+  | map(select($hosting == "" or (.procs | any(.command | test($hosting; "i")))))
+')
+
+if (( names_only )); then
+  printf '%s\n' "$out" | jaq -r '.[].name'
+else
+  printf '%s\n' "$out"
+fi
