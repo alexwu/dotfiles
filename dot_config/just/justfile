@@ -364,6 +364,82 @@ launch-dash:
         sleep 0.1
     done
 
+# duckyPad Pro: edit DuckyScript profiles without the configurator GUI.
+# Each profile dir holds keyN.txt (DuckyScript source) + keyN.dsb (compiled
+# bytecode the device actually runs) + config.txt (labels/colors). The device
+# executes the .dsb, so a .txt edit MUST be recompiled or the change is ignored.
+# Compiler: github.com/duckypad/DuckStack (needs Python 3.10+). Override the path
+# with $DUCKYPAD_COMPILER.
+DUCKYPAD_COMPILER := env('DUCKYPAD_COMPILER', home_directory() / "Code/DuckStack/ds_compiler/dsvm_make_bytecode.py")
+
+[doc("Print the mounted duckyPad SD card path (detected by its dpp_config.txt serial signature, not a hardcoded volume name).")]
+[group("duckypad")]
+duckypad-card:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    shopt -s nullglob
+    for cfg in /Volumes/*/dpp_config.txt; do
+        if rg -q '^serial_number[[:space:]]+DP24' "$cfg"; then
+            dirname "$cfg"
+            exit 0
+        fi
+    done
+    echo "duckypad-card: no duckyPad card found under /Volumes (plugged in and mounted?)" >&2
+    exit 1
+
+[doc("Compile every keyN.txt -> keyN.dsb in a profile dir. Usage: J duckypad-build path/to/profile_Foo")]
+[group("duckypad")]
+[no-cd]
+duckypad-build PROFILE:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    shopt -s nullglob
+    profile="{{ PROFILE }}"
+    compiler="{{ DUCKYPAD_COMPILER }}"
+    [[ -d "$profile" ]] || { echo "duckypad-build: '$profile' is not a directory" >&2; exit 1; }
+    [[ -f "$compiler" ]] || { echo "duckypad-build: compiler not found at '$compiler' (clone github.com/duckypad/DuckStack or set \$DUCKYPAD_COMPILER)" >&2; exit 1; }
+    profile="$(cd "$profile" && pwd)"
+    # The DuckStack CLI unconditionally dumps pgmlst0/1/2 debug files into cwd;
+    # run it inside a throwaway dir so the debris never lands in the repo or a profile.
+    scratch="$(mktemp -d)"
+    trap 'rm -rf "$scratch"' EXIT
+    count=0
+    for txt in "$profile"/key*.txt; do
+        dsb="${txt%.txt}.dsb"
+        if ! ( cd "$scratch" && python3 "$compiler" "$txt" "$dsb" ) >/dev/null 2>&1; then
+            echo "duckypad-build: FAILED to compile $txt — compiler output:" >&2
+            ( cd "$scratch" && python3 "$compiler" "$txt" "$dsb" ) >&2 || true
+            exit 1
+        fi
+        count=$((count + 1))
+    done
+    echo "duckypad-build: compiled $count key(s) in $(basename "$profile")"
+
+[confirm("Copy this profile onto the duckyPad card? Overwrites the matching profile on the device.")]
+[doc("Build a profile then mirror it onto the duckyPad card and verify the bytecode landed intact. Usage: J duckypad-push path/to/profile_Foo")]
+[group("duckypad")]
+[no-cd]
+duckypad-push PROFILE: (duckypad-build PROFILE)
+    #!/usr/bin/env bash
+    set -euo pipefail
+    shopt -s nullglob
+    profile="{{ PROFILE }}"
+    profile="${profile%/}"
+    name="$(basename "$profile")"
+    card="$({{ just_executable() }} -g duckypad-card)"
+    dest="$card/$name"
+    rsync -a --exclude='._*' --exclude='.DS_Store' "$profile/" "$dest/"
+    /usr/sbin/dot_clean "$card" >/dev/null 2>&1 || true
+    fail=0
+    for dsb in "$profile"/key*.dsb; do
+        if ! cmp -s "$dsb" "$dest/$(basename "$dsb")"; then
+            echo "duckypad-push: VERIFY MISMATCH on $(basename "$dsb")" >&2
+            fail=1
+        fi
+    done
+    [[ $fail -eq 0 ]] || { echo "duckypad-push: verification failed — card may be out of sync" >&2; exit 1; }
+    echo "duckypad-push: '$name' synced to $card and verified"
+
 [doc("Launch the zellij dashboard wall (btm + agent-sessions + pueue + gh-dash) and pin it to workspace D. By hand: J launch-dashboard")]
 [group("aerospace")]
 launch-dashboard:
