@@ -10,7 +10,7 @@ Reference docs for this repo are split across `.claude/rules/`:
 | `mise.md` | mise config, tool backends, Rust toolchain, tool list |
 | `git.md` | Git config (delta/difft/signing/LFS), Lazygit |
 | `desktop.md` | AeroSpace, JankyBorders, Sketchybar, Hammerspoon, Yazi |
-| `terminals.md` | Ghostty, WezTerm, Kitty, Zellij, Petname (DBZ) |
+| `terminals.md` | Ghostty, WezTerm, Kitty, zmx (zn, zmx-* tools, session-shell chain), Zellij, Petname (DBZ) |
 | `editors.md` | Neovim (both configs), Neovide |
 | `claude-scripts.md` | dictate.py, scripts/claude/ hooks, Nim gotchas |
 | `claude-code.md` | Custom skills, subagents, Claude Code hook mechanics |

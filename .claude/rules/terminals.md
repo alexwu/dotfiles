@@ -37,6 +37,18 @@ paths:
 - `macos_option_as_alt yes`
 - Navigation integrated with nvim via `pass_keys.py` kitten (`ctrl+hjkl`)
 
+## zmx
+- Session persistence (the keep-alive half of tmux); every wezterm window/tab/split auto-attaches to a fresh DBZ-named session via `zn` (wezterm `default_prog` → `zsh -c "zn; exec zsh -l"`)
+- `dot_local/bin/executable_zn` — `export SHELL=/opt/homebrew/bin/zsh` + `exec zmx attach "$(dbzname)"`
+- **Session shells are homebrew zsh, deliberately.** Three-layer chain: wezterm copies `zmx_cmd`'s argv0 into every pane's `SHELL` env (appends duplicates; getenv takes the first), zmx's daemon spawns the login `$SHELL`, and atuin's hex pty-proxy (`exec atuin pty-proxy` in zshrc) respawns `$SHELL` via portable_pty. Bare `"zsh"` resolves through the minimal launchd PATH to Apple `/bin/zsh`, whose exec-time env is hidden from `ps eww` (KERN_PROCARGS2 — Apple platform binaries only); homebrew zsh exposes it. Hence full paths in wezterm.lua's `zmx_cmd` AND the `SHELL` export in `zn`.
+- Inspection/cleanup tools in `dot_local/bin/` (bash prototypes, same convention as `agent-sessions`/`mission-control`):
+  - `zmx-ps` — every session as JSON (info + descendant procs + busy/idle verdict); filter flags `--name/--dir/--hosting RE`, `--detached/--attached`, `--busy/--idle`, `--names` for xargs. The `zmx list --json` zmx doesn't have.
+  - `zmx-reap [--kill]` — kill detached sessions whose process tree is idle (shells/atuin-proxy only); dry-run by default, busy sessions always skipped
+  - `zmx-which [session|pid]` — map `claude agents --json` pids → zmx sessions via `ZMX_SESSION` in their env
+  - `zmx-env <session> [rg-pattern]...` — env vars of a session's processes (patterns OR'd)
+- Known edge: `zmx list`'s pid IS the session's root process; the tools only inspect *descendants*, so a session created as `zmx attach name <cmd>` (root = workload, no children) reads as idle
+- **Footgun:** `zmx attach <other>` from INSIDE a session doesn't nest — it switches the current client (the user's pane!). Test session spawning with `wezterm cli spawn` instead
+
 ## Zellij
 - Config: `dot_config/zellij/config.kdl`
 - Theme: snazzy (custom defined in config)
