@@ -24,3 +24,6 @@ __pycache__
 # Compiled Nim test binaries (built in-place by `nim c -r`; .nim sources stay tracked)
 scripts/**/test_*
 !scripts/**/test_*.nim
+
+# duckyPad compiled bytecode — reproducible from keyN.txt via `J duckypad-build`; track source only
+scripts/duckypad/**/*.dsb
