@@ -1,0 +1,31 @@
+z3 Lulu
+x3 Pick
+z4 Clip
+x4 board
+z5 Missn
+x5 Ctrl
+z6 Aero
+x6 Ovrvw
+z17 Esc
+z18 Dicta
+x18 te
+z19 Cmd
+x19 Mode
+z20 Enter
+z21 Vol+
+z22 Vol-
+z23 Mute
+z24 Layer
+x24 Next
+z25 Layer
+x25 Prev
+z26 Home
+BG_COLOR 20 20 30
+SWCOLOR_3 180 120 255
+SWCOLOR_4 180 120 255
+SWCOLOR_5 255 140 40
+SWCOLOR_6 255 140 40
+SWCOLOR_17 220 60 60
+SWCOLOR_18 0 200 255
+SWCOLOR_19 0 200 255
+SWCOLOR_20 80 220 120
