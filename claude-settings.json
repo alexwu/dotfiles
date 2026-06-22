@@ -125,7 +125,7 @@
         ]
       },
       {
-        "matcher": "AskUserQuestion",
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|WebFetch|AskUserQuestion",
         "hooks": [
           {
             "type": "command",
@@ -156,6 +156,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|WebFetch|AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/notify PostToolUse"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "hooks": [
@@ -173,6 +184,10 @@
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/sec-guard cleanup",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/notify SessionEnd"
           }
         ]
       }

@@ -146,6 +146,114 @@ proc notifId(session: string): string =
     agentSlug() & "-" & session
 
 # ---------------------------------------------------------------------------
+# Notification state (per-session scratch in /tmp)
+# ---------------------------------------------------------------------------
+
+# Tools that can be permission-gated and are worth naming in a permission
+# notification. Also the PostToolUse set whose completion (an accepted prompt)
+# should dismiss the notification.
+const
+  gatedTools = ["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit", "WebFetch"]
+  PendingFreshSeconds = 60
+
+proc activeFlagFile(session: string): string =
+  "/tmp/notify-active-" & session & ".flag"
+
+proc pendingFile(session: string): string =
+  "/tmp/notify-pending-" & session & ".json"
+
+proc markActive(session: string) =
+  ## Record that a notification is currently showing for this session, so the
+  ## dismiss path can skip the cost of spawning grrr when nothing is pending.
+  if session.len == 0:
+    return
+  try:
+    writeFile(activeFlagFile(session), "")
+  except IOError, OSError:
+    discard
+
+proc dismissSession(session: string) =
+  ## Clear this session's grrr notification — but only when one is actually
+  ## outstanding (the flag is the cheap guard so PostToolUse can fire on every
+  ## gated tool without spawning grrr each time). Keyed per-session, so it never
+  ## touches another concurrent session's notification.
+  if session.len == 0:
+    return
+  let flag = activeFlagFile(session)
+  if not fileExists(flag):
+    return
+  try:
+    removeFile(flag)
+  except OSError:
+    discard
+  let grrr = findExe("grrr")
+  if grrr.len == 0:
+    return
+  let ident = notifId(session)
+  if ident.len == 0:
+    return
+  try:
+    let p =
+      startProcess(grrr, args = ["clear", "--delivered", ident], options = {poUsePath})
+    discard p.waitForExit()
+    p.close()
+  except OSError:
+    discard
+
+func describeTool(tool: string, toolInput: JsonNode): string =
+  ## One-line summary of what a gated tool is about to do, for permission detail.
+  if toolInput == nil or toolInput.kind != JObject:
+    return ""
+  case tool
+  of "Bash": toolInput{"command"}.getStr("")
+  of "Edit", "Write", "MultiEdit", "NotebookEdit": toolInput{"file_path"}.getStr("")
+  of "WebFetch": toolInput{"url"}.getStr("")
+  else: ""
+
+proc writePending(session, tool: string, toolInput: JsonNode) =
+  ## Stash the most recent gated tool call so a permission notification can name
+  ## it. The permission prompt fires right after this tool's PreToolUse, so the
+  ## freshest entry is the one being gated.
+  if session.len == 0:
+    return
+  try:
+    writeFile(
+      pendingFile(session),
+      $(%*{"tool": tool, "detail": describeTool(tool, toolInput), "ts": epochTime()}),
+    )
+  except IOError, OSError:
+    discard
+
+proc readPending(session: string): tuple[tool, detail: string] =
+  ## The stashed gated tool, or ("", "") when absent or stale (older than
+  ## PendingFreshSeconds — guards against naming an unrelated earlier call when
+  ## the gated tool wasn't one we captured).
+  result = ("", "")
+  if session.len == 0:
+    return
+  var raw = ""
+  try:
+    raw = readFile(pendingFile(session))
+  except IOError, OSError:
+    return
+  let j = tryParseJson(raw)
+  if j == nil or j.kind != JObject:
+    return
+  if epochTime() - j{"ts"}.getFloat(0) > PendingFreshSeconds.float:
+    return
+  result = (j{"tool"}.getStr(""), j{"detail"}.getStr(""))
+
+proc clearSessionState(session: string) =
+  ## Remove this session's scratch files (SessionEnd cleanup).
+  if session.len == 0:
+    return
+  for f in [activeFlagFile(session), pendingFile(session)]:
+    try:
+      removeFile(f)
+    except OSError:
+      discard
+
+# ---------------------------------------------------------------------------
 # Rate limiting
 # ---------------------------------------------------------------------------
 
@@ -531,6 +639,7 @@ proc send(
   )
   dispatch(n)
   recordNotification(project)
+  markActive(threadId)
 
 # ---------------------------------------------------------------------------
 # Event handlers (pure data munging, then call send)
@@ -592,7 +701,18 @@ proc handleNotification(data: JsonNode) =
   let cwd = data{"cwd"}.getStr("").lastPathPart
   let session = data{"session_id"}.getStr("")
   let title = notificationTitle(kind)
-  let msg = data{"message"}.getStr("Waiting for input")
+  var msg = data{"message"}.getStr("Waiting for input")
+  # The Notification payload carries no tool detail for permission prompts, so
+  # name the gated tool from the PreToolUse capture instead of the generic
+  # "Claude needs your permission".
+  if kind == "permission_prompt":
+    let (tool, detail) = readPending(session)
+    if tool.len > 0:
+      msg =
+        if detail.len > 0:
+          tool & ": " & detail
+        else:
+          tool
   send(
     title = title,
     body = msg,
@@ -604,6 +724,11 @@ proc handleNotification(data: JsonNode) =
 
 proc handlePreToolUse(data: JsonNode) =
   let tool = data{"tool_name"}.getStr("")
+  # Stash gated tool calls so a following permission_prompt can name what's
+  # being requested (see handleNotification). These aren't notifications.
+  if tool in gatedTools:
+    writePending(data{"session_id"}.getStr(""), tool, data{"tool_input"})
+    return
   if tool != "AskUserQuestion":
     return
   let cwd = data{"cwd"}.getStr("").lastPathPart
@@ -625,23 +750,20 @@ proc handlePreToolUse(data: JsonNode) =
 
 proc handleUserPromptSubmit(data: JsonNode) =
   ## Clears this session's stale grrr notification when a new prompt is sent —
-  ## the "your turn" ping is out of date the moment you reply. Keyed on the
-  ## same per-session identifier the send used, so it can't touch another
-  ## concurrent session's notification. Only the grrr backend is dismissable
-  ## (apprise toasts carry no identifier and are fire-and-forget).
-  let grrr = findExe("grrr")
-  if grrr.len == 0:
-    return
-  let ident = notifId(data{"session_id"}.getStr(""))
-  if ident.len == 0:
-    return
-  try:
-    let p =
-      startProcess(grrr, args = ["clear", "--delivered", ident], options = {poUsePath})
-    discard p.waitForExit()
-    p.close()
-  except OSError:
-    discard
+  ## the "your turn" ping is out of date the moment you reply. Only the grrr
+  ## backend is dismissable (apprise toasts are fire-and-forget).
+  dismissSession(data{"session_id"}.getStr(""))
+
+proc handlePostToolUse(data: JsonNode) =
+  ## Also clears the notification when you resolve what blocked it without
+  ## typing a prompt: answering an AskUserQuestion, or accepting a permission
+  ## prompt (the gated tool then runs and fires PostToolUse). A no-op unless a
+  ## notification is actually outstanding. (Denial fires no PostToolUse, so that
+  ## case clears on the next typed prompt instead.)
+  dismissSession(data{"session_id"}.getStr(""))
+
+proc handleSessionEnd(data: JsonNode) =
+  clearSessionState(data{"session_id"}.getStr(""))
 
 # ---------------------------------------------------------------------------
 # CLI entry (cligen dispatchMulti)
@@ -671,9 +793,24 @@ proc userPromptSubmit() =
   if data != nil:
     handleUserPromptSubmit(data)
 
+proc postToolUse() =
+  ## PostToolUse event — dismisses the notification on answered question /
+  ## accepted permission.
+  let data = readStdinPayload()
+  if data != nil:
+    handlePostToolUse(data)
+
+proc sessionEnd() =
+  ## SessionEnd event — removes this session's scratch files.
+  let data = readStdinPayload()
+  if data != nil:
+    handleSessionEnd(data)
+
 when isMainModule:
   dispatchMulti(
     [notification, cmdName = "Notification"],
     [preToolUse, cmdName = "PreToolUse"],
     [userPromptSubmit, cmdName = "UserPromptSubmit"],
+    [postToolUse, cmdName = "PostToolUse"],
+    [sessionEnd, cmdName = "SessionEnd"],
   )
