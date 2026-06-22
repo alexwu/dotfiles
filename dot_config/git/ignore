@@ -13,6 +13,7 @@ nucleo.log
 .Trash
 .http
  http-client.env.json
+ .firecrawl/
 
 **/.claude/settings.local.json
 .claude/.mind.mv2.*

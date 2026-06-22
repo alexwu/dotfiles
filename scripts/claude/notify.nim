@@ -89,6 +89,63 @@ proc tryParseJson(s: string): JsonNode =
     nil
 
 # ---------------------------------------------------------------------------
+# Notification identity (per-session, per-agent)
+# ---------------------------------------------------------------------------
+
+# Per-agent detection for the notification-identifier namespace, so concurrent
+# sessions of different agents (and the dismiss that clears them) never collide.
+#
+# Documented, tool-specific signals come FIRST because they're the reliable
+# ones — CLAUDECODE is the env var Anthropic actually documents and commits to.
+# The generic slug vars below are the fallback catch:
+#   - AI_AGENT  — undocumented/observed-only; Claude Code sets
+#     `claude-code_2-1-183_agent` (slug_version_agent), but it's absent from the
+#     official env-vars reference and could change without notice.
+#   - AGENT     — the emerging cross-agent convention (Goose/Amp set a slug),
+#     but its value is contested (some tools set AGENT=1 as a boolean) and
+#     Claude Code declined to adopt it (anthropics/claude-code#24838).
+# Extend by appending a marker row (preferred) or relying on AGENT/AI_AGENT.
+const
+  agentMarkers = [
+    ("LULU_AGENT", "lulu"),
+      # our own agent's base indicator (lulu-agent: AgentIdentity.env_vars,
+      # always "1" for any lulu-spawned subprocess; session id NOT guaranteed)
+    ("CLAUDECODE", "claude-code"), # documented, stable
+    ("CURSOR_AGENT", "cursor"),
+    ("GEMINI_CLI", "gemini"),
+    ("CODEX_SANDBOX", "codex"),
+    ("GOOSE_TERMINAL", "goose"),
+  ]
+  genericAgentVars = ["AGENT", "AI_AGENT"]
+
+proc slugFromGeneric(v: string): string =
+  ## Slug from a generic AGENT/AI_AGENT value (leading token before `_`),
+  ## ignoring the boolean forms some tools use. "" when not slug-like.
+  if v.len == 0 or v in ["1", "true", "0", "false"]:
+    return ""
+  v.split('_')[0]
+
+proc agentSlug(): string =
+  ## Identifies the host agent. Documented markers first, then the generic
+  ## slug vars, then "luna".
+  for (envVar, slug) in agentMarkers:
+    if getEnv(envVar).len > 0:
+      return slug
+  for envVar in genericAgentVars:
+    let slug = slugFromGeneric(getEnv(envVar))
+    if slug.len > 0:
+      return slug
+  "luna"
+
+proc notifId(session: string): string =
+  ## Per-session notification identifier for grrr send/clear, or "" when there
+  ## is no session id (an un-keyed send that can't be dismissed — old behavior).
+  if session.len == 0:
+    ""
+  else:
+    agentSlug() & "-" & session
+
+# ---------------------------------------------------------------------------
 # Rate limiting
 # ---------------------------------------------------------------------------
 
@@ -400,6 +457,12 @@ proc grrrNotifier(n: Notification): seq[seq[string]] =
     return @[]
 
   var cmd = @[grrr, "--appId", "Luna", "--title", n.title]
+  # Per-session identifier so a later UserPromptSubmit can clear this exact
+  # notification (and only this session's). n.threadId is the session id.
+  let ident = notifId(n.threadId)
+  if ident.len > 0:
+    cmd.add "--identifier"
+    cmd.add ident
   if n.subtitle.len > 0:
     cmd.add "--subtitle"
     cmd.add n.subtitle
@@ -560,6 +623,26 @@ proc handlePreToolUse(data: JsonNode) =
     priority = prHigh,
   )
 
+proc handleUserPromptSubmit(data: JsonNode) =
+  ## Clears this session's stale grrr notification when a new prompt is sent —
+  ## the "your turn" ping is out of date the moment you reply. Keyed on the
+  ## same per-session identifier the send used, so it can't touch another
+  ## concurrent session's notification. Only the grrr backend is dismissable
+  ## (apprise toasts carry no identifier and are fire-and-forget).
+  let grrr = findExe("grrr")
+  if grrr.len == 0:
+    return
+  let ident = notifId(data{"session_id"}.getStr(""))
+  if ident.len == 0:
+    return
+  try:
+    let p =
+      startProcess(grrr, args = ["clear", "--delivered", ident], options = {poUsePath})
+    discard p.waitForExit()
+    p.close()
+  except OSError:
+    discard
+
 # ---------------------------------------------------------------------------
 # CLI entry (cligen dispatchMulti)
 # ---------------------------------------------------------------------------
@@ -582,7 +665,15 @@ proc preToolUse() =
   if data != nil:
     handlePreToolUse(data)
 
+proc userPromptSubmit() =
+  ## UserPromptSubmit event — clears this session's stale notification.
+  let data = readStdinPayload()
+  if data != nil:
+    handleUserPromptSubmit(data)
+
 when isMainModule:
   dispatchMulti(
-    [notification, cmdName = "Notification"], [preToolUse, cmdName = "PreToolUse"]
+    [notification, cmdName = "Notification"],
+    [preToolUse, cmdName = "PreToolUse"],
+    [userPromptSubmit, cmdName = "UserPromptSubmit"],
   )

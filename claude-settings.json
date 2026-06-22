@@ -201,6 +201,10 @@
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/reward-anchor reset",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/notify UserPromptSubmit"
           }
         ]
       }
