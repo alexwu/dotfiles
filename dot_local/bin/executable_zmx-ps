@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
 # zmx-ps — every zmx session as JSON: session info, descendant processes,
-# and a busy/idle verdict. The `zmx list --json` that zmx doesn't have.
+# and an active/idle verdict. The `zmx list --json` that zmx doesn't have.
 #
 # Schema per session:
 #   { name, pid, clients, created, age_s, start_dir, current,
-#     state: "busy"|"idle", busy_with: <comm>|null,
+#     state: "active"|"idle", running: <comm>|null,
 #     procs: [ { pid, etime, cpu, rss_kb, command } ] }
 #
-# "busy" = any descendant that isn't shell/atuin-pty-proxy infrastructure.
+# "active" = the session's process tree holds a real workload: any descendant
+# that isn't shell/atuin-pty-proxy infrastructure. This is SESSION OCCUPANCY,
+# distinct from a Claude agent's own "busy" turn-status (see agent-sessions).
 #
 # Usage: zmx-ps [filters]
 #   --name RE        session name matches RE (case-insensitive)
 #   --dir RE         start_dir matches RE
 #   --hosting RE     any descendant command matches RE (e.g. claude, codex)
 #   --detached       clients == 0          --attached   clients > 0
-#   --busy           working procs exist   --idle       infrastructure only
+#   --active         working procs exist   --idle       infrastructure only
 #   --names          print matching session names only (for xargs)
 #
 # Examples:
@@ -34,7 +36,7 @@ while [[ $# -gt 0 ]]; do
     --hosting)  f_hosting="${2:?--hosting needs a pattern}"; shift 2 ;;
     --detached) f_attach="detached"; shift ;;
     --attached) f_attach="attached"; shift ;;
-    --busy)     f_state="busy"; shift ;;
+    --active)   f_state="active"; shift ;;
     --idle)     f_state="idle"; shift ;;
     --names)    names_only=1; shift ;;
     -h|--help)  awk 'NR > 1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "$0"; exit 0 ;;
@@ -101,8 +103,8 @@ out=$(printf '%s\n' "$tagged" | jaq -R -s \
     | . as $s
     | .procs = ($procs | map(select(.session == $s.name) | del(.session)))
     | (.procs | map(select((.command | infra) | not))) as $work
-    | .state = (if ($work | length) > 0 then "busy" else "idle" end)
-    | .busy_with = (if ($work | length) > 0 then ($work[0].command | base) else null end))
+    | .state = (if ($work | length) > 0 then "active" else "idle" end)
+    | .running = (if ($work | length) > 0 then ($work[0].command | base) else null end))
   | map(select($name == "" or (.name | test($name; "i"))))
   | map(select($dir == "" or (.start_dir | test($dir; "i"))))
   | map(select($attach == "" or

@@ -3,11 +3,20 @@
 #
 # A detached session may still host live work: a claude/codex agent, an nvim
 # with unsaved buffers, a build. Reapable = the daemon's descendant tree is
-# empty or contains nothing but shells. Anything else marks the session busy
+# empty or contains nothing but shells. Anything else marks the session active
 # and it is always skipped — kill those manually with `zmx kill <name>`.
+#
+# "active" is SESSION OCCUPANCY (something is running), NOT a Claude agent's
+# own "busy" turn-status — a session can be active with no agent in it at all.
+#
+# Occupancy (active|idle) + session metadata are delegated to `zmx-ps`, the
+# single source of truth — reap categorizes its JSON and only ever kills
+# detached+idle. No independent process-tree walk lives here anymore; when
+# zmx-ps is ported to Nim, reap rides along for free.
 #
 # Usage: zmx-reap            # dry run: table of detached sessions + verdicts
 #        zmx-reap --kill     # kill the reapable ones
+#        zmx-reap --all      # also list attached sessions (dim, never reaped)
 
 set -uo pipefail
 # Pin TMPDIR to the launchd GUI temp so zmx resolves the real sockets
@@ -16,40 +25,16 @@ export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPD
 PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 
 kill_mode=0
-case "${1:-}" in
-  --kill|-k) kill_mode=1 ;;
-  "") ;;
-  *) echo "usage: zmx-reap [--kill]" >&2; exit 2 ;;
-esac
+show_all=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --kill|-k) kill_mode=1; shift ;;
+    --all|-a)  show_all=1; shift ;;
+    *) echo "usage: zmx-reap [--kill] [--all]" >&2; exit 2 ;;
+  esac
+done
 
 b=$'\e[1m'; dim=$'\e[2m'; red=$'\e[31m'; grn=$'\e[32m'; ylw=$'\e[33m'; rst=$'\e[0m'
-
-snapshot=$(ps -axo pid=,ppid=,command=)
-
-# First working descendant's name under a daemon pid, or empty if idle.
-# Shells and the atuin pty-proxy are infrastructure: ignored, but traversed.
-busy_of() {
-  awk -v root="$1" '
-    {
-      pid=$1; ppid=$2; cmd=$3
-      for (i=4; i<=NF; i++) cmd = cmd " " $i
-      kids[ppid] = kids[ppid] " " pid; name[pid] = cmd
-    }
-    END {
-      top = 0
-      n = split(kids[root], q, " ")
-      for (qi=1; qi<=n; qi++) if (q[qi] != "") stack[++top] = q[qi]
-      while (top > 0) {
-        p = stack[top--]
-        base = name[p]; sub(/ .*/, "", base); sub(/.*\//, "", base); sub(/^-/, "", base)
-        infra = (base ~ /^(sh|bash|zsh|fish|dash)$/) || \
-                (base == "atuin" && name[p] ~ /pty-proxy/)
-        if (!infra) { print base; exit }
-        m = split(kids[p], q2, " ")
-        for (qi=1; qi<=m; qi++) if (q2[qi] != "") stack[++top] = q2[qi]
-      }
-    }' <<< "$snapshot"
-}
 
 fmt_age() {
   local s=$1
@@ -59,43 +44,57 @@ fmt_age() {
   fi
 }
 
-now=$(date +%s)
+# Single zmx-ps snapshot: the oracle for occupancy + metadata.
+ps_json=$(zmx-ps 2>/dev/null)
+[[ -z "$ps_json" ]] && ps_json='[]'
+
 reap=()
-busy_n=0
+active_n=0
+attached_n=0
 
 printf '%s%-44s %-4s %-18s %s%s\n' "$b" NAME AGE VERDICT DIR "$rst"
-while IFS=$'\t' read -r name pid clients created dir; do
-  [[ -z "${name:-}" || "${clients:-0}" != 0 ]] && continue
-  age=$(fmt_age $(( now - created )))
-  busy=$(busy_of "$pid")
-  if [[ -n "$busy" ]]; then
-    (( busy_n++ ))
-    printf '%-44s %-4s %sbusy:%-13s%s %s%s%s\n' "$name" "$age" "$ylw" "$busy" "$rst" "$dim" "$dir" "$rst"
-  else
-    reap+=("$name")
-    printf '%-44s %-4s %sreap%s               %s%s%s\n' "$name" "$age" "$red" "$rst" "$dim" "$dir" "$rst"
-  fi
-done < <(zmx list 2>/dev/null | awk -F'\t' '{
-    delete a
-    for (i=1; i<=NF; i++) {
-      n = index($i, "="); if (n == 0) continue
-      k = substr($i, 1, n-1); gsub(/^[^a-z_]+/, "", k)
-      a[k] = substr($i, n+1)
-    }
-    if (a["name"] != "")
-      print a["name"] "\t" a["pid"] "\t" a["clients"] "\t" a["created"] "\t" a["start_dir"]
-  }')
+# Per session: cat = reap (detached+idle) | active (detached+active, skipped)
+# | attached (clients>0, skipped). Fields joined on \x1f so an empty `running`
+# can't collapse the row (tab is IFS-whitespace; US is not).
+while IFS=$'\x1f' read -r cat name age_s running dir; do
+  [[ -z "${name:-}" ]] && continue
+  age=$(fmt_age "$age_s")
+  case "$cat" in
+    reap)
+      reap+=("$name")
+      printf '%-44s %-4s %sreap%s              %s%s%s\n' \
+        "$name" "$age" "$red" "$rst" "$dim" "$dir" "$rst" ;;
+    active)
+      (( active_n++ ))
+      printf '%-44s %-4s %sactive:%-11s%s %s%s%s\n' \
+        "$name" "$age" "$ylw" "$running" "$rst" "$dim" "$dir" "$rst" ;;
+    attached)
+      # Counted so an all-attached world reads as "saw N, skipped them", not a
+      # dead tool. With --all, listed too so reap doubles as a session inventory.
+      (( attached_n++ ))
+      (( show_all )) && printf '%-44s %-4s %sattached%s          %s%s%s\n' \
+        "$name" "$age" "$dim" "$rst" "$dim" "$dir" "$rst" ;;
+  esac
+done < <(printf '%s' "$ps_json" | jaq -r '
+  .[]
+  | [ (if .clients > 0 then "attached"
+       elif .state == "active" then "active"
+       else "reap" end),
+      .name, (.age_s | tostring), (.running // ""), .start_dir ]
+  | join("\u001f")')
 
 echo
 if (( ${#reap[@]} == 0 )); then
-  printf '%snothing to reap%s (%d busy skipped)\n' "$grn" "$rst" "$busy_n"
+  printf '%snothing to reap%s (%d detached-active, %d attached — all skipped)\n' \
+    "$grn" "$rst" "$active_n" "$attached_n"
   exit 0
 fi
 
 if (( kill_mode )); then
   zmx kill "${reap[@]}"
-  printf '%skilled %d session(s)%s, %d busy skipped\n' "$grn" "${#reap[@]}" "$rst" "$busy_n"
+  printf '%skilled %d session(s)%s, %d active + %d attached skipped\n' \
+    "$grn" "${#reap[@]}" "$rst" "$active_n" "$attached_n"
 else
-  printf '%d reapable, %d busy skipped — dry run. Re-run with %s--kill%s to execute.\n' \
-    "${#reap[@]}" "$busy_n" "$b" "$rst"
+  printf '%d reapable, %d active + %d attached skipped — dry run. Re-run with %s--kill%s to execute.\n' \
+    "${#reap[@]}" "$active_n" "$attached_n" "$b" "$rst"
 fi

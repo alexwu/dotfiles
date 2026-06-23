@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# agent-sessions — glanceable status of live Claude Code + Codex sessions,
+# one row per agent, enriched with the zmx session each one lives in.
+#
+# TWO DISTINCT STATE AXES, shown side by side:
+#   status — the AGENT's own turn-state (cc interactive: busy/waiting/idle;
+#            cx: time since last rollout write — no live-status CLI exists).
+#   occ    — SESSION OCCUPANCY of the zmx shell the agent lives in: active
+#            (process tree holds a workload) vs idle, from `zmx-ps`. An idle
+#            agent can sit in an active session — they measure different things.
+#
+# `claude agents --json` is heterogeneous by kind:
+#   interactive — terminal sessions: status + pid (-> zmx shell), but no id
+#   background  — headless subagent tasks: sessionId + name + state, but no pid
+# Interactive + codex render as resumable "sessions"; background agents get
+# their own dim section (name + short id + state) so they aren't mistaken for
+# terminal sessions.
+#
+# v2 PROTOTYPE (bash; Nim port to follow once the format locks, sharing a core
+# with zmx-ps/mission-control). Sources:
+#   claude agents --json   -> kind/status/state/pid/sessionId/cwd
+#   ps eww -p <pid>        -> ZMX_SESSION (which shell an interactive agent is in)
+#   zmx-ps                 -> per-session occupancy (active|idle)
+#   ~/.codex/sessions/.../rollout-*.jsonl -> liveness via mtime; session id from
+#                            the session_meta payload.id (== filename uuid)
+#
+# Usage: agent-sessions [--within MIN] [--watch [SECS]] [--json]
+#   --json  canonical array, one object per agent (the Nim port's contract):
+#     { source, kind, status, pid, session_id, short_id, name, cwd, branch,
+#       zmx_session, occ, idle_s, started }
+
+set -uo pipefail
+# Pin TMPDIR to the launchd GUI temp so zmx-ps/ps resolve real sockets
+# regardless of launch context (Claude namespaces TMPDIR; GUI apps don't).
+export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}")"
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+within_min=90
+watch_secs=0
+json=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --within) within_min="${2:-90}"; shift 2 ;;
+    --json)   json=1; shift ;;
+    --watch)
+      if [[ "${2:-}" =~ ^[0-9]+$ ]]; then watch_secs="$2"; shift 2; else watch_secs=2; shift 1; fi ;;
+    *) shift ;;
+  esac
+done
+
+b=$'\e[1m'; dim=$'\e[2m'; red=$'\e[31m'; grn=$'\e[32m'; ylw=$'\e[33m'; cyn=$'\e[36m'; mag=$'\e[35m'; rst=$'\e[0m'
+
+git_branch() { git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null || true; }
+zmx_of()     { ps eww -p "$1" 2>/dev/null | rg -o -m1 'ZMX_SESSION=[^ ]+' | cut -d= -f2 || true; }
+
+fmt_idle() {
+  local s=$1
+  if   (( s < 60 ));   then printf '%ds' "$s"
+  elif (( s < 3600 )); then printf '%dm' $(( s / 60 ))
+  else                      printf '%dh%dm' $(( s / 3600 )) $(( (s % 3600) / 60 ))
+  fi
+}
+
+# Canonical per-agent records, one compact JSON object per line. Per-row shell
+# calls (git branch, pid->zmx session) happen here; jaq -n does the escaping.
+collect_ndjson() {
+  local now; now=$(date +%s)
+
+  # Per-session occupancy from zmx-ps: session name -> active|idle (one call).
+  declare -A OCC
+  while IFS=$'\t' read -r zn zst; do
+    [[ -n "$zn" ]] && OCC[$zn]="$zst"
+  done < <(zmx-ps 2>/dev/null | jaq -r '.[] | "\(.name)\t\(.state)"')
+
+  # Claude — heterogeneous by kind. Interactive: status + pid (-> zmx shell).
+  # Background: state + sessionId + name (no pid, no shell).
+  claude agents --json 2>/dev/null \
+    | jaq -r '.[] | [
+        .kind, ((.pid // "") | tostring), (.cwd // ""),
+        (.status // ""), (.state // ""), (.sessionId // ""), (.id // ""),
+        (.name // ""), (((.startedAt // 0) / 1000) | floor | tostring)
+      ] | join("\u001f")' \
+    | while IFS=$'\x1f' read -r kind pid cwd status state sid shortid name started; do
+        local sess="" occ="" eff branch
+        branch=$(git_branch "$cwd")
+        if [[ "$kind" == interactive ]]; then
+          eff="${status:-idle}"
+          [[ -n "$pid" ]] && sess=$(zmx_of "$pid")
+          [[ -n "$sess" ]] && occ="${OCC[$sess]:-}"
+        else
+          eff="${state:-?}"
+        fi
+        jaq -nc \
+          --arg kind "$kind" --arg status "$eff" --arg pid "$pid" \
+          --arg sid "$sid" --arg shortid "$shortid" --arg name "$name" \
+          --arg cwd "$cwd" --arg branch "$branch" --arg sess "$sess" \
+          --arg occ "$occ" --arg started "$started" '
+          def nn: if . == "" then null else . end;
+          { source: "claude", kind: $kind, status: $status,
+            pid: ($pid | nn | if . == null then null else tonumber end),
+            session_id: ($sid | nn), short_id: ($shortid | nn),
+            name: ($name | nn), cwd: ($cwd | nn), branch: ($branch | nn),
+            zmx_session: ($sess | nn), occ: ($occ | nn),
+            idle_s: null, started: ($started | tonumber) }' </dev/null
+      done
+
+  # Codex — file-based liveness (no live-status CLI, no pid -> no zmx link).
+  # Session id is the session_meta payload.id (same uuid as the filename).
+  fd -e jsonl . "$HOME/.codex/sessions" --changed-within "${within_min}min" 2>/dev/null \
+    | while read -r f; do
+        local m
+        m=$(stat -f '%m' "$f" 2>/dev/null) || continue
+        awk 'NR==1{print; exit}' "$f" \
+          | jaq -c --argjson now "$now" --argjson m "$m" '{
+              source: "codex", kind: "codex", status: "idle",
+              pid: null,
+              session_id: (.payload.id // null),
+              short_id: ((.payload.id // "")[0:8] | if . == "" then null else . end),
+              name: null,
+              cwd: (.payload.cwd // null),
+              branch: (.payload.git.branch // null),
+              zmx_session: null, occ: null,
+              idle_s: ($now - $m), started: $m }'
+      done
+}
+
+render() {
+  local json; json=$(collect_ndjson | jaq -s '.')
+  printf '%s%s agent sessions%s  %sstatus=agent · occ=session%s\n' "$b" "$cyn" "$rst" "$dim" "$rst"
+
+  # Sessions — interactive Claude + Codex (resumable). waiting < busy < idle,
+  # then most-recent first.
+  local sessions
+  sessions=$(jaq -r '
+    [ .[] | select(.kind == "interactive" or .kind == "codex") ]
+    | sort_by(
+        (if .status == "waiting" then 0 elif .status == "busy" then 1 else 2 end),
+        (-(.started // 0)))
+    | .[]
+    | [ .kind, .status, (.cwd // "?"), (.branch // ""),
+        (.zmx_session // "-"), (.occ // "-"), (.short_id // "-"),
+        ((.idle_s // -1) | tostring) ] | join("\u001f")' <<< "$json")
+
+  if [[ -z "$sessions" ]]; then
+    printf '%s   (no live sessions)%s\n' "$dim" "$rst"
+  else
+    while IFS=$'\x1f' read -r kind status cwd branch sess occ shortid idle_s; do
+      [[ -z "$kind" ]] && continue
+      local dot tag proj st_raw st_col occ_raw occ_col zmxcol idcol
+      proj=$(basename "${cwd:-?}")
+      case "$kind" in
+        interactive)
+          tag="${mag}cc${rst}"; zmxcol="$sess"; idcol="-"
+          case "$status" in
+            waiting) dot="${red}${b}●${rst}"; st_raw=waiting; st_col="$red" ;;
+            busy)    dot="${ylw}●${rst}";      st_raw=busy;    st_col="$ylw" ;;
+            *)       dot="${dim}○${rst}";      st_raw=idle;    st_col="$dim" ;;
+          esac ;;
+        codex)
+          tag="${cyn}cx${rst}"; zmxcol="-"; idcol="$shortid"
+          if (( idle_s >= 0 && idle_s < 20 )); then dot="${grn}●${rst}"; else dot="${dim}○${rst}"; fi
+          if (( idle_s >= 0 )); then st_raw=$(fmt_idle "$idle_s"); else st_raw=idle; fi
+          st_col="$dim" ;;
+      esac
+      case "$occ" in
+        active) occ_raw=active; occ_col="$grn" ;;
+        idle)   occ_raw=idle;   occ_col="$dim" ;;
+        *)      occ_raw=-;      occ_col="$dim" ;;
+      esac
+      printf '%s %s %-14s %s%-11s%s %-16s %s%-8s%s %s%-6s%s %s%s%s\n' \
+        "$dot" "$tag" "${proj:0:14}" "$dim" "${branch:0:11}" "$rst" \
+        "${zmxcol:0:16}" "$st_col" "$st_raw" "$rst" "$occ_col" "$occ_raw" "$rst" \
+        "$dim" "${idcol:0:8}" "$rst"
+    done <<< "$sessions"
+  fi
+
+  # Background — headless subagent tasks (name + short id + state).
+  local bg
+  bg=$(jaq -r '
+    [ .[] | select(.kind == "background") ]
+    | sort_by(.status, (.name // "~"))
+    | .[] | [ (.name // "(unnamed)"), (.short_id // "-"), (.status // "?") ] | @tsv' <<< "$json")
+  if [[ -n "$bg" ]]; then
+    printf '%s background tasks%s\n' "$dim" "$rst"
+    while IFS=$'\t' read -r name shortid state; do
+      [[ -z "$name" ]] && continue
+      printf '  %s%-34s %-10s %s%s\n' "$dim" "${name:0:34}" "${shortid:0:8}" "$state" "$rst"
+    done <<< "$bg"
+  fi
+}
+
+if (( json )); then
+  collect_ndjson | jaq -s '.'
+elif (( watch_secs > 0 )); then
+  while :; do printf '\e[H\e[2J'; render; sleep "$watch_secs"; done
+else
+  render
+fi
