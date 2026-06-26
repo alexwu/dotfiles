@@ -79,7 +79,7 @@ models:
       responseHeader: 300
 
   "Qwen3.6-35B-A3B":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
     ttl: 6000
     filters:
       setParamsByID:
@@ -108,7 +108,7 @@ models:
             preserve_thinking: true
 
   "Qwen3.6-27B":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
     ttl: 6000
     filters:
       setParamsByID:
@@ -331,7 +331,7 @@ models:
   # trusting long inputs; if a long clip spirals, that's the bug resurfacing.
   "gemma-4-12b-it":
     cmd: /Users/jamesbombeelu/.local/share/mise/installs/github-ggml-org-llama-cpp/latest/llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q6_K.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/mmproj-F32.gguf
-    ttl: 6000
+    ttl: 12000
     timeouts:
       responseHeader: 120
   "Dark-Nexus-24B-v2.0":
@@ -346,6 +346,57 @@ models:
       responseHeader: 120
   "Broken-Tutu-24B-Unslop-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/mradermacher/Broken-Tutu-24B-Unslop-v2.0-i1-GGUF/Broken-Tutu-24B-Unslop-v2.0.i1-Q5_K_M.gguf
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt static
+  # quant, Q5_K_M_HB16 (embeddings/output kept at bf16, the higher-quality flavor,
+  # matching the Omega-Evolution sibling). Auto-downloads into llama.cpp's own HF
+  # cache on first load via -hfr/-hff (no hand-placed file). Text-only ("only text
+  # layers were trained on"), so no --mmproj. --reasoning off is mandatory for any
+  # gemma-4 arch (peg-gemma4 thought-channel wedge fix, see gemma-4-31B-it NOTE);
+  # the finetune also strips reasoning tags itself. Sampling per the card: temp 0.8
+  # / top_p 0.95 / min_p 0.03.
+  "Melody1437-26B-A4B-v2.0":
+    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 0.8 --top-p 0.95 --min-p 0.03 --reasoning off -hfr "ReadyArt/Melody1437-26B-A4B-v2.0-GGUF" -hff Melody1437-26B-A4B-v2.0-HB16-Q5_K_M.gguf --no-webui
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  # Dense 31B sibling of the 26B-A4B Melody above — ReadyArt gemma-4-31B-it
+  # finetune (LoRA-64 v2.0), NOT MoE, text-only ("text layers only", no --mmproj).
+  # HB16-Q5_K_M static quant (embeddings/output kept at bf16, the higher-quality
+  # flavor, matching the 26B Melody / Omega-Evolution convention). gemma-4 arch →
+  # --reasoning off mandatory (peg-gemma4 thought-channel wedge fix, see
+  # gemma-4-31B-it NOTE); the finetune also strips reasoning tags itself. 64k ctx
+  # (lower than the 26B's 128k — dense 31B is heavier per token). Sampling per the
+  # card: temp 1.0 / top_p 0.92 (rep/presence pen 0 = llama.cpp defaults). Manual
+  # weights via `pueue` (label claude: dl-melody1437-31b) to
+  # ~/.cache/huggingface/models/ReadyArt/Melody1437-31B-v2.0-GGUF/.
+  "Melody1437-31B-v2.0":
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --temp 1.0 --top-p 0.92 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Melody1437-31B-v2.0-GGUF/Melody1437-31B-v2.0-HB16-Q5_K_M.gguf --no-webui
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt i1 iMatrix
+  # quant, Q5_K_M_hb16 (embeddings/output kept at bf16, the higher-quality flavor).
+  # Hybrid of Safeword Omega Directive/Darker + Melody1437, so same gemma-4 arch →
+  # --reasoning off mandatory (peg-gemma4 thought-channel wedge fix, see 31B NOTE).
+  # Auto-downloads into llama.cpp's HF cache via -hfr/-hff. Text-only. Sampling per
+  # the card: temp 1.0 / top_p 0.92 (freq/presence pen 0 = llama.cpp defaults).
+  "Omega-Evolution-26B-A4B-v3.0":
+    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Omega-Evolution-26B-A4B-v3.0-GGUF" -hff Omega-Evolution-26B-A4B-v3.0.i1-Q5_K_M_hb16.gguf --no-webui
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
+  # Gemma-4-Queen-31B-it — aifeifei798 dense 31B gemma-4 finetune (mradermacher just
+  # did the static quants). Q4_K_M (the card's "fast,
+  # recommended" quant). Text-only here — vision skipped, no --mmproj. gemma-4 arch
+  # → --reasoning off mandatory (peg-gemma4 thought-channel wedge fix, see
+  # gemma-4-31B-it NOTE). Sampling = Google's gemma-4 defaults (the quant card gives
+  # no model-specific rec). Weights via `pueue` (label claude: dl-gemma-4-queen-31b)
+  # to ~/.cache/huggingface/models/mradermacher/Gemma-4-Queen-31B-it/.
+  "Gemma-4-Queen-31B-it":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Gemma-4-Queen-31B-it/Gemma-4-Queen-31B-it.Q4_K_M.gguf --no-webui
     ttl: 28800
     timeouts:
       responseHeader: 120
