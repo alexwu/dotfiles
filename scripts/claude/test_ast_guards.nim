@@ -362,6 +362,60 @@ suite "git-confirm tier-2 + split":
       ],
     )
 
+# ── truncation-guard (head/tail as a real program, not a flag/string) ───────
+suite "pipe-truncate":
+  test "positives — real truncation commands":
+    runCases(
+      "truncation",
+      [
+        Case(name: "pipe to tail", cmd: "cargo test | tail -40", fires: true),
+        Case(name: "pipe to head", cmd: "rg foo | head -20", fires: true),
+        Case(name: "tail -n form", cmd: "pytest | tail -n 50", fires: true),
+        Case(name: "tail -f follow", cmd: "tail -f app.log", fires: true),
+        Case(name: "multi-pipe tail", cmd: "git log | rg fix | tail -5", fires: true),
+        Case(name: "head bare file", cmd: "head -100 build.log", fires: true),
+        Case(name: "chained tail", cmd: "make && swift test | tail -30", fires: true),
+        Case(name: "nested in subst", cmd: "echo $(cargo build | tail -5)", fires: true),
+      ],
+    )
+
+  test "decoys — --tail/--head FLAG must NOT fire":
+    runCases(
+      "truncation",
+      [
+        Case(
+          name: "kubectl logs --tail", cmd: "kubectl logs pod --tail=100", fires: false
+        ),
+        Case(name: "docker logs --tail", cmd: "docker logs web --tail 50", fires: false),
+        Case(
+          name: "docker compose logs --tail",
+          cmd: "docker compose logs --tail 100",
+          fires: false,
+        ),
+        Case(
+          name: "bd update --description",
+          cmd: "bd update lulu-dictate-fas0 --description=foo",
+          fires: false,
+        ),
+      ],
+    )
+
+  test "decoys — \"tail\"/\"head\" inside a string/word must NOT fire":
+    runCases(
+      "truncation",
+      [
+        Case(
+          name: "tail word in echo",
+          cmd: "echo \"the tail end of output\"",
+          fires: false,
+        ),
+        Case(name: "tail in quoted arg", cmd: "rg --pretty 'tail' notes.md", fires: false),
+        Case(name: "memo with --tail flag", cmd: "memo cargo test --tail 40", fires: false),
+        Case(name: "filename contains tail", cmd: "cat tail_recursion.md", fires: false),
+        Case(name: "headers path word", cmd: "ls src/headers/", fires: false),
+      ],
+    )
+
 # ── git-confirm: catastrophic parity (REQUIRED — gates ship) ────────────────
 # Asserts the AST catastrophic classification (firedCatastrophic, via ruleMeta)
 # never UNDER-marks vs the regex never-allow contract. Each command below maps

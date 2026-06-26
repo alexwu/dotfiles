@@ -31,9 +31,13 @@
 ##   hooks.PreToolUse[].matcher = "Bash"
 ##   hooks.PreToolUse[].hooks[].command = "$HOME/.local/bin/truncation-guard"
 ##
-## Cost: one classifier round-trip every time `head` or `tail` appears in a Bash
-## command (fast on the resident local model). Most commands never mention either
-## word, so the fast-path skips them outright.
+## Cost: a cheap in-process regex skips any command without a `head`/`tail`
+## token (most commands). When the token IS present, a fast local ast-grep scan
+## (the `pipe-truncate` rule in `ast_guard_rules`) decides whether it is a real
+## truncation command (`… | tail -40`) or a false alarm (a `--tail` flag, a
+## "tail" substring inside a string); only a real truncation reaches the
+## classifier round-trip. `--tail`-flag commands and quoted "tail" no longer
+## pay for an LLM call.
 ##
 ## Smoke test (paste payload via /tmp/*.sh, not inline — avoids tripping the
 ## hook on Claude's own bash invocation):
@@ -41,14 +45,18 @@
 ##     | truncation-guard
 
 import std/[json, options, os, re, strutils]
+import ../lib/ast_bash
 import ../lib/llm_decide
+import ast_guard_rules
 
 const TimeoutSecs = 30
   ## Wall-clock cap on the classifier round-trip via `timeout(1)`. The default
   ## local model is resident (always-on group), so 30s is ample; it also leaves
   ## headroom if routed to a cloud provider. On timeout the hook degrades to a deny.
 
-# Fast-path: skip commands that don't mention head or tail at all.
+# Cheap pre-filter: skip commands that don't mention head or tail at all, so the
+# ast-grep scan only runs on the small candidate set. Doubles as the degraded
+# fallback gate when ast-grep itself is unavailable (see main).
 let mentionsHeadOrTail = re"\b(head|tail)\b"
 
 # `memo <cmd>` runs `<cmd>` and caches its full stdout/stderr; the
@@ -102,9 +110,20 @@ proc main() =
   if cmd.len == 0:
     return
   if not cmd.contains(mentionsHeadOrTail):
-    return # fast path — no head/tail mentioned at all
-  if isMemoInvocation(cmd):
-    return # memo wraps full output in cache; --head/--tail are display only
+    return # cheap pre-filter — no head/tail token anywhere, can't be truncation
+
+  # AST gate: among token-bearing commands, fire ONLY when head/tail is an
+  # actual program (`… | tail -40`), never a `--tail` flag or a "tail" substring
+  # in a heredoc/string. If ast-grep can't run, degrade to the original regex
+  # behavior (memo carve-out, then classify) so a broken matcher fails toward
+  # the prior over-eager guard rather than skipping classification.
+  let needsClassify =
+    try:
+      anyFires(rulesFor("truncation"), cmd)
+    except AstGrepError:
+      not isMemoInvocation(cmd)
+  if not needsClassify:
+    return
 
   let decision = adjudicate(
     cmd,

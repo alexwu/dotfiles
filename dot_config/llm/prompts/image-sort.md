@@ -4,6 +4,16 @@ object — no prose, no markdown.
 
 Decide in this order — the first that fits wins:
 
+- **skyrim** — a SOURCE-driven category, judged from the **DOWNLOAD SOURCE** hint
+  appended below the image (not from the pixels). If that hint is present and its
+  host is **nexusmods.com** or **loverslab.com** (or any subdomain of them), the
+  file is Skyrim-mod material → classify it **skyrim**, and this wins over every
+  visual category below no matter what the image shows (armor, a character, scenery,
+  a woman who might otherwise read as lulu). If there is no DOWNLOAD SOURCE hint, or
+  its host is anything else, skyrim does NOT apply — fall through to the visual
+  categories. (NOTE(alexwu): nexusmods hosts every game; the game id lives in the
+  path, `/mods/1704/` = Skyrim Special Edition. If non-Skyrim Nexus images start
+  misfiling as skyrim, narrow this rule to that path segment.)
 - **lulu** — the image's primary subject is a young woman with blonde hair and
   green eyes, slim/petite build (the reference person this library collects).
   Any medium counts: photoreal, 3D render, anime, or cartoon. If the main
@@ -34,7 +44,7 @@ realistic even when stylized or not perfectly photoreal. `anime` = hand-drawn 2D
 anime / manga (cel shading, clean lineart). `cartoon` = western-animated /
 stylized 2D. When torn between `anime` and `realistic` on glossy CG / AI art,
 pick `realistic` — that bucket owns rendered imagery. Use `none` for any non-lulu
-category (screenshot, meme, wallpaper, other).
+category (skyrim, screenshot, meme, wallpaper, other).
 
 ## `nsfw`
 
@@ -45,9 +55,10 @@ for any category — do not refuse or soften; this is a routing signal.
 
 A short kebab-case descriptor — lowercase, hyphens between words, aim ~40
 characters (60 max), no path, no extension, no quotes. For **lulu** describe
-pose / setting / notable detail; for **screenshot** describe the app and what's
-shown (e.g. `safari-settings-privacy-panel`); for **meme** the gist of the joke
-or template; for **wallpaper** the scene (e.g. `neon-tokyo-skyline-at-night`);
-for **other** a brief descriptor.
+pose / setting / notable detail; for **skyrim** the armor / outfit, character, or
+scene (e.g. `elven-armor-blonde-warrior-snowy-peak`); for **screenshot** describe
+the app and what's shown (e.g. `safari-settings-privacy-panel`); for **meme** the
+gist of the joke or template; for **wallpaper** the scene (e.g.
+`neon-tokyo-skyline-at-night`); for **other** a brief descriptor.
 
 Fill every field.

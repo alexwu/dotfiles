@@ -79,6 +79,8 @@ mkdir -p "$HOME/.local/bin"
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/truncation_guard.nim") | sha256sum }}
 # lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/llm_decide.nim") | sha256sum }}
 # lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/transcript.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/lib/ast_bash.nim") | sha256sum }}
+# lib hash:    {{ include (joinPath .chezmoi.sourceDir "scripts/claude/ast_guard_rules.nim") | sha256sum }}
 {
   SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/truncation_guard.nim" }}"
   TARGET="$HOME/.local/bin/truncation-guard"

@@ -407,6 +407,22 @@ rule:
     - has: { kind: word, regex: '^replace$', stopBy: end }
 """
 
+# ── truncation-guard ───────────────────────────────────────────────────────
+# Real output truncation: `head`/`tail` invoked as an actual program (the
+# truncating command in a pipeline, e.g. `… | tail -40`). Keyed on `field:
+# name`, so a `--tail` FLAG (`kubectl logs --tail=100`, `bd close … --tail 40`)
+# parses as a `word` arg and does NOT match, and the literal word "tail" inside
+# a heredoc / quoted string is `string_content` and does NOT match either.
+# `memo … --tail N` is likewise not a head/tail command, so it passes free
+# without the old leading-`memo` carve-out.
+const PipeTruncate* = """
+id: pipe-truncate
+language: bash
+rule:
+  kind: command
+  has: { field: name, regex: '^(head|tail)$' }
+"""
+
 # ── secret-guard (reference only — secret-guard stays on regex) ─────────────
 # Content reader whose argument is a sensitive PATH (matched only as a `word`,
 # deliberately NOT as string_content). Retained for the corpus that documents
@@ -479,6 +495,7 @@ let guardRules*: Table[string, seq[string]] = {
     GitNotes, GitReplace,
   ],
   "secret": @[SecretReaderPath],
+  "truncation": @[PipeTruncate],
 }.toTable
 
 proc rulesFor*(guard: string): seq[string] =

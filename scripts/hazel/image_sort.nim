@@ -10,8 +10,10 @@
 ##                 video (MP4/MOV/M4V/WEBM/MKV). Any other extension is skipped
 ##                 (exit 0, file untouched) — never a hard error.
 ## - [root]:       destination root for the sorted tree. Defaults to
-##                 ~/Downloads/Images. Change this ONE path to relocate the
-##                 whole library later (e.g. into BombeeCloud).
+##                 ~/Media/Images — deliberately OUTSIDE ~/Downloads (see the
+##                 NOTE at the bottom). Change this ONE path to relocate the
+##                 whole library (the local working copy; an encrypted archive
+##                 such as a Cryptomator/BombeeCloud vault is synced separately).
 ## - -m, --model:  llama-swap model id passed to `llm-local -m` (positional model
 ##                 arg removed — pass `-m <id>` anywhere in the args). Defaults to
 ##                 gemma-4-26B-A4B-it — stock MoE, 14/14 in the bake-off and ~2x
@@ -28,10 +30,22 @@
 ## returns { category, style, nsfw, name }. Routing under <root>:
 ##
 ##   lulu       -> Lulu/<style>/<name>.png          (nsfw -> Lulu/<style>/nsfw/)
+##   skyrim     -> Skyrim/<name>.png                 (nsfw -> Skyrim/nsfw/)
 ##   screenshot -> Screenshots/<name>.png
 ##   meme       -> Memes/<name>.png
 ##   wallpaper  -> Wallpapers/<name>.png            (nsfw -> Wallpapers/nsfw/)
 ##   other      -> Other/<original-filename>         (moved as-is, not renamed)
+##
+## The macOS "Where from" provenance (the `com.apple.metadata:kMDItemWhereFroms`
+## xattr a browser stamps on a download) is read straight from the file's bytes
+## (not via `mdls`, which lags the Spotlight index) and fed to the classifier as
+## a DOWNLOAD SOURCE hint. The `skyrim` category and the rule that maps a
+## nexusmods / loverslab source to it both live in the schema + prompt (under
+## ~/.config/llm) — the model makes the call from the URL hint; there is no
+## hardcoded host match in this file. When a raster is sips-converted
+## (heic/jpg/webp/avif), the fresh PNG would lose the xattr — so it is re-stamped
+## byte-exact onto the converted file before the original is trashed, keeping
+## provenance intact in the library.
 ##
 ## Inputs are normalized to a working PNG for the vision call, by kind:
 ##   - png:            classified in place (no copy — already the target format)
@@ -52,20 +66,24 @@
 ## rejects a full-length movie — which is then skipped, not misfiled. Frame-count
 ## detection for gifs uses `magick`. All helpers resolve on PATH.
 ##
-## WARNING(alexwu): if this is ever wired to a Hazel rule on ~/Downloads, scope
-## the rule to the top level only — with <root> inside Downloads it would
-## otherwise re-process its own Images/ subfolders in a loop. Moving <root>
-## out of Downloads removes the hazard entirely.
+## NOTE(alexwu): the library now defaults to ~/Media/Images — deliberately
+## OUTSIDE ~/Downloads — so a Hazel rule watching Downloads never re-processes
+## its own sorted output. If you ever point <root> back INSIDE the watched
+## Downloads tree, scope the rule to the top level only, or it loops on its own
+## Images/ subfolders.
 
-import std/[os, osproc, streams, strutils, tempfiles]
+import std/[os, osproc, sequtils, streams, strutils, tempfiles]
 import std/options
 import json_serialization
 import json_serialization/std/options as jsOptions
 
 const
   defaultModel = "gemma-4-26B-A4B-it"
-  defaultRootRel = "Downloads/Images" # relative to $HOME
+  defaultRootRel = "Media/Images" # relative to $HOME; outside ~/Downloads on purpose
   knownStyles = ["realistic", "anime", "cartoon"]
+  whereFromsAttr = "com.apple.metadata:kMDItemWhereFroms"
+    ## macOS "Where from" — the source URL(s) a browser stamps on a download,
+    ## as a binary-plist array (slot 0 = file URL, slot 1 = referring page).
   videoExts = [".mp4", ".mov", ".m4v", ".webm", ".mkv"]
   imageExts = [
     ".heic", ".heif", ".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg", ".gif", ".mp4",
@@ -217,6 +235,46 @@ proc humanSize(bytes: BiggestInt): string =
   else:
     $(bytes div (1024 * 1024)) & " MB"
 
+proc whereFromsHex(path: string): string =
+  ## The raw `kMDItemWhereFroms` xattr as whitespace-free hex, or "" if the file
+  ## carries no such attribute. Read straight from the file's bytes via
+  ## `xattr -px` — deliberately NOT via `mdls`, which reads the Spotlight index
+  ## and lags a just-downloaded or just-written file (the index can still report
+  ## (null) while the attribute is physically present, verified empirically).
+  let p =
+    startProcess("xattr", args = ["-px", whereFromsAttr, path], options = {poUsePath})
+  streams.close(p.inputStream)
+  let outp = streams.readAll(p.outputStream)
+  discard streams.readAll(p.errorStream)
+  let code = p.waitForExit()
+  p.close()
+  if code != 0:
+    return "" # no such xattr (exit 1) — the common, expected case
+  for ch in outp:
+    if ch in HexDigits:
+      result.add ch
+
+proc whereFromUrls(hex, workDir: string): seq[string] =
+  ## Decode the WhereFroms hex (a binary-plist array of URL strings) into the
+  ## source URLs, deduplicated. [] when absent or unreadable — provenance is a
+  ## routing hint, never fatal. Goes hex -> bytes -> `plutil -convert json` so
+  ## the existing JSON decoder can read it, instead of hand-parsing bplist.
+  if hex.len == 0:
+    return @[]
+  let
+    plistPath = workDir / "wherefroms.plist"
+    jsonPath = workDir / "wherefroms.json"
+  try:
+    writeFile(plistPath, parseHexStr(hex))
+  except CatchableError:
+    return @[]
+  if not tryRun("plutil", ["-convert", "json", "-o", jsonPath, plistPath]):
+    return @[]
+  try:
+    result = Json.decode(readFile(jsonPath), seq[string]).deduplicate
+  except CatchableError:
+    return @[]
+
 proc main() =
   # Hazel / launchd invoke us with a minimal PATH that omits ~/.local/bin,
   # where llm-local lives — prepend it so the vision call resolves regardless
@@ -307,6 +365,15 @@ proc main() =
     # heic/heif/jpg/jpeg/webp/avif + static gif → sips raster → png.
     discard run("sips", ["-s", "format", "png", input, "--out", workPng])
 
+  # Where-from provenance: the browser's download URL(s), read straight from the
+  # xattr (index-independent). Fed to the classifier below as context — the prompt
+  # uses the source domain to route nexusmods / loverslab downloads to `skyrim`
+  # (and to sharpen naming for everything else). Read once here while the original
+  # still exists; reused to re-stamp the xattr onto a sips-converted PNG (which
+  # would otherwise lose it).
+  let sourceHex = whereFromsHex(input)
+  let sources = whereFromUrls(sourceHex, workDir)
+
   var llmArgs = @[
     "run", "-m", model, "--schema", "image-sort", "--promptFile", "image-sort", "-i",
     workPng,
@@ -340,6 +407,14 @@ proc main() =
       "usually 'other' (app icon, logo, sticker), NOT a 'wallpaper'; only a " &
       "large, screen-shaped image (~1920x1080 or bigger) is a true wallpaper."
   )
+  if sources.len > 0:
+    # The download URL is context the pixels don't carry — the domain alone often
+    # pins the category (a social host → meme, an art/mod host → its subject) and
+    # the path/filename sharpens the name.
+    llmArgs.add(
+      "DOWNLOAD SOURCE (where this file came from, context not part of the " & "image): " &
+        sources.join("  |  ") & ". The domain is a strong signal for routing and naming."
+    )
   let raw = run("llm-local", llmArgs)
 
   var c: Classification
@@ -366,7 +441,7 @@ proc main() =
       createDir(dest)
       moveFile(input, final)
       stderr.writeLine("image-sort: " & input & " -> " & final & " [other]")
-  of "screenshot", "lulu", "meme", "wallpaper":
+  of "screenshot", "lulu", "meme", "wallpaper", "skyrim":
     if slug.len == 0:
       fail(
         "classifier returned empty/unusable name for " & category & " (raw: " & raw & ")"
@@ -379,6 +454,10 @@ proc main() =
       dest = root / "Memes"
     of "wallpaper":
       dest = root / "Wallpapers"
+      if nsfw:
+        dest = dest / "nsfw"
+    of "skyrim":
+      dest = root / "Skyrim"
       if nsfw:
         dest = dest / "nsfw"
     else: # lulu
@@ -405,6 +484,12 @@ proc main() =
         moveFile(input, final) # move the original (renamed), no trash
       else:
         moveFile(workPng, final)
+        # The sips conversion produced a fresh PNG that dropped the source's
+        # WhereFroms provenance — re-stamp it (byte-exact) before trashing the
+        # original so "Where from" survives into the library. Best-effort: a
+        # failed write must never abort the sort.
+        if sourceHex.len > 0:
+          discard tryRun("xattr", ["-wx", whereFromsAttr, sourceHex, final])
         trashOrDelete(input)
       stderr.writeLine("image-sort: " & input & " -> " & final & " [" & category & "]")
   else:
