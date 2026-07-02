@@ -1,0 +1,31 @@
+# ~/.config/rumdl/rumdl.toml — global rumdl defaults for every project.
+# rumdl loads this ONLY when a project has no .rumdl.toml of its own. A project
+# config fully REPLACES this unless it opts in with:
+#   extends = "~/.config/rumdl/rumdl.toml"
+
+[global]
+# We intentionally use raw inline HTML in markdown.
+disable = ["MD033"]
+respect-gitignore = true
+
+# Only genuinely non-authored / generated / boilerplate content is excluded.
+# NOT CLAUDE.md / AGENTS.md — those are prose we maintain and want wrapped.
+exclude = [
+  ".git",
+  ".github",
+  ".beads",           # generated
+  "node_modules",
+  "vendor",
+  "dist",
+  "build",
+  "CHANGELOG.md",     # generated
+  "LICENSE.md",       # boilerplate
+  ".agents/skills/*.md",  # frequently symlinked third-party skills
+  ".claude/skills/*.md",
+]
+
+[MD013]
+line-length = 100
+code-blocks = false
+tables = false
+headings = true
