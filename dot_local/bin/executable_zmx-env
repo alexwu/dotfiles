@@ -22,7 +22,9 @@ shift
 rg_args=()
 for p in "$@"; do rg_args+=(-e "$p"); done
 
-b=$'\e[1m'; dim=$'\e[2m'; rst=$'\e[0m'
+b=$'\e[1m'
+dim=$'\e[2m'
+rst=$'\e[0m'
 
 daemon=$(zmx list 2>/dev/null | awk -F'\t' -v want="$session" '{
     delete a
@@ -56,7 +58,7 @@ descendants=$(awk -v root="$daemon" '
       m = split(kids[p], q2, " ")
       for (qi=1; qi<=m; qi++) if (q2[qi] != "") queue[++tail] = q2[qi]
     }
-  }' <<< "$snapshot")
+  }' <<<"$snapshot")
 
 if [[ -z "$descendants" ]]; then
   echo "session '$session' (daemon $daemon) has no running processes"
@@ -75,7 +77,7 @@ while IFS=$'\t' read -r pid name; do
       }
       if (cur != "") print cur
     }' | sort)
-  if (( ${#rg_args[@]} > 0 )); then
+  if ((${#rg_args[@]} > 0)); then
     env_out=$(printf '%s\n' "$env_out" | rg -i "${rg_args[@]}" || true)
   fi
   if [[ -z "$env_out" ]]; then
@@ -84,4 +86,4 @@ while IFS=$'\t' read -r pid name; do
     printf '%s\n' "$env_out"
   fi
   echo
-done <<< "$descendants"
+done <<<"$descendants"

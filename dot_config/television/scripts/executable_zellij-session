@@ -10,8 +10,8 @@ name=${2:-}
 case "$cmd" in
   list)
     # Newest-first, excluding the session we're currently attached to (if any).
-    zellij list-sessions -s -r \
-      | awk -v cur="${ZELLIJ_SESSION_NAME:-}" 'cur == "" || $0 != cur'
+    zellij list-sessions -s -r |
+      awk -v cur="${ZELLIJ_SESSION_NAME:-}" 'cur == "" || $0 != cur'
     ;;
 
   preview)
@@ -33,7 +33,7 @@ case "$cmd" in
     # so we branch on OS instead.
     case "$(uname -s)" in
       Darwin) cache_dir="$HOME/Library/Caches/org.Zellij-Contributors.Zellij" ;;
-      *)      cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zellij" ;;
+      *) cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zellij" ;;
     esac
     layout_file="$cache_dir/contract_version_1/session_info/$name/session-layout.kdl"
 
@@ -54,7 +54,7 @@ case "$cmd" in
         echo "running:"
         printf '%s\n' "$pane_actions" | while read -r kind target; do
           case "$kind" in
-            edit)    echo "  → edit $target" ;;
+            edit) echo "  → edit $target" ;;
             command) echo "  → $target" ;;
           esac
         done
@@ -69,8 +69,8 @@ case "$cmd" in
 
     # Live snapshot of the target session's focused pane. `--session X action
     # dump-screen` with no --pane-id targets X's focused pane automatically.
-    zellij --session "$name" action dump-screen --ansi 2>/dev/null \
-      || echo "(unable to dump focused pane)"
+    zellij --session "$name" action dump-screen --ansi 2>/dev/null ||
+      echo "(unable to dump focused pane)"
     ;;
 
   attach)

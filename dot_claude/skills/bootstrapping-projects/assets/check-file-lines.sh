@@ -13,7 +13,7 @@ max="${FILE_LINE_MAX:-400}"
 status=0
 for f in "$@"; do
   [ -f "$f" ] || continue
-  lines=$(wc -l < "$f" | tr -d ' ')
+  lines=$(wc -l <"$f" | tr -d ' ')
   if [ "$lines" -gt "$max" ]; then
     printf 'ERROR: %s has %d lines (max %d) — split it.\n' "$f" "$lines" "$max" >&2
     status=1

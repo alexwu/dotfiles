@@ -28,19 +28,36 @@ kill_mode=0
 show_all=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --kill|-k) kill_mode=1; shift ;;
-    --all|-a)  show_all=1; shift ;;
-    *) echo "usage: zmx-reap [--kill] [--all]" >&2; exit 2 ;;
+    --kill | -k)
+      kill_mode=1
+      shift
+      ;;
+    --all | -a)
+      show_all=1
+      shift
+      ;;
+    *)
+      echo "usage: zmx-reap [--kill] [--all]" >&2
+      exit 2
+      ;;
   esac
 done
 
-b=$'\e[1m'; dim=$'\e[2m'; red=$'\e[31m'; grn=$'\e[32m'; ylw=$'\e[33m'; rst=$'\e[0m'
+b=$'\e[1m'
+dim=$'\e[2m'
+red=$'\e[31m'
+grn=$'\e[32m'
+ylw=$'\e[33m'
+rst=$'\e[0m'
 
 fmt_age() {
   local s=$1
-  if   (( s < 3600 ));  then printf '%dm' $(( s / 60 ))
-  elif (( s < 86400 )); then printf '%dh' $(( s / 3600 ))
-  else                       printf '%dd' $(( s / 86400 ))
+  if ((s < 3600)); then
+    printf '%dm' $((s / 60))
+  elif ((s < 86400)); then
+    printf '%dh' $((s / 3600))
+  else
+    printf '%dd' $((s / 86400))
   fi
 }
 
@@ -63,17 +80,20 @@ while IFS=$'\x1f' read -r cat name age_s running dir; do
     reap)
       reap+=("$name")
       printf '%-44s %-4s %sreap%s              %s%s%s\n' \
-        "$name" "$age" "$red" "$rst" "$dim" "$dir" "$rst" ;;
+        "$name" "$age" "$red" "$rst" "$dim" "$dir" "$rst"
+      ;;
     active)
-      (( active_n++ ))
+      ((active_n++))
       printf '%-44s %-4s %sactive:%-11s%s %s%s%s\n' \
-        "$name" "$age" "$ylw" "$running" "$rst" "$dim" "$dir" "$rst" ;;
+        "$name" "$age" "$ylw" "$running" "$rst" "$dim" "$dir" "$rst"
+      ;;
     attached)
       # Counted so an all-attached world reads as "saw N, skipped them", not a
       # dead tool. With --all, listed too so reap doubles as a session inventory.
-      (( attached_n++ ))
-      (( show_all )) && printf '%-44s %-4s %sattached%s          %s%s%s\n' \
-        "$name" "$age" "$dim" "$rst" "$dim" "$dir" "$rst" ;;
+      ((attached_n++))
+      ((show_all)) && printf '%-44s %-4s %sattached%s          %s%s%s\n' \
+        "$name" "$age" "$dim" "$rst" "$dim" "$dir" "$rst"
+      ;;
   esac
 done < <(printf '%s' "$ps_json" | jaq -r '
   .[]
@@ -84,13 +104,13 @@ done < <(printf '%s' "$ps_json" | jaq -r '
   | join("\u001f")')
 
 echo
-if (( ${#reap[@]} == 0 )); then
+if ((${#reap[@]} == 0)); then
   printf '%snothing to reap%s (%d detached-active, %d attached — all skipped)\n' \
     "$grn" "$rst" "$active_n" "$attached_n"
   exit 0
 fi
 
-if (( kill_mode )); then
+if ((kill_mode)); then
   zmx kill "${reap[@]}"
   printf '%skilled %d session(s)%s, %d active + %d attached skipped\n' \
     "$grn" "${#reap[@]}" "$rst" "$active_n" "$attached_n"
