@@ -16,6 +16,9 @@ zed-settings.json
 # Claude Code project context (lives in source dir only)
 CLAUDE.md
 
+# Dev task runner (lives in source dir only — not a dotfile to deploy)
+justfile
+
 # Firecrawl scrape dumps
 .firecrawl/
 
