@@ -124,6 +124,18 @@ into the picker. Requires [fzf](https://github.com/junegunn/fzf).
   match is highlighted.
 - **Ctrl-C** — cancel; drop into a regular shell as an escape hatch.
 
+> In this dotfiles setup `zmx-select` ships as a standalone script on `$PATH`
+> (`~/.local/bin/zmx-select`, chezmoi source `dot_local/bin/executable_zmx-select`)
+> rather than a per-shell function, so zsh and fish share one source. It draws
+> its list from [`zmx-ps`](#) when present — richer rows (dir · state ·
+> running · clients), directories shown relative to `~/Code` / `$HOME` (the
+> chezmoi source dir renders as `dotfiles`), and the current-session filter
+> keyed off zmx's own `→` marker — and falls back to the plain `zmx list` parse
+> below when `zmx-ps` isn't installed. Sessions started in the current directory
+> sort to the top, the rest grouped by directory; `zmx-select --here` narrows
+> the list to `$PWD` only. The inline function below is the portable,
+> dependency-free equivalent.
+
 ### bash / zsh
 
 ```bash
@@ -131,6 +143,7 @@ zmx-select() {
   local display
   display=$(zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients created dir; do
     name=${name##*name=}
+    [[ -n "$ZMX_SESSION" && "$name" == "$ZMX_SESSION" ]] && continue   # hide the session you're already in
     pid=${pid#pid=}
     clients=${clients#clients=}
     dir=${dir#start_dir=}
@@ -145,7 +158,7 @@ zmx-select() {
     --reverse \
     --prompt="zmx> " \
     --header="Enter: select | Ctrl-N: create new" \
-    --preview='zmx history {1}' \
+    --preview='zmx history {1} --vt' \
     --preview-window=right:60%:follow \
   )
   local rc=$?

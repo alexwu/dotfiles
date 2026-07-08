@@ -120,44 +120,7 @@ then
   alias must="mise run"
 fi
 
-if (( $+commands[zmx] ))
-then
-  zmx-select() {
-    local display
-    display=$(zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients created dir; do
-      name=${name##*name=}
-      pid=${pid#pid=}
-      clients=${clients#clients=}
-      dir=${dir#start_dir=}
-      printf "%-20s  pid:%-8s  clients:%-2s  %s\n" "$name" "$pid" "$clients" "$dir"
-    done)
-
-    local output query selected session_name
-    output=$({ [[ -n "$display" ]] && echo "$display"; } | fzf \
-      --print-query \
-      --height=80% \
-      --reverse \
-      --prompt="zmx> " \
-      --header="Enter: select" \
-      --preview='zmx history {1}' \
-      --preview-window=right:60%:follow \
-    )
-    local rc=$?
-
-    query=$(echo "$output" | sed -n '1p')
-    selected=$(echo "$output" | sed -n '2p')
-
-    if [[ $rc -eq 0 && -n "$selected" ]]; then
-      session_name=$(echo "$selected" | awk '{print $1}')
-    elif [[ -n "$query" ]]; then
-      session_name="$query"
-    else
-      return 130
-    fi
-
-    zmx attach "$session_name"
-  }
-fi
+# zmx-select lives at ~/.local/bin/zmx-select (chezmoi: dot_local/bin/executable_zmx-select)
 
 if (( $+commands[zellij] ))
 then
@@ -279,7 +242,14 @@ else
 fi
 unset _prompt_choice
 
-if [[ -z $CLAUDECODE ]] && (( $+commands[pokemon-colorscripts] ))
+if [[ -t 1 && -z $CLAUDECODE ]] && (( $+commands[pokemon-colorscripts] ))
 then
   pokemon-colorscripts -r --no-title
+fi
+
+# Agent hygiene: strip interactive-only aliases from agent/pipe shells so
+# command-shadowing (diff→delta, ssh→kitten) doesn't leak into Claude Code
+# snapshots or other agents' `zsh -ic` environments.
+if [[ ! -t 1 || -n $CLAUDECODE ]]; then
+  unalias diff ssh obsidian df du 2>/dev/null
 fi

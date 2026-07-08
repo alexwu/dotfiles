@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# zmx-select — fuzzy session picker. fzf over your zmx sessions with a live
+# color (--vt) scrollback preview, then attach.
+#
+#   Enter    attach the highlighted session, or create one from the typed
+#            query when nothing matches
+#   Ctrl-N   force create-from-query even when a match is highlighted
+#   Ctrl-S   toggle cwd-only ⇄ all sessions, in place
+#   Ctrl-C   cancel and drop to a regular shell
+#
+# The session you're currently in is always hidden from the list. Session data
+# comes from `zmx-ps` when available (richer: state / running / clients, and
+# the current-session filter is keyed off zmx's own → marker), falling back to
+# a plain `zmx list` parse otherwise.
+#
+# Sessions started in the current directory float to the top; the rest are
+# grouped by directory.
+#
+# Usage: zmx-select [--here]
+#   --here   start filtered to sessions in the current directory ($PWD); the
+#            in-picker Ctrl-S toggle flips this either way at runtime
+#
+#   Bind it to a key, call it manually, or auto-launch outside a session:
+#     [[ -z "$ZMX_SESSION" ]] && zmx-select && exit
+
+set -uo pipefail
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+command -v zmx >/dev/null || {
+  echo "zmx-select: zmx not found" >&2
+  exit 127
+}
+command -v fzf >/dev/null || {
+  echo "zmx-select: fzf not found" >&2
+  exit 127
+}
+
+# Format a start_dir for display:
+#   chezmoi source dir → "dotfiles"; the ~/Code dir itself → "Code"; under
+#   ~/Code → path relative to ~/Code (e.g. "lulu-dictate", "cleverific/ws2");
+#   $HOME itself → "Home"; elsewhere under $HOME → path relative to $HOME;
+#   anything else → the full absolute path.
+fmt_rows() {
+  # stdin TSV: name \t pid \t clients \t state \t running \t dir
+  # emits (dir promoted to 2nd column; name must stay 1st for the {1} preview):
+  #   name \t dir \t state \t running \t cl:N \t pid:N
+  awk -F'\t' -v HOME="$HOME" \
+    -v DOTS="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}" '
+    function fmtdir(d,   code) {
+      code = HOME "/Code"
+      if (d == DOTS) return "dotfiles"
+      if (d == code) return "Code"
+      if (substr(d, 1, length(code) + 1) == code "/") return substr(d, length(code) + 2)
+      if (d == HOME) return "Home"
+      if (substr(d, 1, length(HOME) + 1) == HOME "/") return substr(d, length(HOME) + 2)
+      return d
+    }
+    { printf "%s\t%s\t%s\t%s\tcl:%s\tpid:%s\n", $1, fmtdir($6), $4, $5, $3, $2 }
+  ' | column -t -s "$(printf '\t')"
+}
+
+sort_rows() {
+  # stdin raw TSV: order sessions started in $PWD first, then group by dir, then
+  # active before idle within each dir ("active" < "idle" sorts that way), then
+  # by name. Prepend four sort keys, sort, strip them back off.
+  local tab
+  tab=$(printf '\t')
+  awk -F'\t' -v OFS='\t' -v CWD="$PWD" '{ print (($6 == CWD) ? 0 : 1), $6, $4, $1, $0 }' |
+    sort -t "$tab" -k1,1n -k2,2 -k3,3 -k4,4 |
+    cut -f5-
+}
+
+# Build the picker list (current session excluded). $1 = mode: 0 all, 1 cwd-only.
+# Shared source: prefer zmx-ps (JSON with a `current` flag + state/running);
+# fall back to parsing `zmx list` directly. Both emit the same raw TSV
+# (name \t pid \t clients \t state \t running \t dir) into sort_rows | fmt_rows.
+build_list() {
+  local here="${1:-0}" raw="" have_source=0
+  if command -v zmx-ps >/dev/null && command -v jaq >/dev/null; then
+    raw=$(zmx-ps 2>/dev/null | jaq -r --arg pwd "$PWD" --argjson here "$here" '
+      .[] | select(.current | not) | select($here == 0 or .start_dir == $pwd)
+      | [ .name, (.pid|tostring), (.clients|tostring),
+          .state, (.running // "-"), .start_dir ] | @tsv')
+    have_source=1
+  fi
+  if ((!have_source)); then
+    raw=$(zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients created dir; do
+      name=${name##*name=}
+      [[ -n "${ZMX_SESSION:-}" && "$name" == "$ZMX_SESSION" ]] && continue
+      pid=${pid#pid=}
+      clients=${clients#clients=}
+      dir=${dir#start_dir=}
+      [[ $here -eq 1 && "$dir" != "$PWD" ]] && continue
+      printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$pid" "$clients" "-" "-" "$dir"
+    done)
+  fi
+  [[ -n "$raw" ]] && printf '%s\n' "$raw" | sort_rows | fmt_rows
+}
+
+# Reload entry point for the in-picker Ctrl-S toggle. The mode (0 all / 1 cwd)
+# lives in $ZMX_SELECT_STATE, seeded by the parent invocation; flip it, repaint.
+if [[ "${1:-}" == "--toggle" ]]; then
+  [[ -n "${ZMX_SELECT_STATE:-}" ]] || {
+    build_list 0
+    exit 0
+  }
+  m=$(cat "$ZMX_SELECT_STATE" 2>/dev/null || echo 0)
+  m=$((1 - m))
+  printf '%s' "$m" >"$ZMX_SELECT_STATE"
+  build_list "$m"
+  exit 0
+fi
+
+here=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help)
+      awk 'NR > 1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "$0"
+      exit 0
+      ;;
+    --here | --cwd)
+      here=1
+      shift
+      ;;
+    *)
+      echo "zmx-select: unknown flag '$1' (see --help)" >&2
+      exit 2
+      ;;
+  esac
+done
+
+# Mode state shared with the Ctrl-S reload; cleaned up on exit.
+STATE=$(mktemp "${TMPDIR:-/tmp}/zmx-select.XXXXXX") || {
+  echo "zmx-select: mktemp failed" >&2
+  exit 1
+}
+printf '%s' "$here" >"$STATE"
+export ZMX_SELECT_STATE="$STATE"
+trap 'rm -f "$STATE"' EXIT
+
+self=$(command -v zmx-select 2>/dev/null || printf '%s' "$0")
+
+output=$(build_list "$here" | fzf \
+  --print-query \
+  --expect=ctrl-n \
+  --height=80% \
+  --reverse \
+  --prompt="zmx> " \
+  --header="Enter: attach · Ctrl-N: new · Ctrl-S: toggle cwd-only · Ctrl-C: cancel" \
+  --preview='zmx history {1} --vt' \
+  --preview-window=right:60%:follow \
+  --bind="ctrl-s:reload($self --toggle)")
+rc=$?
+
+query=$(sed -n '1p' <<<"$output")
+key=$(sed -n '2p' <<<"$output")
+selected=$(sed -n '3p' <<<"$output")
+
+if [[ "$key" == "ctrl-n" && -n "$query" ]]; then
+  session_name="$query"
+elif [[ $rc -eq 0 && -n "$selected" ]]; then
+  session_name=${selected%% *} # first whitespace-delimited field is the name
+elif [[ -n "$query" ]]; then
+  session_name="$query"
+else
+  exit 130
+fi
+
+zmx attach "$session_name"

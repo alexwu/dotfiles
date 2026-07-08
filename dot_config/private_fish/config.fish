@@ -215,42 +215,7 @@ if status is-interactive
         if command -q petname
             abbr -a zn 'zmx attach (petname -d ~/.config/petname-dbz)'
         end
-
-        function zmx-select
-            set -l display (zmx list 2>/dev/null | while read -l line
-                # parse tab-separated fields
-                set -l parts (string split \t $line)
-                set -l name (string replace 'name=' '' $parts[1])
-                set -l pid (string replace 'pid=' '' $parts[2])
-                set -l clients (string replace 'clients=' '' $parts[3])
-                set -l dir (string replace 'start_dir=' '' $parts[5])
-                printf "%-20s  pid:%-8s  clients:%-2s  %s\n" $name $pid $clients $dir
-            end)
-
-            set -l output (begin
-                test -n "$display"; and echo "$display"
-            end | fzf \
-                --print-query \
-                --height=80% \
-                --reverse \
-                --prompt="zmx> " \
-                --header="Enter: select" \
-                --preview='zmx history {1}' \
-                --preview-window=right:60%:follow)
-            set -l rc $status
-
-            set -l query $output[1]
-            set -l selected $output[2]
-
-            if test $rc -eq 0 -a -n "$selected"
-                set -l session_name (echo $selected | awk '{print $1}')
-                zmx attach $session_name
-            else if test -n "$query"
-                zmx attach $query
-            else
-                return 130
-            end
-        end
+        # zmx-select lives at ~/.local/bin/zmx-select (dot_local/bin/executable_zmx-select)
     end
 
     # ----------------------------
