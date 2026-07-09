@@ -241,7 +241,12 @@ Beyond the universal Phase 5 in SKILL.md:
 3. **Cross-file self-containment test:** A fresh session reading `index.md` first, then section files in numbered order, can implement everything without looking anything up
 4. Shut down all teammates via `SendMessage` (type: `"shutdown_request"`)
 5. Clean up the team via `TeamDelete` after all teammates confirm shutdown
-6. Call ExitPlanMode for user approval
+6. Ask the universal Phase 5 compaction question (agent-teams plans skew large, so the recommendation usually lands on **/compact first** or **Fresh session**)
+7. Call ExitPlanMode for user approval
+
+## Phase 6 Note: Post-Approval Handoff
+
+The base SKILL.md owns Phase 6 (post-approval, lead-only — teammates are already shut down). For a beads repo, the `## Beads to File` section lives in `index.md`; file the issues per `references/beads-handoff.md`, write IDs back into `index.md`, then honor the compaction choice. Don't start implementing until the handoff is done and, if the user chose to compact, they've come back.
 
 ## Self-Containment Test (multi-file additions)
 

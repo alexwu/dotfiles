@@ -45,7 +45,9 @@ digraph plan_mode {
     "Run audits in parallel\n(Codex + Opus escalation)" [shape=box];
     "Findings to address?" [shape=diamond];
     "Address findings\n(revise / AskUserQuestion)" [shape=box];
-    "ExitPlanMode" [shape=doublecircle];
+    "Ask: compact before starting?\n(required)" [shape=box];
+    "ExitPlanMode" [shape=box];
+    "Post-approval handoff\n(file beads · honor compaction)" [shape=doublecircle];
 
     "Enter plan mode" -> "Identify scope";
     "Identify scope" -> "Deep exploration";
@@ -62,7 +64,9 @@ digraph plan_mode {
     "Run audits in parallel\n(Codex + Opus escalation)" -> "Findings to address?";
     "Findings to address?" -> "Address findings\n(revise / AskUserQuestion)" [label="yes — pass 1 or 2"];
     "Address findings\n(revise / AskUserQuestion)" -> "Run audits in parallel\n(Codex + Opus escalation)" [label="re-audit (max 2)"];
-    "Findings to address?" -> "ExitPlanMode" [label="clean or escalated"];
+    "Findings to address?" -> "Ask: compact before starting?\n(required)" [label="clean or escalated"];
+    "Ask: compact before starting?\n(required)" -> "ExitPlanMode";
+    "ExitPlanMode" -> "Post-approval handoff\n(file beads · honor compaction)";
 }
 ```
 
@@ -86,6 +90,7 @@ Before reading anything, state:
 5. **Find tests** — what existing test patterns and infrastructure exist?
 6. **Fetch external references** — if the task involves a library, API, or tool, fetch the relevant docs and inline key syntax/signatures into the plan. Do NOT assume the executing session will "just look it up"
 7. **Link the origin** — find the GitHub issue, PR, or conversation that motivated this work
+8. **Sketch the beads breakdown (beads repos only)** — if a `.beads/` directory exists at the repo root, decompose the work into beads issues (with blocked-by dependencies) while you have full context. This is read-only here: no `bd` calls yet — you draft them into the plan (Phase 4) and file them in the post-approval handoff (Phase 6). Skip entirely for repos without `.beads/`. See `references/beads-handoff.md`.
 
 **Use parallel subagents** for independent exploration tasks (e.g., searching for types AND finding test files AND fetching library docs simultaneously). Prefer the focused explorers over `general-purpose`: `code-explorer` for local-codebase research, `github-explorer` for GitHub repos (code, issues, PRs, releases), `web-explorer` for library/framework/API docs and general web research. Each has tighter tool allowlists and discipline baked into its system prompt.
 
@@ -192,6 +197,13 @@ the executing session won't have your exploration context.]
 2. [Specific action with file path]
 3. [Run tests / verify]
 ...
+
+## Beads to File
+<!-- Include ONLY when the repo has a `.beads/` directory at its root; omit the whole
+section otherwise. Drafted here, filed automatically in Phase 6, IDs written back after. -->
+| Bead | Type | Priority | Blocked by | Notes |
+|---|---|---|---|---|
+| [short title] | [bug/feature/task/epic/chore/decision] | [0-4, 0=highest] | [another row's title, or —] | [what it covers] |
 
 ## Risks
 - [Only things that are genuinely unknowable at planning time despite best-effort research]
@@ -312,10 +324,28 @@ check-plan <plan-file-or-directory>
 
 `check-plan` is a small Nim binary on PATH (built by chezmoi from `scripts/claude/check_plan.nim`). It catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, escalation audit mention, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
 
-## Phase 5: Write and Exit
+## Phase 5: Compaction Question & Exit
 
-1. Write the plan to the plan file (as specified by plan mode)
-2. Call ExitPlanMode for user approval
+1. Write the plan to the plan file (as specified by plan mode).
+2. **Ask the required compaction question.** Before `ExitPlanMode`, always run one `AskUserQuestion` — even on small plans, the user decides. The point: implementation should start on a clean slate if this planning session burned a lot of context, and the post-approval handoff (Phase 6) is where any management work happens *before* the user compacts. Compute a recommendation and flag it on the matching option:
+
+   | Recommendation | Signals | Option to offer |
+   |---|---|---|
+   | **Continue** | Single variant, few files read, ≤1 subagent, short plan | "Continue in this session" |
+   | **/compact first** *(recommended)* | Moderate exploration — many files read, a few subagents, plan spans several areas, or the session already feels deep | "/compact, then implement" |
+   | **Fresh session** *(necessary)* | Agent-teams variant, many subagents, very large plan, or the session is near its context budget — `/compact` won't reclaim enough working room | "Start a fresh session" |
+
+   Phrase it as: *"Compact before I start implementing?"* with those three options, the computed recommendation appended to the matching label (e.g. `/compact, then implement (recommended)`). Don't skip the question, and don't pre-decide by acting without asking.
+3. Call `ExitPlanMode` for user approval.
+
+## Phase 6: Post-Approval Handoff
+
+**This phase runs AFTER `ExitPlanMode` is approved — you're back in normal mode, same session. Do NOT dive into implementation yet.** This is the management window: file beads, then honor the compaction choice. Barreling straight into code edits here is the specific behavior this phase exists to prevent.
+
+1. **File beads (beads repos only).** If a `.beads/` directory exists at the repo root and the plan has a `## Beads to File` section, create the issues now, wire up dependencies, capture IDs, and write them back into the plan's table. Auto-filed, then reported — no extra confirmation. Follow `references/beads-handoff.md` for the exact `bd` procedure. No `.beads/` → skip silently.
+2. **Honor the compaction choice** from Phase 5:
+   - **Continue** → proceed to implement.
+   - **/compact first** or **Fresh session** → STOP with a clean handoff message and let the user drive the compaction. Name what was filed and where the plan lives, e.g.: *"Handoff done. Filed bd-a1b2, bd-c3d4, bd-e5f6 (bucket → wiring → tests). Plan at `.claude/plans/rate-limiter.md` is self-contained — `/compact` (or open a fresh session), then say go and I'll implement."* Don't touch code until they come back.
 
 ## The Self-Containment Test
 
@@ -373,3 +403,13 @@ If the answer is no, the plan is missing context. Common gaps:
 | Spawned audits sequentially | They're independent reviews — spawn in a single message with two `Agent` tool calls so they run in parallel. |
 | Downgraded the escalation audit to Sonnet | Opus tier matters for spotting motivated reasoning and rationalized tradeoffs. Don't trade audit quality for tokens. |
 | Audit loop without a cap | 2-pass cap per audit is hard. After that, escalate remaining Critical / ESCALATE findings to the user via AskUserQuestion. |
+
+### Handoff mistakes
+
+| Mistake | Fix |
+|---|---|
+| Skipped the compaction question | It's required on every plan — the user decides whether to compact before implementing. Compute a recommendation, but always ask. |
+| Started implementing right after ExitPlanMode | Phase 6 is a management checkpoint, not the green light. File beads, honor the compaction choice, and stop unless the user picked Continue. |
+| Filed beads during plan mode | Plan mode can't run `bd`. Draft the breakdown into the plan's `## Beads to File` section; file it in Phase 6 after approval. |
+| Added a Beads section to a non-beads repo | Beads is conditional on a `.beads/` directory at the repo root. No `.beads/` → no beads section, no `bd` calls, no mention. |
+| Compacted (or told the user to) before filing beads | Beads filing is management work that must finish *before* compaction — the plan survives a compact, but the pre-implementation `bd create` window doesn't. File first, then hand off. |
