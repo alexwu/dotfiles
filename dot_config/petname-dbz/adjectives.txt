@@ -87,3 +87,8 @@ wolf-person
 yardrat
 z-fighter
 zombie
+super-saiyan-god
+shadow-dragon
+cerealian
+metal
+bio
