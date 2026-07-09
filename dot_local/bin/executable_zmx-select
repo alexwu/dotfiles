@@ -6,6 +6,7 @@
 #            query when nothing matches
 #   Ctrl-N   force create-from-query even when a match is highlighted
 #   Ctrl-S   toggle cwd-only ⇄ all sessions, in place
+#   Ctrl-X   kill the highlighted session, then refresh the list
 #   Ctrl-C   cancel and drop to a regular shell
 #
 # The session you're currently in is always hidden from the list. Session data
@@ -97,19 +98,23 @@ build_list() {
   [[ -n "$raw" ]] && printf '%s\n' "$raw" | sort_rows | fmt_rows
 }
 
-# Reload entry point for the in-picker Ctrl-S toggle. The mode (0 all / 1 cwd)
-# lives in $ZMX_SELECT_STATE, seeded by the parent invocation; flip it, repaint.
-if [[ "${1:-}" == "--toggle" ]]; then
-  [[ -n "${ZMX_SELECT_STATE:-}" ]] || {
-    build_list 0
+# Reload entry points for the in-picker binds (Ctrl-S toggle → --toggle, Ctrl-X
+# kill → --emit). The mode (0 all / 1 cwd) lives in $ZMX_SELECT_STATE, seeded by
+# the parent; --emit repaints the current view, --toggle flips the mode first.
+case "${1:-}" in
+  --emit)
+    build_list "$(cat "${ZMX_SELECT_STATE:-/dev/null}" 2>/dev/null || echo 0)"
     exit 0
-  }
-  m=$(cat "$ZMX_SELECT_STATE" 2>/dev/null || echo 0)
-  m=$((1 - m))
-  printf '%s' "$m" >"$ZMX_SELECT_STATE"
-  build_list "$m"
-  exit 0
-fi
+    ;;
+  --toggle)
+    m=0
+    [[ -f "${ZMX_SELECT_STATE:-}" ]] && m=$(cat "$ZMX_SELECT_STATE" 2>/dev/null || echo 0)
+    m=$((1 - m))
+    [[ -n "${ZMX_SELECT_STATE:-}" ]] && printf '%s' "$m" >"$ZMX_SELECT_STATE"
+    build_list "$m"
+    exit 0
+    ;;
+esac
 
 here=0
 while [[ $# -gt 0 ]]; do
@@ -146,10 +151,11 @@ output=$(build_list "$here" | fzf \
   --height=80% \
   --reverse \
   --prompt="zmx> " \
-  --header="Enter: attach · Ctrl-N: new · Ctrl-S: toggle cwd-only · Ctrl-C: cancel" \
+  --header="Enter: attach · Ctrl-N: new · Ctrl-S: cwd-only · Ctrl-X: kill · Ctrl-C: cancel" \
   --preview='zmx history {1} --vt' \
   --preview-window=right:60%:follow \
-  --bind="ctrl-s:reload($self --toggle)")
+  --bind="ctrl-s:reload($self --toggle)" \
+  --bind="ctrl-x:execute-silent(zmx kill {1})+reload($self --emit)")
 rc=$?
 
 query=$(sed -n '1p' <<<"$output")
