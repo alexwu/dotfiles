@@ -1,0 +1,20 @@
+# btty config — lulu-code-ehxg.2
+# [shell]: the program + args every pane spawns (WezTerm default_prog
+# analogue). btty never rewrites SHELL from this value.
+[workspace]
+collection-source-command = "eo list --paths"
+git-roots-only = true
+name-bases = ["~/Code"]
+exclude-globs = ["~/Code/cleverific/*scratch*"]
+
+[workspace.aliases]
+"~/.local/share/chezmoi" = "dotfiles"
+
+[shell]
+program = "/opt/homebrew/bin/zsh"
+args = ["-c", "/Users/jamesbombeelu/.local/bin/zn; exec /opt/homebrew/bin/zsh -l"]
+
+# [ui] appearance: system | light | dark — pins ALL native chrome (sidebar,
+# alerts, menus, future settings GUI) independent of system appearance.
+[ui]
+appearance = "dark"
