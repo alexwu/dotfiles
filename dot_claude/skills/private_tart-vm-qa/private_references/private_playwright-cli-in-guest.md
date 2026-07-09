@@ -50,3 +50,28 @@ hammer if a daemon wedges. Named sessions via `-s=<name>` isolate parallel flows
 Cookies/localStorage live in the session (in-memory by default; `--persistent` writes the profile to
 disk so logins survive browser restarts). `state-save`/`state-load <file>` snapshot auth state
 explicitly. Log in once by driving the login form, save state, load it in later runs.
+
+### Bot-detection-gated sites (Cloudflare Turnstile etc.) — verified 2026-07-09
+
+Playwright-launched chromium / chrome-for-testing gets fingerprinted and hard-blocked. The stack
+that works: install REAL Chrome in the guest (`brew install --cask google-chrome`, then
+`sudo xattr -dr com.apple.quarantine "/Applications/Google Chrome.app"`), launch it yourself —
+
+```bash
+open -n "/Applications/Google Chrome.app" --args --user-data-dir=$HOME/.qa-chrome \
+  --remote-debugging-port=9223 --no-first-run --no-default-browser-check <URL>
+```
+
+— then `playwright-cli attach --cdp=http://localhost:9223`. Genuine fingerprint + the guest's
+NAT egress (same public IP as the host) sails past the challenge.
+
+**Migrating an authenticated session host→guest: NEVER copy the Chrome profile directory.**
+Cookies are encrypted with the host's "Chrome Safe Storage" login-keychain key; the guest can't
+decrypt them and silently drops every cookie (you land logged-out with no error). Instead:
+`state-save` on the host browser over CDP (cookies export decrypted) → scp → `state-load` in the
+guest → cookies re-persist under the guest's own keychain and survive VM restarts. Delete the
+state file on both sides afterwards — it holds live session cookies.
+
+Worked end-to-end example (Turnstile-gated Shopify admin, cross-origin OOPIF, screenshots):
+the Cleverific `qa-cleverific-browser` skill — `references/qa-in-tart-vm.md` and the
+`scripts/qa-vm.just` executable justfile.

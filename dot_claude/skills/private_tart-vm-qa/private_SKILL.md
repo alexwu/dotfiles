@@ -5,7 +5,7 @@ description: Run GUI QA inside a headless tart macOS VM so the app under test ne
 
 # Headless VM QA with tart
 
-A tart macOS guest (`tahoe-base`, cloned from `ghcr.io/cirruslabs/macos-tahoe-base`) runs with **no host window** under `tart run --no-graphics`, yet still renders a full virtual display with an auto-logged-in Aqua session. Everything runs over SSH; the host keeps focus the entire time. Proven end-to-end 2026-07-09 (Btty + peekaboo + headed Chromium).
+A tart macOS guest (`tahoe-base`, cloned from `ghcr.io/cirruslabs/macos-tahoe-base`) runs with **no host window** under `tart run --no-graphics`, yet still renders a full virtual display with an auto-logged-in Aqua session. Everything runs over SSH; the host keeps focus the entire time. Proven end-to-end 2026-07-09 (Btty + peekaboo + headed Chromium; same day: real Chrome + an authenticated, Turnstile-gated admin — see the playwright reference).
 
 **Why permissions just work:** the Cirrus images pre-grant Accessibility, ScreenCapture, PostEvent, and AppleEvents to `/usr/libexec/sshd-keygen-wrapper` in TCC.db (SIP and Gatekeeper are disabled in the image). Any binary invoked over SSH inherits those grants — peekaboo, playwright, anything. No dialogs, no tccutil, no MDM.
 
@@ -54,6 +54,11 @@ SSH_OPTS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Connect
 | Stale app instance answers the automation | `pkill -x <App>` before relaunch |
 | Only 2 concurrent VMs (Virtualization.framework cap) | Stop one before booting another |
 | macOS 15+ host needs an unlocked login.keychain to run any VM | Non-issue on a logged-in dev machine; scripted `security unlock-keychain` on true headless hosts |
+| A process runs in the guest but its port/service never appears | A dialog is probably blocking it on the guest desktop — `peekaboo image --mode screen` and LOOK before debugging the app |
+| First launch of a brew-cask app blocks on a Gatekeeper "downloaded from the Internet" dialog (despite the image's disabled Gatekeeper) | `sudo xattr -dr com.apple.quarantine "/Applications/<App>.app"` right after install; if already stuck: screenshot, dismiss, `pkill`, relaunch |
+| `open -a <Name>` right after a brew install over SSH → "Unable to find application" | LaunchServices hasn't registered it in the Aqua session yet — open **by path**: `open -n "/Applications/<App>.app"` |
+| `$` / `$(…)` inside a double-quoted SSH command string expands on the HOST | Single-quote the remote command (or compose it with `quote()` in a justfile); sanity-check with `echo $(hostname)` — it must print the guest's name |
+| Guest clock is UTC | Don't expect guest file timestamps to match host local time |
 
 ## Deeper references — load on the matching task
 
