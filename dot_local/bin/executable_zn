@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # zn — attach to a freshly-named zmx session.
 #
+# Rolls a DBZ petname (dbzname) and attaches, re-rolling if the name collides
+# with a live session so two spawns never land in the same one.
+#
+# Usage: zn [-t|--tries N]
+#   -t, --tries N   max collision re-rolls before giving up (default 3, or
+#                   $ZN_TRIES; 0 disables the check).
+#
 # Companion to `dbzname`. On PATH so wezterm's split/tab spawn calls
 # can invoke it directly without sourcing zshrc.
 
@@ -14,4 +21,33 @@ PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 # its exec-time env from `ps eww` (KERN_PROCARGS2); homebrew zsh exposes
 # it, so session shells stay inspectable by zmx-env/zmx-ps.
 export SHELL=/opt/homebrew/bin/zsh
-exec zmx attach "$(dbzname)"
+
+# Max collision re-rolls: --tries/-t flag, else $ZN_TRIES, else 3.
+tries="${ZN_TRIES:-3}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -t | --tries)
+      tries="${2:?--tries needs a number}"
+      shift 2
+      ;;
+    -h | --help)
+      awk 'NR > 1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "$0"
+      exit 0
+      ;;
+    *)
+      echo "zn: unknown flag '$1' (see --help)" >&2
+      exit 2
+      ;;
+  esac
+done
+
+# Re-roll the name until it doesn't match a live session. petname draws are
+# independent, so nothing otherwise stops two spawns picking the same name —
+# and `zmx attach <existing>` silently joins that session instead of creating a
+# new one. Bounded by $tries so an exhausted pool can't spin forever (0 = off).
+name=$(dbzname)
+n=0
+while ((n++ < tries)) && zmx list --short 2>/dev/null | rg -qxF "$name"; do
+  name=$(dbzname)
+done
+exec zmx attach "$name"
