@@ -6,6 +6,7 @@ collection-source-command = "eo list --paths"
 git-roots-only = true
 name-bases = ["~/Code"]
 exclude-globs = ["~/Code/cleverific/*scratch*"]
+collapse-roots = ["~/Code/lulu-dictate"]
 
 [workspace.aliases]
 "~/.local/share/chezmoi" = "dotfiles"
