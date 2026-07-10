@@ -15,3 +15,4 @@ Reference docs for this repo are split across `.claude/rules/`:
 | `claude-scripts.md` | dictate.py, scripts/claude/ hooks, Nim gotchas |
 | `claude-code.md` | Custom skills, subagents, Claude Code hook mechanics |
 | `hazel.md` | scripts/hazel/ tools (heic-ai-rename, image-sort, gif-mosaic), Hazel PATH gotcha |
+| `macos.md` | scripts/macos/ tools (electron-apps), Electron detection signals, Homebrew cask layout |
