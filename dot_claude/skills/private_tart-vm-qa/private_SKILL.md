@@ -1,11 +1,13 @@
 ---
 name: tart-vm-qa
-description: Run GUI QA inside a headless tart macOS VM so the app under test never steals focus on the host. Use when asked to QA, smoke-test, screenshot, or drive a macOS app (btty or any .app) or a browser flow "in the VM", "headless", "without stealing focus", "in the background", or via tart. Covers boot/deploy/drive over SSH, peekaboo GUI automation in the guest, and playwright-cli browser QA in the guest.
+description: Run GUI QA inside a headless tart macOS VM so the app under test never steals focus on the host. Use when asked to QA, smoke-test, screenshot, or drive any macOS .app or a browser flow "in the VM", "headless", "without stealing focus", "in the background", or via tart. Covers boot/deploy/drive over SSH, peekaboo GUI automation in the guest, and playwright-cli browser QA in the guest.
 ---
 
 # Headless VM QA with tart
 
-A tart macOS guest (`tahoe-base`, cloned from `ghcr.io/cirruslabs/macos-tahoe-base`) runs with **no host window** under `tart run --no-graphics`, yet still renders a full virtual display with an auto-logged-in Aqua session. Everything runs over SSH; the host keeps focus the entire time. Proven end-to-end 2026-07-09 (Btty + peekaboo + headed Chromium; same day: real Chrome + an authenticated, Turnstile-gated admin — see the playwright reference).
+A tart macOS guest (`tahoe-base`, cloned from `ghcr.io/cirruslabs/macos-tahoe-base`) runs with **no host window** under `tart run --no-graphics`, yet still renders a full virtual display with an auto-logged-in Aqua session. Everything runs over SSH; the host keeps focus the entire time. Proven end-to-end 2026-07-09 (a native SwiftUI app + peekaboo + headed Chromium; same day: real Chrome + an authenticated, Turnstile-gated admin — see the playwright reference).
+
+**Check the repo first:** a project may ship its own harness on top of this flow (e.g. lulu-code's `mise run qa:vm` cycle in `packaging/qa-vm.sh`, Cleverific's `qa-cleverific-browser` skill) — the repo's CLAUDE.md is the pointer. Prefer the project harness when one exists; the recipe below is the generic floor.
 
 **Why permissions just work:** the Cirrus images pre-grant Accessibility, ScreenCapture, PostEvent, and AppleEvents to `/usr/libexec/sshd-keygen-wrapper` in TCC.db (SIP and Gatekeeper are disabled in the image). Any binary invoked over SSH inherits those grants — peekaboo, playwright, anything. No dialogs, no tccutil, no MDM.
 
@@ -30,9 +32,9 @@ Then pull the base image (~25 GB download, 50 GB sparse disk — one-time):
 tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest tahoe-base
 ```
 
-## The golden image (`btty-qa-golden`)
+## The golden image (`qa-golden`)
 
-`tart clone` is APFS copy-on-write — snapshotting a provisioned guest costs seconds and ~no disk. `btty-qa-golden` (built 2026-07-09) is `tahoe-base` frozen right after provisioning, containing on top of the Cirrus base (which already ships brew, node/npm/npx, python, ruby):
+`tart clone` is APFS copy-on-write — snapshotting a provisioned guest costs seconds and ~no disk. `qa-golden` (built 2026-07-09) is `tahoe-base` frozen right after provisioning, containing on top of the Cirrus base (which already ships brew, node/npm/npx, python, ruby):
 
 - **peekaboo** at `/usr/local/bin/peekaboo` (scp'd from the host — `readlink -f` the brew symlink first)
 - **`@playwright/cli`** global + its `chrome-for-testing` browser (`playwright-cli install-browser chrome-for-testing`)
@@ -41,26 +43,12 @@ tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest tahoe-base
 Uses:
 
 ```bash
-tart clone btty-qa-golden tahoe-base    # restore the working VM after wrecking it
-tart clone btty-qa-golden worker-1      # disposable pristine clone per QA run; delete after
-tart push / tart pull                   # ship it to another mesh Mac via an OCI registry (ghcr.io)
+tart clone qa-golden tahoe-base    # restore the working VM after wrecking it
+tart clone qa-golden worker-1      # disposable pristine clone per QA run; delete after
+tart push / tart pull              # ship it to another mesh Mac via an OCI registry (ghcr.io)
 ```
 
 `tahoe-base` is the live working VM and drifts (later sessions added real Chrome for Turnstile-gated QA); the golden is the known-good floor. To rebuild golden from nothing: clone the base image, run the provisioning steps in the two references, `tart stop`, `tart clone` to a new golden name.
-
-## btty QA (lulu-code) — use the mise tasks
-
-```bash
-mise run qa:vm          # full cycle: package → boot → deploy → peekaboo smoke → screenshot to dist/qa/
-mise run qa:vm:up       # boot headless + ensure peekaboo in guest
-mise run qa:vm:deploy   # ship dist/Btty.app into guest, clean-relaunch
-mise run qa:vm:smoke    # type a command into Btty, verify it executed, screenshot
-mise run qa:vm:shot     # screenshot guest screen to dist/qa/
-mise run qa:vm:down     # stop the VM
-packaging/qa-vm.sh ssh  # interactive shell into the guest
-```
-
-The implementation is `packaging/qa-vm.sh` — read it before extending; every helper encodes a gotcha from the table below.
 
 ## Generic recipe (any app, any repo)
 
@@ -85,7 +73,8 @@ SSH_OPTS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Connect
 
 | Trap | Fix |
 |------|-----|
-| `tart ip` returns a **stale DHCP lease for a STOPPED VM** | Never use it as a liveness check; parse `tart list` state (see `vm_running()` in qa-vm.sh) |
+| `tart ip` returns a **stale DHCP lease for a STOPPED VM** | Never use it as a liveness check; parse `tart list` state (e.g. `vm_running()` in lulu-code's qa-vm.sh) |
+| Playwright-launched chromium / chrome-for-testing gets **fingerprinted and hard-blocked by bot protection** (Cloudflare Turnstile — Shopify admin, etc.) | Install REAL headed Chrome in the guest and `playwright-cli attach --cdp` to it — full recipe in `references/playwright-cli-in-guest.md` |
 | Cold boot: IP arrives long before sshd | Wait up to ~180s for SSH after IP appears |
 | ssh-agent offers every key → "Too many authentication failures" | `PreferredAuthentications=password -o IdentitiesOnly=yes` |
 | Non-interactive SSH PATH is bare | Absolute paths: `/usr/local/bin/peekaboo`, `/opt/homebrew/bin/npx`, or `export PATH=/opt/homebrew/bin:$PATH` first |

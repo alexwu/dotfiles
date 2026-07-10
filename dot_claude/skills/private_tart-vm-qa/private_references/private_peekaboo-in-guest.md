@@ -40,8 +40,8 @@ fixed it 100% of the time.
 For a terminal app, type a command whose side effect is checkable over SSH:
 
 ```bash
-/usr/local/bin/peekaboo type 'touch /tmp/qa-marker' --app Btty
-/usr/local/bin/peekaboo press return --app Btty
+/usr/local/bin/peekaboo type 'touch /tmp/qa-marker' --app <App>
+/usr/local/bin/peekaboo press return --app <App>
 # then poll: test -f /tmp/qa-marker   (retry up to ~10s — keystroke → PTY → shell isn't instant)
 ```
 
