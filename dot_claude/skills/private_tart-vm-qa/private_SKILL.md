@@ -7,7 +7,7 @@ description: Run GUI QA inside a headless tart macOS VM so the app under test ne
 
 A tart macOS guest (`tahoe-base`, cloned from `ghcr.io/cirruslabs/macos-tahoe-base`) runs with **no host window** under `tart run --no-graphics`, yet still renders a full virtual display with an auto-logged-in Aqua session. Everything runs over SSH; the host keeps focus the entire time. Proven end-to-end 2026-07-09 (a native SwiftUI app + peekaboo + headed Chromium; same day: real Chrome + an authenticated, Turnstile-gated admin — see the playwright reference).
 
-**Check the repo first:** a project may ship its own harness on top of this flow (e.g. lulu-code's `mise run qa:vm` cycle in `packaging/qa-vm.sh`, Cleverific's `qa-cleverific-browser` skill) — the repo's CLAUDE.md is the pointer. Prefer the project harness when one exists; the recipe below is the generic floor.
+**Check the repo first:** a project may ship its own harness on top of this flow (a `qa:vm`-style task runner target, a project QA skill) — the repo's CLAUDE.md is the pointer. Prefer the project harness when one exists; the recipe below is the generic floor.
 
 **Why permissions just work:** the Cirrus images pre-grant Accessibility, ScreenCapture, PostEvent, and AppleEvents to `/usr/libexec/sshd-keygen-wrapper` in TCC.db (SIP and Gatekeeper are disabled in the image). Any binary invoked over SSH inherits those grants — peekaboo, playwright, anything. No dialogs, no tccutil, no MDM.
 
@@ -18,7 +18,7 @@ All formulas, no casks (the only cask in the whole flow is real Chrome *inside* 
 ```bash
 brew install cirruslabs/cli/tart        # tart, from the Cirrus tap (repo now lives at openai/tart)
 brew install sshpass                    # homebrew-core; password SSH into the guest (admin/admin)
-brew install steipete/tap/peekaboo      # host copy is also what gets scp'd into guests
+brew install steipete/tap/peekaboo      # for host-side GUI QA; guests brew-install their own copy
 brew install playwright-cli             # homebrew-core; host install only needed to drive a HOST browser
                                         # (e.g. state-save for session migration) — in the GUEST install it
                                         # via npm instead: npm install -g @playwright/cli@latest
@@ -73,7 +73,7 @@ SSH_OPTS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Connect
 
 | Trap | Fix |
 |------|-----|
-| `tart ip` returns a **stale DHCP lease for a STOPPED VM** | Never use it as a liveness check; parse `tart list` state (e.g. `vm_running()` in lulu-code's qa-vm.sh) |
+| `tart ip` returns a **stale DHCP lease for a STOPPED VM** | Never use it as a liveness check; parse `tart list` state (State is the last column) |
 | Playwright-launched chromium / chrome-for-testing gets **fingerprinted and hard-blocked by bot protection** (Cloudflare Turnstile — Shopify admin, etc.) | Install REAL headed Chrome in the guest and `playwright-cli attach --cdp` to it — full recipe in `references/playwright-cli-in-guest.md` |
 | Cold boot: IP arrives long before sshd | Wait up to ~180s for SSH after IP appears |
 | ssh-agent offers every key → "Too many authentication failures" | `PreferredAuthentications=password -o IdentitiesOnly=yes` |
@@ -92,4 +92,3 @@ SSH_OPTS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Connect
 
 - **Driving a native app with peekaboo in the guest** (screenshots, typing, window checks, the `--app` pinning trap): read `references/peekaboo-in-guest.md`.
 - **Browser QA with playwright-cli in the guest** (sessions over SSH, browser install, headed mode): read `references/playwright-cli-in-guest.md`.
-- Full recorded recipe + provenance: `bd recall tart-headless-qa-recipe-2026-07` (lulu-code repo).
