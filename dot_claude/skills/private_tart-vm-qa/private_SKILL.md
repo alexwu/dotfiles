@@ -9,6 +9,45 @@ A tart macOS guest (`tahoe-base`, cloned from `ghcr.io/cirruslabs/macos-tahoe-ba
 
 **Why permissions just work:** the Cirrus images pre-grant Accessibility, ScreenCapture, PostEvent, and AppleEvents to `/usr/libexec/sshd-keygen-wrapper` in TCC.db (SIP and Gatekeeper are disabled in the image). Any binary invoked over SSH inherits those grants — peekaboo, playwright, anything. No dialogs, no tccutil, no MDM.
 
+## Host setup from scratch
+
+All formulas, no casks (the only cask in the whole flow is real Chrome *inside* the guest — see the playwright reference):
+
+```bash
+brew install cirruslabs/cli/tart        # tart, from the Cirrus tap (repo now lives at openai/tart)
+brew install sshpass                    # homebrew-core; password SSH into the guest (admin/admin)
+brew install steipete/tap/peekaboo      # host copy is also what gets scp'd into guests
+brew install playwright-cli             # homebrew-core; host install only needed to drive a HOST browser
+                                        # (e.g. state-save for session migration) — in the GUEST install it
+                                        # via npm instead: npm install -g @playwright/cli@latest
+```
+
+Newer Homebrew refuses third-party taps until trusted: if `brew install steipete/tap/peekaboo` errors with "untrusted tap", run `brew trust steipete/tap` first. If tons of daily VMs ever exhaust DHCP leases, the tart caveat has the `bootpd` lease-time fix (tart.run/faq).
+
+Then pull the base image (~25 GB download, 50 GB sparse disk — one-time):
+
+```bash
+tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest tahoe-base
+```
+
+## The golden image (`btty-qa-golden`)
+
+`tart clone` is APFS copy-on-write — snapshotting a provisioned guest costs seconds and ~no disk. `btty-qa-golden` (built 2026-07-09) is `tahoe-base` frozen right after provisioning, containing on top of the Cirrus base (which already ships brew, node/npm/npx, python, ruby):
+
+- **peekaboo** at `/usr/local/bin/peekaboo` (scp'd from the host — `readlink -f` the brew symlink first)
+- **`@playwright/cli`** global + its `chrome-for-testing` browser (`playwright-cli install-browser chrome-for-testing`)
+- **playwright** (npm project at `~/pwtest`) + its downloaded chromium
+
+Uses:
+
+```bash
+tart clone btty-qa-golden tahoe-base    # restore the working VM after wrecking it
+tart clone btty-qa-golden worker-1      # disposable pristine clone per QA run; delete after
+tart push / tart pull                   # ship it to another mesh Mac via an OCI registry (ghcr.io)
+```
+
+`tahoe-base` is the live working VM and drifts (later sessions added real Chrome for Turnstile-gated QA); the golden is the known-good floor. To rebuild golden from nothing: clone the base image, run the provisioning steps in the two references, `tart stop`, `tart clone` to a new golden name.
+
 ## btty QA (lulu-code) — use the mise tasks
 
 ```bash
