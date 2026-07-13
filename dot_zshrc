@@ -180,10 +180,6 @@ then
   source <(JUST_COMPLETE=zsh just)
 fi
 
-if command -v ngrok &>/dev/null; then
-  eval "$(ngrok completion)"
-fi
-
 if (( $+commands[zellij] ))
 then
   [[ -f ~/.zfunc/_zellij ]] || zellij setup --generate-completion zsh > ~/.zfunc/_zellij
