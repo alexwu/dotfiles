@@ -14,131 +14,71 @@
 ##                 "edits since Alex's last prompt", not "edits this
 ##                 session". Scope creep is per-turn; the counter should be
 ##                 too.
+##   resolve     — prints the anchor path that WOULD be injected, for hosts
+##                 with no hook system. Exits 1 with no output when nothing
+##                 resolves (including a manifest `skip = true` match).
+##
+## `--agent <slug>` names the host agent for manifest matching; see
+## `persona_anchor.nim` for why sniffing the env is only the fallback.
 ##
 ## Output protocol:
 ##   - Fires: emits `additionalContext` (no `permissionDecision`) — the
 ##     reminder rides alongside the tool result without altering the
 ##     permission flow. PreToolUse accepts additionalContext on its own.
 ##   - Doesn't fire: silent (exit 0, no output) — wrong tool, wrong mode,
-##     counter not at threshold, kill switch set, or stdin payload missing.
+##     counter not at threshold, kill switch set, stdin payload missing, or
+##     no anchor resolved.
 ##
 ## Kill switch: `ENABLE_REWARD_ANCHOR=0` → immediate exit 0, no output.
 ## Tuning:      `REWARD_ANCHOR_FREQUENCY=N` → override default N=8.
 ##
-## State file: `~/.claude/reward_anchor/<session_id>.json`
-##   Shape: `{"count": <int>, "last_fired_at": "<iso8601>"}`
-##   Survives `--resume`/`--continue`. Parent dir created lazily by
-##   `saveState` on first edit. No cleanup hook for now — files are tiny
-##   and `persona_anchor` doesn't clean up either.
+## State file: `~/.claude/reward_anchor/<session_id>.json` — see
+## `scripts/lib/anchor.nim`. No cleanup hook for now; files are tiny.
 ##
-## Reminder body: loaded at fire time from `$REWARD_ANCHOR_FILE`, default
-## `~/.claude/anchors/reward_anchor.md` (typically a symlink into a private
-## prompts repo). The file is a template — `<MODE>` and `<COUNT>` are
-## substituted at emit time so the reminder reflects the current run.
-## Missing/unreadable file → silent no-op (same exit path as
-## `ENABLE_REWARD_ANCHOR=0`) so a fresh machine without the prompts repo
-## checked out doesn't break the hook. Keep the body under the 10K char
-## `additionalContext` cap.
+## Reminder body: chosen at fire time by `resolveAnchor` — `$REWARD_ANCHOR_FILE`,
+## then the manifest (`~/.claude/anchors/anchors.toml`), then the legacy
+## `~/.claude/anchors/reward_anchor.md`. The body is a template: `<MODE>` and
+## `<COUNT>` are substituted at emit time so the reminder reflects the current
+## run. Nothing resolved → silent no-op, so a fresh machine without the
+## prompts repo checked out doesn't break the hook. Keep the body under the
+## 10K char `additionalContext` cap.
 
-import std/[json, os, strutils, times]
+import std/[json, os, times]
 import cligen
+import ../lib/agent_env
+import ../lib/anchor
 
-const defaultReminderRelPath = ".claude/anchors/reward_anchor.md"
-const defaultFrequency = 8
+const
+  kind = "reward"
+  envVar = "REWARD_ANCHOR_FILE"
+  legacyRelPath = ".claude/anchors/reward_anchor.md"
+  stateDir = "reward_anchor"
+  defaultFrequency = 8
 
-const triggerTools = ["Edit", "Write", "MultiEdit", "Agent"]
-const triggerModes = ["acceptEdits", "auto", "bypassPermissions"]
+  triggerTools = ["Edit", "Write", "MultiEdit", "Agent"]
+  triggerModes = ["acceptEdits", "auto", "bypassPermissions"]
 
-# ---------------------------------------------------------------------------
-# Types
-# ---------------------------------------------------------------------------
+proc bodyFor(data: JsonNode, agentOverride: string): string =
+  ## "" means "inject nothing" — missing file, `skip = true`, or no match.
+  let
+    cwd = data{"cwd"}.getStr(getCurrentDir())
+    who =
+      if agentOverride.len > 0:
+        agentOverride
+      else:
+        agentSlug()
+    r = resolveAnchor(kind, envVar, legacyRelPath, cwd, who)
+  if r.skip or r.path.len == 0:
+    ""
+  else:
+    loadReminder(r.path)
 
-type State = object
-  count: int
-  lastFiredAt: string
-
-# ---------------------------------------------------------------------------
-# State file — nested under ~/.claude/reward_anchor/. saveState creates the
-# parent dir lazily.
-# ---------------------------------------------------------------------------
-
-proc stateFilePath(sessionId: string): string =
-  getHomeDir() / ".claude" / "reward_anchor" / (sessionId & ".json")
-
-proc loadState(sessionId: string): State =
-  let path = stateFilePath(sessionId)
-  if not fileExists(path):
-    return State()
-  try:
-    let j = parseJson(readFile(path))
-    if j.kind == JObject:
-      result.count = j{"count"}.getInt(0)
-      result.lastFiredAt = j{"last_fired_at"}.getStr("")
-  except JsonParsingError, ValueError, IOError, OSError:
-    discard
-
-proc saveState(sessionId: string, state: State) =
-  let path = stateFilePath(sessionId)
-  try:
-    createDir(path.parentDir)
-    var payload = %*{"count": state.count}
-    if state.lastFiredAt.len > 0:
-      payload["last_fired_at"] = %state.lastFiredAt
-    writeFile(path, $payload)
-  except IOError, OSError:
-    discard
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-proc currentFrequency(): int =
-  let raw = getEnv("REWARD_ANCHOR_FREQUENCY", "")
-  if raw.len == 0:
-    return defaultFrequency
-  try:
-    let n = parseInt(raw)
-    if n > 0: n else: defaultFrequency
-  except ValueError:
-    defaultFrequency
-
-proc disabled(): bool =
-  getEnv("ENABLE_REWARD_ANCHOR", "1") == "0"
-
-proc reminderPath(): string =
-  let raw = getEnv("REWARD_ANCHOR_FILE", "")
-  if raw.len > 0:
-    return expandTilde(raw)
-  return getHomeDir() / defaultReminderRelPath
-
-proc loadReminder(): string =
-  let path = reminderPath()
-  if not fileExists(path):
-    return ""
-  try:
-    return readFile(path)
-  except IOError, OSError:
-    return ""
-
-proc inject(mode: string, count: int, tmpl: string) =
-  let body = tmpl.replace("<MODE>", mode).replace("<COUNT>", $count)
-  echo %*{
-    "hookSpecificOutput":
-      {"hookEventName": "PreToolUse", "additionalContext": body}
-  }
-
-proc readStdinPayload(): JsonNode =
-  try:
-    parseJson(stdin.readAll())
-  except JsonParsingError, ValueError, IOError:
-    nil
-
-# ---------------------------------------------------------------------------
-# Event handlers
-# ---------------------------------------------------------------------------
-
-proc handlePretoolUse(data: JsonNode) =
-  if disabled():
+proc pretooluse(agent = "") =
+  ## PreToolUse — increment counter; inject reminder at threshold.
+  if disabled("ENABLE_REWARD_ANCHOR"):
+    return
+  let data = readStdinPayload()
+  if data == nil:
     return
   let toolName = data{"tool_name"}.getStr("")
   if toolName notin triggerTools:
@@ -146,43 +86,53 @@ proc handlePretoolUse(data: JsonNode) =
   let mode = data{"permission_mode"}.getStr("")
   if mode notin triggerModes:
     return
-  let sessionId = data{"session_id"}.getStr("default")
-  let freq = currentFrequency()
-  var state = loadState(sessionId)
+  let
+    sessionId = data{"session_id"}.getStr("default")
+    freq = currentFrequency("REWARD_ANCHOR_FREQUENCY", defaultFrequency)
+  var state = loadState(stateDir, sessionId)
   state.count += 1
   let fires = state.count mod freq == 0
   if fires:
     state.lastFiredAt = $now().utc()
-  saveState(sessionId, state)
+  saveState(stateDir, sessionId, state)
   if fires:
-    let tmpl = loadReminder()
-    if tmpl.len > 0:
-      inject(mode, state.count, tmpl)
-
-proc handleReset(data: JsonNode) =
-  if disabled():
-    return
-  let sessionId = data{"session_id"}.getStr("default")
-  saveState(sessionId, State())
-
-# ---------------------------------------------------------------------------
-# CLI entry
-# ---------------------------------------------------------------------------
-
-proc pretooluse() =
-  ## PreToolUse — increment counter; inject reminder at threshold.
-  let data = readStdinPayload()
-  if data != nil:
-    handlePretoolUse(data)
+    let body = bodyFor(data, agent)
+    if body.len > 0:
+      inject(
+        "PreToolUse", applyTemplate(body, {"<MODE>": mode, "<COUNT>": $state.count})
+      )
 
 proc resetCounter() =
   ## UserPromptSubmit — zero the counter (new turn, new scope).
   ## Named `resetCounter` to avoid collision with `system.reset`.
+  if disabled("ENABLE_REWARD_ANCHOR"):
+    return
   let data = readStdinPayload()
-  if data != nil:
-    handleReset(data)
+  if data == nil:
+    return
+  saveState(stateDir, data{"session_id"}.getStr("default"), State())
+
+proc resolve(agent = "", cwd = "") =
+  ## Print the resolved anchor path; exit 1 with no output when none/skipped.
+  let
+    who =
+      if agent.len > 0:
+        agent
+      else:
+        agentSlug()
+    where =
+      if cwd.len > 0:
+        cwd
+      else:
+        getCurrentDir()
+    r = resolveAnchor(kind, envVar, legacyRelPath, where, who)
+  if r.skip or r.path.len == 0:
+    quit(1)
+  echo r.path
 
 when isMainModule:
   dispatchMulti(
-    [pretooluse, cmdName = "pretooluse"], [resetCounter, cmdName = "reset"]
+    [pretooluse, cmdName = "pretooluse"],
+    [resetCounter, cmdName = "reset"],
+    [resolve, cmdName = "resolve"],
   )

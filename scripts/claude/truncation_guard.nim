@@ -94,7 +94,7 @@ const DegradedReason =
   "out, or returned an unparseable response), so this is failing closed. " &
   "If the upstream is genuinely cheap (--help, rg, ls, cat, git log), " &
   "re-run without `head` / `tail`. If it's expensive (build, test, network, " &
-  "container), use `memo <cmd> --tail N` instead — memo caches the full " &
+  "container), use `memo --tail N -- <cmd>` instead — memo caches the full " &
   "output so it can be re-read via `memo show -- <cmd>`, no information lost."
 
 proc isMemoInvocation(cmd: string): bool =

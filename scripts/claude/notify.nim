@@ -12,7 +12,7 @@
 ## Built-in backends:
 ##   - appriseNotifier — desktop toast via apprise CLI (always, if installed)
 ##   - grrrNotifier    — growlrrr (always, if installed); click-to-focus when
-##                       in Zellij or WezTerm, --reactivate otherwise
+##                       in Zellij, WezTerm, or btty, --reactivate otherwise
 ##
 ## To add a new backend:
 ##   1. Write a `proc fooNotifier(n: Notification): seq[seq[string]]`.
@@ -31,6 +31,7 @@
 
 import std/[base64, json, os, osproc, strutils, times, tempfiles, streams]
 import cligen
+import ../lib/agent_env
 
 # std/md5 is deprecated in favor of the `checksums` nimble package, but it
 # still works and we only need a short hash for rate-limit filenames — not
@@ -91,51 +92,6 @@ proc tryParseJson(s: string): JsonNode =
 # ---------------------------------------------------------------------------
 # Notification identity (per-session, per-agent)
 # ---------------------------------------------------------------------------
-
-# Per-agent detection for the notification-identifier namespace, so concurrent
-# sessions of different agents (and the dismiss that clears them) never collide.
-#
-# Documented, tool-specific signals come FIRST because they're the reliable
-# ones — CLAUDECODE is the env var Anthropic actually documents and commits to.
-# The generic slug vars below are the fallback catch:
-#   - AI_AGENT  — undocumented/observed-only; Claude Code sets
-#     `claude-code_2-1-183_agent` (slug_version_agent), but it's absent from the
-#     official env-vars reference and could change without notice.
-#   - AGENT     — the emerging cross-agent convention (Goose/Amp set a slug),
-#     but its value is contested (some tools set AGENT=1 as a boolean) and
-#     Claude Code declined to adopt it (anthropics/claude-code#24838).
-# Extend by appending a marker row (preferred) or relying on AGENT/AI_AGENT.
-const
-  agentMarkers = [
-    ("LULU_AGENT", "lulu"),
-      # our own agent's base indicator (lulu-agent: AgentIdentity.env_vars,
-      # always "1" for any lulu-spawned subprocess; session id NOT guaranteed)
-    ("CLAUDECODE", "claude-code"), # documented, stable
-    ("CURSOR_AGENT", "cursor"),
-    ("GEMINI_CLI", "gemini"),
-    ("CODEX_SANDBOX", "codex"),
-    ("GOOSE_TERMINAL", "goose"),
-  ]
-  genericAgentVars = ["AGENT", "AI_AGENT"]
-
-proc slugFromGeneric(v: string): string =
-  ## Slug from a generic AGENT/AI_AGENT value (leading token before `_`),
-  ## ignoring the boolean forms some tools use. "" when not slug-like.
-  if v.len == 0 or v in ["1", "true", "0", "false"]:
-    return ""
-  v.split('_')[0]
-
-proc agentSlug(): string =
-  ## Identifies the host agent. Documented markers first, then the generic
-  ## slug vars, then "luna".
-  for (envVar, slug) in agentMarkers:
-    if getEnv(envVar).len > 0:
-      return slug
-  for envVar in genericAgentVars:
-    let slug = slugFromGeneric(getEnv(envVar))
-    if slug.len > 0:
-      return slug
-  "luna"
 
 proc notifId(session: string): string =
   ## Per-session notification identifier for grrr send/clear, or "" when there
@@ -205,10 +161,14 @@ func describeTool(tool: string, toolInput: JsonNode): string =
   if toolInput == nil or toolInput.kind != JObject:
     return ""
   case tool
-  of "Bash": toolInput{"command"}.getStr("")
-  of "Edit", "Write", "MultiEdit", "NotebookEdit": toolInput{"file_path"}.getStr("")
-  of "WebFetch": toolInput{"url"}.getStr("")
-  else: ""
+  of "Bash":
+    toolInput{"command"}.getStr("")
+  of "Edit", "Write", "MultiEdit", "NotebookEdit":
+    toolInput{"file_path"}.getStr("")
+  of "WebFetch":
+    toolInput{"url"}.getStr("")
+  else:
+    ""
 
 proc writePending(session, tool: string, toolInput: JsonNode) =
   ## Stash the most recent gated tool call so a permission notification can name
@@ -404,11 +364,49 @@ proc weztermPaneIsFocused(paneId: string): bool =
 
   clients[0]{"focused_pane_id"}.getInt(-1) == ourPaneId
 
+proc bttySocketArgs(): seq[string] =
+  ## `--socket` override when the pane env pins the exact daemon socket, so a
+  ## lookup can't drift to a different daemon (e.g. an isolated dev socket).
+  ## Empty when unset — the CLI's own discovery order takes over.
+  let sock = getEnv("BTTY_SOCK")
+  if sock.len > 0:
+    @["--socket", sock]
+  else:
+    @[]
+
+proc bttyFindPane(): JsonNode =
+  ## Our btty pane per the daemon's registry, or nil when it can't be resolved
+  ## (not in btty, daemon down, no match). Exact $BTTY_PANE match first; when
+  ## that id is dead — a zmx session outlives the pane it was born in, so the
+  ## env goes stale — falls back to cwd, preferring a focused match (the same
+  ## heuristic as the Ghostty cwd check).
+  let paneId = getEnv("BTTY_PANE")
+  if paneId.len == 0:
+    return nil
+  let output = runCapture("btty", bttySocketArgs() & @["list-panes"])
+  let reply = tryParseJson(output)
+  if reply == nil or reply.kind != JObject:
+    return nil
+  let panes = reply{"data"}
+  if panes == nil or panes.kind != JArray:
+    return nil
+  let cwd = getCurrentDir()
+  var cwdMatch: JsonNode = nil
+  for pane in panes:
+    if pane.kind != JObject:
+      continue
+    if pane{"pane_id"}.getStr("") == paneId:
+      return pane
+    if pane{"cwd"}.getStr("") == cwd and
+        (cwdMatch == nil or pane{"focused"}.getBool(false)):
+      cwdMatch = pane
+  cwdMatch
+
 proc isTerminalFocused(): bool =
   ## Macos-specific. Returns true when the terminal running this session is
-  ## the frontmost focused app (per aerospace) AND — in Zellij or WezTerm —
-  ## our pane is the focused one. A backgrounded pane/tab/workspace counts as
-  ## not focused, so the notification still fires.
+  ## the frontmost focused app (per aerospace) AND — in Zellij, WezTerm, or
+  ## btty — our pane is the focused one. A backgrounded pane/tab/workspace
+  ## counts as not focused, so the notification still fires.
   let zellijPaneId = getEnv("ZELLIJ_PANE_ID")
   if zellijPaneId.len > 0 and not zellijPaneIsFocused(zellijPaneId):
     return false
@@ -432,6 +430,14 @@ proc isTerminalFocused(): bool =
     if focusedApp != "ghostty":
       return false
     return ghosttyFocusedCwd() == getCurrentDir()
+
+  # btty: terminalPid() can't answer (no GUI-pid query), so match aerospace's
+  # app name and ask the daemon whether our pane is the focused one.
+  if bundle == "com.btty.app":
+    if focusedApp != "Btty":
+      return false
+    let pane = bttyFindPane()
+    return pane != nil and pane{"focused"}.getBool(false)
 
   let ourPid = terminalPid()
   if ourPid <= 0 or focusedPid != ourPid:
@@ -542,6 +548,38 @@ proc buildWeztermFocusScript(paneId: string, tabId: int, workspace: string): str
   )
   path
 
+proc buildBttyFocusScript(paneId: string): string =
+  ## Writes a shell script that brings btty to the front and focuses the pane.
+  ## Returns the path. Executable (0755).
+  ##
+  ## `btty focus-pane <uuid>` resolves cross-workspace natively — the daemon
+  ## switches workspace → tab → pane — so unlike the WezTerm script there is
+  ## no tab/workspace juggling. The socket is baked in because grrr runs the
+  ## script with a bare env that carries no BTTY_SOCK/BTTY_DIR to discover by.
+  let btty = findExe("btty")
+  let bttyBin = if btty.len > 0: btty else: "btty"
+
+  var content = "#!/bin/sh\nopen -b com.btty.app\n"
+  let bttyDir = getEnv("BTTY_DIR")
+  if bttyDir.len > 0:
+    content.add("export BTTY_DIR='" & bttyDir & "'\n")
+  content.add(bttyBin)
+  for arg in bttySocketArgs():
+    content.add(" '" & arg & "'")
+  content.add(" focus-pane " & paneId & "\n")
+
+  let (file, path) = createTempFile("btty-focus-", ".sh")
+  file.write(content)
+  file.close()
+  setFilePermissions(
+    path,
+    {
+      fpUserRead, fpUserWrite, fpUserExec, fpGroupRead, fpGroupExec, fpOthersRead,
+      fpOthersExec,
+    },
+  )
+  path
+
 proc appriseNotifier(n: Notification): seq[seq[string]] =
   ## Standard desktop toast via apprise CLI. Unavailable if apprise is
   ## missing from PATH.
@@ -556,10 +594,10 @@ proc appriseNotifier(n: Notification): seq[seq[string]] =
 
 proc grrrNotifier(n: Notification): seq[seq[string]] =
   ## Growlrrr. Fires for every notification (like apprise). Attaches a
-  ## click-to-focus script when running inside Zellij or WezTerm — both jump
-  ## to the right tab + pane; outside both, or when the pane can't be
-  ## resolved, it falls back to --reactivate. Unavailable only when grrr is
-  ## missing from PATH.
+  ## click-to-focus script when running inside Zellij, WezTerm, or btty — all
+  ## three jump to the right tab + pane (btty across workspaces too); outside
+  ## them, or when the pane can't be resolved, it falls back to --reactivate.
+  ## Unavailable only when grrr is missing from PATH.
   let grrr = findExe("grrr")
   if grrr.len == 0:
     return @[]
@@ -585,19 +623,26 @@ proc grrrNotifier(n: Notification): seq[seq[string]] =
     cmd.add "--execute"
     cmd.add buildZellijFocusScript(zellijPane, zellijTab)
   else:
-    # Resolved lazily — skip the `wezterm cli list` subprocess when the
-    # Zellij branch already won (e.g. Zellij running inside WezTerm).
-    let weztermPane = getEnv("WEZTERM_PANE")
-    let (weztermTab, weztermWs) =
-      if weztermPane.len > 0:
-        weztermPaneInfo(weztermPane)
-      else:
-        (tabId: -1, workspace: "")
-    if weztermTab >= 0:
+    # Resolved lazily — each probe's subprocess runs only when the previous
+    # branch declined (e.g. Zellij running inside WezTerm or btty). btty comes
+    # before WezTerm: a dev-built GUI launched from a WezTerm shell leaks a
+    # stale WEZTERM_PANE into its panes, while BTTY_PANE is definitive.
+    let bttyPane = bttyFindPane()
+    if bttyPane != nil:
       cmd.add "--execute"
-      cmd.add buildWeztermFocusScript(weztermPane, weztermTab, weztermWs)
+      cmd.add buildBttyFocusScript(bttyPane{"pane_id"}.getStr(""))
     else:
-      cmd.add "--reactivate"
+      let weztermPane = getEnv("WEZTERM_PANE")
+      let (weztermTab, weztermWs) =
+        if weztermPane.len > 0:
+          weztermPaneInfo(weztermPane)
+        else:
+          (tabId: -1, workspace: "")
+      if weztermTab >= 0:
+        cmd.add "--execute"
+        cmd.add buildWeztermFocusScript(weztermPane, weztermTab, weztermWs)
+      else:
+        cmd.add "--reactivate"
 
   cmd.add n.body
   @[cmd]

@@ -4,7 +4,13 @@
     "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "DISABLE_AUTOUPDATER": "1",
-    "ENABLE_CLAUDEAI_MCP_SERVERS": "0"
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "0",
+    "ALLOW_LLM_DECIDE": "1"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -87,6 +93,7 @@
       "Bash(go install*)"
     ]
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -149,9 +156,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/reward-anchor pretooluse",
+            "command": "/Users/jamesbombeelu/.local/bin/reward-anchor pretooluse --agent claude-code",
             "timeout": 5,
             "statusMessage": "Scope check..."
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PLAN_FILE=\"$HOME/.claude/plans/.current-plan.md\"; jaq -r '.tool_input.plan // empty' > \"$PLAN_FILE\" && [ -s \"$PLAN_FILE\" ] && ( neovide --reuse-instance \"$PLAN_FILE\" >/dev/null 2>&1 & ); true",
+            "statusMessage": "Opening plan in Neovide...",
+            "async": true
           }
         ]
       }
@@ -198,7 +216,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor session-start",
+            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor session-start --agent claude-code",
             "timeout": 5
           }
         ]
@@ -209,7 +227,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor prompt-submit",
+            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor prompt-submit --agent claude-code",
             "timeout": 5
           },
           {
@@ -237,15 +255,15 @@
     "basedpyright@claude-code-lsps": true,
     "claude-code-setup@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": false,
-    "code-review@claude-code-plugins": true,
+    "code-review@claude-code-plugins": false,
     "codex@openai-codex": true,
     "commit-commands@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "github@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "linear@claude-plugins-official": true,
-    "mcp-server-dev@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": false,
+    "linear@claude-plugins-official": false,
+    "mcp-server-dev@claude-plugins-official": false,
     "notion@claude-plugins-official": true,
     "plugin-dev@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
@@ -259,15 +277,14 @@
     "superpowers@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": false,
     "telegram@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": true,
     "vtsls@claude-code-lsps": true,
     "xcsift@xcsift": true,
     "clangd-lsp@claude-plugins-official": true,
     "remember@claude-plugins-official": false,
     "coderabbit@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": false,
     "nono@always-further": true,
-    "figma@claude-plugins-official": true,
+    "figma@claude-plugins-official": false,
     "clangd@claude-code-lsps": true
   },
   "extraKnownMarketplaces": {
@@ -312,13 +329,21 @@
         "source": "github",
         "repo": "ast-grep/agent-skill"
       }
+    },
+    "shopify-ai-toolkit": {
+      "source": {
+        "source": "github",
+        "repo": "Shopify/shopify-ai-toolkit"
+      }
     }
   },
   "effortLevel": "high",
   "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
   "theme": "auto",
-  "editorMode": "vim",
+  "editorMode": "normal",
   "verbose": true,
+  "precomputeCompactionEnabled": true,
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
