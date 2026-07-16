@@ -15,12 +15,6 @@ groups:
       # swap:false here means it never cold-loads again). 14/14 in the bake-off,
       # ~2x faster than the 31B dense.
       - "gemma-4-26B-A4B-it"
-      # EXPERIMENT(alexwu): 31B dense moved here from workhorse to gauge the
-      # always-resident perf impact (instant availability, no cold-load) against
-      # the unified-memory cost of co-residing permanently with the 26B MoE +
-      # 35B heretic (swap:false → all three held at once). Revert to workhorse
-      # if the memory pressure isn't worth the instant access.
-      - "gemma-4-31B-it"
 
   # Code-completion / next-edit models — one resident at a time (`swap: true`):
   # you drive a single completion provider at a time (Zed's zeta OR Sweep), so
@@ -124,6 +118,46 @@ models:
             # preserve past <think> blocks across multi-turn lu tool loops —
             # cures cross-turn amnesia + restores 100% KV-cache prefix hits.
             # No-op for single-turn classify/dictation/vision (no history).
+            preserve_thinking: true
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.95
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: true
+            preserve_thinking: true
+
+  # MTP-enabled twin of the censored Qwen3.6-27B above — same UD-Q5_K_XL weights
+  # and sampling, but pulled from unsloth's `-MTP-GGUF` repo, which preserves the
+  # native MTP heads that the plain `-GGUF` repo (the daily 27B) strips. Isolates
+  # the MTP variable: byte-identical cmd to `Qwen3.6-27B` except the model path +
+  # `--spec-type draft-mtp --spec-draft-n-max 3` (n-max 3 tuned on the heretic
+  # entry for this Metal build). Purpose is an apples-to-apples MTP-vs-baseline
+  # A/B against the daily `Qwen3.6-27B`.
+  # CAVEAT: unsloth's README says `--mmproj` is "not yet supported with MTP", but
+  # the heretic entry below runs both and works (only long-fill captions stall,
+  # ggml-org/llama.cpp#23636) — mirroring that precedent. If vision misbehaves,
+  # drop `--mmproj` (text-only MTP) or the two `--spec-*` flags (vision, no MTP).
+  # Left in the DEFAULT group (not workhorse) while it's an experiment — promote
+  # into `workhorse` if it earns a permanent slot. Weights via pueue
+  # (label claude: dl-qwen36-27b-mtp) → ~/.cache/huggingface/models/unsloth/.
+  "Qwen3.6-27B-mtp":
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-MTP-GGUF/mmproj-F16.gguf
+    ttl: 6000
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 0.7
+          top_p: 0.8
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: false
             preserve_thinking: true
         "${MODEL_ID}:thinking":
           temperature: 1.0
@@ -263,10 +297,30 @@ models:
     # instead — it has an inverted-guard bug in some builds and reintroduced the
     # wedge. (setParamsByID is even worse: a per-request body rewrite that hung on
     # system-prompt + multimodal requests.) Sampling = Google's gemma-4 defaults.
+  # MTP twin of gemma-4-31B-it above — same Q5_K_M weights, sampling, and the
+  # peg-gemma4 `--reasoning off` wedge fix; adds speculative decoding.
+  # NOTE(alexwu): gemma's MTP is architecturally DIFFERENT from Qwen3.6's. Qwen
+  # bakes the MTP heads into the main GGUF (`--spec-type draft-mtp` alone). Gemma
+  # ships a SEPARATE Google-trained 4-layer drafter checkpoint (unsloth
+  # `mtp-gemma-4-31B-it.gguf`, ~515MB Q8_0) that shares the target's embeddings +
+  # KV cache — attached via `--spec-draft-model`. Hence both flags here.
+  # n-max 4 = unsloth's documented gemma-4-31B starting point (they say tune 1-6
+  # per hardware); sweep against the 27B's measured sweet spot if this underperforms.
+  # mmproj KEPT (vision): the MTP PR declares vision officially compatible; the
+  # real risk is an OOM/slot-corruption bug class (llama.cpp#23371, #22867) that
+  # only bites under long-ctx + `-np > 1` — this entry is ctx 32768, parallel 1,
+  # so it dodges that. Drop `--spec-draft-*` (vision, no MTP) or `--mmproj`
+  # (text-only MTP) if it misbehaves. Default group (experiment) — promote to
+  # always-on if it earns the router job. Drafter via pueue
+  # (label claude: dl-gemma4-31b-mtp-drafter).
+  "gemma-4-31B-it-mtp":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --spec-type draft-mtp --spec-draft-n-max 4 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mtp-gemma-4-31B-it.gguf --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
+    timeouts:
+      responseHeader: 120
   # Stock (non-heretic) 26B MoE — the "regular 26b": fast (~4B active), accurate,
   # jailbreakable for free-form. Stock template; Q5_K_S + F32 mmproj (downloading).
   "gemma-4-26B-A4B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 131072 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
     timeouts:
       responseHeader: 120
   # Abliterated dense twin of gemma-4-31B-it (mradermacher heretic, i1-Q4_K_M).
@@ -278,7 +332,7 @@ models:
   # MoE twin (A4B ≈ 4B active, 26B total), "ultra" abliteration. The "worst
   # corner" prediction — MoE *and* heavy abliteration — for the same bake-off.
   "gemma-4-26B-A4B-it-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.mmproj-f16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 131072 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.mmproj-f16.gguf
     timeouts:
       responseHeader: 120
   # gemma-4 E4B-it — instruction-tuned "edge" variant (Per-Layer-Embeddings /
@@ -377,6 +431,20 @@ models:
     ttl: 28800
     timeouts:
       responseHeader: 120
+  # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt static quant, Q5_K_M
+  # (the card's "recommended" quant). Adult-roleplay finetune "inspired by the
+  # spirit of Melody1437," so same gemma-4 arch → --reasoning off mandatory
+  # (peg-gemma4 thought-channel wedge fix, see gemma-4-31B-it NOTE); the card also
+  # strips reasoning tags itself for cleaner RP. (Thinking CAN be re-enabled via
+  # chat_template_kwargs enable_thinking:true, but the family convention here is
+  # off.) Auto-downloads into llama.cpp's HF cache via -hfr/-hff. Text-only, no
+  # --mmproj. Sampling per the card: temp 1.0 / top_p 0.92 (freq/presence pen 0 =
+  # llama.cpp defaults) — matches the Omega-Evolution sibling below.
+  "Dark-Scarlett-v1.0-26B-A4B":
+    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Dark-Scarlett-v1.0-26B-A4B-GGUF" -hff Dark-Scarlett-v1.0-26B-A4B-Q5_K_M.gguf --no-webui
+    ttl: 28800
+    timeouts:
+      responseHeader: 120
   # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt i1 iMatrix
   # quant, Q5_K_M_hb16 (embeddings/output kept at bf16, the higher-quality flavor).
   # Hybrid of Safeword Omega Directive/Darker + Melody1437, so same gemma-4 arch →
@@ -417,6 +485,23 @@ models:
     # quantized KV + flash-attn to match the other vision entries.
     cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
     ttl: 6000
+  # JoyCaption Beta One — fancyfeast's image captioner (LLaVA arch: SigLIP2
+  # vision + Llama 3.1 8B), built for dense, minimally-filtered training captions
+  # across SFW/NSFW. concedo's repo is the COMPLETE GGUF set: Q8_0 language
+  # weights + the f16 vision projector. mradermacher's GGUF repo is language-only
+  # (no mmproj) — useless alone for vision, so both files come from concedo. Q8_0
+  # is effectively lossless on an 8B (f16 = 2x size, no visible gain). Prompt it
+  # like any chat VLM: system "You are a helpful image captioner", user "Write a
+  # long descriptive caption for this image in a formal tone." Vision-entry flags
+  # (ctx pin + parallel 1 + quantized KV + flash-attn) mirror Qwen3-VL above to
+  # avoid the image-on-compute-buffer KV OOM. --jinja uses the GGUF's embedded
+  # Llama 3.1 template. Weights via `pueue` (label claude: dl-joycaption-q8) to
+  # ~/.cache/huggingface/models/concedo/. Default group.
+  "JoyCaption-Beta-One":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/concedo/llama-joycaption-beta-one-hf-llava-mmproj-gguf/Llama-Joycaption-Beta-One-Hf-Llava-Q8_0.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/concedo/llama-joycaption-beta-one-hf-llava-mmproj-gguf/llama-joycaption-beta-one-llava-mmproj-model-f16.gguf --no-webui
+    ttl: 600
+    timeouts:
+      responseHeader: 120
   "sweepai/sweep-next-edit-1.5b":
     cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --port ${PORT} --no-webui
   "henrik3/sweep-next-edit-v2-7B":
@@ -440,19 +525,19 @@ models:
   # --- mlx-audio: per-model entries ---
   # STT
   "mlx-community/Voxtral-Mini-4B-Realtime-2602-fp16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 7200
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
   "mlx-community/Qwen3-ASR-1.7B-8bit":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
   "mlx-community/parakeet-tdt-0.6b-v3":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     timeouts:
@@ -460,7 +545,7 @@ models:
 
   # TTS
   "mlx-community/Kokoro-82M-bf16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     filters:
@@ -470,31 +555,31 @@ models:
     timeouts:
       responseHeader: 300
   "mlx-community/chatterbox-fp16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
   "mlx-community/Dia-1.6B-fp16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
   "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-bf16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
   "mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-bf16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 28800
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
   "mlx-community/Voxtral-4B-TTS-2603-mlx-bf16":
-    cmd: mlx_audio.server --workers 1 --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
+    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
     ttl: 7200
     checkEndpoint: /v1/models
     filters:
@@ -509,10 +594,10 @@ peers:
     proxy: http://127.0.0.1:8001
     apiKey: ${env.OMLX_API_KEY}
     models:
-      - Qwen3.5-27B-4bit
+      - gemma-4-26B-A4B-it-oQ6
       - gemma-4-31b-it-4bit
-      - Qwen3-Coder-Next-MLX-6bit
-      - Qwen3.6-27B-UD-MLX-4bit
+      - Qwen3.6-27B-oQ4e-mtp
+      - Qwen3.6-35B-A3B-oQ4e-mtp
     timeouts:
       connect: 30
       keepalive: 30
@@ -524,21 +609,31 @@ peers:
     proxy: https://openrouter.ai/api
     apiKey: ${env.OPENROUTER_API_KEY}
     models:
+      - anthropic/claude-fable-5
+      - anthropic/claude-haiku-4.5
       - anthropic/claude-opus-4.6
       - anthropic/claude-opus-4.7
       - anthropic/claude-opus-4.8
       - anthropic/claude-sonnet-4.6
-      - anthropic/claude-haiku-4.5
-      - google/gemini-3.1-flash-lite
-      - google/gemini-3.5-flash
-      - google/gemini-3.1-pro-preview
-      - google/gemini-3-pro-image-preview
-      - google/gemini-3.1-flash-image-preview
+      - anthropic/claude-sonnet-5
       - deepseek/deepseek-v3.2
       - deepseek/deepseek-v4-flash
       - deepseek/deepseek-v4-pro
+      - google/gemini-3-pro-image
+      - google/gemini-3.1-flash-image
+      - google/gemini-3.1-flash-lite
+      - google/gemini-3.1-flash-lite-image
+      - google/gemini-3.1-pro-preview
+      - google/gemini-3.5-flash
+      - google/gemma-4-31b-it
+      - minimax/minimax-m3
       - moonshotai/kimi-k2.6
+      - moonshotai/kimi-k2.7-code
+      - openai/gpt-5.6-luna
+      - openai/gpt-5.6-sol
+      - openai/gpt-5.6-terra
       - openai/gpt-chat-latest
+      - z-ai/glm-5.2
       - ~openai/gpt-latest
     timeouts:
       connect: 30
