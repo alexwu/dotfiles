@@ -137,13 +137,17 @@ proc resolveAnchor*(kind, envVar, legacyRelPath, cwd, agent: string): Resolved =
 
 # ---------------------------------------------------------------------------
 # Per-session counter state — `~/.claude/<stateDir>/<session_id>.json`
-#   Shape: `{"count": <int>, "last_fired_at": "<iso8601>"}`
-# `last_fired_at` is set only on actual fires. Survives `--resume`/`--continue`
-# because session_id is stable. `saveState` creates the parent dir lazily.
+#   Shape: `{"count": <int>, "resets": <int>, "last_fired_at": "<iso8601>"}`
+# `count` is edits since the last prompt (zeroed by `reset`). `resets` counts
+# the prompts that landed on a nonzero `count` — times a climb was interrupted;
+# it survives `reset`. Both `resets` and `last_fired_at` are omitted from the
+# file when zero/empty. Survives `--resume`/`--continue` because session_id is
+# stable. `saveState` creates the parent dir lazily.
 # ---------------------------------------------------------------------------
 
 type State* = object
   count*: int
+  resets*: int
   lastFiredAt*: string
 
 proc stateFilePath(stateDir, sessionId: string): string =
@@ -157,6 +161,7 @@ proc loadState*(stateDir, sessionId: string): State =
     let j = parseJson(readFile(path))
     if j.kind == JObject:
       result.count = j{"count"}.getInt(0)
+      result.resets = j{"resets"}.getInt(0)
       result.lastFiredAt = j{"last_fired_at"}.getStr("")
   except JsonParsingError, ValueError, IOError, OSError:
     discard
@@ -166,6 +171,8 @@ proc saveState*(stateDir, sessionId: string, state: State) =
   try:
     createDir(path.parentDir)
     var payload = %*{"count": state.count}
+    if state.resets > 0:
+      payload["resets"] = %state.resets
     if state.lastFiredAt.len > 0:
       payload["last_fired_at"] = %state.lastFiredAt
     writeFile(path, $payload)

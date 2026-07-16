@@ -1,4 +1,4 @@
-import std/[options, os, unittest]
+import std/[options, os, strutils, unittest]
 import parsetoml
 import ./anchor
 
@@ -186,3 +186,27 @@ suite "applyTemplate":
 
   test "leaves unknown placeholders alone":
     check applyTemplate("<A> <C>", {"<A>": "x"}) == "x <C>"
+
+suite "counter state":
+  const
+    sd = "anchor_test_state"
+    sid = "roundtrip_fixture"
+  let statePath = getHomeDir() / ".claude" / sd / (sid & ".json")
+
+  teardown:
+    removeFile(statePath)
+
+  test "count, resets, and last_fired_at round-trip":
+    saveState(sd, sid, State(count: 3, resets: 2, lastFiredAt: "t"))
+    let s = loadState(sd, sid)
+    check s.count == 3
+    check s.resets == 2
+    check s.lastFiredAt == "t"
+
+  test "zero resets / empty last_fired_at are omitted but load as defaults":
+    saveState(sd, sid, State(count: 1))
+    let s = loadState(sd, sid)
+    check s.count == 1
+    check s.resets == 0
+    check s.lastFiredAt == ""
+    check "resets" notin readFile(statePath)

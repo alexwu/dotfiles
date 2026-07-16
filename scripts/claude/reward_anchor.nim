@@ -10,10 +10,11 @@
 ##                 Gated on `permission_mode in {acceptEdits, auto,
 ##                 bypassPermissions}` — `default` and `plan` already
 ##                 prompt or aren't editing, so the reminder would be noise.
-##   reset       — UserPromptSubmit. Zeros the counter so the metric is
-##                 "edits since Alex's last prompt", not "edits this
-##                 session". Scope creep is per-turn; the counter should be
-##                 too.
+##   reset       — UserPromptSubmit. Zeros the per-turn counter so `<COUNT>`
+##                 stays "edits since Alex's last prompt" (scope creep is
+##                 per-turn). A reset landing on a nonzero count also bumps
+##                 the session `<TURNS>` tally — how many climbs he's
+##                 interrupted this session; that one is NOT zeroed.
 ##   resolve     — prints the anchor path that WOULD be injected, for hosts
 ##                 with no hook system. Exits 1 with no output when nothing
 ##                 resolves (including a manifest `skip = true` match).
@@ -37,9 +38,9 @@
 ##
 ## Reminder body: chosen at fire time by `resolveAnchor` — `$REWARD_ANCHOR_FILE`,
 ## then the manifest (`~/.claude/anchors/anchors.toml`), then the legacy
-## `~/.claude/anchors/reward_anchor.md`. The body is a template: `<MODE>` and
-## `<COUNT>` are substituted at emit time so the reminder reflects the current
-## run. Nothing resolved → silent no-op, so a fresh machine without the
+## `~/.claude/anchors/reward_anchor.md`. The body is a template: `<MODE>`,
+## `<COUNT>`, and `<TURNS>` are substituted at emit time so the reminder
+## reflects the current run. Nothing resolved → silent no-op, so a fresh machine without the
 ## prompts repo checked out doesn't break the hook. Keep the body under the
 ## 10K char `additionalContext` cap.
 
@@ -99,18 +100,28 @@ proc pretooluse(agent = "") =
     let body = bodyFor(data, agent)
     if body.len > 0:
       inject(
-        "PreToolUse", applyTemplate(body, {"<MODE>": mode, "<COUNT>": $state.count})
+        "PreToolUse",
+        applyTemplate(
+          body, {"<MODE>": mode, "<COUNT>": $state.count, "<TURNS>": $state.resets}
+        ),
       )
 
 proc resetCounter() =
-  ## UserPromptSubmit — zero the counter (new turn, new scope).
+  ## UserPromptSubmit — zero the per-turn counter (new turn, new scope) while
+  ## keeping the session tallies. A reset landing on a nonzero `count` bumps
+  ## `resets` — the number of climbs he's interrupted mid-stride this session.
   ## Named `resetCounter` to avoid collision with `system.reset`.
   if disabled("ENABLE_REWARD_ANCHOR"):
     return
   let data = readStdinPayload()
   if data == nil:
     return
-  saveState(stateDir, data{"session_id"}.getStr("default"), State())
+  let sessionId = data{"session_id"}.getStr("default")
+  var state = loadState(stateDir, sessionId)
+  if state.count > 0:
+    state.resets += 1
+  state.count = 0
+  saveState(stateDir, sessionId, state)
 
 proc resolve(agent = "", cwd = "") =
   ## Print the resolved anchor path; exit 1 with no output when none/skipped.
