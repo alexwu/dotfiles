@@ -153,7 +153,7 @@ This is the breadcrumb trail — if an API changes or something doesn't work as 
 the implementing session needs to know where the information came from.
 
 ## Skills & Tools
-- **Skills:** [List skills the executing session should invoke, e.g., `superpowers:test-driven-development`, `writing-mise-tasks`]
+- **Skills:** [List skills the executing session should invoke, e.g., `test-driven-development`, `systematic-debugging`, `writing-mise-tasks`]
 - **Tools:** [List MCP servers, CLI tools, or specific tooling needed, e.g., "use `xcsift` for build output", "use context7 for API docs", "use GitHub MCP for issue updates"]
 
 Explicitly call out what the executing session should reach for. Don't assume it will
@@ -236,6 +236,7 @@ Steps that involve code changes MUST include a concrete code snippet showing the
 - Use actual function names, types, and signatures from exploration
 - Show the key logic, not the entire file
 - Never include placeholder comments like `// TODO: figure this out` or `# Handle the edge cases here`
+- Never write "same as step N" or "similar to the above" — repeat the code in full. Steps may be executed out of order, and agent-teams teammates read their section in isolation
 
 If you can't write the snippet, you haven't explored enough. Go back to Phase 2.
 
@@ -342,10 +343,12 @@ check-plan <plan-file-or-directory>
 
 **This phase runs AFTER `ExitPlanMode` is approved — you're back in normal mode, same session. Do NOT dive into implementation yet.** This is the management window: file beads, then honor the compaction choice. Barreling straight into code edits here is the specific behavior this phase exists to prevent.
 
+> **This is not the `handoff` skill.** Despite the shared name, this phase writes no `.handoff/` doc — the **plan file is the handoff** here, and it already passes the self-containment test below. Reach for the `handoff` skill only once implementation is *underway* and there's execution state (progress against the plan, what broke, what you discovered) that the plan can't hold. Writing a handoff doc for an approved-but-unstarted plan just duplicates it.
+
 1. **File beads (beads repos only).** If a `.beads/` directory exists at the repo root and the plan has a `## Beads to File` section, create the issues now, wire up dependencies, capture IDs, and write them back into the plan's table. Auto-filed, then reported — no extra confirmation. Follow `references/beads-handoff.md` for the exact `bd` procedure. No `.beads/` → skip silently.
 2. **Honor the compaction choice** from Phase 5:
    - **Continue** → proceed to implement.
-   - **/compact first** or **Fresh session** → STOP with a clean handoff message and let the user drive the compaction. Name what was filed and where the plan lives, e.g.: *"Handoff done. Filed bd-a1b2, bd-c3d4, bd-e5f6 (bucket → wiring → tests). Plan at `.claude/plans/rate-limiter.md` is self-contained — `/compact` (or open a fresh session), then say go and I'll implement."* Don't touch code until they come back.
+   - **/compact first** or **Fresh session** → STOP with a clean handoff message and let the user drive the compaction. Name what was filed and where the plan lives, e.g.: *"Handoff done. Filed bd-a1b2, bd-c3d4, bd-e5f6 (bucket → wiring → tests). Plan at `plans/rate-limiter.md` is self-contained — `/compact` (or open a fresh session), then say go and I'll implement."* Don't touch code until they come back.
 
 ## The Self-Containment Test
 
@@ -359,6 +362,7 @@ If the answer is no, the plan is missing context. Common gaps:
 - GitHub issue context that motivated design decisions
 - Assumptions that feel "obvious" because you just explored the code
 - Code snippets that reference functions or types you haven't verified exist
+- Names the plan *itself defines* drift between steps — a function introduced as `clearLayers()` in step 3 but called `clearFullLayers()` in step 7. Check every new name, signature, and type for cross-step consistency
 - You consulted external docs but didn't link them in "Documentation Referenced"
 - You skipped Phase 4.5 without the user explicitly opting out, and the plan never got a second-opinion read
 - The escalation audit surfaced ESCALATE findings and you folded them into Risks instead of asking the user — every ESCALATE needs an AskUserQuestion before ExitPlanMode
@@ -384,6 +388,7 @@ If the answer is no, the plan is missing context. Common gaps:
 | Plan says "update" without specifics | Name the function, line, and exact change |
 | Steps describe code changes but have no snippets | Every code-changing step needs a concrete snippet showing the actual change |
 | Snippets contain placeholder comments | If you wrote `// handle errors here` instead of actual error handling, you haven't finished exploring |
+| Later steps contradict earlier definitions | Names, signatures, and types the plan defines must match across every step that uses them — cross-check before exiting |
 | No assumptions section | Always document what you assumed to be true and why |
 | No decision rationale | Always explain what options were considered and why the chosen approach won |
 | No risks section | Always flag unknowns and edge cases |

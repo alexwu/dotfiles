@@ -41,8 +41,12 @@ calls baked in; the reader rebuilds its own todo list from the doc.
    gh pr view --json number,url,state,title 2>/dev/null   # PR for this branch, if any
    ```
    Record it plus any GitHub issue the session was about, and the path to a plan
-   file if one exists (e.g. under `docs/plans/`). Reference plans/PRs — don't
+   file if one exists (`plans/` or `.plans/`). Reference plans/PRs — don't
    re-paste their contents.
+
+   If you're partway through a plan, name **which of its steps are done** in
+   `## Status`. The plan holds the spec; the handoff holds progress against it.
+   That split is the whole reason both documents exist.
 
 4. **Open tasks — beads vs checklist.**
    - **`.beads/` exists at the repo root** → this repo uses beads. **Read
@@ -124,3 +128,7 @@ repo: <name> · branch: <branch> · <YYYY-MM-DD HH:MM> · agent: <claude-code|co
   unless the user asks to spin a focused task out separately.
 - **Slug is for humans scanning `handoff list`** — keep it short and descriptive
   (`retry-backoff`, not `fix-stuff`).
+- **An approved-but-unstarted plan needs no handoff.** If plan mode just exited
+  and no code has been written, the plan file is already self-contained — that's
+  `plan-mode-plans` Phase 6 ("Post-Approval Handoff"), which despite its name
+  writes no `.handoff/` doc. Hand off once implementation is *underway*.

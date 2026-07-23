@@ -24,7 +24,10 @@ repo's **current** state, and continue.
      ```bash
      handoff latest
      ```
-     Exit 1 means there are none here — tell the user, don't invent one.
+     Exit 1 means there are none here. Before giving up, check for an approved
+     plan (`plans/`, `.plans/`) — a session that started from plan mode has a
+     self-contained plan file *instead of* a handoff, and that's the right entry
+     point. Otherwise say so; don't invent one.
    - **A file path** → read it directly.
    - **A slug or date fragment** ("retry", "2026-07-23") → match against:
      ```bash
@@ -55,6 +58,18 @@ repo's **current** state, and continue.
 
 6. **Orient the user.** Briefly restate the goal, what's done, and the immediate
    next step from the doc — then continue the work.
+
+7. **When the checklist runs dry.** Once the doc's open tasks are done (or the
+   session is wrapping up), close the loop — don't just stop:
+   - Report what got done vs. what's still open, and why anything was left.
+   - Surface uncommitted work (`git status --short`). **Name it; don't commit
+     unasked** — committing is the user's call.
+   - If real state accumulated (decisions made, things discovered, work left
+     part-done), say so: **the handoff on disk is now stale** — its `## Next
+     steps` describe a world that has moved — and offer to write a fresh one.
+
+   A resumed session owes the next one its own handoff, or the chain ends here.
+   `handoff → pickup → ∅` is the failure mode this step exists to prevent.
 
 ## Gotchas
 
