@@ -457,6 +457,20 @@ mkdir -p "$HOME/.local/bin"
   fi
 }
 
+# ---- tool-failure-log (Nim) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/claude/tool_failure_log.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/claude/tool_failure_log.nim" }}"
+  TARGET="$HOME/.local/bin/tool-failure-log"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping tool-failure-log" >&2
+  else
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
 # ---- electron-apps (Nim, requires cligen) ----
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/macos/electron_apps.nim") | sha256sum }}
 {
@@ -470,6 +484,26 @@ mkdir -p "$HOME/.local/bin"
   else
     if ! nimble path cligen >/dev/null 2>&1; then
       echo "build-scripts: installing cligen for electron-apps"
+      nimble install -y cligen >/dev/null
+    fi
+    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
+    echo "build-scripts: built $TARGET"
+  fi
+}
+
+# ---- handoff (Nim, requires cligen) ----
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/handoff/handoff.nim") | sha256sum }}
+{
+  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/handoff/handoff.nim" }}"
+  TARGET="$HOME/.local/bin/handoff"
+
+  if ! command -v nim >/dev/null 2>&1; then
+    echo "build-scripts: nim not found on PATH, skipping handoff" >&2
+  elif ! command -v nimble >/dev/null 2>&1; then
+    echo "build-scripts: nimble not found on PATH, skipping handoff" >&2
+  else
+    if ! nimble path cligen >/dev/null 2>&1; then
+      echo "build-scripts: installing cligen for handoff"
       nimble install -y cligen >/dev/null
     fi
     nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"

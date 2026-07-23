@@ -1,0 +1,35 @@
+#!/bin/bash
+# Deploys selected skills from ~/.claude/skills into ~/.agents/skills as real
+# copies (cross-agent visibility). Add a skill: append to SKILLS + the hash
+# block below.
+# Re-run triggers — chezmoi run_onchange fires when this file's rendered
+# contents change; the hashes below change whenever any skill source file does:
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/exact_writing-clis/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/exact_handoff/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/exact_pickup/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+set -euo pipefail
+SKILLS=(writing-clis handoff pickup)
+LOCK="$HOME/.agents/.skill-lock.json"
+mkdir -p "$HOME/.agents/skills"
+for skill in "${SKILLS[@]}"; do
+  src="$HOME/.claude/skills/$skill"
+  # Guard 1: a symlinked source may point back INTO ~/.agents (ast-grep does);
+  # rsync --delete from a dir into itself is data loss. Skip loudly.
+  if [ -L "$src" ]; then
+    echo "deploy-agents-skills: SKIP $skill — $src is a symlink (self-sync hazard)" >&2
+    continue
+  fi
+  # Guard 2: never write into a dir owned by the skills CLI (npx skills).
+  # Quoted-name match is schema-agnostic and fails toward skipping.
+  if [ -f "$LOCK" ] && rg -q "\"$skill\"" "$LOCK"; then
+    echo "deploy-agents-skills: SKIP $skill — tracked in .skill-lock.json (npx skills territory)" >&2
+    continue
+  fi
+  rsync -a --delete "$src/" "$HOME/.agents/skills/$skill/"
+done
