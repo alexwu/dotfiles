@@ -1,0 +1,20 @@
+{
+	# caddy-tailscale plugin: each `bind tailscale/<name>` joins the tailnet as
+	# its OWN node, gets its own MagicDNS name + auto HTTPS cert.
+	tailscale {
+		# TS_AUTHKEY injected by fnox exec (see the LaunchAgent). Only needed to
+		# (re)register a node; after first run, state below carries it.
+		auth_key {env.TS_AUTHKEY}
+		# The key is an OAuth client secret, which forces a tag on the node
+		# (same tag the mini's ScaleTail containers use: --advertise-tags=tag:container).
+		tags tag:container
+		state_dir /Users/jamesbombeelu/.local/state/caddy-tailscale
+	}
+}
+
+# llama-swap, fronted as its own tailnet node -> https://llama-swap.burro-neon.ts.net
+# Owns the node's root, so both the /ui/ web UI and /v1/ API work with no path prefix.
+https://llama-swap.burro-neon.ts.net {
+	bind tailscale/llama-swap
+	reverse_proxy http://127.0.0.1:8000
+}

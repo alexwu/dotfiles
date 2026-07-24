@@ -16,3 +16,4 @@ Reference docs for this repo are split across `.claude/rules/`:
 | `claude-code.md` | Custom skills, subagents, Claude Code hook mechanics |
 | `hazel.md` | scripts/hazel/ tools (heic-ai-rename, image-sort, gif-mosaic), Hazel PATH gotcha |
 | `macos.md` | scripts/macos/ tools (electron-apps), Electron detection signals, Homebrew cask layout |
+| `caddy.md` | caddy-tailscale custom build, the llama-swap tailnet node, Caddyfile/plist/fnox wiring |
