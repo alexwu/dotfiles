@@ -39,12 +39,6 @@ $q0_num5 : aerospace workspace 5
 $q0_num0 : aerospace workspace 0
 $q0_num_decimal : aerospace layout h_accordion h_tiles
 
-# Lens front-door (lulu-select-1ry): the daemon resolves these TOML recipes from
-# ~/.local/share/lulu-select/lenses/ instead of the standalone launcher scripts.
-# Requires a `just install` to have seeded the built-in lenses (incl. meta.toml).
-cmd - space : /Users/jamesbombeelu/.local/bin/lulu-select meta
-cmd + alt - e : /Users/jamesbombeelu/.local/bin/lulu-select emoji
-# Snippets: fires the picked espanso match into the previously-focused app
-# (the Lens's actions.default runs `espanso match exec`). Replaces the old
-# espick script.
-ctrl + alt + cmd - s : /Users/jamesbombeelu/.local/bin/lulu-select snippets
+# AeroSpace overview overlay. Replaces the old Hammerspoon ctrl+alt+cmd-space
+# binding (now disabled in ~/.hammerspoon/init.lua); see ~/Code/aerospace-manager.
+ctrl + alt + cmd - space : /Users/jamesbombeelu/.local/bin/aerospace-manager toggle
