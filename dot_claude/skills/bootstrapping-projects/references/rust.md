@@ -1,8 +1,10 @@
 # Rust project bootstrap
 
 Grounded in `lulu-agent` — the most thought-out Rust project, strict from line
-one. Defer Rust *idioms* to the `pi-agent-rust` skill; this reference owns
-**layout + dependencies + the quality gate**.
+one. Defer Rust *idioms* to the `writing-rust-code` skill; this reference owns
+**layout + dependencies + the quality gate**. (`pi-agent-rust` is a
+repo-specific workflow skill for `pi_agent_rust`, not a style canon — don't
+route to it for idioms.)
 
 ## Layout — workspace from day one
 
@@ -10,7 +12,7 @@ Always scaffold a Cargo **workspace** with crates under `crates/`, even for a
 single crate. Adding crate #2 is then zero-friction, and dependencies are
 centralized from the start.
 
-```
+```text
 my-project/
 ├── Cargo.toml            # [workspace] — members, package defaults, lints, deps
 ├── rust-toolchain.toml
@@ -250,4 +252,8 @@ refs to commit SHAs (Dependabot bumps them).
 | JSON Schema | `schemars` |
 | Time | `jiff` |
 | IDs | `uuid` (v7) |
+| POSIX calls | `rustix` (never raw `unsafe { libc::... }` when a wrapper exists) |
+| Sync locks | `parking_lot` (no poisoning) |
+| Builders | `bon` |
+| Enum utilities | `strum` |
 | Test process | `assert_cmd`; HTTP mock: `wiremock`; temp files: `tempfile` |

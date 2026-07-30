@@ -92,7 +92,7 @@ parsing, error types, date math, JSON handling, HTTP, etc.
 
 | Stack | Reference | Deep skill(s) to also load |
 |-------|-----------|----------------------------|
-| **Rust** | `references/rust.md` | `pi-agent-rust` |
+| **Rust** | `references/rust.md` | `writing-rust-code` |
 | **Swift / iOS** | `references/swift-ios.md` | `building-swiftui-views`, `pfw-*` (TCA, dependencies, sqlite-data, sharing, …) |
 | **Nim** | `references/nim.md` | `writing-nim-code` |
 | **Python** | `references/python-guardrails.md` | — (Python is last-resort; the reference is mostly "don't") |
