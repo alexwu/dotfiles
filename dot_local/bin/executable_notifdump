@@ -1,0 +1,284 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Dump macOS notification records from the usernoted database as JSON.
+
+Full-fidelity decode: binary plist records are parsed with plistlib, nested
+NSKeyedArchiver payloads (userInfo, communication contexts) are unarchived,
+Cocoa timestamps become ISO 8601, and remaining binary blobs are base64.
+Requires Full Disk Access for the invoking terminal.
+"""
+
+import argparse
+import base64
+import json
+import plistlib
+import sqlite3
+import sys
+import time
+import uuid as uuidlib
+from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import quote
+
+COCOA_EPOCH = 978307200
+DEFAULT_DB = Path.home() / "Library/Group Containers/group.com.apple.usernoted/db2/db"
+
+
+def cocoa_iso(ts):
+    if ts is None:
+        return None
+    return (
+        datetime.fromtimestamp(ts + COCOA_EPOCH, tz=timezone.utc)
+        .astimezone()
+        .isoformat()
+    )
+
+
+def decode_bytes(blob):
+    if blob.startswith(b"bplist00"):
+        try:
+            plist = plistlib.loads(blob)
+        except ValueError as exc:
+            return {
+                "$data": base64.b64encode(blob).decode(),
+                "$error": f"bplist parse failed: {exc}",
+            }
+        unarchived = unarchive(plist)
+        return unarchived if unarchived is not None else walk(plist)
+    return {"$data": base64.b64encode(blob).decode()}
+
+
+def walk(value):
+    if isinstance(value, dict):
+        return {key: walk(val) for key, val in value.items()}
+    if isinstance(value, list):
+        return [walk(val) for val in value]
+    if isinstance(value, bytes):
+        return decode_bytes(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, plistlib.UID):
+        return value.data
+    return value
+
+
+def unarchive(plist):
+    if not (isinstance(plist, dict) and plist.get("$archiver") == "NSKeyedArchiver"):
+        return None
+    objects = plist.get("$objects", [])
+
+    def resolve(value, seen):
+        if isinstance(value, plistlib.UID):
+            idx = value.data
+            if idx in seen or idx >= len(objects):
+                return None
+            return resolve(objects[idx], seen | {idx})
+        if isinstance(value, dict):
+            if "NS.keys" in value and "NS.objects" in value:
+                keys = [str(resolve(key, seen)) for key in value["NS.keys"]]
+                return dict(
+                    zip(keys, [resolve(val, seen) for val in value["NS.objects"]])
+                )
+            if "NS.objects" in value:
+                return [resolve(val, seen) for val in value["NS.objects"]]
+            if "NS.string" in value:
+                return resolve(value["NS.string"], seen)
+            if "NS.time" in value:
+                return cocoa_iso(value["NS.time"])
+            if "NS.data" in value:
+                data = resolve(value["NS.data"], seen)
+                return decode_bytes(data) if isinstance(data, bytes) else data
+            if "$classname" in value:
+                return value["$classname"]
+            out = {}
+            for key, val in value.items():
+                if key == "$class":
+                    out["$class"] = resolve(val, seen)
+                elif not key.startswith("$"):
+                    out[key] = resolve(val, seen)
+            return out
+        if value == "$null":
+            return None
+        if isinstance(value, bytes):
+            return decode_bytes(value)
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, list):
+            return [resolve(val, seen) for val in value]
+        return value
+
+    top = plist.get("$top", {})
+    return resolve(top.get("root", top), frozenset())
+
+
+def fetch(db_path, limit, app, since):
+    query = (
+        "SELECT r.rec_id, a.identifier, r.delivered_date, r.request_date,"
+        " r.request_last_date, r.snooze_fire_date, r.presented, r.style, r.uuid, r.data"
+        " FROM record r LEFT JOIN app a ON r.app_id = a.app_id"
+    )
+    clauses = []
+    params = []
+    if app:
+        clauses.append("a.identifier = ? COLLATE NOCASE")
+        params.append(app)
+    if since is not None:
+        clauses.append("r.rec_id > ?")
+        params.append(since)
+    if clauses:
+        query += " WHERE " + " AND ".join(clauses)
+    # --since emits oldest-first so a follower can append; default is newest-first
+    query += (
+        " ORDER BY r.rec_id ASC"
+        if since is not None
+        else " ORDER BY r.delivered_date DESC"
+    )
+    if limit is not None:
+        query += " LIMIT ?"
+        params.append(limit)
+
+    conn = sqlite3.connect(f"file:{quote(str(db_path))}?mode=ro", uri=True)
+    try:
+        rows = conn.execute(query, params).fetchall()
+    finally:
+        conn.close()
+
+    for (
+        rec_id,
+        identifier,
+        delivered,
+        requested,
+        request_last,
+        snooze,
+        presented,
+        style,
+        uid,
+        data,
+    ) in rows:
+        yield {
+            "rec_id": rec_id,
+            "app": identifier,
+            "delivered": cocoa_iso(delivered),
+            "requested": cocoa_iso(requested),
+            "request_last": cocoa_iso(request_last),
+            "snooze_fire": cocoa_iso(snooze),
+            "presented": bool(presented) if presented is not None else None,
+            "style": style,
+            "uuid": str(uuidlib.UUID(bytes=uid)) if uid else None,
+            "data": decode_bytes(data) if data else None,
+        }
+
+
+def emit(record):
+    print(json.dumps(record, ensure_ascii=False), flush=True)
+
+
+def watch(db_path, app, since, backlog):
+    conn = sqlite3.connect(f"file:{quote(str(db_path))}?mode=ro", uri=True)
+    try:
+        last = since
+        if last is None:
+            last = conn.execute(
+                "SELECT COALESCE(MAX(rec_id), 0) FROM record"
+            ).fetchone()[0]
+            if backlog:
+                for record in reversed(list(fetch(db_path, backlog, app, None))):
+                    emit(record)
+        version = conn.execute("PRAGMA data_version").fetchone()[0]
+        failures = 0
+        while True:
+            time.sleep(1)
+            try:
+                current = conn.execute("PRAGMA data_version").fetchone()[0]
+                failures = 0
+            except sqlite3.Error:
+                failures += 1
+                if failures >= 10:
+                    raise
+                continue
+            if current == version:
+                continue
+            version = current
+            for record in fetch(db_path, None, app, last):
+                emit(record)
+                last = record["rec_id"]
+    finally:
+        conn.close()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="notifdump",
+        description="Dump macOS notification records from the usernoted database as JSON.",
+    )
+    parser.add_argument(
+        "-n",
+        "--limit",
+        type=int,
+        help="records to read (default: 10, or unlimited with --since;"
+        " with --watch: backlog printed before following)",
+    )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="follow mode: emit new records as JSONL as they arrive (polls 1s)",
+    )
+    parser.add_argument(
+        "--since",
+        type=int,
+        metavar="REC_ID",
+        help="only records with rec_id greater than this, oldest-first",
+    )
+    parser.add_argument(
+        "-a", "--app", help="filter by app identifier (case-insensitive)"
+    )
+    parser.add_argument(
+        "--jsonl",
+        action="store_true",
+        help="one JSON object per line instead of an array",
+    )
+    parser.add_argument(
+        "--db", type=Path, default=DEFAULT_DB, help="path to the usernoted database"
+    )
+    args = parser.parse_args()
+
+    if not args.db.exists():
+        print(
+            f"notifdump: database not found at {args.db} — does your terminal have Full Disk Access?",
+            file=sys.stderr,
+        )
+        return 2
+
+    if args.watch:
+        try:
+            watch(args.db, args.app, args.since, args.limit)
+        except KeyboardInterrupt:
+            return 130
+        except sqlite3.Error as exc:
+            print(f"notifdump: can't read {args.db} — {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    limit = (
+        args.limit
+        if args.limit is not None
+        else (None if args.since is not None else 10)
+    )
+    try:
+        records = list(fetch(args.db, limit, args.app, args.since))
+    except sqlite3.Error as exc:
+        print(f"notifdump: can't read {args.db} — {exc}", file=sys.stderr)
+        return 1
+
+    if args.jsonl:
+        for record in records:
+            print(json.dumps(record, ensure_ascii=False))
+    else:
+        print(json.dumps(records, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
