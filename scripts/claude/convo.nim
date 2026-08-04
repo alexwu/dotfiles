@@ -55,10 +55,80 @@ proc recent(n = 5, path = "", json = false, include_tool_results = false) =
   let turns = parseTranscript(resolvePath(path), include_tool_results)
   emit(recentTurns(turns, n), json)
 
-proc allTurns(path = "", json = false, include_tool_results = false) =
-  ## Print the whole filtered conversation.
+proc parseTs(ts: string): Option[Time] =
+  ## Transcript timestamps are ISO 8601 UTC ("2026-08-04T03:48:52.186Z").
+  if ts.len == 0:
+    return none(Time)
+  for fmt in ["yyyy-MM-dd'T'HH:mm:ss'.'fff'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'"]:
+    try:
+      return some(parse(ts, fmt, utc()).toTime)
+    except TimeParseError:
+      discard
+  none(Time)
+
+proc localDay(t: Time): string =
+  t.local.format("yyyy-MM-dd")
+
+func gapMarker(a, b: Time): string =
+  ## "" under 3 hours; otherwise a human-scale seam.
+  let hours = (b - a).inHours
+  if hours < 3:
+    ""
+  elif hours < 24:
+    "[— resumed after " & $hours & " hours —]"
+  elif hours < 48:
+    "[— resumed the next day —]"
+  else:
+    "[— resumed after " & $((b - a).inDays) & " days —]"
+
+proc allTurns(path = "", day = "", json = false, include_tool_results = false) =
+  ## Print the whole filtered conversation. `--day YYYY-MM-DD` emits only that
+  ## LOCAL day's turns; when the session began on an earlier day a header says
+  ## so, and multi-hour gaps inside the window get seam markers (text mode
+  ## only — `--json` gets the filtered turns, no markers). Turns without a
+  ## timestamp are dropped in day mode (they can't be dated).
   let turns = parseTranscript(resolvePath(path), include_tool_results)
-  emit(turns, json)
+  if day.len == 0:
+    emit(turns, json)
+    return
+  try:
+    discard parse(day, "yyyy-MM-dd")
+  except TimeParseError:
+    stderr.writeLine("convo all: bad --day (use YYYY-MM-DD): " & day)
+    quit(1)
+
+  var kept: seq[Turn] = @[]
+  var keptTimes: seq[Time] = @[]
+  var firstTime = none(Time)
+  for t in turns:
+    let ts = parseTs(t.timestamp)
+    if ts.isNone:
+      continue
+    if firstTime.isNone:
+      firstTime = ts
+    if localDay(ts.get) == day:
+      kept.add t
+      keptTimes.add ts.get
+  if kept.len == 0:
+    return
+  if json:
+    echo turnsToJson(kept)
+    return
+
+  var parts: seq[string] = @[]
+  let firstDay = localDay(firstTime.get)
+  if firstDay < day:
+    let earlier =
+      (parse(day, "yyyy-MM-dd").toTime - parse(firstDay, "yyyy-MM-dd").toTime).inDays
+    let unit = if earlier == 1: " day earlier; " else: " days earlier; "
+    parts.add "[session began " & $earlier & unit & "earlier portion omitted]"
+  for i, t in kept:
+    if i > 0:
+      let marker = gapMarker(keptTimes[i - 1], keptTimes[i])
+      if marker.len > 0:
+        parts.add marker
+    parts.add t.role & ": " & t.text
+  echo parts.join("\n\n")
 
 func humanSize(n: BiggestInt): string =
   const Units = ["B", "K", "M", "G", "T"]
