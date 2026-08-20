@@ -1,6 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
+    "SHELL": "/opt/homebrew/bin/bash",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "DISABLE_AUTOUPDATER": "1",
@@ -93,7 +94,7 @@
       "Bash(go install*)"
     ]
   },
-  "model": "opus",
+  "model": "fable",
   "hooks": {
     "PreToolUse": [
       {
@@ -241,6 +242,19 @@
           }
         ]
       }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/tool-failure-log",
+            "timeout": 5,
+            "statusMessage": "Logging lulu-tool failure..."
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -274,7 +288,7 @@
     "rust-analyzer@claude-code-lsps": true,
     "security-guidance@claude-plugins-official": false,
     "skill-codex@skill-codex": true,
-    "superpowers@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": false,
     "swift-lsp@claude-plugins-official": false,
     "telegram@claude-plugins-official": false,
     "vtsls@claude-code-lsps": true,
@@ -285,7 +299,10 @@
     "skill-creator@claude-plugins-official": false,
     "nono@always-further": true,
     "figma@claude-plugins-official": false,
-    "clangd@claude-code-lsps": true
+    "clangd@claude-code-lsps": true,
+    "shortcuts-playground@shortcuts-playground": true,
+    "funes@huggingface": true,
+    "matrix@claude-code-channel-matrix": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {
@@ -335,6 +352,24 @@
         "source": "github",
         "repo": "Shopify/shopify-ai-toolkit"
       }
+    },
+    "shortcuts-playground": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/viticci/shortcuts-playground-plugin.git"
+      }
+    },
+    "huggingface": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/jamesbombeelu/.funes/integrations/claude-plugin"
+      }
+    },
+    "claude-code-channel-matrix": {
+      "source": {
+        "source": "github",
+        "repo": "zekker6/claude-code-channel-matrix"
+      }
     }
   },
   "effortLevel": "high",
@@ -349,6 +384,8 @@
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": false,
+  "cleanupPeriodDays": 365,
+  "showClearContextOnPlanAccept": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
   }

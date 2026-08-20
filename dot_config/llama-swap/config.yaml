@@ -369,22 +369,8 @@ models:
   # uses the OpenAI-style input_audio part instead.) Weights via `pueue` (label
   # claude: dl-gemma4-12b-it-q6k). Default group — promote to always-on if it earns
   # a router/audio job. Ref: hf.co/unsloth/gemma-4-12b-it-GGUF.
-  # BINARY OVERRIDE: this entry calls the explicit mise llama-server (build 9518)
-  # instead of bare `llama-server`, because Homebrew's stock binary is pinned at
-  # 9430 which dies on the gemma4uv projector ("unknown projector type: gemma4uv",
-  # llama.cpp#24120). The gemma4uv loader landed in b9503; 9518 has it. Rest of the
-  # fleet still resolves bare `llama-server` → Homebrew 9430. Revert this to bare
-  # once `brew info llama.cpp` stable is ≥ 9493 (mise install is the "for now" path).
-  # STATUS: TEXT + AUDIO + VISION all verified working (2026-06-04). The 12B AUDIO
-  # loop (llama.cpp#24138 — infinite reasoning-token spiral on our exact F32 mmproj)
-  # only bites with thinking ENABLED; this entry's `--reasoning off` sidesteps it.
-  # Verified on a 7s clip: BOTH transcription AND comprehension returned
-  # finish_reason=stop, clean bounded output, no loop. VISION: described a synthetic
-  # shapes+text image accurately, OCR correct, NO #24146 <unused49> garbage. CAVEAT:
-  # long audio untested (the #24138 report used a 12-min clip) — re-test before
-  # trusting long inputs; if a long clip spirals, that's the bug resurfacing.
   "gemma-4-12b-it":
-    cmd: /Users/jamesbombeelu/.local/share/mise/installs/github-ggml-org-llama-cpp/latest/llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q6_K.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q6_K.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/mmproj-F32.gguf
     ttl: 12000
     timeouts:
       responseHeader: 120
@@ -627,6 +613,7 @@ peers:
       - google/gemini-3.5-flash
       - google/gemini-3.5-flash-lite
       - google/gemini-3.6-flash
+      - google/gemini-3.7-flash
       - google/gemma-4-31b-it
       - minimax/minimax-m3
       - moonshotai/kimi-k2.6
