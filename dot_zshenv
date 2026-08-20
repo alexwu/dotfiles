@@ -1,0 +1,17 @@
+# Sourced by EVERY zsh — including the non-interactive $SHELL -c that sshd and
+# `ssh host 'cmd'` run — so keep it fast: no evals, no forks. .zprofile still does
+# the full brew/mise setup for login shells; typeset -U dedupes the overlap.
+typeset -U path
+path=(/opt/homebrew/bin /opt/homebrew/sbin $HOME/.local/bin $path)
+export PATH
+
+# rustup's PATH hook (the mini has cargo via rustup; harmless where absent)
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Local sessions use this machine's 1Password SSH agent; ssh sessions keep the
+# forwarded agent sshd already put in SSH_AUTH_SOCK. ~/.ssh/config carries the
+# matching IdentityAgent conditional for OpenSSH itself (which outranks this env
+# var); this export covers everything that only reads SSH_AUTH_SOCK.
+if [[ -z "${SSH_CONNECTION:-}" && -S "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" ]]; then
+  export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+fi
