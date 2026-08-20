@@ -187,7 +187,15 @@ proc luArgv*(schemaRef, promptName, model: string): seq[string] =
   ## MANDATORY: without it lu discovers and splices the cwd's CLAUDE.md/AGENTS.md
   ## into the system prompt — an injection vector for a guard. --ephemeral leaves
   ## no session file (this fires on every command); --max-turns 1 means the agent
-  ## loop can never dispatch a tool (schema mode one-shots anyway).
+  ## loop can never dispatch a tool (schema mode one-shots anyway). --no-tools is
+  ## also MANDATORY, for two reasons: it drops a tool payload the guard can never
+  ## use, and llama.cpp cannot build a combined grammar when `tools` and
+  ## `response_format.json_schema` are sent together — the server 400s with
+  ## "Failed to initialize samplers: failed to parse grammar", which adjudicate
+  ## maps to `none`, i.e. every classification degrades to the caller fallback.
+  ## Verified on llama-server build 10516 (b95502ba9): tools alone OK, schema
+  ## alone OK, both together fail. `tool_choice: "none"` also fixes it upstream,
+  ## but lu exposes --no-tools, and no tools is what a guard actually wants.
   let absSchema =
     if schemaRef.isAbsolute:
       schemaRef
@@ -197,7 +205,7 @@ proc luArgv*(schemaRef, promptName, model: string): seq[string] =
   let m = if model.len > 0: model else: DefaultLocalModel
   @[
     "lu", "-P", "llama", "-m", m, "--schema", absSchema, "--prompt-file", absPrompt,
-    "--no-context-files", "--ephemeral", "--max-turns", "1",
+    "--no-context-files", "--ephemeral", "--max-turns", "1", "--no-tools",
   ]
 
 proc runLlm(

@@ -77,6 +77,7 @@ suite "llm_decide":
     check a[0] == "lu"
     check "--no-context-files" in a
     check "--ephemeral" in a
+    check "--no-tools" in a
     let s = argAfter(a, "--schema")
     check s.isAbsolute and s.endsWith("pretooluse.schema.json")
     check argAfter(a, "--prompt-file").endsWith("/git-confirm-classify.md")
