@@ -53,14 +53,16 @@ When denying, set `permissionDecisionReason` to a single line that:
 
 1. Names what the upstream actually is (one short phrase).
 2. Recommends `memo` as the non-evasive replacement, with the right flag —
-   `memo <the upstream command> --tail N` to keep the display bounded, with
-   the full output cached and retrievable via `memo show -- <cmd>`.
+   `memo --tail N -- <the upstream command>` to keep the display bounded, with
+   the full output cached and retrievable via `memo show -- <cmd>`. memo's own
+   flags MUST come before the wrapped command; anything after the command name
+   is handed to that command, which will reject `--tail`.
 3. Reminds the reader the full stream is never thrown away with `memo`.
 
 Example deny reason:
 
 > `cargo test` is an expensive run whose useful errors live at the end of the
-> stream. Re-run as `memo cargo test --tail 80` — memo caches the full output
+> stream. Re-run as `memo --tail 80 -- cargo test` — memo caches the full output
 > so you can re-read it with `memo show -- cargo test`, no information lost.
 
 ## Other fields
