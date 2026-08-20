@@ -1,8 +1,7 @@
 # zmx shell integration & environment
 
-How to wire zmx into your shell, prompt, and SSH workflow. Snippets are from the
-zmx v0.6.0 README; the fzf picker is corrected for v0.6.0's `zmx list` field
-names (see the note there).
+How to wire zmx into your shell, prompt, and SSH workflow. Snippets track the
+zmx **v0.7.0** README. Items marked **0.7.0+** are not available on 0.6.0.
 
 ## Contents
 
@@ -112,6 +111,17 @@ if type -q zmx
 end
 ```
 
+### nushell (0.7.0+) — sourced from `config.nu`
+
+`zmx completions nu` is new in 0.7.0; 0.6.0 accepts only `bash`, `zsh`, and
+`fish`, and exits silently on anything else — so a `nu` completion that produces
+no output means the binary is too old, not that the command failed.
+
+```nu
+zmx completions nu | save -f ~/.config/nushell/zmx-completions.nu
+# then in config.nu:  source ~/.config/nushell/zmx-completions.nu
+```
+
 ## fzf session picker
 
 An interactive picker that fuzzy-finds existing sessions, previews their
@@ -181,10 +191,23 @@ zmx-select() {
 }
 ```
 
-> The field-stripping above is corrected for zmx v0.6.0. The README's published
-> version strips `session_name=` / `started_in=`, but v0.6.0 `zmx list` emits
-> `name=` / `start_dir=`; `${name##*name=}` also drops the leading `→`/space
-> prefix so the `--preview` and selection see a bare session name.
+> Upstream fixed its own picker's field parsing in v0.7.0 (#172), so the README
+> now strips `name=` / `start_dir=` too. Two differences remain in the version
+> above, both deliberate: `${name##*name=}` (greedy) also drops the leading
+> `→`/space prefix so the `--preview` and the selection see a bare session name,
+> and the `$ZMX_SESSION` guard hides the session you are already sitting in.
+>
+> **The `dir` column collects junk.** `read`'s *last* variable absorbs the rest
+> of the line, tabs included — so `dir` is really `start_dir=…` plus any `cmd=`,
+> `ended=`, `exit_code=`, and (on **0.7.0+**) every label. `${dir#start_dir=}`
+> only strips the prefix. Sessions created with an explicit command already show
+> this; labels make it routine. Add a trailing catch-all so `dir` stays clean:
+>
+> ```bash
+> while IFS=$'\t' read -r name pid clients created dir rest; do
+> ```
+>
+> and print `$rest` as its own column if you want the labels visible.
 
 ### Auto-launch on shell startup
 
@@ -198,11 +221,40 @@ if command -v zmx &> /dev/null && command -v fzf &> /dev/null && [[ -z "$ZMX_SES
 fi
 ```
 
+### Alternative: gentle hint (shared servers)
+
+Auto-launching the picker on every connection is too aggressive on a box you SSH
+into for quick one-off commands. Print a one-line reminder instead, and only when
+sessions actually exist:
+
+```bash
+if command -v zmx &> /dev/null && [[ -z "$ZMX_SESSION" ]]; then
+  count=$(zmx ls --short 2>/dev/null | wc -l)
+  if [[ "$count" -gt 0 ]]; then
+    echo "zmx: $count session(s) active — \`zmx-select\` to attach" >&2
+  fi
+fi
+```
+
+`--short` is doing real work here: it prints one bare name per line *and* stays
+silent when there are no sessions, so `wc -l` gives a clean `0` instead of
+counting the "no sessions found" line. Auto-launch for dedicated dev machines,
+hint for shared servers.
+
 ## SSH multi-window workflow
 
 zmx's model: instead of one SSH connection with N tmux panes, open N terminals,
 SSH into each, and attach a session per terminal. Your OS window manager
 arranges them — that is the whole philosophy.
+
+To try it without touching your SSH config, pass `-t` so ssh allocates a TTY —
+without it `zmx attach` has no PTY to take over:
+
+```bash
+ssh -t dev-box zmx attach default
+```
+
+For the real setup, put `RequestTTY yes` in the config entry below instead.
 
 Create an SSH config entry for the remote dev host:
 
@@ -265,13 +317,25 @@ priority order:
 3. `TMPDIR` → `{TMPDIR}/zmx-{uid}` (uid suffix for multi-user safety).
 4. `/tmp/zmx-{uid}` — the default fallback.
 
-Logs are always on and cannot currently be disabled:
+Logs are always on and cannot currently be disabled. **The log directory moved
+in 0.7.0** and is no longer derived from the socket directory:
 
-- Global CLI log: `{socket_dir}/logs/zmx.log`
-- Per-session log: `{socket_dir}/logs/{session_name}.log`
+| | 0.6.0 | 0.7.0+ |
+|---|---|---|
+| Resolution | `{socket_dir}/logs` | 1. `$ZMX_DIR/logs`<br>2. `$XDG_STATE_HOME/zmx/logs`<br>3. `$HOME/.local/state/zmx/logs`<br>4. `{TMPDIR}/zmx-{uid}` (only if `HOME` is unset) |
+| Typical macOS path | `/var/folders/…/zmx-{uid}/logs` | `~/.local/state/zmx/logs` |
 
-`zmx version` prints the resolved socket and log directories — the quickest way
-to confirm where everything lives.
+Files are the same either way: a global `zmx.log` plus one
+`{session_name}.log` per session.
+
+Note that `ZMX_DIR` still pins **both** directories, so it is the one setting
+that behaves identically across versions. Everywhere else, read the path off
+`zmx version` rather than assuming — it prints the resolved socket and log
+directories and is the quickest way to confirm where everything actually lives:
+
+```sh
+zmx version | awk '/^log_dir/ {print $NF}'
+```
 
 ## Permissions
 

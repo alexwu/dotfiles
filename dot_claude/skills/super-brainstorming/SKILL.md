@@ -40,6 +40,8 @@ If a question is "which architecture / what's the source of truth / what do we b
 
 Restate what they want to build in your own words — one or two sentences — so the target is shared and any misread surfaces immediately. If it touches existing code, do a *light* orientation (recent commits, the obvious relevant files) to ask sharper questions. This is not the deep exploration plan mode does.
 
+**Scope gate — decompose before refining.** If the idea spans multiple independent subsystems ("a platform with chat, file storage, billing, and analytics"), flag it now, before any detail questions. Help split it into sub-projects: the independent pieces, how they relate, what order to build them. Then run this process on the first sub-project — each gets its own design → plan cycle. Clarifying rounds spent polishing details of a thing that needs splitting are wasted rounds.
+
 ### 2. Clarify the design-determining forks
 
 Ask focused questions, **one concept per round** (occasionally a tight cluster when genuinely independent), and keep going until the design space is pinned. Prefer `AskUserQuestion` with concrete options — discrete forks are faster to answer and force you to actually enumerate the choices. Lead with your recommendation.
@@ -92,6 +94,7 @@ Then **transition to plan mode** — `EnterPlanMode`, which loads `plan-mode-pla
 | Skipping the source-of-truth/data-model decision | For multi-component systems it determines everything | Settle it early in step 3 |
 | Leaving out blind spots to seem agreeable | Surfacing the unconsidered IS the value | Pressure-test concurrency, failure, evolution, security |
 | Designing the whole v2 | Scope creep at design time is the most expensive kind | YAGNI — find the MVP spine first |
+| Refining details of a multi-subsystem idea | Questions asked before decomposition are wasted on a thing that needs splitting | Scope gate in step 1 — split into sub-projects, design the first |
 | Firing on a small/clear change | This skill is for buildable ideas with open design | One inline question, or just do it |
 | Asking file-level / code-level questions here | That's `plan-mode-plans` Phase 3 | Decide architecture & order; defer the diff |
 | Writing a `docs/specs/*.md` design file | This setup rejects rogue spec docs | Recap in conversation; let plan mode capture it |

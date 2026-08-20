@@ -25,7 +25,11 @@ When unsure, default to pueue for anything that *might* run long. The overhead i
 
 ## The Claude labeling convention
 
-Every `pueue add` issued by Claude must include `--label "claude: <descriptor>"`. The `claude:` prefix is how a future session finds tasks Claude itself launched. Match the user's existing convention `<domain>: <descriptor>` (their existing tasks use `mlx-audio: <model>`).
+Every `pueue add` issued by Claude must include a label. Format: `claude:<repo>: <descriptor>` when working inside a repo/project directory (`<repo>` = directory basename, e.g. `claude:lulu-code: rust-ci`); plain `claude: <descriptor>` for non-project work. The `claude:` prefix is how a future session finds tasks Claude itself launched (`startswith("claude:")` matches both forms).
+
+The repo segment exists because of a query-language asymmetry (verified v4.0.4): `label` is a **filterable** column, `path` is **display-only**. So `pueue status "label%=lulu-code"` scopes to one repo natively. The task's cwd is still recorded automatically in `path` — surface it with `pueue status columns=id,status,path,label`, or filter by real path via `pueue status --json | jaq '[.tasks[] | select(.path | test("lulu-code"))]'`.
+
+Users' own tasks follow `<domain>: <descriptor>` (e.g. `mlx-audio: <model>`) — don't rewrite their labels.
 
 ```bash
 # Simple command (no shell metachars)
@@ -37,7 +41,7 @@ pueue add --label "claude: <descriptor>" -w "<dir>" '<full command as a single s
 
 Don't omit `--label`. Don't omit `-w` if the working directory matters (it usually does — pueued's CWD is wherever the daemon was launched, which is *not* your shell's CWD). The `--` + argv form silently breaks for compound commands because pueue joins argv with spaces — see footgun #1 in `references/pitfalls-and-debugging.md`.
 
-Descriptors should be short, lowercase, hyphenated, and identify the *what*, not the *when*: `claude: dl-llama-70b`, `claude: ios-build`, `claude: pytest-myproject`. Pueue records timestamps automatically — no need to encode them in the label.
+Descriptors should be short, lowercase, hyphenated, and identify the *what*, not the *when*: `claude:lulu-app: dl-llama-70b`, `claude:cleverific: rspec-orders`, `claude: dl-llama-70b` (no repo). Pueue records timestamps automatically — no need to encode them in the label.
 
 ## Quick command reference
 
@@ -54,7 +58,7 @@ Descriptors should be short, lowercase, hyphenated, and identify the *what*, not
 | Kill a task | `pueue kill <id>` |
 | Restart in place | `pueue restart --in-place <id>` *(see footgun below)* |
 | Chain after deps | `pueue add --after <id1> <id2> -- <cmd>` |
-| Make a group | `pueue group add <name> && pueue parallel <N> --group <name>` |
+| Make a group | `pueue group add <name> && pueue parallel <N> --group <name>` *(see Group discipline below)* |
 
 For the full surface (stash, enqueue, env set, parallel tweaks, all status JSON shapes), see `references/core-commands.md`.
 
@@ -76,6 +80,47 @@ pueue status --json | jaq '[.tasks | to_entries[] | select(.value.status | type 
 ```
 
 Use `pueue status` (no flags) only when you genuinely want a wide overview. JSON shape edge cases (Done vs Running representation) are covered in `references/core-commands.md`.
+
+## Group discipline — groups schedule, labels identify
+
+The anti-pattern: creating a group as a *category* — topic-shaped, ad-hoc (`tests`, `build`, `dl-stuff`), no parallel limit, never operated on as a unit. A group with no concurrency semantics is a worse label, and pueue already has labels. The opposite failure is real too: leaving everything in `default` (parallel=1) serializes unrelated work — a 30-second build queued behind a 20-minute model download.
+
+**A group exists only to (a) enforce a parallel limit on a shared resource, or (b) operate on a batch as a unit (`wait`/`pause`/`kill` together). Never to categorize.** Three questions, in order:
+
+1. Does the task contend for a shared resource? → standing group below.
+2. Is it a fan-out to be waited on / paused / killed as one thing? → ephemeral `batch-*` group.
+3. Neither → `default`. No group thoughts.
+
+### Standing groups (fixed taxonomy — never invent siblings)
+
+| Group | parallel | What goes in |
+|---|---|---|
+| `net` | 3 | downloads: hf/ollama pulls, large clones, curl/aria2 |
+| `cpu` | 1 | builds & encodes — cargo/swift/zig already saturate cores internally |
+| `checks` | 2 | lint, typecheck, lighter test runs |
+| `default` | 1 | quick serial chains where submission order *is* the plan |
+
+Create idempotently before first use (`group add` errors if it exists — that's fine):
+
+```bash
+pueue group add net 2>/dev/null; pueue parallel 3 --group net
+pueue add -g net --label "claude:lulu-app: dl-qwen-72b" -- hf download ...
+```
+
+A `gpu` group may be added if/when queueing work against the RTX 4090 box; anything else new gets proposed to the user first.
+
+### Ephemeral `batch-*` groups
+
+For fan-outs needing unit semantics — `wait --group`, a batch-specific limit, or first-failure-stops-the-batch (`pause_group_on_failure: true` in the daemon config; note it's daemon-wide, not per-group):
+
+```bash
+pueue group add batch-cassettes 2>/dev/null; pueue parallel 2 --group batch-cassettes
+# ... pueue add -g batch-cassettes ... (one per item)
+pueue wait --group batch-cassettes --quiet
+pueue clean -g batch-cassettes && pueue group remove batch-cassettes
+```
+
+Named `batch-<topic>`. The cleanup line is part of the convention — `group remove` requires the group be empty, and corpse groups accumulating is exactly the failure mode this section exists to prevent.
 
 ## Cross-session discovery — picking up Claude's prior work
 

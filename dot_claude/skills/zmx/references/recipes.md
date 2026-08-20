@@ -8,15 +8,30 @@ output.
 ## The `zmx list` format
 
 One line per session. The current session's line starts with `→ `; every other
-line starts with two spaces. After that prefix come five tab-separated fields:
+line starts with two spaces. After that prefix come tab-separated `key=value`
+fields — the first four always, the rest only when they apply:
 
 ```
   name=<name>	pid=<pid>	clients=<n>	created=<epoch>	start_dir=<dir>
-→ name=<name>	pid=<pid>	clients=<n>	created=<epoch>	start_dir=<dir>
+→ name=<name>	pid=<pid>	clients=<n>	created=<epoch>	start_dir=<dir>	cmd=<cmd>
 ```
+
+| Position | Field | When |
+|---|---|---|
+| `$1`–`$4` | `name` `pid` `clients` `created` | always |
+| `$5` | `start_dir` | session recorded a working directory |
+| then | `cmd` | session was created with an explicit command |
+| then | `ended` `exit_code` | a `run` task has finished in that session |
+| last | `<label>=<value>`… | **0.7.0+**, one per label, key-sorted |
 
 - `clients` — attached-client count; `0` means detached / headless.
 - `created` — Unix epoch **seconds** (not a human date).
+- Positional `awk` on `$1`–`$5` is safe: everything optional is appended
+  *after* `start_dir`, so labels never shift the leading columns. Anything past
+  `$5` should be matched by key, not position.
+- Unreachable sessions emit a different shape entirely —
+  `name=… err=<ErrorName> status=<cleaning up|unreachable>` — with no `pid` or
+  `clients`. Filters keyed on `clients=` skip these silently.
 
 ## Extracting one field
 
@@ -58,6 +73,26 @@ Chain a filter into name extraction to get a clean list to act on:
 zmx list | rg 'clients=0\b' | rg 'start_dir=.*cleverific' \
   | rg -o 'name=[^\t]+' | cut -d= -f2-
 ```
+
+## Filtering by label (0.7.0+)
+
+There is no `--where` — the flag is in zmx's help text but not in its argument
+parser, so it is silently ignored and you get every session (see
+`commands.md`). Labels are just more `key=value` fields, so the same `rg`
+filters work, anchored on a tab to avoid matching a value substring:
+
+```sh
+zmx list | rg '\tstage=build\b'                  # one label
+zmx list | rg '\tproject=zmx\b' | rg '\tenv=prd\b'   # AND two labels
+zmx list | rg '\tstage=' | rg -o 'name=[^\t]+' | cut -d= -f2- | xargs zmx kill
+```
+
+> ⚠️ **Only `name`, `start_dir`, and `cmd` are reserved label keys.** Nothing
+> stops `zmx set dev clients=0`, which appends a second `clients=0` field and
+> makes that session a false positive for `rg 'clients=0\b'` while it is in
+> fact attached. If you filter on structural fields *and* use labels, anchor
+> the structural ones to their position instead:
+> `zmx list | awk -F'\t' '$3 == "clients=0"'`.
 
 ## Feeding names back into zmx
 
