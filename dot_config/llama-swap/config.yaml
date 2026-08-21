@@ -170,6 +170,53 @@ models:
             enable_thinking: true
             preserve_thinking: true
 
+  # Qwen3.8-27B — successor to the daily Qwen3.6-27B. Same UD-Q5_K_XL quant +
+  # F16 mmproj convention; same qwen3_5 arch family (Gated DeltaNet hybrid,
+  # config.json model_type qwen3_5), which build 10453 (both binaries) already
+  # runs. MTP heads are baked into unsloth's MAIN -GGUF repo this generation
+  # (config.json unsloth_fixed_mtp: true, mtp_num_hidden_layers: 1) — no
+  # separate -MTP-GGUF split — so --spec-type draft-mtp is on, n-max 3 per the
+  # 27B-heretic sweep on this Metal build (no-mtp 13.2 tok/s → n-max 3 ~26).
+  # Sampling per the model card: instruct temp 0.7/top_p 0.8/presence 1.5
+  # (unchanged from 3.6); thinking temp 1.0/top_p 0.95/presence 0.0 — the 0.0
+  # presence is a REAL change from the 3.6 entries' 1.5, per the 3.8 card.
+  # Thinking is ON by default in 3.8; enable_thinking kwargs mirror the 3.6
+  # pattern (card: "disabled per request", preserve_thinking explicitly
+  # supported). Reasoning depth is also tunable per-request via
+  # chat_template_kwargs reasoning_effort: xhigh (default)|medium|low|none.
+  # #23636 large-ctx MTP caveat applies at 262144 — drop the two --spec-* flags
+  # if long-fill generations stall. Default group (new arrival) — promote to
+  # workhorse if it displaces the 3.6-27B daily. Weights via pueue
+  # (label claude:chezmoi: dl-qwen38-27b, task 139).
+  "Qwen3.8-27B":
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-27B-GGUF/mmproj-F16.gguf
+    ttl: 6000
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 0.7
+          top_p: 0.8
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: false
+            # preserve past <think> blocks across multi-turn lu tool loops —
+            # cures cross-turn amnesia + restores 100% KV-cache prefix hits.
+            # No-op for single-turn classify/dictation/vision (no history).
+            preserve_thinking: true
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.95
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 0.0
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: true
+            preserve_thinking: true
+
   # Abliterated ("heretic") twin of Qwen3.6-27B — uncensored vision + text.
   # Same flags/sampling as the censored 27B above; only the weights differ.
   # NOTE(alexwu): "Native MTP Preserved" is real — `--spec-type draft-mtp`
@@ -418,7 +465,7 @@ models:
     timeouts:
       responseHeader: 120
   # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt static quant, Q5_K_M
-  # (the card's "recommended" quant). Adult-roleplay finetune "inspired by the
+  # (the card's "recommended" quant). Roleplay finetune "inspired by the
   # spirit of Melody1437," so same gemma-4 arch → --reasoning off mandatory
   # (peg-gemma4 thought-channel wedge fix, see gemma-4-31B-it NOTE); the card also
   # strips reasoning tags itself for cleaner RP. (Thinking CAN be re-enabled via

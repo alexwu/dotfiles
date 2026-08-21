@@ -66,7 +66,7 @@ let contentReader =
 let sensitivePath =
   re"""(?x)
     # Specific files
-    \bid_(rsa|ed25519|ecdsa|dsa)\b  # SSH private keys
+    \bid_(rsa|ed25519|ecdsa|dsa)\b(?!\.pub\b)  # SSH private keys — not the .pub half of the pair
   | \.pem\b                         # PEM certs/keys
   | \.p12\b | \.pfx\b               # PKCS12
   | \bage\.txt\b                    # age encryption keys
@@ -78,7 +78,12 @@ let sensitivePath =
   | github-copilot/apps\.json\b     # Copilot session tokens
   | atuin/key\b                     # atuin sync encryption key
     # Credential directories
-  | \.ssh/                          # SSH directory
+    # SSH directory — the catch-all for arbitrarily-named private keys
+    # (~/.ssh/work_key). Carves out the three members that carry no secret:
+    # config (and config.d/), known_hosts (and known_hosts2/.old), and any
+    # *.pub. A bare `.ssh/` with no filename still matches, so bulk reads of
+    # the whole directory stay denied.
+  | \.ssh/(?!(?:config|known_hosts\S*)\b)(?![^/\s]*\.pub\b)
   | \.aws/                          # AWS credentials directory
   | \.gnupg/                        # GPG keyring
   | \.config/op/                    # 1Password CLI
