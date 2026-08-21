@@ -64,6 +64,17 @@
 ##
 ##   Carry-over from the original version: commit, push (any form).
 ##
+##   The three carry-overs now land in different tiers:
+##     commit --amend   catastrophic — rewrites the last commit; the local half
+##                      of amend-then-force-push, and force-push is already
+##                      catastrophic. Enum drops `allow`; always at least asks.
+##     commit (plain)   softened — still detected and adjudicated (the reason is
+##                      worth having in the transcript), but the enum drops
+##                      `deny`, so a routine commit can cost at most one confirm.
+##                      Revoked by a risky sibling segment or an AST-only match.
+##     push             unchanged — detected, fully adjudicable; the destructive
+##                      push forms remain catastrophic on their own patterns.
+##
 ## Env-var-prefix handling — `KEY=value [KEY2=value2] git <verb>` is
 ## stripped before the leading-token regex. Quoted (`KEY="hello world"`),
 ## empty (`KEY=`), and backslash-escaped values (`KEY=hello\ world`) all
@@ -152,8 +163,21 @@ let shellChainingSplit = re"""[|;&`\n]+|\$\("""
 # Tier 1: verb alone is enough to ask.
 let tier1Verbs = re"""^git\s+(rebase|filter-branch|filter-repo)(\s|$)"""
 
-# Carry-over from the original commit/push-only version.
-let commitPush = re"""^git\s+(commit|push)(\s|$)"""
+# Carry-over from the original commit/push-only version, since split three ways
+# because the three now land in different tiers.
+#
+# `--amend` rewrites the last commit rather than recording a new one, so it is
+# lifted out of the routine-commit tier into catastrophic (never auto-allow) —
+# it is the local half of the amend-then-force-push rewrite, and force-push is
+# already catastrophic. Must be tested BEFORE commitPlain, which it also matches.
+let commitAmend = re"""^git\s+commit\s+(.*\s)?--amend(\s|$)"""
+
+# A plain `git commit` records reflog-recoverable local state. It stays detected
+# — the adjudicated reason is worth having in the transcript — but the enum is
+# narrowed to {allow,ask} so a deny is structurally impossible. See isSoftCommit.
+let commitPlain = re"""^git\s+commit(\s|$)"""
+
+let pushAny = re"""^git\s+push(\s|$)"""
 
 # Universal --force guard — any git subcommand with a standalone `--force`
 # flag (filter-repo, filter-branch, branch, tag, checkout, clean, …) asks.
@@ -249,9 +273,9 @@ let tier2Patterns = [
 # regardless of conversation / config, so injection can only make them stricter.
 # (cleanAny is checked separately in isCatastrophic to exclude the dry-run no-op.)
 let catastrophicPatterns = [
-  tier1Verbs, forceFlag, pushForceFlags, pushPlusRefspec, pushDelete, pushColonRef,
-  pushMirror, resetHard, checkoutDiscard, checkoutForce, restoreAny, switchDiscard,
-  stashDropClear, reflogDestroy, gcPrune, branchForce, tagForce,
+  tier1Verbs, commitAmend, forceFlag, pushForceFlags, pushPlusRefspec, pushDelete,
+  pushColonRef, pushMirror, resetHard, checkoutDiscard, checkoutForce, restoreAny,
+  switchDiscard, stashDropClear, reflogDestroy, gcPrune, branchForce, tagForce,
 ]
 
 proc stripEnvPrefix(segment: string): string =
@@ -272,9 +296,9 @@ proc normalizeSegment(segment: string): string =
 proc segmentRisk(segment: string): string =
   ## Returns a short risk label if this segment is risky, "" otherwise.
   let s = normalizeSegment(segment)
-  if s.contains(tier1Verbs):
+  if s.contains(tier1Verbs) or s.contains(commitAmend):
     return "rewrites history"
-  if s.contains(commitPush):
+  if s.contains(commitPlain) or s.contains(pushAny):
     return "publishes / records state"
   if s.contains(forceFlag):
     return "--force flag"
@@ -306,6 +330,25 @@ proc decisionsExcludingAllow(base: seq[string]): seq[string] =
   if result.len == 0:
     result = @["ask", "deny"]
 
+proc isSoftCommit(segment: string): bool =
+  ## True for a plain `git commit` — no `--amend`, nothing else risky in the
+  ## segment. These record reflog-recoverable local state and are the single
+  ## most common flagged command; a hard block on one is never the right answer.
+  let s = normalizeSegment(segment)
+  s.contains(commitPlain) and not s.contains(commitAmend) and not isCatastrophic(s)
+
+proc decisionsExcludingDeny(base: seq[string]): seq[string] =
+  ## `base` with "deny" removed; an empty or deny-only `base` → {allow,ask}.
+  ## Mirror of decisionsExcludingAllow: gives a plain commit a no-hard-block
+  ## floor, so the worst the classifier can do to a routine commit is ask.
+  if base.len == 0:
+    return @["allow", "ask"]
+  for d in base:
+    if d != "deny":
+      result.add d
+  if result.len == 0:
+    result = @["allow", "ask"]
+
 proc main() =
   let payload = parseJson(stdin.readAll())
   let cmd = payload{"tool_input", "command"}.getStr("")
@@ -316,6 +359,9 @@ proc main() =
 
   var matched: seq[string] = @[]
   var catastrophic = false
+  # Only softened when EVERY flagged segment is a plain commit — one risky
+  # sibling in a `git commit … && git push --force` chain revokes the floor.
+  var softCommitOnly = true
   for segment in cmd.split(shellChainingSplit):
     let s = segment.strip()
     if s.len == 0:
@@ -326,6 +372,8 @@ proc main() =
       matched.add("`" & stripped & "` (" & risk & ")")
       if isCatastrophic(s):
         catastrophic = true
+      if not isSoftCommit(s):
+        softCommitOnly = false
 
   # Union (AST ∪ regex): tree-sitter-bash catches nested/quoted forms the regex
   # split misses — e.g. `echo $(git push --force)`, where the split on `$(`
@@ -340,6 +388,9 @@ proc main() =
         matched.add("`" & cmd.strip() & "` (" & labels.join(", ") & ", via ast)")
       if astFired.anyIt(ruleMeta.getOrDefault(it).catastrophic):
         catastrophic = true
+      # An AST firing means a nested/quoted form the regex tier did not model.
+      # Never soften on one: the softening floor is only for shapes we parsed.
+      softCommitOnly = false
   except AstGrepError:
     discard
 
@@ -356,11 +407,17 @@ proc main() =
     emit("ask", askReason)
     return
 
-  # A catastrophic command can never auto-allow: narrow the enum to exclude
-  # `allow` regardless of conversation, config, or a successful injection.
+  # Two opposing floors, catastrophic first so it wins any overlap:
+  #   catastrophic  → drop `allow`, so conversation, config, or a successful
+  #                   injection can only ever make the decision stricter.
+  #   plain commit  → drop `deny`, so the worst a routine commit can cost is
+  #                   one confirm. Revoked by any risky sibling segment or any
+  #                   AST-only match (see softCommitOnly).
   let decisions =
     if catastrophic:
       decisionsExcludingAllow(allowedDecisions())
+    elif softCommitOnly:
+      decisionsExcludingDeny(allowedDecisions())
     else:
       allowedDecisions()
   let decision = adjudicate(

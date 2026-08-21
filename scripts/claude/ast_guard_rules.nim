@@ -83,6 +83,23 @@ rule:
     - has: { kind: word, regex: '^(commit|push)$', stopBy: end }
 """
 
+# `git commit --amend` rewrites the last commit, so it leaves the ask-tier
+# GitCommitPush set and joins the catastrophic history-rewrite tier. Amend also
+# fires GitCommitPush (both match `commit`); firedRuleIds returns the union and
+# the catastrophic flag is an anyIt, so the stricter rule wins.
+const GitCommitAmend* = """
+id: git-commit-amend
+language: bash
+rule:
+  kind: command
+  all:
+    - has: { field: name, regex: '^git$' }
+    - has: { kind: word, regex: '^commit$', stopBy: end }
+    - any:
+        - has: { kind: word, regex: '^--amend$', stopBy: end }
+        - has: { kind: string_content, regex: '^--amend$', stopBy: end }
+"""
+
 # Universal --force on ANY subcommand (word or quoted). `--force-with-lease`
 # is intentionally NOT matched here (longer word) — it is gated by the push
 # rule, mirroring the regex guard's word-boundary carve-out.
@@ -454,6 +471,7 @@ type RuleInfo* = object
 let ruleMeta*: Table[string, RuleInfo] = {
   "git-rewrite": RuleInfo(label: "rewrites history", catastrophic: true),
   "git-commit-push": RuleInfo(label: "publishes / records state", catastrophic: false),
+  "git-commit-amend": RuleInfo(label: "rewrites history", catastrophic: true),
   "git-force": RuleInfo(label: "--force flag", catastrophic: true),
   "git-reset-hard": RuleInfo(label: "destructive flag/arg", catastrophic: true),
   "git-push-destructive": RuleInfo(label: "destructive flag/arg", catastrophic: true),
@@ -487,12 +505,12 @@ let guardRules*: Table[string, seq[string]] = {
   "wezterm": @[WeztermKill],
   "git-add": @[GitAddBulk],
   "git-confirm": @[
-    GitRewrite, GitCommitPush, GitForce, GitResetHard, GitPushDestructive,
-    GitBranchForce, GitBranchDelete, GitTagForce, GitTagDelete, GitClean, GitStashDrop,
-    GitStashPop, GitStashUntracked, GitCheckoutDiscard, GitRestore, GitReflogDestroy,
-    GitSwitchDiscard, GitGcPrune, GitWorktreeRemove, GitConfigUnset, GitRm,
-    GitUpdateRef, GitRemoteRemove, GitSubmoduleDeinit, GitSymbolicRefDel, GitRerere,
-    GitNotes, GitReplace,
+    GitRewrite, GitCommitPush, GitCommitAmend, GitForce, GitResetHard,
+    GitPushDestructive, GitBranchForce, GitBranchDelete, GitTagForce, GitTagDelete,
+    GitClean, GitStashDrop, GitStashPop, GitStashUntracked, GitCheckoutDiscard,
+    GitRestore, GitReflogDestroy, GitSwitchDiscard, GitGcPrune, GitWorktreeRemove,
+    GitConfigUnset, GitRm, GitUpdateRef, GitRemoteRemove, GitSubmoduleDeinit,
+    GitSymbolicRefDel, GitRerere, GitNotes, GitReplace,
   ],
   "secret": @[SecretReaderPath],
   "truncation": @[PipeTruncate],

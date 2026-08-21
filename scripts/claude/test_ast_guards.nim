@@ -409,8 +409,12 @@ suite "pipe-truncate":
           cmd: "echo \"the tail end of output\"",
           fires: false,
         ),
-        Case(name: "tail in quoted arg", cmd: "rg --pretty 'tail' notes.md", fires: false),
-        Case(name: "memo with --tail flag", cmd: "memo cargo test --tail 40", fires: false),
+        Case(
+          name: "tail in quoted arg", cmd: "rg --pretty 'tail' notes.md", fires: false
+        ),
+        Case(
+          name: "memo with --tail flag", cmd: "memo cargo test --tail 40", fires: false
+        ),
         Case(name: "filename contains tail", cmd: "cat tail_recursion.md", fires: false),
         Case(name: "headers path word", cmd: "ls src/headers/", fires: false),
       ],
@@ -425,6 +429,9 @@ const catastrophicCorpus = [
   "git rebase -i HEAD~3", # tier1Verbs
   "git filter-branch --tree-filter x HEAD", # tier1Verbs
   "git filter-repo --path x", # tier1Verbs
+  "git commit --amend", # commitAmend
+  "git commit --amend --no-edit", # commitAmend
+  "git commit -m x \"--amend\"", # commitAmend, quoted flag arm
   "git push --force", # forceFlag / pushForceFlags
   "git push -f origin main", # pushForceFlags
   "git push --force-with-lease origin", # pushForceFlags
