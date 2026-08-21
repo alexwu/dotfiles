@@ -20,7 +20,7 @@ PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 # zshrc (portable_pty new_default_prog reads $SHELL). Apple /bin/zsh hides
 # its exec-time env from `ps eww` (KERN_PROCARGS2); homebrew zsh exposes
 # it, so session shells stay inspectable by zmx-env/zmx-ps.
-export SHELL=/opt/homebrew/bin/zsh
+export SHELL="/opt/homebrew/bin/zsh"
 
 # Max collision re-rolls: --tries/-t flag, else $ZN_TRIES, else 3.
 tries="${ZN_TRIES:-3}"
@@ -50,4 +50,4 @@ n=0
 while ((n++ < tries)) && zmx list --short 2>/dev/null | rg -qxF "$name"; do
   name=$(dbzname)
 done
-exec zmx attach "$name"
+exec env -u ZMX_SESSION zmx attach "$name"
