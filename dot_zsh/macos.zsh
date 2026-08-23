@@ -33,7 +33,11 @@ eval "$(mise activate zsh)"
 
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
-source ~/.config/op/plugins.sh
+# op plugin aliases (circleci, huggingface-cli, ...) can fire 1Password
+# biometric prompts mid-run — keep them out of agent/pipe shells
+if [[ -t 1 && -z $CLAUDECODE ]]; then
+  source ~/.config/op/plugins.sh
+fi
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NEOVIDE_MULTIGRID=true
@@ -43,7 +47,6 @@ export HOMEBREW_NO_ENV_HINTS=true
 export OP_BIOMETRIC_UNLOCK_ENABLED=true
 # path=(/Applications/Postgres.app/Contents/Versions/latest/bin $path)
 path=($HOME/.bin/nvim/bin $path)
-export SSH_AUTH_SOCK=""~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
 if (( $+commands[wezterm] ))
 then
