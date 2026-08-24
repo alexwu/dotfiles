@@ -2,9 +2,6 @@ if [ $(arch) = "arm64" ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-# zerobrew
-export PATH="/opt/zerobrew/prefix/bin:$PATH"
-
 if (( $+commands[kk] ))
 then
   kk completions zsh > ~/.zfunc/_kk 2>/dev/null
@@ -27,7 +24,6 @@ then
 fi
 
 alias co="git checkout"
-alias obsidian="nvim ~/Obsidian/Default"
 
 eval "$(mise activate zsh)"
 
