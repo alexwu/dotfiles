@@ -13,8 +13,35 @@
 {{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/exact_pickup/**/*.md")) -}}
 # {{ . }} {{ include . | sha256sum }}
 {{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/writing-rust-code/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/bootstrapping-projects/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/bootstrapping-projects/**/*.sh")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/super-code-review/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/plan-mode-plans/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/claude-md-improver/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
 set -euo pipefail
-SKILLS=(writing-clis handoff pickup)
+SKILLS=(
+  writing-clis
+  handoff
+  pickup
+  writing-rust-code
+  bootstrapping-projects
+  super-code-review
+  plan-mode-plans
+  claude-md-improver
+)
 LOCK="$HOME/.agents/.skill-lock.json"
 mkdir -p "$HOME/.agents/skills"
 for skill in "${SKILLS[@]}"; do
