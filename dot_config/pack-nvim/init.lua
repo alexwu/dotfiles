@@ -1,46 +1,7 @@
 vim.loader.enable()
 
--- pack_init.lua - Minimal Neovim config using vim.pack builtin plugin manager
--- Requires Neovim 0.12+ nightly
-
 -- ============================================================================
--- MONKEY PATCH: Fix vim.system returning nil stdout/stderr
--- ============================================================================
--- HACK: Neovim dev builds have a bug where vim.system returns nil for
--- stdout/stderr instead of empty strings, breaking vim.pack.update()
-
--- do
---   local original_system = vim.system
---   ---@diagnostic disable-next-line: duplicate-set-field
---   vim.system = function(cmd, opts, on_exit)
---     -- Normalize the callback to ensure stdout/stderr are strings
---     local function normalize_result(result)
---       result.stdout = result.stdout or ""
---       result.stderr = result.stderr or ""
---       return result
---     end
---
---     if on_exit then
---       -- Async version with callback - wrap the callback
---       local wrapped_exit = function(result)
---         on_exit(normalize_result(result))
---       end
---       return original_system(cmd, opts, wrapped_exit)
---     else
---       -- Sync version - wrap :wait()
---       local obj = original_system(cmd, opts)
---       local original_wait = obj.wait
---       obj.wait = function(self, timeout)
---         local result = original_wait(self, timeout)
---         return normalize_result(result)
---       end
---       return obj
---     end
---   end
--- end
-
--- ============================================================================
--- MINIMAL UTILS (just the set helper)
+-- UTILS
 -- ============================================================================
 
 local M = {}
@@ -357,6 +318,24 @@ set("n", "]t", vim.cmd.tabnext, { desc = "Next tab" })
 set("n", "[t", vim.cmd.tabprevious, { desc = "Previous tab" })
 set({ "n", "o", "x" }, "gl", "$", { desc = "End of line" })
 
+-- NOTE: This is just the exact copy of the builtin mappings.
+-- https://github.com/neovim/neovim/blob/ea878f456a8b15381ce215b6e53781b0a061c5f4/runtime/lua/vim/_core/defaults.lua#L462-L477I
+set({ "n", "x", "o" }, "<CR>", function()
+  if vim.treesitter.get_parser(nil, nil, { error = false }) then
+    require("vim.treesitter._select").select_parent(vim.v.count1)
+  else
+    vim.lsp.buf.selection_range(vim.v.count1)
+  end
+end, { desc = "Select parent (outer) node" })
+
+set({ "x", "o" }, "<BS>", function()
+  if vim.treesitter.get_parser(nil, nil, { error = false }) then
+    require("vim.treesitter._select").select_child(vim.v.count1)
+  else
+    vim.lsp.buf.selection_range(-vim.v.count1)
+  end
+end, { desc = "Select child (inner) node" })
+
 -- Scroll half page
 local function scroll_half_page(dir)
   local line_count = vim.api.nvim_buf_line_count(0)
@@ -393,9 +372,9 @@ vim.diagnostic.config({
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = " ✘",
-      [vim.diagnostic.severity.WARN] = "  ",
-      [vim.diagnostic.severity.HINT] = "  ",
-      [vim.diagnostic.severity.INFO] = "  ",
+      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.HINT] = " ",
+      [vim.diagnostic.severity.INFO] = " ",
     },
   },
   float = {
