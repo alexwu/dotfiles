@@ -8,6 +8,7 @@ local set = vim.keymap.set
 _G.set = vim.keymap.set
 
 vim.opt.rtp:prepend(vim.fn.expand("~/Code/neovim/plugins/bu"))
+vim.opt.rtp:prepend(vim.fn.expand("~/Code/lulu-code/integrations/btty.nvim"))
 
 -- ============================================================================
 -- OPTIONS (from options.lua, excluding Snacks-specific stuff)

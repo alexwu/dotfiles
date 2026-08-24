@@ -75,7 +75,8 @@ then
     eval "$(chezmoi source-path ~/.config/nvim)"
     nvim .
   }
-  alias envim="NVIM_APPNAME=pack-nvim nvim"
+  export NVIM_APPNAME=pack-nvim
+  alias envim="NVIM_APPNAME=nvim nvim"
 else
   export VISUAL="vim"
   export EDITOR="vim"
@@ -84,6 +85,15 @@ if (( $+commands[delta] ))
 then
   alias diff="delta"
 fi
+
+# Ctrl-g: pop the current command line into $EDITOR (nvim), edit it with full
+# editor power, :wq to run it — mirrors Claude Code's Ctrl-g "edit in $EDITOR".
+# The ergonomic way to compose long multiline commands (hark, ffmpeg, curl).
+# Rebinds list-expand (unused); zellij's Ctrl-g is moved off so this key reaches
+# the shell inside multiplexed sessions too.
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^G' edit-command-line
 
 
 if (( $+commands[nvim] ))
@@ -106,8 +116,19 @@ fi
 
 if (( $+commands[atuin] ))
 then
-  eval "$(atuin init zsh)"
-  eval "$(atuin hex init)"
+  # Deliberately NOT `atuin hex init`. pty-proxy's only job is slicing command
+  # OUTPUT out of the OSC 133 stream into the daemon's in-memory store for
+  # `atuin ai` to read back — history, search and sync all ride the
+  # preexec/precmd hooks below and work without it. Skipping it drops a process
+  # per shell and, more importantly, the bug it caused: hex init derives
+  # pty-proxy's shell from ${ZSH_ARGZERO:-...}, whose :- fallback only fires
+  # when ZSH_ARGZERO is UNSET, never when it holds a pathless name. zmx spawns
+  # its session shell as argv0 "-zsh" (dash + basename, per login(1)), so atuin
+  # exec'd `pty-proxy --shell zsh` and exported SHELL=zsh session-wide. OpenSSH
+  # runs Match exec / ProxyCommand through $SHELL and stats it literally, so
+  # `git fetch` died with `Shell "zsh" is not executable` (atuin 18.19.0).
+  # --disable-ai drops the ? binding (64 lines, AI-only — nothing else changes).
+  eval "$(atuin init zsh --disable-ai)"
 fi
 
 if (( $+commands[just] ))
@@ -175,10 +196,13 @@ then
   source <(carapace _carapace zsh)
 fi
 
-if (( $+commands[just] ))
-then
-  source <(JUST_COMPLETE=zsh just)
-fi
+# NOTE: just's clap dynamic completer is deliberately NOT sourced — it emits
+# recipes and all 66 global flags as one unsorted `_describe -V values` group
+# (~148 flat entries, flags first), so group-order can't reorder it. Carapace
+# already registers `just` above and returns recipes only (tag `recipes`, with
+# doc comments); flags still complete after a `-`. Homebrew's site-functions
+# `_just` is a shim around the same clap completer, but carapace's compdef runs
+# after compinit and wins.
 
 if (( $+commands[zellij] ))
 then

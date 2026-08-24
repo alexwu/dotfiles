@@ -15,6 +15,7 @@ Experimental Neovim configuration using Neovim 0.12+ nightly features:
 - Neovim 0.12+ nightly build
 - tree-sitter CLI (auto-installed by `plugin/nvim-treesitter.lua` via brew/scoop/npm)
 - `~/Code/neovim/plugins/bu/` checkout of the bu library (alexwu/bombeelu-tils on GitHub) — required by `bombeelu.autocmds`, `bombeelu.visual-surround`, and global keymaps in `init.lua`. `init.lua` rtp-prepends this path.
+- `~/Code/lulu-code/integrations/btty.nvim/` checkout of the btty Neovim integration. `init.lua` rtp-prepends this path.
 
 ## Plugin Management with vim.pack
 
@@ -74,7 +75,7 @@ Sections, in order:
 2. Monkey patch for vim.system nil stdout/stderr bug in nightly builds
 3. `<leader>` set to space
 4. `_G.set = vim.keymap.set` keymap alias
-5. **bu rtp prepend** for `~/Code/neovim/plugins/bu`
+5. **bu and btty rtp prepends** for their local checkouts
 6. Platform helpers via `require("bombeelu.utils")` (is_mac, is_vscode, invert, not_vscode)
 7. URL helpers (`gh`/`gl`/`cb`) and `is_active`, exposed as globals for plugin/* files
 8. **PackChanged hooks** (currently the fff.nvim binary build) — must register before any `plugin/*.lua` calls `vim.pack.add`
