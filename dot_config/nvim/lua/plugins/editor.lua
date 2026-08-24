@@ -470,6 +470,7 @@ return {
     "cursortab/cursortab.nvim",
     -- version = "*",
     lazy = false,
+    enabled = false,
     build = "cd server && go build",
     cond = utils.not_vscode,
     opts = {
@@ -500,13 +501,11 @@ return {
     },
   },
 
-  -- linw1995/nvim-mcp — MCP server exposing Neovim state to AI clients.
-  -- `build` runs `cargo install --path .` to install the `nvim-mcp` binary
-  -- into ~/.cargo/bin. setup() starts an RPC server on a per-project socket.
   {
     "linw1995/nvim-mcp",
     build = "cargo install --path .",
     opts = {},
+    enabled = false,
   },
 
   {

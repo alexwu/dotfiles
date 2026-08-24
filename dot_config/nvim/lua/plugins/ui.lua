@@ -58,6 +58,7 @@ return {
   {
     "mrjones2014/smart-splits.nvim",
     event = "VeryLazy",
+    cond = utils.is_wezterm_or_kitty,
     config = function()
       require("smart-splits").setup({})
       _G.set("n", "<C-h>", require("smart-splits").move_cursor_left)
@@ -173,6 +174,7 @@ return {
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-mini/mini.icons" },
     opts = {
       anti_conceal = { enabled = false },
+      completions = { lsp = { enabled = true } },
     },
   },
 

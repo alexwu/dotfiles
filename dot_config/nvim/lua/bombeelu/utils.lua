@@ -15,6 +15,21 @@ function M.is_vscode()
   return vim.g.vscode ~= nil
 end
 
+---@return boolean
+function M.is_wezterm()
+  return vim.env.TERM_PROGRAM == "WezTerm"
+end
+
+---@return boolean
+function M.is_kitty()
+  return vim.env.KITTY_WINDOW_ID ~= nil or vim.env.TERM == "xterm-kitty"
+end
+
+---@return boolean
+function M.is_wezterm_or_kitty()
+  return M.is_wezterm() or M.is_kitty()
+end
+
 ---@generic T
 ---@param fn fun(): T
 ---@return fun(): boolean
