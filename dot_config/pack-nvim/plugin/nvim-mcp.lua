@@ -38,4 +38,5 @@ vim.api.nvim_create_autocmd("PackChanged", {
 
 vim.pack.add({ { src = gh("linw1995/nvim-mcp") } })
 
-require("nvim-mcp").setup({})
+-- TODO: Fix weird arg error...if it's worth it
+-- require("nvim-mcp").setup({})
