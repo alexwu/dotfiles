@@ -129,6 +129,14 @@ set("n", "<leader>fc", function()
   Snacks.picker.command_history()
 end, { desc = "Command history" })
 
+set("n", "<leader>fd", function()
+  Snacks.picker.diagnostics_buffer()
+end, { desc = "Buffer diagnostics" })
+
+set("n", "<leader>fD", function()
+  Snacks.picker.diagnostics()
+end, { desc = "Workspace diagnostics" })
+
 set("n", "<leader>fh", function()
   Snacks.picker.help()
 end, { desc = "Help pages" })

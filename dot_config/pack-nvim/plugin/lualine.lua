@@ -63,7 +63,6 @@ require("lualine").setup({
     section_separators = { left = "", right = "" },
     globalstatus = true,
   },
-  -- Drop "lazy" — we use vim.pack now
   extensions = { "quickfix", "oil", "overseer", "man", "mason" },
   sections = {
     lualine_a = {
@@ -101,14 +100,15 @@ require("lualine").setup({
     },
     lualine_x = {
       Snacks and Snacks.profiler and Snacks.profiler.status() or "",
+      vim.ui.progress_status,
       -- noice mode display dropped (noice omitted from this config)
       -- lazy.status updates dropped (we use vim.pack — :Pack info instead)
       {
         "diff",
         symbols = {
-          added = " ",
-          modified = " ",
-          removed = " ",
+          added = " ",
+          modified = " ",
+          removed = " ",
         },
         source = function()
           local gitsigns = vim.b.gitsigns_status_dict

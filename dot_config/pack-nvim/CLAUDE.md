@@ -9,6 +9,7 @@ Experimental Neovim configuration using Neovim 0.12+ nightly features:
 - **Per-plugin layout**: `plugin/<name>.lua` per plugin (one `vim.pack.add` + `setup` per file). `init.lua` holds foundations only (~480 lines).
 - **Manual treesitter setup**: No `treesitter-modules.nvim`. Uses `vim.treesitter.start` + `nvim-treesitter.install` directly per the plugin author's own README recommendation.
 - **`vim.lsp.config()` + `vim.lsp.enable()`**: New builtin LSP config API. Per-server overrides live in `after/lsp/<name>.lua`.
+- **UI2 cmdline/messages**: Enables Neovim's experimental UI2 with `cmdheight=0`; `tiny-cmdline.nvim` repositions its native cmdline window.
 
 ## Requirements
 
@@ -79,7 +80,7 @@ Sections, in order:
 6. Platform helpers via `require("bombeelu.utils")` (is_mac, is_vscode, invert, not_vscode)
 7. URL helpers (`gh`/`gl`/`cb`) and `is_active`, exposed as globals for plugin/* files
 8. **PackChanged hooks** (currently the fff.nvim binary build) — must register before any `plugin/*.lua` calls `vim.pack.add`
-9. Vim options (with `ch=2`, MenuPopup cleanup autocmd, yank highlight, completeopt, etc.)
+9. Vim options (with `cmdheight=0`, MenuPopup cleanup autocmd, yank highlight, completeopt, etc.)
 10. `vim.diagnostic.config()`
 11. Global keymaps: j/k smart, indent, ESC, save, F2/F3, alt-BS, Q, ]t/[t, scroll-half, treesitter `<CR>`/`<BS>`, `<C-y>` inline completion, gd/grr/gri/grt/grx/gra LSP keymaps, `K` smart hover dispatcher, `<A-o>`/`<A-O>` via `bu.keys.o/O`
 12. Custom commands (`Qa`, `Wq`, `W`)

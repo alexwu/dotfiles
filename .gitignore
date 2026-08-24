@@ -28,3 +28,5 @@ scripts/**/test_*
 # duckyPad compiled bytecode — reproducible from keyN.txt via `J duckypad-build`; track source only
 scripts/duckypad/**/*.dsb
 .handoff/
+
+**/nvim.log

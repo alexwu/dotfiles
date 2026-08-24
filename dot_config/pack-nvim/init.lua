@@ -18,11 +18,10 @@ vim.g.mapleader = " "
 
 vim.o.autoindent = true
 vim.o.autoread = true
-vim.o.ch = 2
 vim.o.confirm = true
 vim.o.ignorecase = true
 vim.o.backspace = "indent,eol,start"
-vim.o.cmdheight = 1
+vim.o.cmdheight = 0
 vim.o.cursorline = true
 vim.o.directory = "~/.vim-tmp/,~/.tmp/,~/tmp/,/var/tmp/,/tmp"
 vim.o.mouse = "nvi"
@@ -296,7 +295,7 @@ set("n", "<F3>", [[<cmd>let @+ = fnamemodify(expand('%'), ':.')<CR>]], { desc = 
 set("n", "<A-BS>", "db", { desc = "Delete previous word" })
 set("i", "<A-BS>", "<C-W>", { desc = "Delete previous word" })
 
--- set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
+set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
 set("n", "]t", vim.cmd.tabnext, { desc = "Next tab" })
 set("n", "[t", vim.cmd.tabprevious, { desc = "Previous tab" })
 set({ "n", "o", "x" }, "gl", "$", { desc = "End of line" })
@@ -368,6 +367,22 @@ vim.diagnostic.config({
 })
 
 -- LSP Keymaps
+local function hover()
+  local filetype = vim.filetype.match({ buf = 0 })
+  if vim.tbl_contains({ "vim", "help" }, filetype) then
+    vim.cmd("h " .. vim.fn.expand("<cword>"))
+  elseif filetype == "man" then
+    vim.cmd("Man " .. vim.fn.expand("<cword>"))
+  else
+    local ok, pretty_hover = pcall(require, "pretty_hover")
+    if ok then
+      pretty_hover.hover()
+    else
+      vim.lsp.buf.hover()
+    end
+  end
+end
+
 set("n", "gd", function()
   vim.lsp.buf.definition()
 end, { silent = true, desc = "Go to definition" })
@@ -384,4 +399,8 @@ set("n", "gry", function()
   vim.lsp.buf.type_definition()
 end, { desc = "Go to type definition" })
 
-set("n", "K", vim.lsp.buf.hover, { silent = true, desc = "Hover" })
+set({ "n", "x" }, "gra", function()
+  require("tiny-code-action").code_action()
+end, { desc = "Select a code action" })
+
+set("n", "K", hover, { silent = true, desc = "Hover" })
