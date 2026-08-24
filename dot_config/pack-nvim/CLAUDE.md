@@ -73,7 +73,7 @@ Sections, in order:
 1. **`vim.loader.enable()`** (line 1, ~30% startup speedup per echasnovski's vim.pack guide)
 2. Monkey patch for vim.system nil stdout/stderr bug in nightly builds
 3. `<leader>` set to space
-4. `M.set` keymap helper, `_G.set = M.set`
+4. `_G.set = vim.keymap.set` keymap alias
 5. **bu rtp prepend** for `~/Code/neovim/plugins/bu`
 6. Platform helpers via `require("bombeelu.utils")` (is_mac, is_vscode, invert, not_vscode)
 7. URL helpers (`gh`/`gl`/`cb`) and `is_active`, exposed as globals for plugin/* files
@@ -88,7 +88,7 @@ Sections, in order:
 
 | Module | Description |
 |---|---|
-| `autocmds` | LazyVim-derived autocmds: checktime, resize_splits, last_loc, close_with_q, man_unlisted, wrap_spell, json_conceal, auto_create_dir |
+| `autocmds` | LazyVim-derived autocmds: resize_splits, last_loc, close_with_q, man_unlisted, wrap_spell, json_conceal, auto_create_dir |
 | `git` | Tiered base branch detection (PR cache → reflog → merge-base → default). Async `gh` PR cache on BufEnter |
 | `lspinfo` | Floating-window `:LspInfo` reimplementation (the original was removed from nvim-lspconfig) |
 | `neotest` | `:Test` command + jump keymaps (wired by `plugin/neotest.lua`) |
@@ -126,7 +126,7 @@ Per-server `vim.lsp.config()` overrides. Auto-loaded by Neovim's runtime and dee
 
 Per the `treesitter-modules.nvim` README, post-0.12 incremental selection is native via `an`/`in` keymaps. `plugin/nvim-treesitter.lua` does the rest manually via `vim.treesitter.start(buf, lang)` (highlight), `vim.treesitter.foldexpr()` (fold), `nvim-treesitter.indentexpr()` (indent), and a FileType autocmd that auto-installs missing parsers.
 
-The `<CR>`/`<BS>` bindings in `init.lua` use `vim.treesitter._select` (internal) with an LSP fallback — coexists with native `an`/`in`.
+The `<CR>`/`<BS>` bindings in `init.lua` use `vim.treesitter.select()` with an LSP fallback — coexists with native `an`/`in`.
 
 ## Lazy-load Patterns (DirChanged-deferred)
 

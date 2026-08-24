@@ -149,7 +149,7 @@ vim.api.nvim_create_autocmd("FileType", {
 
     -- fold (per-window)
     vim.wo.foldmethod = "expr"
-    vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    vim.wo.foldexpr = vim.treesitter.foldexpr
     -- highlight
     vim.treesitter.start(buf, language)
     -- indent

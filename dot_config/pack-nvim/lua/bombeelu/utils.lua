@@ -26,21 +26,6 @@ end
 
 M.not_vscode = M.invert(M.is_vscode)
 
----@param modes string|string[]
----@param mappings string|string[]
----@param callback string|function
----@param opts? table
-function M.set(modes, mappings, callback, opts)
-  opts = opts or {}
-  if type(mappings) == "string" then
-    mappings = { mappings }
-  end
-
-  for _, mapping in ipairs(mappings) do
-    vim.keymap.set(modes, mapping, callback, opts)
-  end
-end
-
 -- ============================================================================
 -- PLUGIN HELPERS (URL builders, status check) — exposed globally for plugin/*
 -- ============================================================================

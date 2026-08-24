@@ -3,15 +3,6 @@ local M = {}
 local augroup = require("bu").nvim.augroup
 
 function M.setup()
-  vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
-    group = augroup("checktime"),
-    callback = function()
-      if vim.o.buftype ~= "nofile" then
-        vim.cmd("checktime")
-      end
-    end,
-  })
-
   vim.api.nvim_create_autocmd({ "VimResized" }, {
     group = augroup("resize_splits"),
     callback = function()
@@ -65,7 +56,7 @@ function M.setup()
           vim.cmd("close")
           pcall(vim.api.nvim_buf_delete, event.buf, { force = true })
         end, {
-          buffer = event.buf,
+          buf = event.buf,
           silent = true,
           desc = "Quit buffer",
         })

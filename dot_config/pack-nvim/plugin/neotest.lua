@@ -61,7 +61,7 @@ set("n", "<leader>tf", function()
 end, { desc = "Run all tests in file" })
 
 set("n", "<leader>ta", function()
-  require("neotest").run.run(vim.loop.cwd())
+  require("neotest").run.run(vim.uv.cwd())
 end, { desc = "Run all test files" })
 
 set("n", "<leader>tn", function()

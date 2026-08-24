@@ -4,25 +4,8 @@ vim.loader.enable()
 -- UTILS
 -- ============================================================================
 
-local M = {}
-
----@param modes string|string[]
----@param mappings string|string[]
----@param callback string|function
----@param opts? table
-function M.set(modes, mappings, callback, opts)
-  opts = opts or {}
-  if type(mappings) == "string" then
-    mappings = { mappings }
-  end
-
-  for _, mapping in ipairs(mappings) do
-    vim.keymap.set(modes, mapping, callback, opts)
-  end
-end
-
-local set = M.set
-_G.set = M.set
+local set = vim.keymap.set
+_G.set = vim.keymap.set
 
 vim.opt.rtp:prepend(vim.fn.expand("~/Code/neovim/plugins/bu"))
 
@@ -33,6 +16,7 @@ vim.opt.rtp:prepend(vim.fn.expand("~/Code/neovim/plugins/bu"))
 vim.g.mapleader = " "
 
 vim.o.autoindent = true
+vim.o.autoread = true
 vim.o.ch = 2
 vim.o.confirm = true
 vim.o.ignorecase = true
@@ -226,18 +210,15 @@ end
 
 -- :Pack update [plugin]
 vim.api.nvim_create_user_command("Pack", function(opts)
-  local args = vim.split(opts.args, "%s+")
+  local args = opts.fargs
   local subcmd = args[1]
 
   if subcmd == "update" then
-    local plugin_name = args[2]
-    if plugin_name then
-      vim.notify("Updating " .. plugin_name .. "...", vim.log.levels.INFO)
-      vim.pack.update({ plugin_name })
-    else
-      vim.notify("Updating all plugins...", vim.log.levels.INFO)
-      vim.pack.update()
-    end
+    vim.api.nvim_cmd({
+      cmd = "packupdate",
+      args = vim.list_slice(args, 2),
+      bang = opts.bang,
+    }, {})
   elseif subcmd == "info" or subcmd == "get" then
     local plugin_name = args[2]
     local info = vim.pack.get(plugin_name and { plugin_name } or nil, { info = true })
@@ -272,6 +253,7 @@ vim.api.nvim_create_user_command("Pack", function(opts)
   end
 end, {
   nargs = "*",
+  bang = true,
   desc = "Manage vim.pack plugins",
   complete = function(arg_lead, cmd_line, _)
     local args = vim.split(cmd_line, "%s+")
@@ -313,7 +295,7 @@ set("n", "<F3>", [[<cmd>let @+ = fnamemodify(expand('%'), ':.')<CR>]], { desc = 
 set("n", "<A-BS>", "db", { desc = "Delete previous word" })
 set("i", "<A-BS>", "<C-W>", { desc = "Delete previous word" })
 
-set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
+-- set("n", "Q", vim.cmd.quit, { desc = "Quit window" })
 set("n", "]t", vim.cmd.tabnext, { desc = "Next tab" })
 set("n", "[t", vim.cmd.tabprevious, { desc = "Previous tab" })
 set({ "n", "o", "x" }, "gl", "$", { desc = "End of line" })
@@ -322,7 +304,7 @@ set({ "n", "o", "x" }, "gl", "$", { desc = "End of line" })
 -- https://github.com/neovim/neovim/blob/ea878f456a8b15381ce215b6e53781b0a061c5f4/runtime/lua/vim/_core/defaults.lua#L462-L477I
 set({ "n", "x", "o" }, "<CR>", function()
   if vim.treesitter.get_parser(nil, nil, { error = false }) then
-    require("vim.treesitter._select").select_parent(vim.v.count1)
+    vim.treesitter.select("parent", vim.v.count1)
   else
     vim.lsp.buf.selection_range(vim.v.count1)
   end
@@ -330,7 +312,7 @@ end, { desc = "Select parent (outer) node" })
 
 set({ "x", "o" }, "<BS>", function()
   if vim.treesitter.get_parser(nil, nil, { error = false }) then
-    require("vim.treesitter._select").select_child(vim.v.count1)
+    vim.treesitter.select("child", vim.v.count1)
   else
     vim.lsp.buf.selection_range(-vim.v.count1)
   end

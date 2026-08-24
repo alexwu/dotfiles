@@ -3,9 +3,9 @@ local keys = require("bu").keys
 local M = {}
 
 local function surround_selection(mode, start_pair, end_pair, range, opts)
-  opts = vim.F.if_nil(opts, {})
+  opts = vim.nonnil(opts, {})
   local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
-  local new_lines = vim.F.if_nil(opts.new_lines, false)
+  local new_lines = vim.nonnil(opts.new_lines, false)
   local start_row = range.start_row - 1
   local start_col = range.start_col - 1
   local end_row = range.end_row - 1
@@ -79,7 +79,7 @@ end
 ---@param opts? { add_new_lines: boolean }
 ---@return string[]
 local function create_tags(input, opts)
-  opts = vim.F.if_nil(opts, {})
+  opts = vim.nonnil(opts, {})
   local begin_tag = string.format("<%s>", input)
   local end_tag = string.format("</%s>", input)
 
@@ -122,29 +122,29 @@ local function setup_buffer_mappings(bufnr)
 
   set({ "v" }, { "(", ")" }, function()
     surround_mapping({ "(", ")" })
-  end, { desc = "Surround selection with parentheses", buffer = bufnr })
+  end, { desc = "Surround selection with parentheses", buf = bufnr })
 
   set({ "v" }, { "{", "}" }, function()
     surround_mapping({ "{", "}" })
-  end, { desc = "Surround selection with curly braces", buffer = bufnr })
+  end, { desc = "Surround selection with curly braces", buf = bufnr })
 
   set({ "v" }, { "[", "]" }, function()
     surround_mapping({ "[", "]" })
-  end, { desc = "Surround selection with square brackets", buffer = bufnr })
+  end, { desc = "Surround selection with square brackets", buf = bufnr })
 
   set({ "v" }, { "q" }, function()
     surround_mapping({ [["]], [["]] })
-  end, { desc = "Surround selection with double quotes", buffer = bufnr })
+  end, { desc = "Surround selection with double quotes", buf = bufnr })
 
   set({ "v" }, { [[']] }, function()
     surround_mapping({ "'", "'" })
-  end, { desc = "Surround selection with single quotes", buffer = bufnr })
+  end, { desc = "Surround selection with single quotes", buf = bufnr })
 
   set({ "v" }, { [[`]], [[`]] }, function()
     surround_mapping({ "`", "`" })
-  end, { desc = "Surround selection with backtick", buffer = bufnr })
+  end, { desc = "Surround selection with backtick", buf = bufnr })
 
-  set({ "v" }, { "t" }, surround_tags, { desc = "Surround selection specified tag", buffer = bufnr })
+  set({ "v" }, { "t" }, surround_tags, { desc = "Surround selection specified tag", buf = bufnr })
 end
 
 function M.setup()
