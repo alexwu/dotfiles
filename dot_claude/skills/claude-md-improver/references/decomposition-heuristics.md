@@ -51,9 +51,11 @@ Trigger any of these:
 - Personal sandbox URLs, test creds, machine-specific paths
 - Personal-preference overrides for project conventions
 
-### Extracts to `~/.claude/CLAUDE.md`
+### Extracts to `~/.claude/CLAUDE.md` — propose-only
 
 - Cross-project preferences accidentally placed in project memory
+
+Report these as a proposed extraction with the diff; do not perform it. The user's global prompt loads into every project on the machine, so it only gets edited when they ask. See SKILL.md Phase 6.
 
 ## Naming
 

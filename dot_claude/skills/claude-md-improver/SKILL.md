@@ -19,7 +19,10 @@ Audit, route, and improve Claude Code memory surfaces. The job has two halves, a
 
 Most "my CLAUDE.md is messy" complaints are actually one of these. An audit that only does the subtractive half misses everything the user built since the last refresh.
 
-**This skill writes to memory files** (CLAUDE.md, `.claude/rules/*.md`, CLAUDE.local.md). It does NOT write to auto memory at `~/.claude/projects/<proj>/memory/` — Claude owns that surface; we only flag drift.
+**This skill writes to memory files** (CLAUDE.md, `.claude/rules/*.md`, CLAUDE.local.md). Two surfaces sit outside that:
+
+- **Auto memory** (`~/.claude/projects/<proj>/memory/`) — Claude owns it. Never write; only flag drift.
+- **User scope** (`~/.claude/CLAUDE.md`, `~/.claude/rules/*.md`) — **report freely, apply never.** Read them in Phase 1, audit them, put proposed diffs in the Phase 5 report — then stop. Phase 6 may not apply a user-scope edit unless the user asked for global/user-level changes in this session or approves that specific diff after you name it. These files load into *every* project on the machine; the blast radius is why the user opts in each time. Silence is not opt-in.
 
 ## Mental model
 
@@ -199,7 +202,7 @@ For each item from Phases 2 and 3, propose a target surface using the decision t
 
 - Section in CLAUDE.md that only matters for `src/api/**` → extract to `.claude/rules/api.md` with `paths: ["src/api/**"]` frontmatter
 - Multi-step workflow in CLAUDE.md → extract to a skill (the body still loads from CLAUDE.md every session, wasting context; a skill loads on demand)
-- Personal preference shared in team CLAUDE.md → move to `~/.claude/CLAUDE.md` or `CLAUDE.local.md`
+- Personal preference shared in team CLAUDE.md → `CLAUDE.local.md`. Route to `~/.claude/CLAUDE.md` only when the preference is genuinely cross-project — and that target is **propose-only** (see Phase 6), so file it under user-scope findings rather than the main list
 - New repo feature surfaced in scour → most often CLAUDE.md (project-wide) or `.claude/rules/<topic>.md` (path-scoped)
 - "I always have to remind Claude X" learning → leave it; auto memory will capture it. If it's already in CLAUDE.md and ALSO in auto memory, deduplicate (prefer CLAUDE.md for things you author, auto memory for things Claude noticed).
 - Repository has `AGENTS.md` but no import → add `@AGENTS.md` to CLAUDE.md.
@@ -257,7 +260,17 @@ For each file, list categorical findings with severity. Group by file.
 
 #### .claude/rules/security.md
 - [unscoped] No `paths:` frontmatter; loads on every session even though content only relevant to auth code
+
+### User-scope findings — NOT applied without your go-ahead
+Everything targeting `~/.claude/CLAUDE.md` or `~/.claude/rules/*.md`. Listed with full diffs; none of it is touched in Phase 6 unless you say so.
+
+- [misplaced] `~/.claude/CLAUDE.md` L40-52 duplicates the project rule at .claude/rules/testing.md
+  - **Diff sketch:** remove L40-52 from the user file
+- [conflicting] user CLAUDE.md says 4-space indent; project CLAUDE.md says 2-space
+  - **Diff sketch:** none proposed — needs your call on which wins
 ```
+
+Omit this section entirely when there are no user-scope findings. Never fold user-scope items into the per-file findings above — separating them is what makes the gate visible.
 
 ### Phase 6: Targeted updates
 
@@ -272,6 +285,7 @@ For each item:
 - For **addition** items, follow the `Capture format per addition` block in update-guidelines.md (Why / Surface choice / diff)
 - For **oversized**, recommend `/decompose-claude-md` rather than guessing the split inline — it's a multi-step refactor that deserves its own focused command
 - Never write to `~/.claude/projects/<proj>/memory/` — that's Claude's surface. Only flag duplication.
+- **Never apply a user-scope edit here.** `~/.claude/CLAUDE.md` and `~/.claude/rules/*.md` findings were reported in Phase 5 and stop there. Two things unlock one: the user asked for global/user-level changes in this session, or they approve that specific diff after you name it. **Approving the audit as a whole does not approve these** — a user saying "yeah, apply the fixes" means the project fixes. Close Phase 6 by naming what you skipped: "N findings target your global prompt (`~/.claude/CLAUDE.md`) — say the word and I'll apply them." Then stop. Never create a user-scope file that doesn't already exist.
 
 ### Phase 7: Decomposition handoff
 

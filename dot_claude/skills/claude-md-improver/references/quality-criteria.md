@@ -20,7 +20,7 @@ For each memory file in scope, scan for these findings. Each has a definition, d
 **Detect:**
 - A section in CLAUDE.md mentions only paths under a single directory → should be `.claude/rules/<dir>.md` with `paths:` frontmatter
 - A section is a multi-step procedure (numbered steps, "first/then/finally") → should be a skill
-- A section is gitignored-personal content (sandbox URL, test creds, personal pref) sitting in committed CLAUDE.md → should be `CLAUDE.local.md` or `~/.claude/CLAUDE.md`
+- A section is gitignored-personal content (sandbox URL, test creds, personal pref) sitting in committed CLAUDE.md → should be `CLAUDE.local.md` (default), or `~/.claude/CLAUDE.md` if it's cross-project — the latter is a propose-only target, so report the diff under user-scope findings instead of applying it
 - Auto memory (`MEMORY.md`) contains user-authored explicit rules instead of Claude-discovered learnings → should be CLAUDE.md
 - CLAUDE.md duplicates content from `AGENTS.md` instead of importing it
 

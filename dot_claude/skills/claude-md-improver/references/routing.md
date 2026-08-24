@@ -34,8 +34,10 @@ Is this a multi-step procedure or task workflow?
          │
          Is this private to the user (sandbox URLs, personal preferences,
          test creds)?
-         ├─ Yes → CLAUDE.local.md (project) or ~/.claude/CLAUDE.md (global)
+         ├─ Yes → CLAUDE.local.md (project). Default here.
          │        CLAUDE.local.md must be gitignored.
+         │        Cross-project? ~/.claude/CLAUDE.md — but that surface is
+         │        PROPOSE-ONLY (SKILL.md Phase 6). Report the diff; don't apply.
          │
          └─ No → Continue
             │
@@ -112,6 +114,8 @@ For multi-worktree repos, gitignored files only exist in the worktree where crea
 ### User-level — `~/.claude/CLAUDE.md` and `~/.claude/rules/*.md`
 
 Loaded for every project on the machine. Use for cross-project preferences. User rules without `paths:` load before project rules.
+
+**Propose-only surface.** Audit it, report findings against it with diffs — but this skill does not edit or create user-level files unless the user asked for global/user-level changes. See SKILL.md Phase 6.
 
 ### Managed policy CLAUDE.md
 

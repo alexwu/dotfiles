@@ -89,6 +89,8 @@ No frontmatter. Loads always.
 
 ## User-level — `~/.claude/CLAUDE.md`
 
+> Both user-level templates below are **propose-only**. Show them in the report when the user asks what a global file should look like, or when they've asked for global changes. Never create or rewrite one off your own initiative — see SKILL.md Phase 6.
+
 ```markdown
 # Personal preferences
 
