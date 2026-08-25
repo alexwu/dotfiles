@@ -41,6 +41,7 @@ export LS_COLORS="$(vivid generate snazzy)"
 export POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
 export HOMEBREW_NO_ENV_HINTS=true
 export OP_BIOMETRIC_UNLOCK_ENABLED=true
+export COLORTERM=truecolor
 # path=(/Applications/Postgres.app/Contents/Versions/latest/bin $path)
 path=($HOME/.bin/nvim/bin $path)
 
