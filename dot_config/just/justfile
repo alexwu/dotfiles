@@ -477,3 +477,49 @@ launch-dashboard:
         fi
         sleep 0.1
     done
+
+# Create GitHub linked branch(es) from an issue, mirroring the website's "Create a
+# branch" button. Cross-repo aware: the issue can live in one repo (default
+# cleverific/support) while the branch is created in one or more OTHER repos, via
+# `gh issue develop`'s --repo (issue) + --branch-repo (branch) split. GitHub only
+# allows the branch repo to share the issue repo's owner/org (all cleverific/* here).
+# Omit -b to use each repo's own default branch; omit -n to auto-name from the issue
+# title. Does not check out (multi-repo) — git fetch && checkout after. List existing
+# links with: gh issue develop --repo <issue-repo> --list <issue>.
+[doc("Create GitHub linked branch(es) from an issue across one or more repos. Flags: -r ISSUE_REPO (default cleverific/support), -b BASE, -n NAME. Usage: J gh-issue-branch [-r cleverific/support] 456 cleverific/editorder [cleverific/pro-platform ...]")]
+[group("github")]
+[no-cd]
+[positional-arguments]
+gh-issue-branch *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    issue_repo="cleverific/support"
+    base=""
+    name=""
+    usage="usage: J gh-issue-branch [-r ISSUE_REPO] [-b BASE] [-n NAME] <issue> <branch-repo> [branch-repo...]"
+    positional=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -r | --repo) issue_repo="$2"; shift 2 ;;
+            -b | --base) base="$2"; shift 2 ;;
+            -n | --name) name="$2"; shift 2 ;;
+            -h | --help) echo "$usage"; exit 0 ;;
+            --) shift; while [[ $# -gt 0 ]]; do positional+=("$1"); shift; done ;;
+            -*) echo "gh-issue-branch: unknown flag $1" >&2; echo "$usage" >&2; exit 1 ;;
+            *) positional+=("$1"); shift ;;
+        esac
+    done
+    set -- "${positional[@]}"
+    issue="${1:-}"
+    shift || true
+    if [[ -z "$issue" || $# -eq 0 ]]; then
+        echo "$usage" >&2
+        exit 1
+    fi
+    for branch_repo in "$@"; do
+        gh_args=("$issue" --repo "$issue_repo" --branch-repo "$branch_repo")
+        [[ -n "$base" ]] && gh_args+=(--base "$base")
+        [[ -n "$name" ]] && gh_args+=(--name "$name")
+        echo ">> issue $issue ($issue_repo) -> linked branch in $branch_repo" >&2
+        gh issue develop "${gh_args[@]}"
+    done
