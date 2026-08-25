@@ -45,7 +45,7 @@ paths:
 ## Just (global justfile)
 - Config: `dot_config/just/justfile`
 - `J` alias = `just -g` (runs global justfile)
-- Groups: `mac` (remove-quarantine), `docker` (build/rebuild), `mcp` (inspector), `llm` (chat, pipe, respond, pick, unload, events, ui, log, restart)
+- Groups: `mac` (remove-quarantine), `docker` (build/rebuild), `mcp` (inspector), `llm` (chat, pipe, respond, pick, unload, events, ui, log, restart), `caddy` (caddy-deps, caddy-rebuild)
 - LLM tasks use `xh` for HTTP and `jaq` for JSON, target llama-swap at `localhost:8000`
 - Default model: `anthropic/claude-haiku-4.5`
 

@@ -66,3 +66,35 @@ bun = true
 
 [settings.python]
 uv_venv_auto = true
+
+[bootstrap.macos.launchd.agents.llama-swap]
+program = "/opt/homebrew/bin/fnox"
+args = [
+  "exec", "-c", "/Users/jamesbombeelu/.config/fnox/config.toml", "--",
+  "/opt/homebrew/bin/llama-swap",
+  "-listen", "localhost:8000",
+  "-config", "/Users/jamesbombeelu/.config/llama-swap/config.yaml",
+  "-watch-config",
+]
+run_at_load = true
+keep_alive = true
+kickstart = true
+environment = { PATH = "/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.config/llama-swap/llama-swap.log"
+stderr_path = "~/.config/llama-swap/llama-swap.log"
+
+[bootstrap.macos.launchd.agents.caddy-tailscale]
+program = "/opt/homebrew/bin/fnox"
+args = [
+  "exec", "-c", "/Users/jamesbombeelu/.config/fnox/config.toml", "--",
+  "/Users/jamesbombeelu/.local/bin/caddy-tailscale",
+  "run",
+  "--config", "/Users/jamesbombeelu/.config/caddy/Caddyfile",
+  "--adapter", "caddyfile",
+]
+run_at_load = true
+keep_alive = true
+kickstart = true
+environment = { PATH = "/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.config/caddy/caddy-tailscale.log"
+stderr_path = "~/.config/caddy/caddy-tailscale.log"

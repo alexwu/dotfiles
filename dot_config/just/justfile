@@ -174,7 +174,24 @@ llm-log:
 [doc("Restart the llama-swap launchd agent")]
 [group("llama-swap")]
 llm-restart:
-    launchctl kickstart -k gui/$(id -u)/com.github.mostlygeek.llama-swap
+    launchctl kickstart -k gui/$(id -u)/dev.mise.llama-swap
+
+[doc("Show versions baked into the caddy-tailscale binary")]
+[group("caddy")]
+caddy-deps:
+    ~/.local/bin/caddy-tailscale build-info | rg '^dep\s(tailscale\.com|github\.com/tailscale/caddy-tailscale)\s'
+    ~/.local/bin/caddy-tailscale version
+
+[confirm("Rebuild and restart caddy-tailscale? The tailnet endpoint drops briefly.")]
+[doc("Rebuild caddy-tailscale: latest plugin + tailscale.com@TS (default latest release), then restart the agent. Usage: J caddy-rebuild [TS]")]
+[group("caddy")]
+caddy-rebuild ts="latest":
+    go run github.com/caddyserver/xcaddy/cmd/xcaddy@latest build \
+        --with github.com/tailscale/caddy-tailscale \
+        {{ if ts != "" { "--with tailscale.com@" + ts } else { "" } }} \
+        --output ~/.local/bin/caddy-tailscale
+    @just -g caddy-deps
+    launchctl kickstart -k gui/$(id -u)/dev.mise.caddy-tailscale
 
 [arg("model", long="model", short="m")]
 [arg("provider", long="provider", short="p")]

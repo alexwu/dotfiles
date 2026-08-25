@@ -1,0 +1,14 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Converge mise-managed LaunchAgents ([bootstrap.macos.launchd.agents.*]) on
+# chezmoi apply. mise-config.toml is a symlink target (never deployed), so the
+# hash below is what makes this template change — and this script re-run —
+# whenever the file's content does. Unrelated edits (e.g. [tools]) also fire
+# it, but a converged apply is a no-op: unchanged plists are skipped, nothing
+# is kickstarted.
+# mise-config.toml hash: {{ include (joinPath .chezmoi.sourceDir "mise-config.toml") | sha256sum }}
+
+set -euo pipefail
+
+mise bootstrap macos launchd-agents apply --yes
+{{ end -}}

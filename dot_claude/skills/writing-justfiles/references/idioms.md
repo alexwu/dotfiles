@@ -164,7 +164,7 @@ Cheap insurance. Anything that kicks a launchd agent, deletes files, force-pushe
 [doc("Restart the llama-swap launchd agent")]
 [confirm("Restart llama-swap? This will interrupt any running requests.")]
 llm-restart:
-    launchctl kickstart -k gui/$(id -u)/com.github.mostlygeek.llama-swap
+    launchctl kickstart -k gui/$(id -u)/dev.mise.llama-swap
 ```
 
 `just --yes` auto-confirms across the run. A recipe whose dependency requires confirmation is skipped if the dep is declined — so `[confirm]` propagates correctly through dep chains. Deep dive: [`attributes.md#confirm--confirmprompt`](attributes.md#confirm--confirmprompt) and [`recipes.md#7-confirmation-behaviour`](recipes.md#7-confirmation-behaviour).

@@ -1,14 +1,13 @@
 ---
 paths:
   - "dot_config/llama-swap/**"
-  - "private_Library/LaunchAgents/com.github.mostlygeek.llama-swap.plist"
 ---
 
 # LLM Local Inference
 
 ## llama-swap
 - Config: `dot_config/llama-swap/config.yaml` — hot-reloads via `-watch-config` after `chezmoi apply`
-- LaunchAgent plist changes need `launchctl unload/load` (not just chezmoi apply)
+- LaunchAgent is mise-managed: defined in `[bootstrap.macos.launchd.agents.llama-swap]` in `mise-config.toml` (symlink target — edits live immediately), label `dev.mise.llama-swap`. Agent-def changes go live via `mise bootstrap macos launchd-agents apply --yes` (rewrites the plist, reloads, kickstarts — no manual `launchctl` dance). `just llm-restart` kickstarts it.
 - LaunchAgent CWD is `/` (read-only on macOS SIP) — spawned processes need absolute paths for writable dirs
 - Does NOT proxy WebSocket connections — connect directly to backend for realtime endpoints
 - `setParamsByID` works for JSON body endpoints (`/v1/audio/speech`) but NOT multipart form endpoints (`/v1/audio/transcriptions`)

@@ -19,14 +19,28 @@ one means rebuilding Caddy. The Homebrew `caddy` does NOT have the plugin — a
 - Verify the plugin is baked in: `caddy-tailscale list-modules | rg tailscale`
   → `tls.get_certificate.tailscale`, `http.authentication.providers.tailscale`,
   `http.reverse_proxy.transport.tailscale`, `tailscale`.
+- **Updating versions** — everything is compiled in, so every bump is a rebuild + restart.
+  The front door is `J caddy-rebuild [TS]` (global justfile, group `caddy`): latest plugin +
+  `tailscale.com@TS` (default `latest`), prints the baked-in deps (`J caddy-deps` alone does
+  just that), then kickstarts the agent. Manually, the knobs are:
+  - Plugin (and the tsnet/tailscale.com version its go.mod pins): re-run the `xcaddy build`
+    above — `--with <module>` with no `@version` pulls latest master.
+  - Force a newer tailscale.com than the plugin pins: add a second
+    `--with tailscale.com@v1.XX.X` (extra `--with` pins the transitive dep).
+  - Caddy core: xcaddy builds the latest release by default; pin with
+    `xcaddy build v2.11.4 --with …`.
+  - Check what a binary embeds: `caddy-tailscale build-info | rg 'tailscale.com|caddy-tailscale'`
+    and `caddy-tailscale version`.
+  - Then `launchctl kickstart -k gui/$(id -u)/dev.mise.caddy-tailscale` to run the new build.
 
 ## Config + service
 - Caddyfile: `dot_config/caddy/Caddyfile` → `~/.config/caddy/Caddyfile`. Site address
   is the FULL `*.ts.net` hostname + `bind tailscale/<node>`; auto_https then pulls the
   cert from Tailscale automatically (no `tls` block needed with the full hostname).
-- LaunchAgent: `private_Library/LaunchAgents/com.github.tailscale.caddy-tailscale.plist`.
-  Mirrors the llama-swap agent: `fnox exec -c ~/.config/fnox/config.toml -- caddy-tailscale run …`,
-  `RunAtLoad` + `KeepAlive`, logs to `~/.config/caddy/caddy-tailscale.log`.
+- LaunchAgent is mise-managed: `[bootstrap.macos.launchd.agents.caddy-tailscale]` in
+  `mise-config.toml`, label `dev.mise.caddy-tailscale`. Mirrors the llama-swap agent:
+  `fnox exec -c ~/.config/fnox/config.toml -- caddy-tailscale run …`,
+  `run_at_load` + `keep_alive`, logs to `~/.config/caddy/caddy-tailscale.log`.
 - tsnet runs in userspace, so no privileged bind — a user LaunchAgent is enough.
 - Node state: `~/.local/state/caddy-tailscale/` (per-node subdir). Survives restarts.
 
@@ -41,7 +55,8 @@ one means rebuilding Caddy. The Homebrew `caddy` does NOT have the plugin — a
   `fnox -c ~/.config/fnox/config.toml set TS_AUTHKEY <key>`.
 
 ## Gotchas
-- Plist changes need `launchctl unload/load`, NOT just `chezmoi apply` (same as llama-swap).
+- Agent-def changes go live via `mise bootstrap macos launchd-agents apply --yes` (same as
+  llama-swap) — `mise-config.toml` is a symlink target, so no `chezmoi apply` involved at all.
 - LaunchAgent CWD is `/` (SIP read-only) — every path in the Caddyfile/plist is absolute.
 - The laptop sleeps: `llama-swap.burro-neon.ts.net` only resolves while `bombeebook`
   is awake. Physics, not a config bug.
@@ -51,8 +66,8 @@ one means rebuilding Caddy. The Homebrew `caddy` does NOT have the plugin — a
 
 ## Load / reload / status
 ```sh
-launchctl load   ~/Library/LaunchAgents/com.github.tailscale.caddy-tailscale.plist
-launchctl unload ~/Library/LaunchAgents/com.github.tailscale.caddy-tailscale.plist
+mise bootstrap macos launchd-agents apply --yes            # (re)write plist + reload + kickstart
+launchctl kickstart -k gui/$(id -u)/dev.mise.caddy-tailscale   # plain restart, no config change
 tailscale status | rg llama-swap          # node registered?
 curl -s https://llama-swap.burro-neon.ts.net/v1/models   # serving?
 ```
