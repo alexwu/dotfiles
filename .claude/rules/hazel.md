@@ -32,11 +32,14 @@ shell *had* `~/.local/bin`. Test hazel tools under the real minimal env:
   (`trash` CLI) or deleted on success.
 
 - `scripts/hazel/image_sort.nim` (binary `image-sort`) — classify a Downloads image
-  as `lulu | screenshot | meme | wallpaper | other` via `llm-local` structured
-  output, then rename +
+  as `lulu | skyrim | screenshot | meme | wallpaper | other` via `llm-local`
+  structured output, then rename +
   route it under a sorted tree. `image-sort [--dry-run|-n] [-m|--model <id>] <input> [root]`.
-  Root defaults to `~/Downloads/Images` (change the ONE path to relocate the whole
-  library). Routing: `lulu → Lulu/<style>/<name>.png` (nsfw → `…/nsfw/`),
+  Root defaults to `~/Media/Images` — deliberately OUTSIDE `~/Downloads` (change the
+  ONE path to relocate the whole local library; an encrypted archive like a
+  Cryptomator/BombeeCloud vault is synced separately). Routing:
+  `lulu → Lulu/<style>/<name>.png` (nsfw → `…/nsfw/`),
+  `skyrim → Skyrim/<name>.png` (nsfw → `…/nsfw/`),
   `screenshot → Screenshots/<name>.png`, `meme → Memes/<name>.png`,
   `wallpaper → Wallpapers/<name>.png` (nsfw → `…/nsfw/`),
   `other → Other/<original-name>` (verbatim, no rename). Accepts HEIC/HEIF/JPG/JPEG/PNG/WEBP/**AVIF**/**SVG**/GIF + short
@@ -54,11 +57,30 @@ shell *had* `~/.local/bin`. Test hazel tools under the real minimal env:
     signal for "not my job"). `skip` vs `fail` is the deliberate split.
   - Schema `image-sort` + prompt `image-sort` (both under `~/.config/llm`,
     deliberately **uncommitted** — they carry reference-subject appearance text kept
-    out of this public repo).
-  - **WARNING(alexwu):** if wired to a Hazel rule on `~/Downloads`, scope it to the
-    **top level only** — with `<root>` inside Downloads it would re-process its own
-    `Images/` subfolders in a loop. Moving `<root>` out of Downloads removes the
-    hazard entirely.
+    out of this public repo). `skyrim` **is** a schema category (added to the enum),
+    and the rule that maps a source domain to it lives in the **prompt** — the model
+    makes the call from the DOWNLOAD SOURCE hint. There is deliberately **no**
+    hardcoded host match in the Nim (an earlier draft did that; ripped out so all
+    classification logic sits in one place — the schema + prompt).
+  - **"Where from" provenance** (`com.apple.metadata:kMDItemWhereFroms` — the source
+    URL a browser stamps on a download) is read straight from the xattr bytes, NOT
+    via `mdls`, which lags the Spotlight index on a just-downloaded file (so it works
+    before Spotlight catches up, AND the library can be added to Spotlight Privacy
+    without blinding the tool). It's appended to the classify call as a **DOWNLOAD
+    SOURCE** hint, which the prompt uses two ways: to route a `nexusmods.com` /
+    `loverslab.com` download to the `skyrim` category (the source rule wins over the
+    visual categories; prompt carries a `NOTE` on tightening to the Nexus game id —
+    `/mods/1704/` = Skyrim SE — if non-Skyrim Nexus images leak in), and to sharpen
+    naming for everything else. When a raster is sips-converted (heic/jpg/webp/avif)
+    the fresh PNG would lose the xattr, so it's re-stamped byte-exact (`xattr -px` →
+    `-wx`) onto the converted file before the original is trashed. New deps: `xattr`
+    + `plutil` (macOS built-ins in `/usr/bin`, already on the Hazel rule's PATH).
+  - **NOTE(alexwu):** root now defaults to `~/Media/Images`, OUTSIDE `~/Downloads`,
+    so a Hazel rule watching Downloads never re-processes its own sorted output. The
+    Hazel rule invokes `image-sort "$1"` with NO root arg, so it rides this default —
+    relocating the library is a one-line `defaultRootRel` change, no Hazel edit. Only
+    if `<root>` is ever pointed back INSIDE the watched Downloads tree must the rule
+    be scoped to the top level, or it loops on its own `Images/`.
 
 - `scripts/hazel/gif_mosaic.nim` (binary `gif-mosaic`) — render an animation (gif,
   animated webp, short video — anything ffmpeg reads) into a single contact-sheet
