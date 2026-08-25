@@ -540,3 +540,82 @@ gh-issue-branch *args:
         echo ">> issue $issue ($issue_repo) -> linked branch in $branch_repo" >&2
         gh issue develop "${gh_args[@]}"
     done
+
+[confirm("Install/replace the forgejo-runner LaunchAgent on the remote host?")]
+[doc("Install the forgejo-runner LaunchAgent on a mesh host: writes the plist, bootstraps it, kickstarts it. Refuses if the runner config is missing or a daemon is already running. Uninstall with: ssh HOST launchctl bootout gui/$(id -u)/dev.alexwu.forgejo-runner. Usage: J forgejo-runner-install [HOST]")]
+[group("forgejo")]
+[no-cd]
+forgejo-runner-install host="bombeemac-mini":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ssh -o BatchMode=yes {{ quote(host) }} 'bash -s' <<'REMOTE'
+    set -euo pipefail
+
+    label=dev.alexwu.forgejo-runner
+    plist="$HOME/Library/LaunchAgents/$label.plist"
+    config="$HOME/.config/forgejo-runner/config.yaml"
+    runner="$HOME/.local/share/mise/shims/runner"
+    logdir="$HOME/Library/Logs/$label"
+
+    [[ -f "$config" ]] || { echo "forgejo-runner-install: no config at $config — register the runner first." >&2; exit 1; }
+    [[ -x "$runner" ]] || { echo "forgejo-runner-install: no runner binary at $runner." >&2; exit 1; }
+
+    if pgrep -f 'runner daemon' >/dev/null 2>&1; then
+        echo "forgejo-runner-install: a 'runner daemon' is already running. Stop the foreground one first — two daemons sharing a UUID will fight over jobs." >&2
+        exit 1
+    fi
+
+    mkdir -p "$logdir" "$(dirname "$plist")"
+
+    # NOTE: launchd has no "start after Tailscale" primitive. KeepAlive + ThrottleInterval
+    # is the convergence mechanism: pre-Tailscale the daemon fails to resolve the forge
+    # hostname, exits, and gets restarted until the tailnet is up.
+    cat > "$plist" <<PLIST
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+      <dict>
+        <key>Label</key>
+        <string>$label</string>
+        <key>ProgramArguments</key>
+        <array>
+          <string>$runner</string>
+          <string>daemon</string>
+          <string>-c</string>
+          <string>$config</string>
+        </array>
+        <key>UserName</key>
+        <string>$USER</string>
+        <key>WorkingDirectory</key>
+        <string>$HOME</string>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <true/>
+        <key>ThrottleInterval</key>
+        <integer>30</integer>
+        <key>StandardOutPath</key>
+        <string>$logdir/stdout.log</string>
+        <key>StandardErrorPath</key>
+        <string>$logdir/stderr.log</string>
+        <key>EnvironmentVariables</key>
+        <dict>
+          <key>PATH</key>
+          <string>$HOME/.cargo/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        </dict>
+        <key>ProcessType</key>
+        <string>Interactive</string>
+        <key>SessionCreate</key>
+        <true/>
+      </dict>
+    </plist>
+    PLIST
+
+    launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$plist"
+    launchctl kickstart -k "gui/$(id -u)/$label"
+
+    echo ">> installed $plist"
+    launchctl list "$label"
+    echo ">> logs: $logdir/{stdout,stderr}.log"
+    REMOTE
