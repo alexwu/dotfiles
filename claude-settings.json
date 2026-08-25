@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "cleanupPeriodDays": 365,
   "env": {
     "SHELL": "/opt/homebrew/bin/bash",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
@@ -94,7 +95,7 @@
       "Bash(go install*)"
     ]
   },
-  "model": "fable",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -373,6 +374,7 @@
     }
   },
   "effortLevel": "high",
+  "showClearContextOnPlanAccept": false,
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "theme": "auto",
@@ -384,8 +386,6 @@
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": false,
-  "cleanupPeriodDays": 365,
-  "showClearContextOnPlanAccept": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
   }
