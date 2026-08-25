@@ -7,6 +7,10 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "proxy": "",
+  "toolbar": {
+    "code_actions": true
+  },
   "agent_servers": {
     "gemini": {
       "type": "registry"
@@ -23,6 +27,7 @@
   },
   "agent_ui_font_size": 15.0,
   "agent": {
+    "sidebar_side": "right",
     "dock": "left",
     "button": false,
     "favorite_models": [],
@@ -36,7 +41,8 @@
     "active_language_button": true
   },
   "project_panel": {
-    "dock": "right",
+    "git_status_indicator": true,
+    "dock": "left",
     "button": true
   },
   "diagnostics": {
