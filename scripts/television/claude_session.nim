@@ -355,12 +355,6 @@ proc emitResumeShell(m: SessionMeta, fork = false, worktree = false) =
   ## worktree=true appends --worktree, so claude resumes in a fresh git
   ##             worktree rather than the original cwd's branch state.
   ##
-  ## No `exec` — claude runs as a child of the interactive shell so the
-  ## user lands back at their prompt (in the session's cwd) after exit.
-  ## No script(1) wrapper either: when this is eval'd in the parent shell
-  ## claude inherits the shell's original pty slave fds, which bun's
-  ## kqueue accepts (the workaround was only needed when TV gave claude
-  ## dup'd /dev/tty fds — see oven-sh/bun#24158).
   if m.cwd.len == 0:
     quit("session has no recorded cwd: " & m.shortId, 1)
   if not dirExists(m.cwd):
