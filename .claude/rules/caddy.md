@@ -1,3 +1,9 @@
+---
+paths:
+  - "dot_config/caddy/**"
+  - "mise-config.toml"
+---
+
 # Caddy (caddy-tailscale)
 
 A custom Caddy build fronts local services as their own tailnet nodes via the

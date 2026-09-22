@@ -1,3 +1,15 @@
+---
+paths:
+  - "dot_claude/**"
+  - "dot_codex/**"
+  - "claude-settings.json"
+  - ".claude/settings.json"
+  - "run_onchange_deploy-agents-skills.sh.tmpl"
+  - "scripts/claude/**"
+  - "scripts/lib/**"
+  - "scripts/handoff/**"
+---
+
 # Claude Code
 
 ## Custom skills

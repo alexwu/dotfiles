@@ -2,6 +2,7 @@
 paths:
   - "dot_claude/scripts/**"
   - "scripts/claude/**"
+  - "scripts/lib/**"
   - "scripts/wezterm/**"
   - "run_onchange_build-scripts.sh.tmpl"
 ---

@@ -1,3 +1,8 @@
+---
+paths:
+  - "scripts/macos/**"
+---
+
 # macOS Tools
 
 Nim CLIs in `scripts/macos/` (source-only, ignored by chezmoi; binaries compile to
