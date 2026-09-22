@@ -42,7 +42,6 @@ if (( $+commands[yazi] )) then
 fi
 
 export PATH="$HOME/.bin:$PATH"
-export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/.bun/bin:$PATH"
 if (( $+commands[go] )) then
   path=($HOME/go/bin $path)
@@ -273,3 +272,9 @@ fi
 if [[ ! -t 1 || -n $CLAUDECODE ]]; then
   unalias diff ssh obsidian df du 2>/dev/null
 fi
+
+# NOTE: rustup's ~/.cargo/bin must beat Homebrew's rust (which comes back as a
+# brew dependency) and mise's shims. brew shellenv and mise re-run later in
+# startup (macos.zsh, the zim homebrew/mise modules) and reorder PATH, so this
+# has to stay the last PATH edit. typeset -U (zshenv) turns it into a move.
+path=($HOME/.cargo/bin $path)

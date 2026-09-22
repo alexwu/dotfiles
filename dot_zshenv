@@ -5,8 +5,9 @@ typeset -U path
 path=(/opt/homebrew/bin /opt/homebrew/sbin $HOME/.local/bin $path)
 export PATH
 
-# rustup's PATH hook (the mini has cargo via rustup; harmless where absent)
-[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+# rustup's ~/.cargo/bin ahead of Homebrew rust. Not `. ~/.cargo/env`: it skips
+# the prepend when the dir is already on an inherited PATH, even behind Homebrew.
+[[ -d $HOME/.cargo/bin ]] && path=($HOME/.cargo/bin $path)
 
 # Local sessions use this machine's 1Password SSH agent; ssh sessions keep the
 # forwarded agent sshd already put in SSH_AUTH_SOCK. ~/.ssh/config carries the

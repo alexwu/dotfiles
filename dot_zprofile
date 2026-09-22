@@ -12,3 +12,7 @@ source ~/.orbstack/shell/init.zsh 2>/dev/null || :
 
 # Created by `pipx` on 2024-11-07 03:52:32                                                                                                                                │    │
 export PATH="$PATH:/Users/jamesbombeelu/.local/bin"
+
+# NOTE: last PATH edit on purpose: brew shellenv and mise above reorder PATH, so
+# re-front rustup's ~/.cargo/bin over Homebrew rust and mise shims (see .zshrc).
+path=($HOME/.cargo/bin $path)
