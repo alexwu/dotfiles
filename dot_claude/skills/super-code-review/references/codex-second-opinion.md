@@ -4,7 +4,7 @@ The default-on second-opinion pass via `codex:codex-rescue`. Runs in parallel wi
 
 ## Why a second opinion
 
-Our four reviewers share a model family. A genuinely independent second pass from a different model surfaces bugs we'd systematically miss, and corroborates findings we both flag (boosting their confidence at validation time).
+Our five reviewers share a model family. A genuinely independent second pass from a different model surfaces bugs we'd systematically miss, and corroborates findings we both flag (boosting their confidence at validation time).
 
 `codex-rescue` forwards through the Codex companion runtime — so under the hood it's GPT-5-class reasoning rather than Claude. That difference is the value.
 

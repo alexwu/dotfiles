@@ -2,7 +2,7 @@
 
 How the orchestrating skill assembles spawn prompts for the reviewers and validators. Each prompt must be **self-contained** — the spawned subagent doesn't see the orchestrator's conversation history.
 
-## Reviewer spawn template (used for all four generic reviewers + Codex)
+## Reviewer spawn template (used for all five generic reviewers + Codex)
 
 ```
 You are being spawned as part of a super-code-review pipeline. Your role: <agent-name>.
@@ -28,7 +28,7 @@ INTENT CONTEXT
 DIFF
 ----
 
-<either inline diff if <50 KB, or "See file: /tmp/super-code-review-diff-XXXXX.patch">
+<either inline diff if <50 KB, or "See file: <path to the diff file from diff-sources.md>">
 
 TASK
 ----
@@ -101,6 +101,9 @@ Evidence: "<quoted lines>"
 Reasoning: "<claimed why-broken>"
 Source agent: <bug-reviewer | claudemd-compliance-reviewer | ...>
 Confidence reported: <high | medium>
+Rule source: <path> (claude-md and TODO-attribution findings only)
+Rule quote: "<verbatim rule>" (same)
+Rule scope: <repo | user> (same)
 
 CONTEXT
 -------
@@ -114,15 +117,16 @@ YOUR JOB
 1. Read the file in full (path above).
 2. If the finding requires understanding callers or callees, follow up to 2 references.
 3. Decide: is this finding real?
-4. If real, assign severity:
-   - blocker: will fail to build, crash at runtime, produce wrong output, or violate a hard CLAUDE.md rule
+4. If real and `Rule scope` is `user`, assign no severity — set `severity: "none"`. It's a local note, never posted (see claude-md-integration.md → "User-level rules stay local"). Otherwise, assign severity:
+   - blocker: will fail to build, crash at runtime, produce wrong output, or violate a hard CLAUDE.md/AGENTS.md rule
    - major: will cause incorrect or fragile behavior, drop an error path, miss a critical test, deviate from intent
    - suggestion: real but minor; would improve quality without being a must-fix
 5. Return:
    ```
    {
      valid: true|false,
-     severity: "<level>",
+     severity: "<level>",              # "none" when rule_scope is user
+     rule_scope: "repo|user",          # carried through unchanged when the finding has one
      file: "<path>",                   # REQUIRED — confirmed exact file path
      line_start: <N>,                  # REQUIRED — confirmed exact line number(s)
      line_end: <N>,                    # REQUIRED — equals line_start for single-line findings
@@ -147,7 +151,11 @@ Same template, but `FINDING UNDER REVIEW` becomes a numbered list, and the retur
 
 ## Concurrency and read-only enforcement
 
-All reviewer and validator agents inherit the `git-readonly-guard` hook through their frontmatter (the four custom reviewer agents) or via tool allowlist (the validators using `general-purpose` get `Read, Grep, Glob, Bash` — write tools are not included).
+The five custom reviewer agents carry the `git-readonly-guard` hook in their frontmatter. Validators run as `general-purpose`, which has every tool, including Edit and Write; the Agent tool can't narrow that per spawn. The `Read-only. No edits.` constraint in the validator template is the only thing holding them read-only, so keep it in every validator prompt.
+
+Domain auditors (`axiom:*`) are plugin agents with their plugin's own tool set and no guard hook. The spawn prompt is the only read-only constraint on them, so say so in it.
+
+Always pass `model` on validator spawns. Without it, `general-purpose` inherits the session model.
 
 If a validator's needs exceed the read-only floor (e.g., it wants to run a linter), it should return `valid: false, reasoning: "needs more context than read-only permits"` and the orchestrator surfaces that as a gap to the user. Validators do not break the floor.
 
@@ -157,7 +165,8 @@ Each agent returns findings. The orchestrator merges by:
 
 1. Dedupe on `(file, line_range, type)` — same finding from multiple agents collapses, keeping the highest-confidence version and noting `discovered_by: [bug-reviewer, codex]`
 2. Apply validator results — drop `valid: false`, attach severity from `valid: true`
-3. Sort: blockers first (by file path), then majors, then suggestions
-4. Pass to Phase 5 output formatter
+3. Partition `rule_scope: user` findings into `user_rule_notes`. They never enter `findings[]`, the severity counts in `stats`, or any output that reaches the PR
+4. Sort the remaining findings: blockers first (by file path), then majors, then suggestions
+5. Pass to Phase 5 output formatter
 
 Dedupe key tolerance: two findings count as the same when they're in the same file and their line ranges overlap (`max(start_a, start_b) <= min(end_a, end_b)`). Don't over-merge — if two agents flagged different aspects of the same line, keep both with a shared `cluster_id`.

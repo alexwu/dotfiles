@@ -28,7 +28,7 @@ Extract:
 
 ```bash
 # Extract issue numbers from PR/commit bodies
-grep -oE '(Fixes|Closes|Refs|Re:|#)\s*#?[0-9]+' <<<"$PR_BODY_OR_COMMITS" | grep -oE '[0-9]+' | sort -u
+rg -o --no-filename -r '$1' '(?:Fixes|Closes|Refs|Re:)?\s*#([0-9]+)' <<<"$PR_BODY_OR_COMMITS" | sort -u
 
 # Fetch each
 for ISSUE in $ISSUE_NUMBERS; do
@@ -52,7 +52,7 @@ Filter out:
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # Try to extract beads ID from branch + commit bodies + PR body
-BD_IDS=$(echo "$BRANCH $COMMIT_BODIES $PR_BODY" | grep -oE '\bbd[:-][0-9]+\b' | grep -oE '[0-9]+' | sort -u)
+BD_IDS=$(rg -o -r '$1' '\bbd[:-]([0-9]+)\b' <<<"$BRANCH $COMMIT_BODIES $PR_BODY" | sort -u)
 
 # Fetch each
 for ID in $BD_IDS; do
@@ -70,18 +70,16 @@ Detection paths:
 
 ```bash
 # 1. Plan files referenced from PR body or commit bodies
-grep -oE '(plans?/[A-Za-z0-9_./-]+\.md|PLAN\.md|\.claude/plans/[A-Za-z0-9_./-]+\.md)' <<<"$PR_BODY_OR_COMMITS" | sort -u
+rg -o '(plans?/[A-Za-z0-9_./-]+\.md|PLAN\.md|\.claude/plans/[A-Za-z0-9_./-]+\.md)' <<<"$PR_BODY_OR_COMMITS" | sort -u
 
 # 2. Plan files modified in the diff (the author updated/created a plan as part of this change)
-git diff --name-only "$RANGE" | grep -E '(^|/)(PLAN\.md|plans/.*\.md|\.claude/plans/.*\.md)$'
+git diff --name-only "$RANGE" | rg '(^|/)(PLAN\.md|plans/.*\.md|\.claude/plans/.*\.md)$'
 
-# 3. Plan files created during plan mode for this branch
-ls -t .claude/plans/*.md 2>/dev/null | head -3   # MOST recent 3, sorted by mtime
+# 3. Plan files created during plan mode, newest first
+eza -l --sort=modified --reverse .claude/plans 2>/dev/null
 ```
 
-Read each candidate plan file in full — they're usually small and full of acceptance criteria.
-
-**Note:** The third command uses `head` as part of a `sort | head` top-N idiom, which is allowed under the truncation rule. The full content of each *file* is read separately via `Read`.
+From the third listing, pick the plans whose dates and names fit this branch; usually that's the newest one or two. Read each candidate plan file in full. They're usually small and full of acceptance criteria.
 
 ## Aggregation
 

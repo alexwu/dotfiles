@@ -159,7 +159,7 @@ If the answer is "no" for a meaningful change, the tests aren't thorough enough.
 - The diff is a comment-only or formatting-only change
 - The diff is in a `__tests__` / test-only directory and the tests themselves are the change
 - The diff is in a generated file
-- The repo's CLAUDE.md or convention explicitly allows tests-later
+- The repo's CLAUDE.md, AGENTS.md, or convention explicitly allows tests-later
 
 ## Suggestion text shape
 

@@ -15,17 +15,21 @@ If this returns a JSON object with `state: OPEN` (or `MERGED` if user explicitly
 
 ```bash
 # Step 2 — range mode candidate
-git rev-list --count main..HEAD
+DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
+DEFAULT=${DEFAULT#origin/}
+# No origin/HEAD (no remote, or never set): fall back to main, else master.
+: "${DEFAULT:=$(git rev-parse --verify -q main >/dev/null && echo main || echo master)}"
+git rev-list --count "$DEFAULT..HEAD"
 ```
 
-If non-zero, use **range mode** with `main...HEAD` (substitute `master`, `develop`, or whatever the repo's default branch is — check `git symbolic-ref refs/remotes/origin/HEAD` to confirm).
+If non-zero, use **range mode** with `$DEFAULT...HEAD`. Keep the fallback: with `DEFAULT` empty, `git rev-list --count "..HEAD"` prints `0` and exits 0, which silently skips range mode.
 
 ```bash
 # Step 3 — working-tree candidate
-git diff --stat
+git status --porcelain
 ```
 
-If non-empty, use **working-tree mode**.
+If non-empty, use **working-tree mode**. `git status` catches staged-only and untracked changes; `git diff --stat` misses both.
 
 If none of the above produced anything, return early: "No changes to review."
 
@@ -77,19 +81,28 @@ Capture:
 
 ## Working-tree mode (`--source=working` or `--range working`)
 
-Reviews uncommitted changes. Two flavors — the skill should handle both:
+Reviews uncommitted changes: staged, unstaged, and untracked.
 
 ```bash
-# Staged + unstaged (everything since HEAD)
+# Staged + unstaged (everything tracked, since HEAD)
 git diff HEAD
 
 # Or split if needed
 git diff --cached    # staged only
 git diff             # unstaged only
 
-# Changed file list
+# Untracked files — git diff HEAD never shows these. Render each as a new-file diff.
+# --no-index exits 1 when the files differ, which is always here; that's not an error.
+# -n1, not -I{}: macOS xargs -I truncates substituted paths at 255 bytes.
+git ls-files --others --exclude-standard -z \
+  | xargs -0 -n1 git diff --no-index -- /dev/null
+
+# Changed file list (tracked + untracked)
 git diff --name-only HEAD
+git ls-files --others --exclude-standard
 ```
+
+Concatenate the tracked and untracked diffs into one unified diff. Don't `git add -N` to make untracked files show up in `git diff`; that writes to the index, and the pipeline is read-only.
 
 Capture:
 - `base_sha` = `git rev-parse HEAD`
@@ -118,14 +131,11 @@ Pass this normalized object (or its contents) into Phase 1 of the pipeline.
 
 If the unified diff exceeds ~50 KB (~1000 lines), don't inline it into spawn prompts. Instead:
 
-```bash
-# Write to a temp file
-DIFF_FILE=$(mktemp -t super-code-review-diff.XXXXXX.patch)
-git diff "$RANGE" > "$DIFF_FILE"
-# Pass the path to reviewer agents, they Read it
-```
+Write it to a file and pass the path; reviewers `Read` it. Use the Write tool to create `super-code-review-diff.patch` in the scratchpad directory named in your system prompt. If the host names none, create it under `mktemp -d`.
 
-Clean up `$DIFF_FILE` at the end of the run.
+Write the **normalized** diff, the same text you'd otherwise inline. Regenerating it with a fresh `git diff` loses whatever the mode added; in working-tree mode that's every untracked file.
+
+Delete the file at the end of the run.
 
 ## Skip-paths
 

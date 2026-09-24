@@ -54,7 +54,7 @@ If intent context is empty, do the shortcut pass only and skip drift detection.
 **Comment markers** (only flag those added or moved by the diff; pre-existing ones are not your concern):
 - `TODO`, `FIXME`, `HACK`, `XXX`, `BUG`, `KLUDGE`, `OPTIMIZE`
 - `nocheckin`, `DO NOT MERGE`, `DNM`, `WIP`
-- Author-attributed TODOs that lack an attribution: per Alex's CLAUDE.md, TODOs must be `TODO(alexwu):` — flag unattributed ones in his repos
+- TODO/FIXME missing a `(name)` attribution: Alex's user-level CLAUDE.md requires `TODO(alexwu):`. This is a separate finding from the marker itself — an unattributed TODO yields a `hack-marker` finding (repo scope, as for any marker) *and* a `todo-unattributed` finding. To scope the latter, read the repo-root `CLAUDE.md` / `AGENTS.md`, following `@` imports: if they state an attribution rule, tag it `rule_scope: repo` with that file as `rule_source`; otherwise tag it `rule_scope: user` with `rule_source: ~/.claude/CLAUDE.md`. User-scope findings are local notes, never posted
 
 **Error swallowing patterns** (language-dependent — invoke `ast-grep` skill for structural matches):
 - Swift: `try?` replacing a previously-thrown `try`; `catch { }` with empty body; `catch { print(...) }` without rethrow
@@ -99,7 +99,7 @@ For each meaningful change in the diff (non-trivial file or non-obvious modifica
 
 - Pre-existing TODOs/HACKs/etc. not added or moved by this diff
 - Documentation comments that *describe* a TODO concept ("we previously TODO'd this")
-- Bypass flags that the repo's CLAUDE.md or convention explicitly allows
+- Bypass flags that the repo's CLAUDE.md, AGENTS.md, or convention explicitly allows
 - "This feature is incomplete" if it's a stated intentional WIP
 - Anything the bug-reviewer or claudemd-compliance-reviewer covers (let them have it)
 
@@ -131,6 +131,10 @@ shortcuts:
     evidence: "<exact quoted line>"
     notes: "<one sentence — why this matters or what tracking is missing>"
     confidence: high | medium
+    # todo-unattributed only:
+    rule_scope: repo | user
+    rule_source: "<file that states the attribution rule>"
+    rule_quote: "<verbatim rule text>"
 
 drift:
   - description: "<what diverges from intent>"

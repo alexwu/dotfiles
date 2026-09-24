@@ -69,7 +69,7 @@ Each of these is a fake-coverage trap — flag with the smell name and evidence:
 ## What NOT to Flag
 
 - "Coverage percentage is low" — coverage tools aren't the point; behavior is
-- Test style preferences not codified in a CLAUDE.md or repo convention
+- Test style preferences not codified in a CLAUDE.md, AGENTS.md, or repo convention
 - Missing tests for trivial changes (renames, comment edits, formatting)
 - Tests for code that's been deleted in the diff
 - Pre-existing test smells in files the diff didn't touch

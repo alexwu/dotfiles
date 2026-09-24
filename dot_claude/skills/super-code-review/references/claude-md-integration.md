@@ -30,37 +30,55 @@ Do NOT auto-run it. The user invokes it when they're ready.
 
 ## When to suggest `decompose-claude-md`
 
-If the compliance reviewer's process step "discover applicable CLAUDE.md files" reports that any single CLAUDE.md it had to read was **over ~500 lines**, append a suggestion:
+If the compliance reviewer's process step "Discover applicable instruction files" reports that any single CLAUDE.md or AGENTS.md it had to read was **over ~500 lines**, append a suggestion:
 
 ```
 The root CLAUDE.md is N lines, which is enough to start losing context.
 Consider running /decompose-claude-md to split it into .claude/rules/<topic>.md files.
 ```
 
-Heuristic for "over 500 lines": `wc -l < CLAUDE.md` > 500 in any of the CLAUDE.md files traversed. Don't fire this for `.claude/rules/*.md` files — those are already decomposed by definition.
+Heuristic for "over 500 lines": `wc -l` > 500 for any `CLAUDE.md` or `AGENTS.md` traversed (measure the imported file, not a stub). Don't fire this for `.claude/rules/*.md` files — those are already decomposed by definition. For an oversized `AGENTS.md`, `decompose-claude-md` splits it spatially into nested per-directory `AGENTS.md` files instead of extracting to `.claude/rules/`.
 
 ## Passing context to the compliance reviewer
+
+Repos keep their rules in `CLAUDE.md`, `AGENTS.md`, or both. A common layout, used across the `lulu-*` repos, is an `AGENTS.md` holding every rule and a `CLAUDE.md` stub whose only content is `@AGENTS.md`. Discovery has to follow that import, or the reviewer checks an empty stub and reports a clean pass.
 
 The reviewer's spawn prompt should include:
 
 ```
-APPLICABLE CLAUDE.md DISCOVERY
-==============================
+INSTRUCTION FILE DISCOVERY
+==========================
 
 For each changed file, walk from the file's directory up to the repo root.
-Collect every CLAUDE.md encountered. Also collect any `.claude/rules/*.md`
-files referenced from a scoped CLAUDE.md.
+Collect every CLAUDE.md, AGENTS.md, and AGENTS.override.md encountered.
+Follow `@path` imports. Collect `.claude/rules/*.md`, keeping only those
+whose `paths:` frontmatter globs match a changed file (no `paths:` means
+repo-wide). Read a file once when another symlinks to or imports it.
 
 Pre-discovered (run before spawn for efficiency):
-- /repo/CLAUDE.md (always)
-- /repo/<subdir>/CLAUDE.md (for each changed path's lineage)
-- /repo/.claude/rules/*.md (if any are referenced)
-- ~/.claude/CLAUDE.md (the user's global rules — always applies to every diff)
+- /repo/CLAUDE.md and/or /repo/AGENTS.md
+- /repo/<subdir>/{CLAUDE,AGENTS}.md (for each changed path's lineage)
+- /repo/.claude/rules/*.md (the ones whose paths match)
+- ~/.claude/CLAUDE.md, ~/.claude/rules/*.md, ~/.codex/AGENTS.md (user-level —
+  apply to every diff; scope decided by entry point, see below)
 
 The reviewer should Read these in full at the start of its run.
 ```
 
-The `~/.claude/CLAUDE.md` (global / user-level instructions) **always applies** — include it in the pre-discovery list every time. Many of Alex's rules live there (TODO attribution, tool preferences, etc.).
+Include both user-level files whenever they exist, regardless of which agent runs the review. Some of Alex's rules live there (TODO attribution, for one), and they apply to code whichever agent wrote it.
+
+## User-level rules stay local
+
+`~/.claude/CLAUDE.md`, `~/.claude/rules/*.md`, and `~/.codex/AGENTS.md` are Alex's personal rules. The repo's other contributors never agreed to them, so a finding sourced **only** from a user-level file (`rule_scope: user`) is a note to Alex, never a review finding.
+
+Scope is decided by **entry point**. These files are symlinks into a prompts repo on Alex's machine, so the resolved path looks like neither a user file nor a repo file. Anything reached from a user-level entry point, through any symlink or `@` import, is user scope.
+
+- It goes in the local summary's **Personal-rule notes** section (see `output-formats.md`), not in the severity buckets.
+- It is **never** posted as a PR comment or included in any review posted to the PR, and it never affects whether a review approves or blocks.
+- It skips Phase 3 validation's severity assignment; the validator only confirms it's real.
+- Phase 4 partitions it into `user_rule_notes` before sorting (see `agent-prompts.md` → "Result merge format").
+
+When the same rule also appears in a repo-level file, the repo file is the source and the finding is a normal one. The shortcut reviewer's `TODO(alexwu)` attribution check comes from the user-level file, so it follows this rule too.
 
 ## How the reviewer integrates `claude-md-improver`'s philosophy
 
@@ -68,7 +86,8 @@ The `claude-md-improver` skill includes guidance on what makes a *good* CLAUDE.m
 
 - A rule worth enforcing is **specific** (mentions a concrete pattern), **testable** (a reviewer can quote evidence), and **scoped** (clear when it applies)
 - A rule like "write good code" is not enforceable — don't flag against it
-- A rule like "use ctx7 CLI for library docs" is enforceable — flag clearly when the diff doesn't
+- A rule like "TODOs must be attributed as `TODO(name):`" is enforceable — flag clearly when the diff adds one that isn't
+- A rule about how the agent works in a session ("use the ctx7 CLI for library docs") is enforceable in a session, but no diff can violate it — don't flag it
 
 If the reviewer encounters a non-enforceable rule, it skips it (no flag) AND reports it as a gap ("CLAUDE.md contains rule X but it's too vague to enforce").
 
@@ -80,7 +99,7 @@ Path to check: `.claude/`, `~/.claude/projects/<repo-id>/memory/`, repo root for
 
 ## What this skill does NOT do
 
-- It does not edit CLAUDE.md files
+- It does not edit CLAUDE.md or AGENTS.md files
 - It does not run `claude-md-improver` or `decompose-claude-md`
 - It does not refactor rule wording
 

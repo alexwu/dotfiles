@@ -13,14 +13,14 @@ nocheckin  DNM  "DO NOT MERGE"  WIP  TEMPORARY  REMOVE-BEFORE-MERGE
 
 ### Attribution rule (Alex's repos)
 
-Per global CLAUDE.md: TODOs must include attribution: `TODO(alexwu):`. Same for FIXME. Flag any unattributed TODO/FIXME in his repos.
+Per the user-level CLAUDE.md: TODOs must include attribution: `TODO(alexwu):`. Same for FIXME. Flag any unattributed TODO/FIXME in his repos, tagged `rule_scope: user` — it's a local note, never a posted comment (see `claude-md-integration.md` → "User-level rules stay local").
 
 ```
 # Detection
 rg -n '\b(TODO|FIXME)([^(]|$)' <diff>      # TODO not immediately followed by (
 ```
 
-Other repos may have their own conventions (e.g., `TODO(github-username):`) — check the repo's CLAUDE.md before flagging.
+Other repos may have their own conventions (e.g., `TODO(github-username):`) — check the repo's CLAUDE.md or AGENTS.md before flagging.
 
 ## Error-swallowing patterns by language
 

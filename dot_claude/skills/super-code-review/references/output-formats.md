@@ -14,6 +14,7 @@ Proper markdown. Readable in terminal, paste-friendly into GitHub / Slack / a do
 4. **One-paragraph framing** — the diff's apparent scope and where the findings cluster (1-3 sentences). Skip if no findings.
 5. **Severity-bucketed findings** — Blockers, Majors, Suggestions, each as an H2 section with emoji icon, only including buckets that have findings
 6. **Invalidated findings** (when any were killed at validation) — collapsible-feeling H2 section
+6b. **Personal-rule notes** (when any `rule_scope: user` findings exist) — H2 section of one-line notes to Alex about rules from his user-level files. Local output only; see `claude-md-integration.md` → "User-level rules stay local"
 7. **"What's well covered" H2 section** — affirmative balance signal (see below for why this is required)
 8. **"Recommended action" H2 section** — actionable end-summary tying findings to a fix path
 
@@ -136,6 +137,8 @@ This shifts with effort tier: at `--effort=low`, **no inline code snippets** —
 
 PR mode only. If invoked in range or working-tree mode, fall back to the markdown summary and warn.
 
+Never post a `rule_scope: user` finding. Those stay in the local summary's Personal-rule notes.
+
 ### Posting mechanism
 
 Two backends in priority order:
@@ -253,12 +256,15 @@ Structured output for CI consumption.
       "validator_reasoning": "...",
       "fix_direction": "<prose>",
       "fix_snippet": "<code or null>",
-      "rule_source": "path/to/CLAUDE.md (optional, claude-md type only)",
+      "rule_source": "path/to/CLAUDE.md, AGENTS.md, or .claude/rules/*.md (optional, claude-md type only)",
       "rule_quote": "verbatim rule (optional)"
     }
   ],
   "invalidated": [
     {"original_claim": "...", "reviewer": "...", "reason_killed": "..."}
+  ],
+  "user_rule_notes": [
+    {"file": "...", "line_start": 42, "rule_source": "~/.claude/CLAUDE.md", "rule_quote": "...", "note": "..."}
   ],
   "well_covered": ["..."],
   "recommended_action": "<prose>",

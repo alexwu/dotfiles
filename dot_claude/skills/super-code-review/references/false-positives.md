@@ -99,17 +99,22 @@ The test-thoroughness-reviewer should NOT flag missing tests when the diff is:
 
 The bar: changed *observable behavior* needs a test. Changed text-of-the-code-without-behavior does not.
 
-### CLAUDE.md violations against non-scoped CLAUDE.md
+### Violations against a non-scoped instruction file
 
-The claudemd-compliance-reviewer must only flag against CLAUDE.md files that scope to the changed file. A `/repo/src/auth/CLAUDE.md` rule does not apply to `/repo/src/billing/foo.ts`.
+The claudemd-compliance-reviewer must only flag against instruction files (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/*.md`) that scope to the changed file. A `/repo/src/auth/AGENTS.md` rule does not apply to `/repo/src/billing/foo.ts`, and a rule file whose `paths:` globs don't match the changed file doesn't apply to it either.
 
 This is the most common claude-md FP shape. Re-check scope before flagging.
+
+### Session-behavior rules applied to code
+
+Instruction files mix rules about committed artifacts with rules addressed to the agent's own session: tone, persona, "search with `rg`", "never pipe your output through `head`". A diff can't violate the second kind. The test is what the rule governs, not what it mentions: "use `rg`" as a session habit isn't flaggable, but "scripts in this repo use `rg`" is, when the diff adds a script that runs `grep`. Flag rules about the code or repo artifacts: comment style, TODO attribution, naming conventions, required patterns.
 
 ### Findings the parent reviewer's role doesn't own
 
 Each reviewer has a scope. Flagging outside the scope creates duplicate work and confusion.
 
 - bug-reviewer does NOT flag style, missing tests, CLAUDE.md, TODOs
+- silent-failure-reviewer does NOT flag style, missing tests, CLAUDE.md, TODO markers, or bugs unrelated to error handling
 - claudemd-compliance-reviewer does NOT flag bugs, missing tests, TODOs
 - test-thoroughness-reviewer does NOT flag style, CLAUDE.md, bugs (unless the bug *is* in a test file)
 - shortcut-intent-reviewer does NOT flag style, missing tests, bugs
@@ -118,7 +123,7 @@ When a reviewer accidentally produces a cross-domain finding (it happens), the v
 
 ### Pre-existing CLAUDE.md violations re-surfaced because the file moved
 
-If a file was moved (e.g., `git mv`) and now sits in a more-scoped CLAUDE.md's path, the rules of that CLAUDE.md technically apply. But: don't flag pre-existing patterns the move *exposed*; only flag patterns the diff *introduced*.
+If a file was moved (e.g., `git mv`) and now sits under a more-scoped CLAUDE.md or AGENTS.md, that file's rules technically apply. But: don't flag pre-existing patterns the move *exposed*; only flag patterns the diff *introduced*.
 
 ## Validator final filter checklist
 

@@ -96,7 +96,7 @@ No dedicated auditors. Generic reviewers + prompt enrichment.
 
 ## When the language isn't recognized
 
-Run the four generic reviewers + Codex with no domain enrichment. The reviewers' default prompts are language-agnostic and will still find the universal bug classes (off-by-one, null deref equivalents, error swallowing, scope drift).
+Run the five generic reviewers + Codex with no domain enrichment. The reviewers' default prompts are language-agnostic and will still find the universal bug classes (off-by-one, null deref equivalents, error swallowing, scope drift).
 
 ## How to invoke an auditor
 
@@ -108,7 +108,7 @@ Agent(
 )
 ```
 
-Use the auditor's subagent_type (the full plugin:name form as it appears in the available-agents list). If the auditor isn't installed, the Agent spawn will fail — catch that and skip silently with a note in the output that the auditor was expected but unavailable.
+Use the auditor's subagent_type (the full plugin:name form as it appears in the available-agents list). If the auditor isn't installed, the Agent spawn will fail — catch that, skip the auditor, and name it in the output as expected but unavailable.
 
 ## Update path
 

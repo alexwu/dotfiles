@@ -1,11 +1,7 @@
 ---
 name: super-code-review
 description: |
-  THE code review skill. Orchestrates a multi-agent, validated-findings review of a remote PR, a local commit range, or uncommitted working-tree changes — with effort tiers (low/medium/high/ultra), domain-aware routing (Axiom for iOS/Swift, pfw-* for TCA/SwiftUI, etc.), CLAUDE.md compliance enforcement, test thoroughness audit, shortcut/intent-drift detection, and a Codex second opinion by default. Replaces and supersedes every other code-review skill: the harness built-in `/code-review` effort levels, `/code-review:code-review`, `coderabbit:code-review`, `pr-review-toolkit:review-pr`, `feature-dev:code-reviewer`, `simplify`, and `security-review`.
-
-  Trigger aggressively. Use this skill whenever the user says any of: "review", "code review", "super code review", "deep review", "review this PR/diff/branch", "look over my changes", "audit this", "review what I just changed", "check this PR", "review #123" — even when they don't say "super". For local work, also fires on "review my working tree", "check my staged changes", or "review my branch against main". Do NOT use the prior code-review skills when this one applies; this one is the canonical entry point. The only exception is `/code-review ultra` (the billed harness command), which this skill defers to for `--effort=ultra` since the harness owns it.
-
-  CodeRabbit chaining is off by default — only invokes `coderabbit:code-review` when the user passes `--coderabbit` or explicitly asks for "a CodeRabbit pass too".
+  Multi-agent code review of a GitHub PR, a local commit range, or uncommitted working-tree changes. Parallel reviewers cover bugs, silent failures, CLAUDE.md/AGENTS.md compliance, test thoroughness, and shortcuts/scope drift, plus a Codex second opinion; every finding is validated before it ships. Effort tiers low/medium/high, with domain routing for Swift/iOS. Use for any review request, even without the word "super": "review this PR", "code review", "review #123", "look over my changes", "audit this branch", "review my working tree", "check my staged changes". Supersedes `/code-review`, `pr-review-toolkit:review-pr`, `feature-dev:code-reviewer`, `coderabbit:code-review`, `simplify`, and `security-review`. CodeRabbit runs only with `--coderabbit`.
 ---
 
 # super-code-review
@@ -34,15 +30,15 @@ When in doubt: it applies. The pushy description above is intentional — this s
 
 Auto-resolution (when `--source=auto`):
 1. Try `gh pr view --json state` on current branch — if it returns a PR, use PR mode
-2. Else if branch has commits ahead of main (`git rev-list --count main..HEAD > 0`), use range mode with `main...HEAD`
-3. Else if working tree has changes (`git diff --stat`), use working-tree mode
+2. Else if branch has commits ahead of the default branch (`git rev-list --count <default>..HEAD > 0`), use range mode with `<default>...HEAD`
+3. Else if the working tree has staged, unstaged, or untracked changes (`git status --porcelain` is non-empty), use working-tree mode
 4. Else: nothing to review — return early with that message
 
 See `references/diff-sources.md` for details on each mode and exact commands.
 
 ## Pipeline (canonical: `--effort=high`)
 
-The pipeline runs **read-only**. Every subagent's `Bash` is guarded by `git-readonly-guard`. No edits, no writes, no pushes.
+The pipeline runs **read-only**: no edits, no writes, no pushes. The custom reviewers' `Bash` is guarded by `git-readonly-guard`; validators and domain auditors are held to it only by their spawn prompt.
 
 ### Phase 1 — Gather
 
@@ -57,7 +53,8 @@ In parallel (one message, multiple tool calls):
 Spawn these agents in a single message:
 
 - `bug-reviewer` — Opus, logic/type/runtime bugs in the diff
-- `claudemd-compliance-reviewer` — Sonnet, scoped CLAUDE.md violations
+- `silent-failure-reviewer` — Opus, swallowed errors, fallbacks that hide failures, discarded Results
+- `claudemd-compliance-reviewer` — Sonnet, violations of scoped instruction files: `CLAUDE.md`, `AGENTS.md`, or both, whichever the repo uses. See `references/claude-md-integration.md` for discovery
 - `test-thoroughness-reviewer` — Sonnet, test coverage + smell audit
 - `shortcut-intent-reviewer` — Sonnet, TODO/HACK markers + scope drift vs. intent
 - **Domain reviewers** (conditional, based on profile detection):
@@ -76,7 +73,7 @@ Each reviewer receives a self-contained spawn prompt with:
 
 Take all findings from Phase 2. For each unique finding (dedupe by `file:line:type`):
 
-Spawn a validator subagent (`general-purpose`, Opus for bugs, Sonnet for the rest). Validators are **allowed to read context outside the diff** — that's the whole point of validation. The validator's job:
+Spawn a validator subagent (`general-purpose`, with `model` set explicitly: `opus` for bug and silent-failure findings, `sonnet` for the rest — an unset model inherits the session's). Validators are **allowed to read context outside the diff** — that's the whole point of validation. The validator's job:
 
 1. Confirm the finding is real (re-read the relevant file, trace call sites if needed)
 2. Assign a severity: `blocker` / `major` / `suggestion`
@@ -87,6 +84,7 @@ Batch validators by file when 2+ findings hit the same file — single read, mul
 ### Phase 4 — Merge
 
 - Drop validators' `valid: false` findings
+- Move `rule_scope: user` findings into `user_rule_notes` — local only, never in `findings[]`, severity counts, or anything posted
 - Dedupe across our reviewers + Codex (often two agents flag the same thing — keep the higher-confidence version)
 - Sort by severity, then file path
 
@@ -107,8 +105,8 @@ If `--coderabbit` was passed: after Phases 1-5 finish, invoke `coderabbit:code-r
 | Tier | Phase 2 reviewers | Codex 2nd opinion | Validation pass | Use case |
 |---|---|---|---|---|
 | `low` | bug-reviewer only | no | no | Quick sanity check on uncommitted work |
-| `medium` | bug + claudemd + shortcut/intent | no | yes (lightweight, batched aggressively) | Pre-commit review |
-| `high` (default) | All four + domain reviewers | yes | yes (full) | PR review, branch finalization |
+| `medium` | bug + silent-failure + claudemd + shortcut/intent | no | yes (lightweight, batched aggressively) | Pre-commit review |
+| `high` (default) | All five + domain reviewers | yes | yes (full) | PR review, branch finalization |
 | `ultra` | Defers to harness `/code-review ultra` | — | — | Billed cloud multi-agent pass |
 
 See `references/effort-tiers.md` for the exact recipe per tier.
@@ -117,11 +115,13 @@ See `references/effort-tiers.md` for the exact recipe per tier.
 
 ## Severity tags
 
-- **blocker** — must be fixed before merge: bugs that will crash/produce wrong output, CLAUDE.md rule violations on hard rules, dropped error paths, missing tests for new behavior
-- **major** — should be fixed: shortcut markers without tracking, scope drift, weak/tautological tests, soft CLAUDE.md violations
+- **blocker** — must be fixed before merge: bugs that will crash/produce wrong output, violations of hard rules in CLAUDE.md/AGENTS.md, dropped error paths, missing tests for new behavior
+- **major** — should be fixed: shortcut markers without tracking, scope drift, weak/tautological tests, soft CLAUDE.md/AGENTS.md violations
 - **suggestion** — would be nice: stylistic things only flagged because a domain auditor caught them; second-opinion-only findings the validator confirmed but didn't promote
 
 Validators assign severity; the main agent doesn't override.
+
+Findings sourced only from a user-level file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`) get no severity. They're local notes to the user and are **never** posted to a PR. See `references/claude-md-integration.md` → "User-level rules stay local".
 
 ## The "do NOT flag" list (inline because load-bearing)
 
@@ -130,7 +130,7 @@ This list is the load-bearing trust-protector inherited from the prior `/code-re
 - Pre-existing issues outside the diff
 - Pedantic nitpicks a senior engineer wouldn't flag
 - Issues a linter would catch (don't run linters)
-- General code quality concerns unless CLAUDE.md explicitly requires them
+- General code quality concerns unless CLAUDE.md or AGENTS.md explicitly requires them
 - Issues silenced by an in-code comment / directive (`// swiftlint:disable`, `# noqa`, `@ts-expect-error`, etc.)
 - Speculative concerns ("could race if called concurrently") unless the diff introduces that risk
 - Style/formatting/naming preferences
@@ -150,6 +150,7 @@ Inherited verbatim from the prior skill — these details matter because GitHub 
 - For self-contained fixes (≤5 lines, single location), include a committable `suggestion` block
 - For larger fixes, describe the issue + direction without a suggestion block — committable suggestions only when the suggestion *fully* fixes the issue
 - **One comment per unique issue.** Duplicates are not allowed.
+- **Never** post a finding sourced only from a user-level instruction file.
 
 ## Reference files
 
@@ -172,7 +173,7 @@ Load these as needed — they're sized for progressive disclosure:
 
 - It does not fix issues — it reports. Auto-fix is a separate skill (`/simplify` flow, not part of this one).
 - It does not run linters or compilers. CI is the place for that.
-- It does not edit files. Read-only floor enforced by `git-readonly-guard` on every subagent.
+- It does not edit files. The five custom reviewers enforce this with a `git-readonly-guard` frontmatter hook; `general-purpose` validators and plugin domain auditors have write tools available and are held read-only by their prompt.
 - It does not gate on "already reviewed" — the user invokes this skill explicitly; re-runs are intentional, not duplicate.
 
 ## Failure modes
@@ -181,4 +182,4 @@ Load these as needed — they're sized for progressive disclosure:
 - **`gh` not authenticated** in PR mode — explain and suggest `gh auth login`
 - **Codex unavailable** (returns nothing) — proceed without the second opinion, note it in the output
 - **MCP inline-comment server unavailable** in `--comment` mode — fall back to `gh api` (see `references/output-formats.md`)
-- **Domain auditor missing** — skip silently, the generic reviewers cover the basics
+- **Domain auditor missing** — skip it, and name the expected-but-unavailable auditor in the output so a disabled plugin doesn't pass for a clean audit
