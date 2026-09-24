@@ -16,6 +16,9 @@
 {{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/writing-rust-code/**/*.md")) -}}
 # {{ . }} {{ include . | sha256sum }}
 {{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/writing-ruby-code/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
 {{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/bootstrapping-projects/**/*.md")) -}}
 # {{ . }} {{ include . | sha256sum }}
 {{ end -}}
@@ -43,6 +46,7 @@ SKILLS=(
   handoff
   pickup
   writing-rust-code
+  writing-ruby-code
   bootstrapping-projects
   super-code-review
   plan-mode-plans
