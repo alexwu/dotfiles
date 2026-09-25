@@ -23,8 +23,8 @@ run there. The work splits:
    plan's `## Beads to File` section (titles, types, priorities, blocked-by links).
    Pure planning; nothing is created yet.
 2. **Post-approval handoff (Phase 6) — file.** After `ExitPlanMode`, create the
-   issues, capture their IDs, and write the IDs back into the plan file. Auto-filed
-   (per the confirmed skill behavior), then reported.
+   issues, capture their IDs, and write the IDs back into the plan file. Auto-filed,
+   then reported.
 
 ## Plan section (drafted in Phase 4)
 

@@ -11,7 +11,7 @@ This is the default variant. Loaded when the task fits in one session and lives 
 
 ## What overrides apply
 
-**None.** The universal patterns in SKILL.md — Required Sections template, Code Snippets, Specificity Requirements, Self-Containment Test, universal Common Mistakes — apply directly with no modifications.
+**None.** The universal patterns — the Required Sections template, Markdown Style, Code Snippets, Specificity Requirements, and Self-Containment Test in SKILL.md, plus the checklist in `references/common-mistakes.md` — apply directly with no modifications.
 
 If the user asks for TDD on a single-session plan, also load `tdd-cycles.md`. The combination overrides only the Steps section format (flat list → red/green/refactor cycles).
 
@@ -21,4 +21,4 @@ If the task grows mid-planning into something that touches 3+ independent areas,
 
 The base self-containment test from SKILL.md is sufficient. The only single-session-specific thing to verify:
 
-- The plan file passes `check-plan <plan-path>` (Phase 4.5 invokes this; if it fails, fix the plan and re-audit).
+- The plan file passes `check-plan --fix <plan-path>` (Phase 4.5 runs it; SKILL.md says how to handle each exit code).

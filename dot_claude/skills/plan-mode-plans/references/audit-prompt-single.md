@@ -2,8 +2,6 @@
 
 Use this prompt when running Phase 4.5 against a plan that lives in a single `.md` file (single-session variant, with or without TDD).
 
-If the plan uses TDD cycles, **also append the contents of `audit-prompt-tdd-additions.md`** to this prompt before sending it to the rescue agent.
-
 Substitute the two bracketed paths (`<ABSOLUTE_PATH_TO_PLAN>`, `<ABSOLUTE_REPO_ROOT>`) with the real paths.
 
 ---

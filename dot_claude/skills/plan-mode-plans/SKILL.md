@@ -31,44 +31,12 @@ If you're unsure, default to Single. Switch variants mid-planning if the task sh
 
 ## Process Flow
 
-```dot
-digraph plan_mode {
-    "Enter plan mode" [shape=doublecircle];
-    "Identify scope" [shape=box];
-    "Deep exploration" [shape=box];
-    "Enough context?" [shape=diamond];
-    "Clarify with user" [shape=box];
-    "More questions?" [shape=diamond];
-    "Draft plan" [shape=box];
-    "Specific enough?" [shape=diamond];
-    "Write to plan file" [shape=box];
-    "Run audits in parallel\n(Codex + Opus escalation)" [shape=box];
-    "Findings to address?" [shape=diamond];
-    "Address findings\n(revise / AskUserQuestion)" [shape=box];
-    "Ask: compact before starting?\n(required)" [shape=box];
-    "ExitPlanMode" [shape=box];
-    "Post-approval handoff\n(file beads · honor compaction)" [shape=doublecircle];
-
-    "Enter plan mode" -> "Identify scope";
-    "Identify scope" -> "Deep exploration";
-    "Deep exploration" -> "Enough context?";
-    "Enough context?" -> "Deep exploration" [label="no — read more files"];
-    "Enough context?" -> "Clarify with user" [label="yes"];
-    "Clarify with user" -> "More questions?";
-    "More questions?" -> "Clarify with user" [label="yes"];
-    "More questions?" -> "Draft plan" [label="no — all clear"];
-    "Draft plan" -> "Specific enough?";
-    "Specific enough?" -> "Deep exploration" [label="no — gaps found"];
-    "Specific enough?" -> "Write to plan file" [label="yes"];
-    "Write to plan file" -> "Run audits in parallel\n(Codex + Opus escalation)";
-    "Run audits in parallel\n(Codex + Opus escalation)" -> "Findings to address?";
-    "Findings to address?" -> "Address findings\n(revise / AskUserQuestion)" [label="yes — pass 1 or 2"];
-    "Address findings\n(revise / AskUserQuestion)" -> "Run audits in parallel\n(Codex + Opus escalation)" [label="re-audit (max 2)"];
-    "Findings to address?" -> "Ask: compact before starting?\n(required)" [label="clean or escalated"];
-    "Ask: compact before starting?\n(required)" -> "ExitPlanMode";
-    "ExitPlanMode" -> "Post-approval handoff\n(file beads · honor compaction)";
-}
-```
+1. **Identify scope** (Phase 1).
+2. **Explore** until you have enough context (Phase 2), then **clarify** with the user until nothing is left to ask (Phase 3).
+3. **Draft** the plan and write it to the plan file (Phase 4). A draft that isn't specific enough sends you back to exploration.
+4. **Audit** in parallel (Codex + Opus escalation), revise, and re-audit at most once. Then record the outcome and run `check-plan --fix` until it passes (Phase 4.5).
+5. **Ask the compaction question**, then call `ExitPlanMode` (Phase 5).
+6. **Post-approval handoff**: file beads and honor the compaction choice before any implementation (Phase 6).
 
 ## Phase 1: Identify Scope
 
@@ -77,14 +45,14 @@ Before reading anything, state:
 - **Where** it likely lives (educated guess from project structure)
 - **What you don't know** yet (explicit unknowns)
 
-**If the architecture, component boundaries, and build order aren't settled yet, you skipped the design phase.** This skill is *convergent* — it turns a settled design into a file-level plan. It assumes the goal, the architecture (components, source of truth, interfaces), the build sequence, and the non-goals are already decided. A buildable-but-undesigned idea ("I want to build a clipboard-history app with one source of truth and multiple clients") belongs in `super-brainstorming` first: that's where architecture, the data model, sequencing, and blind spots get worked out. Brainstorming hands its settled design here; if it ran, fold that recap straight into the Goal / Context / Decisions / Approach sections instead of re-deriving it. The clarification in Phase 3 below is for *code-level* ambiguities surfaced by exploration — not for "what's the architecture", which should already be answered.
+**This skill turns a settled design into a file-level plan.** It assumes the goal, the architecture (components, source of truth, interfaces), the build sequence, and the non-goals are already decided. If they aren't, run `super-brainstorming` first; a buildable-but-undesigned idea ("a clipboard-history app with one source of truth and multiple clients") belongs there. Brainstorming hands its settled design here, and you fold that recap into Goal / Context / Decisions / Approach instead of re-deriving it. Phase 3 clarification is for code-level ambiguities that exploration surfaces, not for "what's the architecture".
 
 ## Phase 2: Deep Exploration
 
 **Minimum exploration before writing any plan:**
 
 1. **Find all relevant files** — use Glob/Grep to locate code that touches the area
-2. **Read the actual code** — not just file names. Read the functions, interfaces, types
+2. **Read the code** — the functions, interfaces, and types in every file you name
 3. **Trace the data flow** — follow how data moves through the relevant paths
 4. **Check for patterns** — how does the codebase handle similar things already?
 5. **Find tests** — what existing test patterns and infrastructure exist?
@@ -124,19 +92,24 @@ Before reading anything, state:
 - Lead with your recommendation when you have one
 - Keep going until you're confident you understand the intent
 
-**When you think there's nothing to ask**, ask yourself: "If I draft this plan and they reject it, what would the reason be?" That's your question.
-
 **Before moving to Phase 4**, check: "Am I about to put anything in a 'Risks' or 'Open Questions' section that I could resolve right now by asking?" If yes, ask it here. The Risks section in the plan should only contain things that are genuinely unknowable — not things you were too lazy to clarify.
+
+Carry every confirmed answer into the Decisions table in Phase 4. It records the choices the user agreed to, not only your own analysis.
 
 ## Phase 4: Draft the Plan
 
 ### Required Sections
 
-Note: The Decisions table should now reflect choices **confirmed with the user** during Phase 3, not just your own analysis.
+Every plan MUST include these sections, in this order. `check-plan` enforces the order of the required ones: Goal, Context, Decisions, Files Affected, Approach, Risks, Verification. Bracketed lines are placeholders: replace each one, or drop it along with its optional section.
 
-Every plan MUST include:
+- **Documentation Referenced** links every external doc, API reference, or library README consulted during exploration. It's the breadcrumb trail when an API changes or something doesn't work as expected.
+- **Skills & Tools** names what the executing session should reach for. A fresh session won't have the planning context that made these choices obvious.
+- **User-Confirmed Decisions** appears only when the user answered an AskUserQuestion (Phase 3 or a Phase 4.5 ESCALATE) whose answer doesn't fit the Decisions table.
+- **Beads to File** appears only when the repo has a `.beads/` directory at its root. It's drafted here, filed in Phase 6, and gets its IDs written back after.
 
 ```markdown
+# [Plan Title]
+
 ## Goal
 [One sentence. What does "done" look like?]
 
@@ -148,17 +121,9 @@ Every plan MUST include:
 - [Library/API name](URL) — [what was learned, e.g., "streaming API accepts AsyncThrowingStream<Data>"]
 - [Library/API name](URL) — [key detail]
 
-Link every external doc, API reference, or library README consulted during exploration.
-This is the breadcrumb trail — if an API changes or something doesn't work as expected,
-the implementing session needs to know where the information came from.
-
 ## Skills & Tools
 - **Skills:** [List skills the executing session should invoke, e.g., `test-driven-development`, `systematic-debugging`, `writing-mise-tasks`]
 - **Tools:** [List MCP servers, CLI tools, or specific tooling needed, e.g., "use `xcsift` for build output", "use context7 for API docs", "use GitHub MCP for issue updates"]
-
-Explicitly call out what the executing session should reach for. Don't assume it will
-discover these on its own — a fresh session won't have the planning context that made
-these choices obvious.
 
 ## Assumptions
 - [Assumption 1 — what we believe to be true and why]
@@ -169,14 +134,10 @@ these choices obvious.
 |---|---|---|---|
 | [e.g., State management] | [Redux, Zustand, Context] | [Zustand] | [Lightweight, fits existing patterns in `src/store/`] |
 
-## User-Confirmed Decisions (when applicable)
+## User-Confirmed Decisions
 | Question | User's Answer | Captured From |
 |---|---|---|
-| [Question from escalation audit or Phase 3 clarification] | [User's choice] | [Phase 3 / Phase 4.5 ESCALATE finding] |
-
-Only include this section when the user answered an AskUserQuestion (Phase 3 or
-Phase 4.5 ESCALATE) whose answer doesn't fit cleanly into the Decisions table
-above. Omit if empty.
+| [Question from escalation audit or Phase 3 clarification] | [User's choice] | [Phase 3 or the escalation audit's ESCALATE finding] |
 
 ## Files Affected
 - `exact/path/to/file.ts:45-67` — [what changes and why]
@@ -199,8 +160,6 @@ the executing session won't have your exploration context.]
 ...
 
 ## Beads to File
-<!-- Include ONLY when the repo has a `.beads/` directory at its root; omit the whole
-section otherwise. Drafted here, filed automatically in Phase 6, IDs written back after. -->
 | Bead | Type | Priority | Blocked by | Notes |
 |---|---|---|---|---|
 | [short title] | [bug/feature/task/epic/chore/decision] | [0-4, 0=highest] | [another row's title, or —] | [what it covers] |
@@ -208,6 +167,7 @@ section otherwise. Drafted here, filed automatically in Phase 6, IDs written bac
 ## Risks
 - [Only things that are genuinely unknowable at planning time despite best-effort research]
 - [If assumption X is wrong, the fallback is Y]
+- [The audit outcome line, added in Phase 4.5 step 9]
 
 ## Verification
 After implementation, verify before declaring done:
@@ -227,6 +187,17 @@ This section is ONLY for:
 - Things you researched, couldn't find a definitive answer, AND asked the user who said "let's figure it out during implementation"
 
 If you find yourself writing an "open question" here, STOP — either ask the user (Phase 3) or go research it (Phase 2).
+
+### Markdown Style
+
+Plans have to read well for a human. The Phase 4.5 gate lints them with rumdl against `~/.config/rumdl/plan.rumdl.toml`, which extends the house style in `house.rumdl.toml`. Its `--fix` pass handles spacing, list and emphasis markers, and table alignment. These rules need judgment, so write to them from the start:
+
+- **Title and order.** Open with a `#` title. The required sections appear in template order.
+- **Title Case headings, code in backticks.** Wrap every identifier, path, and tool name in a heading in backticks: ``### Wiring `check_plan` into `prek` ``. rumdl never recases code spans; outside one, it would rewrite `check_plan` as `Check_plan`.
+- **A real language on every code fence**: `nim`, `bash`, `toml`, and so on. Use `text` only for output that really is plain text.
+- **No empty sections.** Every heading from `##` down needs body text, or a subheading that has body text. Omit an optional section instead of leaving it empty.
+- **Bold sparingly.** At most three bold phrases per paragraph. Save bold for what a skimming reader must not miss.
+- **Labels are list items, not bold lines.** A bold phrase alone on its line (`**Verify RED**`) fails the gate. Put the label at the start of a numbered or bulleted item instead: `2. **Verify RED.** Run ...`.
 
 ### Code Snippets Are Required
 
@@ -251,13 +222,6 @@ if (!validated.success) {
 await createUser(validated.data);
 ```
 
-**Bad snippet (placeholder garbage):**
-```typescript
-// Add validation logic here
-// Parse the form data and handle errors
-// Then call the API
-```
-
 If a step involves creating or modifying code and has no snippet, the plan is incomplete.
 
 ### Variant-Specific Steps Format
@@ -271,25 +235,27 @@ The Steps section above (a flat numbered list) is the default for **Single** var
 | "Update the handler" | "Add validation to `handleSubmit` in `src/components/Form.tsx:34`" |
 | "Add tests" | "Add test case to `tests/form.test.ts` using the existing `renderForm` helper" |
 | "Modify the type" | "Extend `UserProfile` in `src/types.ts:12` with optional `displayName: string`" |
-| "Update the config" | "Add `newFeature: true` to `FeatureFlags` in `src/config.ts:8`" |
-| "Fix the API call" | "Change `fetch('/api/old')` to `fetch('/api/new')` in `src/api/client.ts:89`" |
 
 **Rule:** If a step doesn't include a file path, it's not specific enough.
 
 ### Alternatives (When Applicable)
 
-If there are genuinely different approaches (not just one obvious path), present 2-3 options:
+If there are genuinely different approaches (not just one obvious path), present 2-3 options as `###` subsections under `## Approach`, with the recommendation in its opening paragraph:
 
 ```markdown
-## Approach A: [Name]
+## Approach
+
+[One paragraph: the recommended option and the concrete reason it wins.]
+
+### Option A: [Name]
+
 - Pros: ...
 - Cons: ...
 
-## Approach B: [Name]
+### Option B: [Name]
+
 - Pros: ...
 - Cons: ...
-
-**Recommendation:** Approach A because [concrete reason].
 ```
 
 Don't force alternatives when there's clearly one right answer.
@@ -303,7 +269,7 @@ After writing the draft to the plan file, run **two parallel audits** before cal
 
 The two audits answer different questions. Codex asks "is this plan technically correct?" Escalation asks "did the planner sneak past anything the user must approve?" The escalation audit exists because the technical-correctness review tends to defer to the planner's framing of tradeoffs ("regression is fine because X") instead of escalating to the user.
 
-**Bypass:** If the user said "skip audit" / "skip audits" / "skip codex audit" / similar in this plan mode session, omit BOTH passes and add a single line to the plan's Risks section: "Plan audits skipped per user request." Default behavior is to run both.
+**Bypass:** If the user said "skip audit" / "skip audits" / "skip codex audit" / similar in this plan mode session, omit BOTH passes, record `Phase 4.5 audits: skipped per user request.` as the outcome line (step 9), and go straight to the gate (step 10). Default behavior is to run both.
 
 **Procedure:**
 
@@ -314,21 +280,27 @@ The two audits answer different questions. Codex asks "is this plan technically 
 5. **Escalation ESCALATE findings → use AskUserQuestion for each one** before ExitPlanMode. Do NOT silently fold them into the Risks section, do NOT rationalize them away, and do NOT batch them into a wall of questions — one AskUserQuestion per finding (or grouped tightly when they share an option set). After the user answers, capture the decision in the plan's Decisions table or, when answers don't fit existing decisions, in a `## User-Confirmed Decisions` section so a fresh session can see the user's sign-off.
 6. **Escalation VERIFY findings → mention briefly in your ExitPlanMode summary** so the user has visibility, but they're not blocking. Don't pre-emptively edit the plan based on them.
 7. **After revisions, re-run BOTH audits ONCE more** (cap at 2 total passes per audit). If the second pass still surfaces CRITICAL or unresolved ESCALATE findings, escalate to the user via AskUserQuestion before ExitPlanMode rather than starting a third pass.
-8. If only Info / OK / VERIFY findings remain, list any non-blocking items in the plan's Risks section as "Audit Info notes (non-blocking): ..." and proceed to Phase 5.
-9. **Partial-failure handling:** If only one audit agent is unavailable (auth error, runtime failure, agent not registered), proceed with the one that ran and note the partial coverage in the plan's Risks section ("Codex audit unavailable — escalation pass only" or vice versa). If both fail, surface to the user and offer to skip-with-note rather than retrying indefinitely.
+8. **Partial-failure handling:** If only one audit agent is unavailable (auth error, runtime failure, agent not registered), proceed with the one that ran and record the gap in the outcome line. If both fail, surface to the user and offer to skip with that recorded, rather than retrying indefinitely.
+9. **Record the outcome.** Add exactly one line to Risks, whatever happened, starting `Phase 4.5 audits:`. Fold any remaining Info / OK findings into it as non-blocking notes:
+   - `Phase 4.5 audits: Codex clean (pass 1); escalation clean (pass 1).`
+   - `Phase 4.5 audits: Codex pass 2, Info (non-blocking): the retry cap is untested; escalation clean (pass 1).`
+   - `Phase 4.5 audits: Codex unavailable (auth error); escalation clean (pass 1).`
+   - `Phase 4.5 audits: skipped per user request.`
+10. **Run the gate**, then proceed to Phase 5 once it passes:
 
-After both audits clear, run the sanity gate:
+    ```bash
+    check-plan --fix <plan-file-or-directory>
+    ```
 
-```bash
-check-plan <plan-file-or-directory>
-```
+    `check-plan` is a Nim binary on PATH, built by chezmoi from `scripts/claude/check_plan.nim`. It applies rumdl's safe fixes, lints the plan against the Markdown Style rules and required section order, and fails unless the plan file (or `index.md`) carries a `Phase 4.5 audits:` line.
 
-`check-plan` is a small Nim binary on PATH (built by chezmoi from `scripts/claude/check_plan.nim`). It catches missing required template sections (Goal, Context, Decisions, Files Affected, Approach, Risks, Verification) and missing audit evidence (Phase 4.5 reference, Audit Info notes, escalation audit mention, or explicit skip note). Exit 0 = pass; non-zero = fix the plan and re-audit.
+    - **Exit 0**: pass.
+    - **Exit 1**: fix each remaining finding in the plan file, then rerun. Heading case (MD063) and fence language (MD040) findings are always left for you: add backticks or recase the heading, and name the fence's real language. **Never run `rumdl fmt` or `rumdl check --fix` yourself**, even though rumdl's summary suggests it. Those fixes rewrite identifiers in headings and label every unknown fence `text`. Style fixes need no re-audit; adding a missing section does.
+    - **Exit 2**: a setup problem, such as rumdl missing from PATH, a missing config (`chezmoi apply`), a bad path, or a plan directory with no `index.md`. Fix a missing `index.md` yourself; tell the user about the rest instead of skipping the gate.
 
 ## Phase 5: Compaction Question & Exit
 
-1. Write the plan to the plan file (as specified by plan mode).
-2. **Ask the required compaction question.** Before `ExitPlanMode`, always run one `AskUserQuestion` — even on small plans, the user decides. The point: implementation should start on a clean slate if this planning session burned a lot of context, and the post-approval handoff (Phase 6) is where any management work happens *before* the user compacts. Compute a recommendation and flag it on the matching option:
+1. **Ask the required compaction question.** Before `ExitPlanMode`, always run one `AskUserQuestion` — even on small plans, the user decides. The point: implementation should start on a clean slate if this planning session burned a lot of context, and the post-approval handoff (Phase 6) is where any management work happens *before* the user compacts. Compute a recommendation and flag it on the matching option:
 
    | Recommendation | Signals | Option to offer |
    |---|---|---|
@@ -337,7 +309,7 @@ check-plan <plan-file-or-directory>
    | **Fresh session** *(necessary)* | Agent-teams variant, many subagents, very large plan, or the session is near its context budget — `/compact` won't reclaim enough working room | "Start a fresh session" |
 
    Phrase it as: *"Compact before I start implementing?"* with those three options, the computed recommendation appended to the matching label (e.g. `/compact, then implement (recommended)`). Don't skip the question, and don't pre-decide by acting without asking.
-3. Call `ExitPlanMode` for user approval.
+2. Call `ExitPlanMode` for user approval.
 
 ## Phase 6: Post-Approval Handoff
 
@@ -356,65 +328,4 @@ Before calling ExitPlanMode, ask yourself:
 
 > If a fresh session reads ONLY this plan file with zero prior context, can it start implementing immediately without looking anything up?
 
-If the answer is no, the plan is missing context. Common gaps:
-- API syntax you verified during exploration but didn't inline
-- Library documentation you consulted but only linked (link AND quote the key parts)
-- GitHub issue context that motivated design decisions
-- Assumptions that feel "obvious" because you just explored the code
-- Code snippets that reference functions or types you haven't verified exist
-- Names the plan *itself defines* drift between steps — a function introduced as `clearLayers()` in step 3 but called `clearFullLayers()` in step 7. Check every new name, signature, and type for cross-step consistency
-- You consulted external docs but didn't link them in "Documentation Referenced"
-- You skipped Phase 4.5 without the user explicitly opting out, and the plan never got a second-opinion read
-- The escalation audit surfaced ESCALATE findings and you folded them into Risks instead of asking the user — every ESCALATE needs an AskUserQuestion before ExitPlanMode
-
-## Common Mistakes
-
-### Exploration mistakes
-
-| Mistake | Fix |
-|---|---|
-| Start writing plan before exploring | Explore FIRST. Read files, trace code paths |
-| Reference files you haven't read | Read every file you mention in the plan |
-| Looked up docs but didn't inline findings | The executing session won't have your exploration context. Inline key syntax, signatures, and patterns |
-| Missing issue/PR links | Link the origin — the executing session needs to understand *why* this work exists |
-| No documentation links | If you consulted docs during exploration, link them in "Documentation Referenced" with what you learned |
-
-### Drafting mistakes
-
-| Mistake | Fix |
-|---|---|
-| Skip test strategy | Always include which test files and what coverage |
-| Overly long plans | Keep it concise. Steps should be scannable |
-| Plan says "update" without specifics | Name the function, line, and exact change |
-| Steps describe code changes but have no snippets | Every code-changing step needs a concrete snippet showing the actual change |
-| Snippets contain placeholder comments | If you wrote `// handle errors here` instead of actual error handling, you haven't finished exploring |
-| Later steps contradict earlier definitions | Names, signatures, and types the plan defines must match across every step that uses them — cross-check before exiting |
-| No assumptions section | Always document what you assumed to be true and why |
-| No decision rationale | Always explain what options were considered and why the chosen approach won |
-| No risks section | Always flag unknowns and edge cases |
-| "Open questions" in Risks section | If you could have asked the user or looked it up, it's not a risk. Go back to Phase 3 or Phase 2 |
-| Risks that are just unverified assumptions | "API might have rate limits" — go check the docs. Don't list it as a risk when 30 seconds of research would give you the answer |
-| Plan has no Verification section | Required. Without it, the executing session has no checkpoint after implementation. |
-
-### Audit mistakes
-
-| Mistake | Fix |
-|---|---|
-| Skipped Phase 4.5 audits on a non-trivial plan | Default is to run BOTH audits. Only skip when user explicitly says so. Note the skip in Risks. |
-| Ran only the Codex audit, skipped the escalation pass | They review different things — Codex catches "wrong code", escalation catches "wrong decision the user didn't approve". Skipping escalation is how regressions silently ship. |
-| Treated audit findings as authoritative | Codex and the Opus auditor are peers, not oracles. Per `codex-result-handling`, evaluate findings critically before applying. |
-| Auto-applied source-code "fixes" from an audit | Both audits review the plan, not the source. Only edit the plan file in plan mode. |
-| Folded ESCALATE findings into the Risks section | The whole point of the escalation audit is to surface decisions the planner buried. Every ESCALATE finding requires AskUserQuestion before ExitPlanMode and the answer captured in Decisions. Don't accept the planner's framing of "this regression is fine." |
-| Spawned audits sequentially | They're independent reviews — spawn in a single message with two `Agent` tool calls so they run in parallel. |
-| Downgraded the escalation audit to Sonnet | Opus tier matters for spotting motivated reasoning and rationalized tradeoffs. Don't trade audit quality for tokens. |
-| Audit loop without a cap | 2-pass cap per audit is hard. After that, escalate remaining Critical / ESCALATE findings to the user via AskUserQuestion. |
-
-### Handoff mistakes
-
-| Mistake | Fix |
-|---|---|
-| Skipped the compaction question | It's required on every plan — the user decides whether to compact before implementing. Compute a recommendation, but always ask. |
-| Started implementing right after ExitPlanMode | Phase 6 is a management checkpoint, not the green light. File beads, honor the compaction choice, and stop unless the user picked Continue. |
-| Filed beads during plan mode | Plan mode can't run `bd`. Draft the breakdown into the plan's `## Beads to File` section; file it in Phase 6 after approval. |
-| Added a Beads section to a non-beads repo | Beads is conditional on a `.beads/` directory at the repo root. No `.beads/` → no beads section, no `bd` calls, no mention. |
-| Compacted (or told the user to) before filing beads | Beads filing is management work that must finish *before* compaction — the plan survives a compact, but the pre-implementation `bd create` window doesn't. File first, then hand off. |
+If the answer is no, the plan is missing context. Either way, run the checklist in `references/common-mistakes.md` now: the common self-containment gaps, plus the exploration, drafting, audit, and handoff mistakes the gate can't catch.

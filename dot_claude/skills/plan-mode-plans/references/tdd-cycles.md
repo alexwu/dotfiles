@@ -14,68 +14,41 @@ Beyond the universal exploration in SKILL.md, also investigate:
 
 ## Steps Section Format
 
-Instead of the generic numbered steps in the base template, each feature/change is a TDD cycle:
+Instead of the generic numbered steps in the base template, each feature or change is a TDD cycle: a `###` heading over one numbered list, one item per phase. Snippets nest inside their list item.
 
 ````markdown
 ## Steps
 
-### Cycle 1: [Behavior being tested]
+### Cycle 1: [Behavior Being Tested]
 
-**RED — Write failing test**
+1. **RED.** Add the failing test to `tests/exact/path/test_file.ts`:
 
-File: `tests/exact/path/test_file.ts`
+   ```typescript
+   test('rejects empty email with validation error', () => {
+     const result = validateEmail('');
+     expect(result).toEqual({ valid: false, error: 'Email is required' });
+   });
+   ```
 
-```typescript
-test('rejects empty email with validation error', () => {
-  const result = validateEmail('');
-  expect(result).toEqual({ valid: false, error: 'Email is required' });
-});
-```
+2. **Verify RED.** Run `npm test tests/exact/path/test_file.ts`. Expected failure: `validateEmail is not defined`, since the function doesn't exist yet.
+3. **GREEN.** Add the minimal implementation to `src/exact/path/validation.ts`:
 
-**Verify RED**
+   ```typescript
+   export function validateEmail(email: string): ValidationResult {
+     if (!email.trim()) {
+       return { valid: false, error: 'Email is required' };
+     }
+     return { valid: true };
+   }
+   ```
 
-```bash
-npm test tests/exact/path/test_file.ts
-```
+4. **Verify GREEN.** Run `npm test tests/exact/path/test_file.ts`. All tests pass.
+5. **Refactor.** [The cleanup, or "None needed."]
+6. **Commit.** `git add src/exact/path/validation.ts tests/exact/path/test_file.ts && git commit -m "feat(validation): Add email presence validation"`
 
-Expected failure: `validateEmail is not defined` (function doesn't exist yet)
+### Cycle 2: [Next Behavior]
 
-**GREEN — Minimal implementation**
-
-File: `src/exact/path/validation.ts`
-
-```typescript
-export function validateEmail(email: string): ValidationResult {
-  if (!email.trim()) {
-    return { valid: false, error: 'Email is required' };
-  }
-  return { valid: true };
-}
-```
-
-**Verify GREEN**
-
-```bash
-npm test tests/exact/path/test_file.ts
-```
-
-All tests pass.
-
-**REFACTOR** (if needed)
-
-[Describe any cleanup, or "None needed" if implementation is already clean]
-
-**Commit**
-
-```bash
-git add src/exact/path/validation.ts tests/exact/path/test_file.ts
-git commit -m "feat(validation): Add email presence validation"
-```
-
----
-
-### Cycle 2: [Next behavior]
-...
+1. **RED.** ...
 ````
 
 ## TDD Cycle Rules
@@ -83,7 +56,7 @@ git commit -m "feat(validation): Add email presence validation"
 These rules are non-negotiable in the plan:
 
 ### 1. Test code comes first in every cycle
-The test snippet MUST appear before the implementation snippet. This isn't just formatting — it reflects the actual execution order.
+The test snippet MUST appear before the implementation snippet. The order on the page is the order of execution.
 
 ### 2. Every cycle needs a verify step
 Both RED and GREEN need explicit verification commands with expected output. The executing session must:
@@ -168,5 +141,5 @@ In addition to the universal self-containment test in SKILL.md, verify:
 - Does each RED step include the expected failure message?
 - Could the executing session run each cycle mechanically without judgment calls?
 - Are test file paths and conventions consistent with what exploration found?
-- Did Phase 4.5 audit run, or was it explicitly skipped (with a note in Risks)?
+- Does Risks carry the `Phase 4.5 audits:` outcome line (SKILL.md Phase 4.5 step 9)?
 - Does the final Verification section call out `coderabbit review --agent` over the cumulative diff after all cycles?

@@ -120,9 +120,11 @@ The plan-name directory replaces the single `{plan-name}.md` file. Numbered pref
 
 ### index.md Format
 
-The master index is authored by the lead and contains:
+The master index is authored by the lead and contains the sections below, in this order. `check-plan` enforces the order of the required ones, as in SKILL.md.
 
 ```markdown
+# [Plan Title]
+
 ## Goal
 [One sentence. What does "done" look like?]
 
@@ -147,7 +149,7 @@ The master index is authored by the lead and contains:
 |---|---|---|---|
 [Merged decision table, conflicts resolved with rationale]
 
-## User-Confirmed Decisions (when applicable)
+## User-Confirmed Decisions
 | Question | User's Answer | Captured From |
 |---|---|---|
 | [Question from escalation audit or Phase 3 clarification] | [User's choice] | [Phase 3 / Phase 4.5 ESCALATE finding] |
@@ -175,6 +177,7 @@ that don't fit the Decisions table. Omit if empty.
 ## Risks
 [Only genuinely unknowable things — not unasked questions or unresearched assumptions]
 - [If assumption X is wrong, the fallback is Y]
+- [The audit outcome line, added in SKILL.md Phase 4.5 step 9]
 
 ## Verification
 After implementation, verify before declaring done:
@@ -187,26 +190,26 @@ After implementation, verify before declaring done:
 
 ### Section File Format
 
-Each teammate writes their section file following this template:
+Each teammate writes their section file following this template. The section name is the file's `#` title, so its parts are `##` headings. The Markdown Style rules in SKILL.md apply here too; `check-plan` lints section files with everything except the required-sections check.
 
 ```markdown
-## {Section Name}
+# {Section Name}
 
-### Scope
+## Scope
 [What this section covers — specific directories, concerns, boundaries]
 
-### Files Affected
+## Files Affected
 - `exact/path/to/file.ts:45-67` — [what changes and why]
 - `exact/path/to/new-file.ts` — [new file, what it contains]
 
-### Key Syntax & Patterns
+## Key Syntax & Patterns
 [API signatures, code patterns, or syntax relevant to this section's implementation. Inline the actual syntax — do NOT rely on "go look up the docs".]
 
-### Dependencies
+## Dependencies
 - **Depends on:** [other section names — must be implemented first]
 - **Blocks:** [other section names — cannot start until this is done]
 
-### Steps
+## Steps
 1. [Specific action with file path and code snippet]
 2. [Specific action with file path and code snippet]
 3. [Run tests / verify]
@@ -230,7 +233,7 @@ If a section fails review, the lead creates a follow-up task via `TaskCreate`: `
 
 ## Phase 4.5 Note
 
-The base SKILL.md owns Phase 4.5. For multi-file plans, two audits run in parallel — Codex (variant-specific) and Opus escalation (variant-agnostic). Compose the prompt files per `references/audit-prompts.md`. The lead invokes BOTH audits ONCE on the composed plan (`index.md` + all section files) before shutting down teammates. Per-section audit was rejected as too costly. The audit happens BEFORE teammate shutdown — the lead handles audit-driven revisions and any AskUserQuestion follow-ups directly.
+The base SKILL.md owns Phase 4.5. Run both audits on the composed plan (`index.md` + all section files) with the same 2-pass cap, composing the prompts per `references/audit-prompts.md`. Then record the outcome line in `index.md` and run `check-plan --fix <plan-dir>`. Do all of it before shutting teammates down, since the lead may still need section-file edits. Per-section audits were rejected as too costly; the lead handles audit-driven revisions and any AskUserQuestion follow-ups directly.
 
 ## Phase 5 Addition: Cleanup
 

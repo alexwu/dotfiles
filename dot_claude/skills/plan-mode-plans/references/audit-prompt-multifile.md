@@ -2,8 +2,6 @@
 
 Use this prompt when running Phase 4.5 against a plan that lives in a directory (`plans/{name}/index.md` + numbered section files) — the agent-teams variant, with or without TDD.
 
-If the plan uses TDD cycles, **also append the contents of `audit-prompt-tdd-additions.md`** to this prompt before sending it to the rescue agent.
-
 Substitute the two bracketed paths (`<ABSOLUTE_PLAN_DIR>`, `<ABSOLUTE_REPO_ROOT>`) with the real paths.
 
 ---
@@ -34,4 +32,4 @@ Group findings as:
 Cite file paths (including which section file) and line numbers exactly. Do NOT modify the plan or any source files.
 ```
 
-**Important:** The audit happens AFTER teammate shutdown is *queued* in process flow but BEFORE it executes — the lead may still need to revise section files based on findings, and teammates are not involved in revision. The lead handles all audit-driven edits directly.
+**Important:** Run this audit before shutting teammates down. The lead makes all audit-driven edits to section files directly; teammates are not involved in revision.

@@ -1,0 +1,38 @@
+# ~/.config/rumdl/plan.rumdl.toml
+#
+# House style plus the plan-mode-plans template structure. `check-plan` passes
+# this with `--config` for every plan file, adding `--disable MD043` for
+# numbered agent-teams section files, which have their own shape.
+
+extends = "house.rumdl.toml"
+
+# Required plan sections, in template order. MD043 matches every heading level,
+# so each gap needs a `*` to absorb optional sections (Documentation Referenced,
+# Assumptions, Steps, ...) and their subheadings. The leading `?` is the plan's
+# H1 title; `?` means exactly one heading, so the title is required.
+[MD043]
+headings = [
+  "?",
+  "*",
+  "## Goal",
+  "*",
+  "## Context",
+  "*",
+  "## Decisions",
+  "*",
+  "## Files Affected",
+  "*",
+  "## Approach",
+  "*",
+  "## Risks",
+  "*",
+  "## Verification",
+  "*",
+]
+
+# Plan sections like "## Key Syntax & Patterns" go straight into one `###`
+# subsection per API. A parent heading whose content is its subsections counts
+# as non-empty here; a heading with nothing under it at all still fails.
+[MD082]
+level = 2
+allow-parent-headings = true

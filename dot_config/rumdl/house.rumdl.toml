@@ -1,0 +1,243 @@
+# ~/.config/rumdl/house.rumdl.toml
+#
+# House style for human-readable technical Markdown:
+# - GFM-compatible
+# - readable raw source
+# - clean rendered output
+# - strong heading/list/code consistency
+# - validated relative links and anchors
+# - guardrails against common AI-generated Markdown noise
+#
+# Opt-in only: rumdl never auto-discovers this file. Pass it with
+# `--config ~/.config/rumdl/house.rumdl.toml`, or build on it with
+# `extends = "~/.config/rumdl/house.rumdl.toml"` (plan.rumdl.toml does).
+
+[global]
+flavor = "gfm"
+respect-gitignore = true
+
+# Opinionated rules that are disabled by default.
+extend-enable = [
+  "MD060", # Consistently formatted tables
+  "MD063", # Title Case headings
+  "MD070", # Safe nested code fences
+  "MD080", # Unique generated heading anchors
+  "MD082", # No empty sections
+  "MD084", # Suspicious invisible Unicode
+  "MD087", # Stale rumdl-disable comments
+]
+
+# No line-length limit: prose stays one line per paragraph or sentence.
+extend-disable = ["MD013"]
+
+# ---------------------------------------------------------------------------
+# Headings
+# ---------------------------------------------------------------------------
+
+# Use ATX headings:
+#
+# # Heading
+#
+# rather than Setext:
+#
+# Heading
+# =======
+[MD003]
+style = "atx"
+
+# Use Title Case for headings.
+#
+# Good:
+# ## Authentication Configuration
+#
+# Avoid:
+# ## Authentication configuration
+#
+# Preserve deliberately cased words such as macOS, GitHub, TypeScript, etc.
+#
+# Code spans are never recased, so put identifiers and tool names in backticks:
+# ## Wiring `check_plan` into `ast-grep`
+#
+# `ignore-words` covers bare tool names. It matches whole words only, so a
+# hyphenated name like ast-grep still needs backticks.
+[MD063]
+style = "title-case"
+preserve-cased-words = true
+ignore-words = ["rumdl", "prek", "chezmoi", "mise", "just"]
+
+# Detect different headings that generate the same GitHub anchor.
+#
+# Example:
+# ## Setup & Run
+# ## Setup Run
+#
+# Both can collapse to the same slug.
+[MD080]
+anchor-style = "github"
+
+# Require real content underneath H2+ before another heading appears.
+#
+# H1 is exempt so this is allowed:
+#
+# # Authentication Plan
+#
+# ## Goal
+#
+# But this is discouraged:
+#
+# ## Implementation
+#
+# ### Backend
+#
+# Prefer a short introduction under "Implementation".
+[MD082]
+level = 2
+allow-parent-headings = false
+
+# ---------------------------------------------------------------------------
+# Lists
+# ---------------------------------------------------------------------------
+
+# Use dashes for unordered lists.
+#
+# - One
+# - Two
+[MD004]
+style = "dash"
+
+# Two-space indentation for nested unordered lists.
+[MD007]
+indent = 2
+
+# Allow either:
+#
+# 1. First
+# 2. Second
+#
+# or lazy numbering:
+#
+# 1. First
+# 1. Second
+[MD029]
+style = "one_or_ordered"
+
+# ---------------------------------------------------------------------------
+# Whitespace and prose
+# ---------------------------------------------------------------------------
+
+# Don't use trailing spaces for Markdown line breaks.
+[MD009]
+strict = true
+
+# ---------------------------------------------------------------------------
+# Code blocks
+# ---------------------------------------------------------------------------
+
+# Prefer fenced code blocks over indentation.
+[MD046]
+style = "fenced"
+
+# Prefer ``` rather than ~~~.
+[MD048]
+style = "backtick"
+
+# MD040 is enabled by default and requires a language on fenced code blocks.
+#
+# Good:
+#
+# ```ruby
+# puts "hello"
+# ```
+#
+# Its auto-fix labels unlabeled fences `text`, which satisfies the rule without
+# naming the real language. Run `rumdl fmt` with `--unfixable MD040` so the
+# author has to pick one.
+#
+# MD070 is enabled above so Markdown examples containing their own fences use
+# a sufficiently long outer fence instead of accidentally terminating it.
+
+# ---------------------------------------------------------------------------
+# Emphasis
+# ---------------------------------------------------------------------------
+
+# Use _italics_ rather than *italics*.
+[MD049]
+style = "underscore"
+
+# Use **bold** rather than __bold__.
+[MD050]
+style = "asterisk"
+
+# Discourage AI-style **bolding** of **every** vaguely **important phrase**.
+#
+# Code spans, links, code blocks, etc. don't count toward these thresholds.
+[MD081]
+targets = "strong"
+max-per-paragraph = 3
+max-consecutive = 2
+
+# ---------------------------------------------------------------------------
+# Tables
+# ---------------------------------------------------------------------------
+
+# Keep pipe tables aligned and readable in raw Markdown as well as rendered.
+[MD060]
+style = "aligned"
+
+# ---------------------------------------------------------------------------
+# Links
+# ---------------------------------------------------------------------------
+
+# Validate heading fragments using GitHub's slug rules.
+#
+# Checks both:
+#
+# [Verification](#verification)
+#
+# and:
+#
+# [Verification](../docs/plan.md#verification)
+#
+# MD051 is enabled by default.
+[MD051]
+anchor-style = "github"
+ignore-case = true
+
+# MD057 is enabled by default and verifies that relative file links exist.
+#
+# Good:
+#
+# [Architecture](../docs/architecture.md)
+#
+# Avoid repository-root / web-route-looking links such as:
+#
+# [Architecture](/docs/architecture.md)
+#
+# `warn` reports those absolute-style paths instead of silently ignoring them.
+[MD057]
+absolute-links = "warn"
+
+# MD059 is enabled by default and discourages meaningless link text such as:
+#
+# [here](...)
+# [click here](...)
+#
+# Prefer:
+#
+# [Authentication Architecture](...)
+
+# ---------------------------------------------------------------------------
+# Unicode / lint hygiene
+# ---------------------------------------------------------------------------
+
+# Detect suspicious invisible characters without going fully strict and
+# complaining about legitimate emoji shaping characters.
+[MD084]
+strict = false
+allow = []
+
+# MD087 is enabled above and reports obsolete comments such as:
+#
+# <!-- rumdl-disable-next-line MD013 -->
+#
+# when the following line no longer violates MD013.
