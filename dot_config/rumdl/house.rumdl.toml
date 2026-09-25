@@ -8,9 +8,10 @@
 # - validated relative links and anchors
 # - guardrails against common AI-generated Markdown noise
 #
-# Opt-in only: rumdl never auto-discovers this file. Pass it with
-# `--config ~/.config/rumdl/house.rumdl.toml`, or build on it with
-# `extends = "~/.config/rumdl/house.rumdl.toml"` (plan.rumdl.toml does).
+# rumdl never auto-discovers this file by name. It takes effect through the
+# configs that extend it: rumdl.toml (the global default for projects with no
+# config of their own) and plan.rumdl.toml (the plan-mode-plans gate). Build on
+# it elsewhere with `extends = "~/.config/rumdl/house.rumdl.toml"`.
 
 [global]
 flavor = "gfm"

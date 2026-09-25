@@ -2,14 +2,17 @@
 # rumdl loads this ONLY when a project has no .rumdl.toml of its own. A project
 # config fully REPLACES this unless it opts in with:
 #   extends = "~/.config/rumdl/rumdl.toml"
+#
+# The rules themselves live in house.rumdl.toml (shared with the plan-mode-plans
+# gate's plan.rumdl.toml); this file adds only the global carve-outs below.
+
+extends = "house.rumdl.toml"
 
 [global]
 # We intentionally use raw inline HTML in markdown.
-disable = ["MD033"]
-respect-gitignore = true
+extend-disable = ["MD033"]
 
 # Only genuinely non-authored / generated / boilerplate content is excluded.
-# NOT CLAUDE.md / AGENTS.md — those are prose we maintain and want wrapped.
 exclude = [
   ".git",
   ".github",
@@ -23,9 +26,3 @@ exclude = [
   ".agents/skills/*.md",  # frequently symlinked third-party skills
   ".claude/skills/*.md",
 ]
-
-[MD013]
-line-length = 100
-code-blocks = false
-tables = false
-headings = true
