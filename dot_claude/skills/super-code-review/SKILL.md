@@ -127,7 +127,7 @@ See `references/effort-tiers.md` for the exact recipe per tier.
 
 ## Severity tags
 
-- **blocker** — must be fixed before merge: bugs that will crash/produce wrong output, violations of hard rules in CLAUDE.md/AGENTS.md, dropped error paths, missing tests for new behavior
+- **blocker** — must be fixed before merge: bugs that will crash/produce wrong output, violations of hard rules in CLAUDE.md/AGENTS.md, dropped error paths, a missing test for the diff's core behavior or a common edge case
 - **major** — should be fixed: shortcut markers without tracking, scope drift, weak/tautological tests, soft CLAUDE.md/AGENTS.md violations
 - **suggestion** — would be nice: stylistic things only flagged because a domain auditor caught them; second-opinion-only findings the validator confirmed but didn't promote
 
@@ -148,6 +148,7 @@ This list is the load-bearing trust-protector inherited from the prior `/code-re
 - Style/formatting/naming preferences
 - "You should test X" when X isn't in the diff
 - Missing tests for trivial changes (renames, comment edits, formatting-only)
+- Missing tests for obscure edge cases, or incidental tests that only add another case to an already-covered path
 
 If a finding can't survive this filter after validation, it does not ship.
 

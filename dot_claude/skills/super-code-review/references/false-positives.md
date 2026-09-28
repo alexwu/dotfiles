@@ -84,7 +84,7 @@ The threshold: a real reviewer should be able to write the failing test or input
 
 If X isn't part of the diff, don't flag missing tests for X. The test-thoroughness-reviewer flags missing tests for the **changed behavior**, not adjacent behavior.
 
-Exception: if the diff *adds a code path* that has no test, that path is in-scope and missing tests are flaggable.
+Exception: if the diff *adds a code path* that has no test, that path is in-scope, and a missing test for its core behavior or a common edge case is flaggable (as a blocker). A missing test for an obscure edge case, or an incidental extra test case, is not.
 
 ### Missing tests for trivial changes
 

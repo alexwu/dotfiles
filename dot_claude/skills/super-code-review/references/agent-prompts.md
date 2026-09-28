@@ -118,8 +118,9 @@ YOUR JOB
 2. If the finding requires understanding callers or callees, follow up to 2 references.
 3. Decide: is this finding real?
 4. If real and `Rule scope` is `user`, assign no severity — set `severity: "none"`. It's a local note, never posted (see claude-md-integration.md → "User-level rules stay local"). Otherwise, assign severity:
-   - blocker: will fail to build, crash at runtime, produce wrong output, or violate a hard CLAUDE.md/AGENTS.md rule
-   - major: will cause incorrect or fragile behavior, drop an error path, miss a critical test, deviate from intent
+   - blocker: will fail to build, crash at runtime, produce wrong output, violate a hard CLAUDE.md/AGENTS.md rule, or leave the diff's core behavior or a common edge case untested
+   - major: will cause incorrect or fragile behavior, drop an error path, deviate from intent
+   - A missing test for an obscure edge case, or an incidental extra test case, isn't a finding: return valid: false
    - suggestion: real but minor; would improve quality without being a must-fix
 5. Return:
    ```
@@ -173,7 +174,7 @@ YOUR JOB
 For each finding:
 1. Read the cited file in full at the head commit, and follow up to 2 callers or callees when the claim depends on them.
 2. Decide whether it's real, introduced by this diff, and something a senior reviewer would block on or ask to fix. Apply the do-NOT-flag list: pre-existing issues, linter-catchable nits, style preferences, speculative "could race" concerns the diff doesn't introduce, anything silenced by a directive.
-3. Confirm the severity: blocker (breaks the build, crashes, wrong output, violates a hard repo rule), major (fragile or incorrect behavior, a dropped error path, a missing test for new behavior, drift from the stated intent), or suggestion. You may change it; say why.
+3. Confirm the severity: blocker (breaks the build, crashes, wrong output, violates a hard repo rule, leaves the diff's core behavior or a common edge case untested), major (fragile or incorrect behavior, a dropped error path, drift from the stated intent), or suggestion. You may change it; say why. A missing test for an obscure edge case, or an incidental extra test, isn't a finding: kill it.
 4. Check the cited lines against the diff: `inline: true` when every cited line is on the new (right-hand) side of a diff hunk, `inline: false` otherwise.
 
 Return a JSON array, one object per finding:

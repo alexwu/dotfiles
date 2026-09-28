@@ -155,6 +155,11 @@ If the answer is "no" for a meaningful change, the tests aren't thorough enough.
 
 ## When *not* to flag missing tests
 
+Flag a missing test only when it would cover the diff's **core behavior** or a **common edge case** (empty/nil input, the usual error path, the boundary the code handles). Both are blockers. Don't flag the rest:
+
+- The missing case is an obscure edge case: rare inputs, exotic combinations
+- The test would only add another case to a path that's already covered
+
 - The diff is a rename refactor with no behavior change
 - The diff is a comment-only or formatting-only change
 - The diff is in a `__tests__` / test-only directory and the tests themselves are the change
