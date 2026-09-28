@@ -39,7 +39,7 @@ No Codex second opinion. No domain auditors. Single-agent throughput.
 | Phase | Action |
 |---|---|
 | 1 (Gather) | Full — diff + intent (all 4 sources unless `--intent` narrows it) + domain profile detection |
-| 2 (Fan-out) | All five generic reviewers + all matching domain auditors + Codex second opinion (all parallel) |
+| 2 (Fan-out) | All five generic reviewers + all matching domain auditors + Codex second opinion (all parallel; Codex omitted under `--skip-codex`) |
 | 3 (Validation) | Full per-finding validation, batched by file when 2+ findings collide |
 | 4 (Merge) | Dedupe across our reviewers + Codex, severity-tag |
 | 5 (Output) | Terminal summary by default; `--comment` posts inline; `--json` for CI |

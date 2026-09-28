@@ -273,7 +273,7 @@ Structured output for CI consumption.
   ],
   "second_opinion": {
     "agent": "codex:codex-rescue",
-    "status": "ran | unavailable",
+    "status": "ran | unavailable | skipped",
     "agreed_findings": 2,
     "unique_findings": 1
   },

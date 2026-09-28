@@ -24,6 +24,7 @@ When in doubt: it applies. The pushy description above is intentional — this s
 | `--range <spec>` | — | Explicit range — `main...HEAD`, `HEAD~5..HEAD`, `pr:1234`, or `working` |
 | `--effort <low\|medium\|high\|ultra>` | `high` | Pipeline depth |
 | `--coderabbit` | off | Chain `coderabbit:code-review` after our pass |
+| `--skip-codex` | off | Skip the Codex second opinion at `high`; everything else runs as usual |
 | `--comment` | off | Post inline comments (PR mode only) |
 | `--submit` | off | After the review, a Fable agent re-validates the findings, then the skill approves the PR or requests changes (PR mode only). See `references/submit.md` |
 | `--block-on <major\|all>` | `major` | With `--submit`: which surviving findings trigger request-changes. `major` = blockers and majors; `all` = everything |
@@ -62,7 +63,7 @@ Spawn these agents in a single message:
 - **Domain reviewers** (conditional, based on profile detection):
   - iOS / Swift: `axiom:swiftui-architecture-auditor`, `axiom:concurrency-auditor` (if async touched), `axiom:swiftdata-auditor` / `axiom:core-data-auditor` (if persistence), `axiom:testing-auditor` (if tests), etc. — see `references/domain-routing.md` for the full mapping
   - Generic: skip
-- `codex:codex-rescue` — **second opinion**, read-only Codex review. See `references/codex-second-opinion.md` for exact invocation. Run in parallel with our reviewers, not after.
+- `codex:codex-rescue` — **second opinion**, read-only Codex review. See `references/codex-second-opinion.md` for exact invocation. Run in parallel with our reviewers, not after. Not spawned when `--skip-codex` is passed.
 
 Each reviewer receives a self-contained spawn prompt with:
 - The diff (inline if <50 KB, else as a file path)

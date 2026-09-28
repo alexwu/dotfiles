@@ -134,4 +134,6 @@ When deduping in Phase 4:
 
 Codex runs through the user's Codex subscription. One call per super-code-review invocation at `--effort=high`. At `--effort=low` and `--effort=medium`, Codex is skipped.
 
-If the user wants to suppress Codex on a specific high-effort run (e.g., for a sensitive repo where intent context shouldn't leave the machine), add `--no-codex` as a future flag. For now, the only way to skip Codex is to drop to `--effort=medium`.
+## `--skip-codex`
+
+Skips the Codex second opinion on a `high` run and changes nothing else: the other reviewers, validation, and output run as usual. Don't spawn `codex:codex-rescue` at all. In the output, write `(Codex second opinion skipped: --skip-codex.)` in place of the unavailable note, and set `second_opinion.status` to `"skipped"` in `--json`. At `low` and `medium` the flag has no effect, since Codex doesn't run there.

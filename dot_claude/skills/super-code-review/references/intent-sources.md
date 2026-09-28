@@ -120,9 +120,3 @@ body: <body>
 ```
 
 If nothing was gathered, pass `INTENT CONTEXT: (empty — drift detection skipped)`. The shortcut-intent-reviewer will then skip the drift pass and run shortcut detection only.
-
-## Privacy
-
-Intent context can contain sensitive details (customer names, internal URLs, credentials referenced in issues). The skill operates locally — nothing leaves the machine except through `gh` (which goes to GitHub anyway). But: when invoking `codex:codex-rescue`, intent context goes through the Codex CLI/API. If the user has indicated this is a private/sensitive repo, **omit** the intent context from the Codex spawn prompt and rely on the diff alone for the second opinion.
-
-(There's no flag for this yet — surface as a follow-up if it matters to the user.)
