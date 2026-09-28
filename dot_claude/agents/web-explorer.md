@@ -23,7 +23,7 @@ description: |
   assistant: "web-explorer — it'll firecrawl-search and scrape the most relevant sources."
   <commentary>Open-ended web research; firecrawl-search returns full page content (not snippets), which web-explorer can synthesize.</commentary>
   </example>
-model: sonnet
+model: user
 color: purple
 tools:
   - Read

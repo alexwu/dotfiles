@@ -21,7 +21,7 @@ color: yellow
 tools: Read, Grep, Glob, Bash
 skills:
   - ast-grep
-memory: project
+memory: user
 hooks:
   PreToolUse:
     - matcher: "Bash"
