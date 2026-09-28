@@ -299,7 +299,7 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "rust-analyzer@claude-code-lsps": true,
     "security-guidance@claude-plugins-official": false,
-    "skill-codex@skill-codex": true,
+    "skill-codex@skill-codex": false,
     "superpowers@claude-plugins-official": false,
     "swift-lsp@claude-plugins-official": false,
     "telegram@claude-plugins-official": false,
