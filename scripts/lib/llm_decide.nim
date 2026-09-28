@@ -168,7 +168,7 @@ proc writeConstrainedSchema(allowed: openArray[string]): string =
   path
 
 const DefaultLocalModel = "Qwen3.6-35B-A3B"
-  ## Local llama-swap classifier (always-on group; resident, no cold-load). Used
+  ## Local llama-swap classifier (hot-path group; resident until 4h idle). Used
   ## by the `lu` path when the caller passes no explicit model.
 
 proc llmArgv(schemaRef, promptName, provider, model: string): seq[string] =

@@ -21,6 +21,8 @@
 ##   * KNOWN GAPS (shared with the regex guards, NOT closed by AST):
 ##       - embedded shell in a quoted arg: `bash -c "git push --force"` — the
 ##         script body is opaque `string_content`, tree-sitter does not recurse.
+##         script-interp covers interpreters there via a string-regex arm on
+##         sh/bash/zsh.
 ##       - variable-indirect program name: `C=cat; $C ~/.ssh/id_rsa` — the
 ##         command_name is a `simple_expansion`, not a literal.
 ##       - cross-command dataflow: `ls ~/.ssh/ | xargs cat` — each command
@@ -440,6 +442,82 @@ rule:
   has: { field: name, regex: '^(head|tail)$' }
 """
 
+# ── inline-script-guard (python / perl / node) ─────────────────────────────
+# INVERTED on purpose: every interpreter command — by name, by path, or behind a
+# wrapper (uv / env / timeout / xargs / mise / memo / …) — counts as an inline
+# script UNLESS it visibly runs a script FILE (a *.py/.pl/.js/… argument not
+# preceded by a code flag) or TOOLING (`-m <module>` other than json.tool,
+# --version / --help). An allowlist of inline forms kept leaking (`-W ignore -c`,
+# `python3 -u` on stdin, `-mjson.tool`); inverted, an unknown shape costs one
+# classifier call instead of a silent miss. `sh`/`bash`/`zsh` quoted scripts
+# are opaque to tree-sitter, so that arm is a string regex with the same
+# script-file exemption.
+# `field:` is only legal in has/inside, and `has: { field: argument }` checks
+# only the FIRST argument, so arguments are matched by node kind (`arg`).
+const ScriptInterp* = """
+id: script-interp
+language: bash
+utils:
+  arg:
+    any: [ { kind: word }, { kind: raw_string }, { kind: string }, { kind: concatenation } ]
+  interp:
+    all:
+      - matches: arg
+      - regex: '^[''"]?(.*/)?(python[0-9.]*|perl[0-9.]*|node|nodejs)[''"]?$'
+  interp-name:
+    has: { field: name, regex: '^(.*/)?(python[0-9.]*|perl[0-9.]*|node|nodejs)$' }
+  wrapped-interp:
+    all:
+      - has: { field: name, regex: '^(.*/)?(uv|uvx|env|timeout|gtimeout|xargs|nice|nohup|time|command|exec|sudo|caffeinate|mise|memo|pueue)$' }
+      - has: { matches: interp }
+  code-flag:
+    all:
+      - matches: arg
+      - not: { regex: '^[''"]?-m' }
+      - any:
+          - regex: '^[''"]?-[A-Za-z0-9]*[ceEp][^\s]*[''"]?$'
+          - regex: '^[''"]?--(eval|print)'
+  script-file:
+    all:
+      - matches: arg
+      - regex: '^[''"]?[^-''"\s][^\s]*\.(py|pyw|pl|pm|js|mjs|cjs|ts)[''"]?$'
+  runs-file:
+    has:
+      matches: script-file
+      not: { follows: { matches: code-flag, stopBy: end } }
+  runs-tooling:
+    all:
+      - not: { has: { matches: code-flag } }
+      - any:
+          - has:
+              all:
+                - matches: arg
+                - regex: '^-m$'
+                - precedes: { all: [ { matches: arg }, { not: { regex: 'json\.tool' } } ] }
+          - has: { all: [ { matches: arg }, { regex: '^-m[A-Za-z_]' }, { not: { regex: 'json\.tool' } } ] }
+          - has: { all: [ { matches: arg }, { regex: '^(--version|-V|--help|-h)$' } ] }
+rule:
+  kind: command
+  any:
+    - all:
+        - any: [ { matches: interp-name }, { matches: wrapped-interp } ]
+        - not: { matches: runs-file }
+        - not: { matches: runs-tooling }
+    - all:
+        - has: { field: name, regex: '^(.*/)?(ba|z)?sh$' }
+        - has:
+            stopBy: end
+            all:
+              - any: [ { kind: string_content }, { kind: raw_string } ]
+              - any:
+                  - all:
+                      - regex: '(^|[\s;|&(''"/])(python[0-9.]*|perl[0-9.]*|nodejs|node)(\s|[''";|&)]|$)'
+                      - not: { regex: '(python[0-9.]*|perl[0-9.]*|nodejs|node)\s+[^\s-][^\s]*\.(py|pyw|pl|pm|js|mjs|cjs|ts)(\s|[''"]|$)' }
+                  # Inline forms fire even when another segment runs a script file.
+                  - regex: '(^|[\s;|&(''"/])(python[0-9.]*|perl[0-9.]*|nodejs|node)\s+[''"]?(-[A-Za-z0-9]*[ceEp]|--eval|--print|-(\s|$)|-m\s*[''"]?json\.tool)'
+                  - regex: '(^|[\s;|&(''"/])(python[0-9.]*|perl[0-9.]*|nodejs|node)\s*([;|&)]|[''"]?$)'
+"""
+
 # ── secret-guard (reference only — secret-guard stays on regex) ─────────────
 # Content reader whose argument is a sensitive PATH (matched only as a `word`,
 # deliberately NOT as string_content). Retained for the corpus that documents
@@ -514,6 +592,7 @@ let guardRules*: Table[string, seq[string]] = {
   ],
   "secret": @[SecretReaderPath],
   "truncation": @[PipeTruncate],
+  "script": @[ScriptInterp],
 }.toTable
 
 proc rulesFor*(guard: string): seq[string] =

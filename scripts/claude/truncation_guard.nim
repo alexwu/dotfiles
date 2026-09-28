@@ -51,7 +51,8 @@ import ast_guard_rules
 
 const TimeoutSecs = 30
   ## Wall-clock cap on the classifier round-trip via `timeout(1)`. The default
-  ## local model is resident (always-on group), so 30s is ample; it also leaves
+  ## local model lives in the hot-path group, so it's usually resident and a
+  ## cold-load after 4h idle takes ~6s; 30s is ample either way. It also leaves
   ## headroom if routed to a cloud provider. On timeout the hook degrades to a deny.
 
 # Cheap pre-filter: skip commands that don't mention head or tail at all, so the

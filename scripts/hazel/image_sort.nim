@@ -17,8 +17,9 @@
 ## - -m, --model:  llama-swap model id passed to `llm-local -m` (positional model
 ##                 arg removed — pass `-m <id>` anywhere in the args). Defaults to
 ##                 gemma-4-26B-A4B-it — stock MoE, 14/14 in the bake-off and ~2x
-##                 faster than the 31B dense at identical accuracy. Kept always-on
-##                 (resident → no cold-load swap, which once wedged a call ~10min).
+##                 faster than the 31B dense at identical accuracy. In the hot-path
+##                 group: resident until 4h idle, so most calls skip the cold-load
+##                 swap that once wedged a call ~10min.
 ##                 Under strict-schema decoding the censorship never fires (the
 ##                 grammar forces a category), so it labels NSFW correctly without
 ##                 refusing. NOT a heretic: abliteration only hurt classification

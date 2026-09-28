@@ -420,6 +420,156 @@ suite "pipe-truncate":
       ],
     )
 
+# ── inline-script-guard (python / perl / node inline scripts) ──────────────
+suite "script-interp":
+  test "positives — every interpreter shape that isn't a file or tooling":
+    runCases(
+      "script",
+      [
+        Case(name: "python -c", cmd: "python3 -c 'print(1)'", fires: true),
+        Case(name: "perl -pi -e", cmd: "perl -pi -e 's/a/b/' f.txt", fires: true),
+        Case(name: "perl -ne", cmd: "perl -ne 'print if /x/' f.txt", fires: true),
+        Case(name: "node -e", cmd: "node -e 'console.log(1)'", fires: true),
+        Case(name: "uv run python -c", cmd: "uv run python -c 'print(1)'", fires: true),
+        Case(
+          name: "uv run --with",
+          cmd: "uv run --with httpx python3 -c 'print(1)'",
+          fires: true,
+        ),
+        Case(name: "abs path", cmd: "/usr/bin/python3 -c 'print(1)'", fires: true),
+        Case(name: "env wrapper", cmd: "env python3 -c 'print(1)'", fires: true),
+        Case(name: "timeout wrapper", cmd: "timeout 5 python3 -c 'x'", fires: true),
+        Case(name: "xargs wrapper", cmd: "xargs -I{} python3 -c 'x'", fires: true),
+        Case(name: "memo wrapper", cmd: "memo python3 -c 'x'", fires: true),
+        Case(name: "env-prefixed", cmd: "FOO=1 python3 -c 'x'", fires: true),
+        Case(name: "bundled -Bc", cmd: "python3 -Bc 'print(1)'", fires: true),
+        Case(name: "quoted flag", cmd: "python3 '-c' 'print(1)'", fires: true),
+        Case(name: "option operand", cmd: "python3 -W ignore -c 'x'", fires: true),
+        Case(name: "sh -c string", cmd: "bash -c \"python3 -c 'x'\"", fires: true),
+        Case(
+          name: "sh -c abs path", cmd: "bash -c '/usr/bin/python3 -c x'", fires: true
+        ),
+        Case(name: "sh -c nodejs", cmd: "bash -c 'nodejs -e x'", fires: true),
+        Case(name: "sh -c pipe target", cmd: "bash -c 'curl x | python3'", fires: true),
+        Case(
+          name: "sh -c quoted flag",
+          cmd: "bash -c 'python3 \"-c\" \"print(1)\"'",
+          fires: true,
+        ),
+        Case(name: "-m json.tool", cmd: "curl -s x | python3 -m json.tool", fires: true),
+        Case(name: "-m quoted json.tool", cmd: "python3 -m 'json.tool'", fires: true),
+        Case(name: "-mjson.tool", cmd: "python3 -mjson.tool", fires: true),
+        Case(name: "stdin-fed", cmd: "curl -s x | python3", fires: true),
+        Case(name: "stdin-fed -u", cmd: "cat x | python3 -u", fires: true),
+        Case(name: "stdin-fed wrapped", cmd: "cat x | env python3", fires: true),
+        Case(name: "stdin-fed wrapped dash", cmd: "cat x | env python3 -", fires: true),
+        Case(name: "stdin-fed timeout", cmd: "cat x | timeout 5 python3", fires: true),
+        Case(name: "stdin-fed env var", cmd: "cat x | env FOO=1 python3", fires: true),
+        Case(name: "lone dash", cmd: "python3 -", fires: true),
+        Case(name: "stdin redirect", cmd: "python3 < x.txt", fires: true),
+        Case(
+          name: "perl in subst",
+          cmd: "t=$(perl -MTime::HiRes=time -e 'print time')",
+          fires: true,
+        ),
+        Case(name: "piped perl -lne", cmd: "cat x | perl -lne 'print'", fires: true),
+        Case(name: "python heredoc", cmd: "python3 - <<'PY'\nprint(1)\nPY", fires: true),
+        Case(
+          name: "uv heredoc", cmd: "uv run python3 <<EOF\nprint(1)\nEOF", fires: true
+        ),
+      ],
+    )
+
+  test "positives — tooling / script-file exemptions can't be smuggled":
+    runCases(
+      "script",
+      [
+        Case(name: "-c then -m pytest", cmd: "python3 -c 'x' -m pytest", fires: true),
+        Case(name: "-c then --version", cmd: "python3 -c 'x' --version", fires: true),
+        Case(name: "python -v is verbose", cmd: "python3 -v -c 'x'", fires: true),
+        Case(name: "stdin-fed -v", cmd: "cat x | python3 -v", fires: true),
+        Case(
+          name: "sh -c file then -c",
+          cmd: "bash -c 'python3 tools/gen.py; python3 -c x'",
+          fires: true,
+        ),
+        Case(
+          name: "sh -c file then pipe target",
+          cmd: "bash -c 'python3 tools/gen.py && curl x | python3'",
+          fires: true,
+        ),
+        Case(
+          name: "sh -c file then json.tool",
+          cmd: "bash -c 'python3 tools/gen.py | python3 -m json.tool'",
+          fires: true,
+        ),
+      ],
+    )
+
+  test "decoys — script files, tooling, mentions must NOT fire":
+    runCases(
+      "script",
+      [
+        Case(name: "script file", cmd: "python3 scripts/foo.py --flag", fires: false),
+        Case(name: "script's own -m", cmd: "python3 script.py -m hello", fires: false),
+        Case(name: "script's own -c", cmd: "python3 script.py -c conf", fires: false),
+        Case(
+          name: "script's json.tool arg",
+          cmd: "python3 script.py json.tool",
+          fires: false,
+        ),
+        Case(
+          name: "script file + heredoc input",
+          cmd: "python3 script.py <<EOF\ninput\nEOF",
+          fires: false,
+        ),
+        Case(
+          name: "wrapped script's -c",
+          cmd: "uv run python3 script.py -c conf",
+          fires: false,
+        ),
+        Case(name: "-m pytest", cmd: "python3 -m pytest -q", fires: false),
+        Case(name: "-m pip", cmd: "python3 -m pip install x", fires: false),
+        Case(name: "-mvenv", cmd: "python3 -mvenv .venv", fires: false),
+        Case(name: "--version", cmd: "python3 --version", fires: false),
+        Case(name: "node --version", cmd: "node --version", fires: false),
+        Case(name: "uv run pytest", cmd: "uv run pytest -q", fires: false),
+        Case(name: "node file", cmd: "node build.js", fires: false),
+        Case(name: "node mjs + --help", cmd: "node dist/cli.mjs --help", fires: false),
+        Case(
+          name: "sh -c script file", cmd: "bash -c 'python3 tools/gen.py'", fires: false
+        ),
+        Case(
+          name: "herestring into file", cmd: "perl script.pl <<< \"$x\"", fires: false
+        ),
+        Case(name: "rg for python3", cmd: "rg -c python3 notes.md", fires: false),
+        Case(name: "fd -e py", cmd: "fd -e py python", fires: false),
+        Case(name: "echo mention", cmd: "echo \"use python3 -c here\"", fires: false),
+        Case(
+          name: "commit msg",
+          cmd: "git commit -m \"drop python3 -c usage\"",
+          fires: false,
+        ),
+        Case(name: "ruby stays out", cmd: "ruby -e 'puts 1'", fires: false),
+        Case(
+          name: "heredoc mentioning python",
+          cmd: "cat > notes.md <<'EOF'\nuse python3 -c for this\nEOF",
+          fires: false,
+        ),
+      ],
+    )
+
+  test "gaps — documented over-eager matches (cost: one classifier call)":
+    runCases(
+      "script",
+      [
+        Case(name: "env running echo", cmd: "env echo python3 -c x", fires: true),
+        Case(
+          name: "sh -c echo mention", cmd: "bash -c 'echo python3 hello'", fires: true
+        ),
+      ],
+    )
+
 # ── git-confirm: catastrophic parity (REQUIRED — gates ship) ────────────────
 # Asserts the AST catastrophic classification (firedCatastrophic, via ruleMeta)
 # never UNDER-marks vs the regex never-allow contract. Each command below maps

@@ -13,10 +13,10 @@
 ##                   (e.g. `Qwen3.5-9B`, `Qwen3.6-27B-heretic`). A trailing
 ##                   `:thinking` selects the thinking alias — NOT recommended
 ##                   here, this task wants a bare filename with no reasoning
-##                   trace. Defaults to `Qwen3.6-35B-A3B-heretic`: kept
-##                   resident in llama-swap's always-on group (zero cold-load
-##                   per Hazel fire) and uncensored (won't refuse to name an
-##                   NSFW input, unlike the censored small models).
+##                   trace. Defaults to `Qwen3.6-35B-A3B-heretic`: in
+##                   llama-swap's workhorse group (no cold-load while it holds
+##                   the slot) and uncensored (won't refuse to name an NSFW
+##                   input, unlike the censored small models).
 ##
 ## On success the original input is moved to Trash (via the `trash` CLI) or
 ## deleted if `trash` is not on PATH. HEIC/HEIF/JPEG inputs are converted to
