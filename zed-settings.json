@@ -7,6 +7,12 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "markdown_preview": {
+    "open_markdown_files_in_preview": true,
+    "font_family": "SF Pro Text",
+    "code_font_family": "FiraCode Nerd Font Mono",
+    "font_size": 14.0
+  },
   "proxy": "",
   "toolbar": {
     "code_actions": true

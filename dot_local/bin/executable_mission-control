@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+# mission-control — unified "everything alive" glance: Claude/Codex agents, the
+# zmx shells they live in, and wezterm workspace context. Sorts sessions that
+# are WAITING on you to the top.
+#
+# v1 PROTOTYPE (bash; Nim port once the format's locked). Sources:
+#   claude agents --json   -> agent pid/cwd/status (busy|waiting|idle)
+#   ps eww -p <pid>        -> ZMX_SESSION glue (which shell an agent lives in)
+#   zmx list               -> persistent shells (name/clients/dir)
+#   wezterm cli list       -> workspace per cwd (best-effort)
+#   ~/.codex/sessions/...   -> codex (no live-status CLI; mtime = liveness)
+#
+# Pins TMPDIR to the launchd GUI temp so zmx/wezterm resolve the real sockets
+# regardless of launch context (Claude namespaces TMPDIR; GUI apps don't).
+
+set -uo pipefail
+export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}")"
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+within_min=90
+watch_secs=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --within)
+      within_min="${2:-90}"
+      shift 2
+      ;;
+    --watch)
+      if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
+        watch_secs="$2"
+        shift 2
+      else
+        watch_secs=2
+        shift 1
+      fi
+      ;;
+    *) shift ;;
+  esac
+done
+
+b=$'\e[1m'
+dim=$'\e[2m'
+red=$'\e[31m'
+grn=$'\e[32m'
+ylw=$'\e[33m'
+blu=$'\e[34m'
+mag=$'\e[35m'
+cyn=$'\e[36m'
+rst=$'\e[0m'
+
+git_branch() { git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null || true; }
+zmx_of() { ps eww -p "$1" 2>/dev/null | rg -o -m1 'ZMX_SESSION=[^ ]+' | cut -d= -f2 || true; }
+fmt_idle() {
+  local s=$1
+  if ((s < 60)); then
+    printf '%ds' "$s"
+  elif ((s < 3600)); then
+    printf '%dm' $((s / 60))
+  else
+    printf '%dh%dm' $((s / 3600)) $(((s % 3600) / 60))
+  fi
+}
+
+collect() {
+  local now
+  now=$(date +%s)
+  local hosted="" # zmx names already hosting a tracked agent (dedupe orphans)
+
+  # Claude agents — real status, cross-linked to their zmx shell.
+  while IFS=$'\t' read -r pid status cwd; do
+    [[ -z "${pid:-}" ]] && continue
+    local zmx prio
+    zmx=$(zmx_of "$pid")
+    [[ -n "$zmx" ]] && hosted+="${zmx}"$'\n'
+    case "$status" in waiting) prio=0 ;; busy) prio=1 ;; *) prio=3 ;; esac
+    printf '%d\t%s\tcc\t%s\t%s\t%s\t%s\n' "$prio" "$now" "$cwd" "$(git_branch "$cwd")" "$status" "$zmx"
+  done < <(claude agents --json 2>/dev/null | jaq -r '.[] | [(.pid|tostring), .status, .cwd] | @tsv')
+
+  # Codex — file-based liveness (no live-status CLI).
+  while read -r f; do
+    [[ -z "$f" ]] && continue
+    local m meta cwd branch
+    m=$(stat -f '%m' "$f" 2>/dev/null) || continue
+    meta=$(awk 'NR==1{print; exit}' "$f" | jaq -r '[(.payload.cwd // ""), (.payload.git.branch // "")] | @tsv' 2>/dev/null)
+    cwd=${meta%%$'\t'*}
+    branch=${meta#*$'\t'}
+    printf '%d\t%s\tcx\t%s\t%s\tidle:%d\t\n' 2 "$m" "$cwd" "$branch" $((now - m))
+  done < <(fd -e jsonl . "$HOME/.codex/sessions" --changed-within "${within_min}min" 2>/dev/null)
+
+  # Orphan zmx shells — running, not hosting a tracked agent.
+  while IFS=$'\t' read -r name clients dir; do
+    [[ -z "${name:-}" ]] && continue
+    if [[ -n "$hosted" ]] && printf '%s' "$hosted" | rg -qxF "$name"; then continue; fi
+    local prio st
+    if [[ "${clients:-0}" == 0 ]]; then
+      prio=5
+      st="detached"
+    else
+      prio=4
+      st="shell"
+    fi
+    printf '%d\t%s\tzmx\t%s\t\t%s\t%s\n' "$prio" "$now" "$dir" "$st" "$name"
+  done < <(zmx list 2>/dev/null | awk -F'\t' '{
+      delete a; for (i=1;i<=NF;i++){ n=index($i,"="); a[substr($i,1,n-1)]=substr($i,n+1) }
+      if (a["name"] != "") print a["name"] "\t" a["clients"] "\t" a["start_dir"]
+    }')
+}
+
+render() {
+  # wezterm cwd -> workspace (best-effort enrichment)
+  declare -A WS
+  while IFS=$'\t' read -r wcwd ws; do
+    [[ -z "${wcwd:-}" ]] && continue
+    wcwd=${wcwd#file://}
+    wcwd="/${wcwd#*/}"
+    wcwd=${wcwd%/}
+    [[ -n "$wcwd" && -z "${WS[$wcwd]:-}" ]] && WS[$wcwd]="$ws"
+  done < <(wezterm cli list --format json 2>/dev/null | jaq -r '.[] | "\(.cwd)\t\(.workspace)"' 2>/dev/null)
+
+  local rows
+  rows=$(collect | sort -t$'\t' -k1,1n -k2,2nr)
+  printf '%s%s mission control%s\n' "$b" "$cyn" "$rst"
+  if [[ -z "$rows" ]]; then
+    printf '%s   (nothing alive)%s\n' "$dim" "$rst"
+    return
+  fi
+
+  while IFS=$'\t' read -r prio rec kind cwd branch state host; do
+    [[ -z "${kind:-}" ]] && continue
+    local dot tag proj st_raw st_col host_col wstag
+    proj=$(basename "${cwd:-?}")
+    wstag=""
+    [[ -n "${WS[${cwd%/}]:-}" ]] && wstag="${dim} ·${WS[${cwd%/}]}${rst}"
+    case "$kind" in
+      cc)
+        tag="${mag}cc ${rst}"
+        host_col="${dim}${host}${rst}"
+        case "$state" in
+          waiting)
+            dot="${red}${b}●${rst}"
+            st_raw=waiting
+            st_col="$red"
+            ;;
+          busy)
+            dot="${ylw}●${rst}"
+            st_raw=busy
+            st_col="$ylw"
+            ;;
+          *)
+            dot="${dim}○${rst}"
+            st_raw=idle
+            st_col="$dim"
+            ;;
+        esac
+        ;;
+      cx)
+        tag="${cyn}cx ${rst}"
+        host_col=""
+        local idle=${state#idle:}
+        ((idle < 20)) && dot="${grn}●${rst}" || dot="${dim}○${rst}"
+        st_raw=$(fmt_idle "$idle")
+        st_col="$dim"
+        ;;
+      zmx)
+        tag="${blu}zmx${rst}"
+        host_col="${dim}${host}${rst}"
+        if [[ "$state" == detached ]]; then
+          dot="${dim}◦${rst}"
+          st_raw=detached
+          st_col="$dim"
+        else
+          dot="${blu}●${rst}"
+          st_raw=shell
+          st_col="$blu"
+        fi
+        ;;
+    esac
+    printf '%s %s %-15s %s%-11s%s %s%-8s%s %s%s\n' \
+      "$dot" "$tag" "${proj:0:15}" "$dim" "${branch:0:11}" "$rst" \
+      "$st_col" "$st_raw" "$rst" "$host_col" "$wstag"
+  done <<<"$rows"
+}
+
+if ((watch_secs > 0)); then
+  # NOTE(alexwu): home+overwrite redraw (\e[H + per-line \e[K) blanks the pane
+  # inside zellij for reasons not yet pinned — needs in-pane debugging. Using
+  # the simple clear-then-render loop (minor flicker) until that's solved.
+  while :; do
+    printf '\e[H\e[2J'
+    render
+    sleep "$watch_secs"
+  done
+else
+  render
+fi

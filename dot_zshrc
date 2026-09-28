@@ -190,6 +190,11 @@ then
   source $HOME/.zsh/claude-sessions.zsh
 fi
 
+if [[ -r $HOME/.zsh/claude-persona.zsh ]]
+then
+  source $HOME/.zsh/claude-persona.zsh
+fi
+
 if (( $+commands[carapace] ))
 then
   source <(carapace _carapace zsh)

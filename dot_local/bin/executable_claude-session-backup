@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# claude-session-backup — additive mirror of this machine's Claude Code
+# transcripts into the Syncthing tree, so Claude's own retention sweep can
+# never be the last word on what history exists.
+#
+# WHY THIS EXISTS: `cleanupPeriodDays` (default 30) deletes transcripts older
+# than N days, and the sweep runs far more often than daily — any session
+# alive 10+ minutes triggers one. A 30-day default silently ate 2026-03-19
+# through 2026-07-20 before anyone noticed.
+#
+# THE TWO RULES, and they are the whole point:
+#   --update    newer source overwrites older destination, never the reverse
+#   NO --delete a file removed from ~/.claude stays in the archive forever
+# Adding --delete would propagate the exact deletions this guards against.
+#
+# PER-HOST DESTINATION is load-bearing, not tidiness: ~/Sync/macOS replicates
+# to the mini, which is also a Mac that could run this. Two hosts writing one
+# path is how you get .sync-conflict-* files.
+set -euo pipefail
+
+src="$HOME/.claude"
+sync_root="$HOME/Sync/macOS"
+dest="$sync_root/Backup/ClaudeSessions/$(hostname -s)"
+
+# Syncthing marks folders it manages with .stfolder. Without it we would be
+# writing to a plain local directory that never replicates anywhere — a
+# backup that silently isn't one.
+if [ ! -d "$sync_root/.stfolder" ]; then
+  echo "$sync_root is not a Syncthing folder (.stfolder missing) — refusing" >&2
+  exit 1
+fi
+
+# Apple ships openrsync (protocol 29); use homebrew's for real --update/--info.
+rsync=/opt/homebrew/bin/rsync
+[ -x "$rsync" ] || { echo "no homebrew rsync at $rsync" >&2; exit 1; }
+
+mkdir -p "$dest/projects"
+
+# Exit 24 is "source files vanished during transfer" — routine here, because
+# Claude's cleanup can delete a transcript mid-run. It is not a failure.
+run_rsync() {
+  local rc=0
+  "$rsync" -a --update --exclude '.DS_Store' "$@" || rc=$?
+  [ "$rc" -eq 0 ] || [ "$rc" -eq 24 ] || return "$rc"
+}
+
+run_rsync "$src/projects/" "$dest/projects/"
+if [ -f "$src/history.jsonl" ]; then run_rsync "$src/history.jsonl" "$dest/"; fi
+
+# Receipt: lets a staleness check notice the job stopped running at all.
+printf '%s %s %s\n' \
+  "$(date +%s)" "$(date -Iseconds)" \
+  "$(fd -e jsonl -tf . "$dest/projects" 2>/dev/null | wc -l | tr -d ' ')" \
+  > "$dest/.last-backup"
+
+cat "$dest/.last-backup"

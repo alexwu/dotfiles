@@ -1,12 +1,15 @@
 default_permissions = "dev-default"
 approval_policy = "on-request"
-model = "gpt-5.5"
+model = "gpt-6-astra"
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
+model_context_window = 872000
 model_reasoning_effort = "medium"
 personality = "friendly"
 
 notify = ["/Users/jamesbombeelu/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+service_tier = "default"
+plan_mode_reasoning_effort = "high"
 
 [tools]
 web_search = true
@@ -71,21 +74,41 @@ args = ["-y", "@shopify/dev-mcp@latest"]
 
 [mcp_servers.node_repl]
 args = []
-command = "/Applications/Codex.app/Contents/Resources/node_repl"
+command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
 startup_timeout_sec = 120
 
 [mcp_servers.node_repl.env]
 NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
-NODE_REPL_NODE_MODULE_DIRS = ""
-NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/node"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/jamesbombeelu/.codex"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/jamesbombeelu/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 CODEX_HOME = "/Users/jamesbombeelu/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "496c7b3cb95b4bc20cff49b513150606e0da0000c92bf752206bee5a6c248423"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
-BROWSER_USE_MARKETPLACE_NAME = "openai-bundled"
-NODE_REPL_UNTRUSTED_ENV_ALLOWLIST = "BROWSER_USE_MARKETPLACE_NAME"
-SKY_CUA_SERVICE_PATH = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/Codex Computer Use.app"
-CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
+BROWSER_USE_TINYSKY_ENABLED = "1"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = ""
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.917.51856"
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/browser/26.917.51856/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
+SKY_CUA_SERVICE_PATH = "/Users/jamesbombeelu/.codex/computer-use/Codex Computer Use.app"
+CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
+
+[mcp_servers.funes]
+command = "funes"
+args = ["mcp"]
+
+[mcp_servers.funes.tools.recall]
+approval_mode = "approve"
+
+[mcp_servers.funes.tools.get]
+approval_mode = "approve"
+
+[mcp_servers.computer-use]
+command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+args = ["mcp"]
+cwd = "."
+enabled = false
 
 [plugins."github@openai-curated"]
 enabled = true
@@ -94,9 +117,6 @@ enabled = true
 enabled = true
 
 [plugins."build-ios-apps@openai-curated"]
-enabled = true
-
-[plugins."computer-use@openai-bundled"]
 enabled = true
 
 [plugins."documents@openai-primary-runtime"]
@@ -124,7 +144,7 @@ enabled = true
 enabled = true
 
 [plugins."superpowers@openai-curated"]
-enabled = true
+enabled = false
 
 [plugins."supabase@openai-curated"]
 enabled = true
@@ -168,24 +188,58 @@ trust_level = "trusted"
 [projects."/Users/jamesbombeelu/Code/cleverific/eo-full"]
 trust_level = "trusted"
 
+[projects."/Users/jamesbombeelu/Code/lulu-agent"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/aerospace-manager"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/ws3"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-send-to-device"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/ws9"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/ws7"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-feeds"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Documents/Codex/2026-07-23/realtime-voice-chat"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/lulu-tools"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Containers"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/ws10"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/cleverific/ws12"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
-last_updated = "2026-05-27T03:42:05Z"
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-05-26T22:43:18Z"
 source_type = "local"
 source = "/Users/jamesbombeelu/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
-
-[tui.model_availability_nux]
-"gpt-5.5" = 4
 
 [notice]
 hide_rate_limit_model_nudge = true
 
 [notice.external_config_migration_prompts]
-home_last_prompted_at = 1779296977
+home_last_prompted_at = 1780424938
 
 [notice.external_config_migration_prompts.project_last_prompted_at]
 "/Users/jamesbombeelu" = 1778209978
@@ -209,9 +263,11 @@ trusted_hash = "sha256:56acfe911eec53753207580bfdaafb59b3e5e785942f45efa0a5b9c61
 
 [hooks.state."/Users/jamesbombeelu/Code/lulu-code/.codex/hooks.json:pre_compact:0:0"]
 trusted_hash = "sha256:241c704df659f6ba9884f40f24bdcfb0e567b9120c452cb153d85fb59e732047"
+enabled = false
 
 [hooks.state."/Users/jamesbombeelu/Code/lulu-code/.codex/hooks.json:session_start:0:0"]
 trusted_hash = "sha256:2ea033e883d96bf17502eabfcdd69d4cfa57aebfbe2677f23149847e97e126b0"
+enabled = false
 
 [hooks.state."/Users/jamesbombeelu/Code/lulu-nvim/.codex/hooks.json:pre_compact:0:0"]
 trusted_hash = "sha256:241c704df659f6ba9884f40f24bdcfb0e567b9120c452cb153d85fb59e732047"
@@ -238,17 +294,56 @@ trusted_hash = "sha256:b1c480c21f5c76070e825e1fa5ac9a9a7a6d8690882bd7ef5ebc80a68
 trusted_hash = "sha256:f00180897a06e173049baa762c6f69e9d562b49910e059f40f4d2b39cbf54b31"
 
 [hooks.state."/Users/jamesbombeelu/.codex/hooks.json:session_start:0:1"]
-trusted_hash = "sha256:b44996d8ed987a12cd099b6fda1512c56e59caa3b23e0dab314f5c488e1b8acd"
+trusted_hash = "sha256:807ffa51b09c69c219f9005fa5e590aa19e151f96d60fb982a8cf86ce1dcb7f9"
 
 [hooks.state."/Users/jamesbombeelu/.codex/hooks.json:user_prompt_submit:0:0"]
-trusted_hash = "sha256:c4c7cdefcc17f2a4e680060202215f2e8b861956c3f547314733fe99f05270bc"
+trusted_hash = "sha256:8789c6112644e223f72c593c37bd5cc249d830ee761ebf4a9cf4024ea8196cd3"
 
 [hooks.state."/Users/jamesbombeelu/.codex/hooks.json:stop:0:0"]
 trusted_hash = "sha256:776953442d19872a1c40aa0216616b014e9642a366b3cac23451de70b5ce1b16"
+enabled = true
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-send-to-device/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-send-to-device/.codex/hooks.json:post_compact:0:0"]
+trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-dictate/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:c5a4137b81937925f852dd486b228ed10534c6277760d1a6dd801f65bf2a5f26"
+
+[hooks.state."/Users/jamesbombeelu/.codex/hooks.json:stop:1:0"]
+trusted_hash = "sha256:b0af4d43341c020c4910558e7114d44c10573a5e932f5f220c64c75d00576c19"
+
+[hooks.state."/Users/jamesbombeelu/Code/aerospace-manager/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
+
+[hooks.state."/Users/jamesbombeelu/Code/aerospace-manager/.codex/hooks.json:post_compact:0:0"]
+trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
+
+[hooks.state."/Users/jamesbombeelu/Code/aerospace-manager/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd42025d51a9"
+
+[hooks.state."/Users/jamesbombeelu/Code/aerospace-manager/.codex/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-app/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-app/.codex/hooks.json:post_compact:0:0"]
+trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-app/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd42025d51a9"
+
+[hooks.state."/Users/jamesbombeelu/Code/lulu-app/.codex/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
 
 [desktop]
-conversationDetailMode = "STEPS_EXECUTION"
-default-service-tier = "priority"
+conversationDetailMode = "STEPS_PROSE"
+followUpQueueMode = "queue"
+dock-icon-preference = "codex-system"
+realtimeVoiceScreenContextEnabled = true
 
 [desktop.open-in-target-preferences]
 global = "ghostty"
@@ -256,8 +351,32 @@ global = "ghostty"
 [desktop.open-in-target-preferences.perPath]
 "/Users/jamesbombeelu/Code/lulu-dictate" = "ghostty"
 
+[desktop.appearanceLightChromeTheme]
+accent = "#339cff"
+contrast = 45
+ink = "#1a1c1f"
+opaqueWindows = false
+surface = "#ffffff"
+
+[desktop.appearanceLightChromeTheme.fonts]
+
+[desktop.appearanceLightChromeTheme.semanticColors]
+diffAdded = "#00a240"
+diffRemoved = "#ba2623"
+skill = "#924ff7"
+
 [tui]
-status_line = ["model-with-reasoning", "current-dir", "model", "project-name", "git-branch", "context-remaining", "five-hour-limit"]
+status_line = ["model-with-reasoning", "current-dir", "model", "project-name", "git-branch", "context-remaining", "five-hour-limit", "reasoning", "permissions", "weekly-limit", "context-window-size"]
+status_line_use_colors = true
+screen_reader_detection_done = true
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+"gpt-5.6-sol" = 4
+gpt-6-astra = 4
+
+[shell_environment_policy.set]
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
 
 # >>> nono:always-further-codex >>>
 [marketplaces.always-further]
@@ -267,6 +386,27 @@ source = "/Users/jamesbombeelu/.codex/plugins/marketplaces/always-further"
 [plugins."nono@always-further"]
 enabled = true
 
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
 [plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."build-macos-apps@openai-curated-remote"]
 enabled = true
 # <<< nono:always-further-codex <<<
