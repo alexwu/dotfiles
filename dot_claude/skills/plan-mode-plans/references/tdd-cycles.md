@@ -64,7 +64,7 @@ Both RED and GREEN need explicit verification commands with expected output. The
 - Run the test again after implementation and confirm it **passes**
 
 ### 3. Minimal implementation only
-The GREEN snippet should be the simplest code that makes the test pass. Don't add features, error handling, or refactoring that isn't required by the current test. Future cycles handle those.
+The GREEN snippet should be the simplest code that makes the test pass. Don't add features, error handling, or refactoring that isn't required by the current test. Future cycles handle those, and those future cycles must exist in this plan's Steps or as Scope Ledger rows. "A later cycle" that isn't written down never runs.
 
 ### 4. One behavior per cycle
 Each cycle tests ONE thing. If you find yourself writing "and" in the cycle name, split it.
@@ -127,7 +127,7 @@ The base skill's required **Verification** section lives at the *end* of the pla
 | Test that can't actually fail | If the test would pass without your implementation, it tests nothing. Write a test that exercises new behavior. |
 | Cycle tests multiple behaviors | Split into separate cycles. One assertion focus per cycle. |
 | No verify commands | Every RED and GREEN needs a runnable command with expected output |
-| GREEN implementation is over-engineered | Write the dumbest code that passes. Refactor later. |
+| GREEN implementation is over-engineered | Write the dumbest code that passes. Refactor in this cycle's refactor step or in a named later cycle. |
 | Skipping commit between cycles | Each cycle = one commit. This is the checkpoint. |
 | Using mocks without user approval | No mocks unless the user explicitly says so. Check if the project uses request recording (VCR, OHHTTPStubs, etc.) instead. Ask during Phase 3 if unsure. |
 | Per-cycle test verification treated as a substitute for final CodeRabbit review | They're complementary. Cycles verify behavior; the final `coderabbit review --agent` pass catches cross-cutting issues (security, perf, anti-patterns) the per-test asserts can't see. |

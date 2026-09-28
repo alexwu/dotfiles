@@ -20,7 +20,7 @@ Beyond the universal Phase 1 in SKILL.md, also choose a decomposition strategy a
 | **By concern** | Cross-cutting changes | core-logic, error-handling, migration, documentation |
 | **By dependency chain** | Ordered work with clear prerequisites | schema-first → API → client → UI |
 
-**Aim for 3-5 teammates.** Each teammate should have a clear, independent exploration scope. If you can't define 3 independent areas, fall back to single-session (don't load this reference; use `single-session.md` only).
+**Aim for 3-5 teammates.** Each teammate should have a clear, independent exploration scope. If you can't define 3 independent areas, fall back to single-session (don't load this reference; use `single-session.md` only). If the request needs more than 5 areas, don't drop areas to hit the number: plan the first set here and give the rest `to file: next plan` ledger rows.
 
 For each teammate, define:
 - **Name/label** — descriptive, e.g. "data-layer-explorer"
@@ -126,7 +126,12 @@ The master index is authored by the lead and contains the sections below, in thi
 # [Plan Title]
 
 ## Goal
-[One sentence. What does "done" look like?]
+[One sentence. What does "done" look like for the whole request?]
+
+## Requested Scope
+> [The user's words, verbatim — one blockquote per turn]
+
+Origin: [direct request / super-brainstorming recap / issue link]
 
 ## Context
 - **Issue:** [Link to GitHub issue, ticket, or description of the request — omit if none]
@@ -170,6 +175,15 @@ that don't fit the Decisions table. Omit if empty.
 
 ## Approach
 [2-4 paragraphs — how all sections fit together, implementation order, integration points]
+
+## Scope Ledger
+| # | Item | Source | Home | Status |
+|---|---|---|---|---|
+| 1 | [one deliverable] | user: "[their words]" | Section [N] | planned |
+| 2 | [a raised item] | [brainstorm / exploration / audit] | to file: bead | provisional |
+
+The ledger lives only in `index.md`. Section files keep their own `## Scope`
+heading, which describes the teammate's area, not the request.
 
 ## Synthesis
 [Cross-cutting decisions and conflict resolutions. What the lead decided when teammates disagreed or areas overlapped.]
@@ -249,7 +263,7 @@ Beyond the universal Phase 5 in SKILL.md:
 
 ## Phase 6 Note: Post-Approval Handoff
 
-The base SKILL.md owns Phase 6 (post-approval, lead-only — teammates are already shut down). For a beads repo, the `## Beads to File` section lives in `index.md`; file the issues per `references/beads-handoff.md`, write IDs back into `index.md`, then honor the compaction choice. Don't start implementing until the handoff is done and, if the user chose to compact, they've come back.
+The base SKILL.md owns Phase 6 (post-approval, lead-only — teammates are already shut down). The Scope Ledger and, for a beads repo, the `## Beads to File` section live in `index.md`. File every provisional row per SKILL.md Phase 6, write the IDs back into `index.md`, run `check-plan --filed <plan-dir>`, then honor the compaction choice. Don't start implementing until the handoff is done and, if the user chose to compact, they've come back.
 
 ## Self-Containment Test (multi-file additions)
 

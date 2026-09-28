@@ -2,9 +2,13 @@
 
 **Conditional.** Everything here applies ONLY when the repo uses beads.
 
-**Detection:** a `.beads/` directory at the repo root (`bd` walks ancestors to find
-it). No `.beads/` → skip all of this, silently. Don't run `bd`, don't add a Beads
-section to the plan, don't mention beads in the handoff.
+**Detection:** run `bd where`. It's read-only and prints the resolved `.beads/`
+directory, issue prefix, and database. Exit 0 → this is a beads repo; note the
+printed prefix. Non-zero, or `bd` missing → no beads, and SKILL.md Phase 3 asks
+where off-plan ledger rows go instead (`scope-ledger.md` → "Where filed rows
+go"). Never test for `.beads/` yourself: `bd` walks parent directories, and in
+Cleverific `eo` workspaces the store sits at the workspace root, one level above
+the repo worktree (`ws6/.beads/` serves `ws6/eo`).
 
 Beads (`bd`) is a graph issue tracker for coding agents: issues have hash IDs like
 `bd-a1b2`, form a dependency graph (`blocks`, `discovered-from`, `parent-child`, …),
@@ -28,8 +32,10 @@ run there. The work splits:
 
 ## Plan section (drafted in Phase 4)
 
-Add this to the plan ONLY when `.beads/` exists. Omit the whole section for a beads
-repo whose plan is too trivial to warrant issues.
+Add this to the plan ONLY when `bd where` exits 0. Every `to file: bead` and
+`to file: next plan` row in the Scope Ledger becomes a row here. Use the ledger's
+Item as the bead title so the write-back is mechanical. Omit the section only when
+the ledger has no off-plan rows and the plan is too small to track as issues.
 
 ```markdown
 ## Beads to File
@@ -77,7 +83,9 @@ bd list --json
 
 Then **write the captured IDs back into the plan's `## Beads to File` table** — edit
 the Bead column to `bd-a1b2 — <title>` — so the implementing session can
-`bd update <id> --claim` and `bd close <id> --reason "…"` as it goes.
+`bd update <id> --claim` and `bd close <id> --reason "…"` as it goes. Rewrite the
+matching Scope Ledger rows too: Home `bd <id>`, Status `filed`. Then run
+`check-plan --filed <plan>`; it fails while any row still reads `to file:`.
 
 **Dependency direction is the #1 trap.** `bd dep add A B` = "A depends on B" = "B
 blocks A" = do B first. `bd create` also accepts inline `--deps blocks:<id>`, but its

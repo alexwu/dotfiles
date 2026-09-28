@@ -12,6 +12,8 @@ Write specific, actionable, **self-contained** plans in plan mode. The plan must
 
 **Core principle:** Explore first, plan second. If you haven't read the files, you can't plan the changes. If the context isn't in the plan, it doesn't survive context clearing.
 
+**Plan the whole request.** The job is to structure everything the user asked for, never to find its smallest piece. A feature can take several phases, several plans, or several agents; that's normal. What it can't do is lose an item on the way. Every requested item gets a row in the plan's Scope Ledger with a real Home (`references/scope-ledger.md`), and "later" isn't a Home.
+
 ## Variant Selection (read FIRST)
 
 This skill covers four variants. Pick based on the task shape, then load the matching reference files alongside this SKILL.md.
@@ -29,6 +31,8 @@ How to decide:
 
 If you're unsure, default to Single. Switch variants mid-planning if the task shape changes — it's cheaper to reload references than to write the wrong kind of plan.
 
+The variant decides **how** the request gets planned, never **how much** of it. If the whole request doesn't fit one session's plan, don't trim the request to fit: plan the first slice here and give every later slice a ledger row reading `to file: next plan`. Phase 6 then files those slices or goes straight back into plan mode for the next one.
+
 ## Process Flow
 
 1. **Identify scope** (Phase 1).
@@ -36,7 +40,7 @@ If you're unsure, default to Single. Switch variants mid-planning if the task sh
 3. **Draft** the plan and write it to the plan file (Phase 4). A draft that isn't specific enough sends you back to exploration.
 4. **Audit** in parallel (Codex + Opus escalation), revise, and re-audit at most once. Then record the outcome and run `check-plan --fix` until it passes (Phase 4.5).
 5. **Ask the compaction question**, then call `ExitPlanMode` (Phase 5).
-6. **Post-approval handoff**: file beads and honor the compaction choice before any implementation (Phase 6).
+6. **Post-approval handoff**: file every provisional ledger row, pass `check-plan --filed`, and honor the compaction choice before any implementation (Phase 6).
 
 ## Phase 1: Identify Scope
 
@@ -44,6 +48,7 @@ Before reading anything, state:
 - **What** needs to change (feature/fix/refactor)
 - **Where** it likely lives (educated guess from project structure)
 - **What you don't know** yet (explicit unknowns)
+- **What the user asked for, verbatim.** Quote their actual words; don't summarize them. In Claude Code, `convo last-user -n <N>` prints the last N typed user messages. On other hosts, copy the turns. These quotes become the plan's `## Requested Scope`, and every distinct thing they ask for becomes a Scope Ledger row. When `super-brainstorming` handed you a recap, carry its original ask and its ledger rows in unchanged.
 
 **This skill turns a settled design into a file-level plan.** It assumes the goal, the architecture (components, source of truth, interfaces), the build sequence, and the non-goals are already decided. If they aren't, run `super-brainstorming` first; a buildable-but-undesigned idea ("a clipboard-history app with one source of truth and multiple clients") belongs there. Brainstorming hands its settled design here, and you fold that recap into Goal / Context / Decisions / Approach instead of re-deriving it. Phase 3 clarification is for code-level ambiguities that exploration surfaces, not for "what's the architecture".
 
@@ -58,7 +63,7 @@ Before reading anything, state:
 5. **Find tests** — what existing test patterns and infrastructure exist?
 6. **Fetch external references** — if the task involves a library, API, or tool, fetch the relevant docs and inline key syntax/signatures into the plan. Do NOT assume the executing session will "just look it up"
 7. **Link the origin** — find the GitHub issue, PR, or conversation that motivated this work
-8. **Sketch the beads breakdown (beads repos only)** — if a `.beads/` directory exists at the repo root, decompose the work into beads issues (with blocked-by dependencies) while you have full context. This is read-only here: no `bd` calls yet — you draft them into the plan (Phase 4) and file them in the post-approval handoff (Phase 6). Skip entirely for repos without `.beads/`. See `references/beads-handoff.md`.
+8. **Find the tracker.** Run `bd where`. It's read-only and prints the resolved `.beads/` directory and issue prefix. Don't look for `.beads/` yourself: `bd` searches parent directories, and in `eo` workspaces the store sits one level above the repo worktree. If it exits 0, decompose the work into beads issues (with blocked-by dependencies) while you have full context. Draft them into the plan in Phase 4 and file them in Phase 6; no `bd create` during planning. If it fails, the repo has no beads, and Phase 3 asks where off-plan ledger rows should go (`references/scope-ledger.md` → "Where filed rows go"). See `references/beads-handoff.md`.
 
 **Use parallel subagents** for independent exploration tasks (e.g., searching for types AND finding test files AND fetching library docs simultaneously). Prefer the focused explorers over `general-purpose`: `code-explorer` for local-codebase research, `github-explorer` for GitHub repos (code, issues, PRs, releases), `web-explorer` for library/framework/API docs and general web research. Each has tighter tool allowlists and discipline baked into its system prompt.
 
@@ -84,12 +89,13 @@ Before reading anything, state:
 - **Ambiguities** — anything with multiple valid interpretations ("should this be a new component or extend the existing one?")
 - **Trade-offs you discovered** — present options with pros/cons from what you found in the code ("the codebase uses pattern X for similar things, but pattern Y might be cleaner here — preference?")
 - **Assumptions you're about to make** — state them explicitly and ask if they're correct ("I'm assuming we want to keep backward compatibility with the v1 API — right?")
-- **Scope questions** — things that could be in or out ("should this also handle the edge case where X? or keep it simple for now?")
+- **Scope questions** — ask **where** an item goes, never **whether** it stays. "X turned out to need a schema migration. Same plan (a new phase), a second plan right after this one, or a filed issue?" Every option keeps X somewhere. If you think X should be cut, say why and let the user drop it in their own words; that quote is the only thing that closes its ledger row as `dropped`.
+- **Where off-plan rows get filed** — when `bd where` failed in Phase 2, ask once where this repo's off-plan ledger rows should go (`references/scope-ledger.md` → "Where filed rows go"), and record the answer under User-Confirmed Decisions.
 
 **How to ask:**
 - Use AskUserQuestion with concrete options informed by your exploration
 - One question at a time — don't dump a wall of questions
-- Lead with your recommendation when you have one
+- Lead with your recommendation on technical trade-offs. On scope, present the homes neutrally: a recommendation to defer is exactly the reflex that shrinks features
 - Keep going until you're confident you understand the intent
 
 **Before moving to Phase 4**, check: "Am I about to put anything in a 'Risks' or 'Open Questions' section that I could resolve right now by asking?" If yes, ask it here. The Risks section in the plan should only contain things that are genuinely unknowable — not things you were too lazy to clarify.
@@ -100,7 +106,10 @@ Carry every confirmed answer into the Decisions table in Phase 4. It records the
 
 ### Required Sections
 
-Every plan MUST include these sections, in this order. `check-plan` enforces the order of the required ones: Goal, Context, Decisions, Files Affected, Approach, Risks, Verification. Bracketed lines are placeholders: replace each one, or drop it along with its optional section.
+Every plan MUST include these sections, in this order. `check-plan` enforces the order of the required ones: Goal, Requested Scope, Context, Decisions, Files Affected, Approach, Scope Ledger, Risks, Verification. It also validates every Scope Ledger row's Home. Bracketed lines are placeholders: replace each one, or drop it along with its optional section.
+
+- **Requested Scope** quotes the user's request verbatim, one blockquote per turn. It's the yardstick the escalation audit measures the plan against, so it must be the user's words, not a summary.
+- **Scope Ledger** gives every requested or raised item a row with a Home. Format and allowed Homes are in `references/scope-ledger.md`.
 
 - **Documentation Referenced** links every external doc, API reference, or library README consulted during exploration. It's the breadcrumb trail when an API changes or something doesn't work as expected.
 - **Skills & Tools** names what the executing session should reach for. A fresh session won't have the planning context that made these choices obvious.
@@ -111,7 +120,14 @@ Every plan MUST include these sections, in this order. `check-plan` enforces the
 # [Plan Title]
 
 ## Goal
-[One sentence. What does "done" look like?]
+[One sentence. What does "done" look like for the whole request?]
+
+## Requested Scope
+> [The user's words, verbatim — one blockquote per turn]
+
+> [Another turn, verbatim]
+
+Origin: [direct request / super-brainstorming recap / issue link]
 
 ## Context
 - **Issue:** [Link to GitHub issue, ticket, or description of the request — omit if none]
@@ -147,6 +163,12 @@ Every plan MUST include these sections, in this order. `check-plan` enforces the
 ## Approach
 [2-4 paragraphs max. HOW you'll implement this, referencing actual code structures
 you found during exploration. Name the functions, types, and patterns involved.]
+
+## Scope Ledger
+| # | Item | Source | Home | Status |
+|---|---|---|---|---|
+| 1 | [one deliverable] | user: "[their words]" | Steps [N-M] | planned |
+| 2 | [a raised item] | [brainstorm / exploration / audit] | to file: bead | provisional |
 
 ## Key Syntax & Patterns
 [Inline the actual API signatures, code patterns, or syntax discovered during
@@ -273,11 +295,11 @@ The two audits answer different questions. Codex asks "is this plan technically 
 
 **Procedure:**
 
-1. Compose the prompts per `references/audit-prompts.md` — that file owns the (variant × TDD) → file composition table and the TDD-additions renumbering rules.
+1. Compose the prompts per `references/audit-prompts.md` — that file owns the (variant × TDD) → file composition table and the TDD-additions renumbering rules. The escalation prompt takes four substitutions: the plan path, the repo root, the plan's `## Requested Scope` pasted verbatim, and its `## Scope Ledger` table pasted verbatim.
 2. **Spawn both audits in parallel** — single message, two `Agent` tool calls. Phrase the Codex prompt without `--write` keywords (the rescue agent strips routing flags; read-only is the codex default). The escalation audit uses `subagent_type: "general-purpose"` with `model: "opus"` — Opus tier matters here for spotting motivated reasoning, don't downgrade.
 3. Read both sets of findings.
 4. **Codex CRITICAL / WARNING findings → revise the plan.** Edit the plan file directly (the only file editable in plan mode). Per `codex-result-handling`, do NOT auto-apply Codex's suggested fixes to source code — the audit reviews the plan, not the source.
-5. **Escalation ESCALATE findings → use AskUserQuestion for each one** before ExitPlanMode. Do NOT silently fold them into the Risks section, do NOT rationalize them away, and do NOT batch them into a wall of questions — one AskUserQuestion per finding (or grouped tightly when they share an option set). After the user answers, capture the decision in the plan's Decisions table or, when answers don't fit existing decisions, in a `## User-Confirmed Decisions` section so a fresh session can see the user's sign-off.
+5. **Escalation ESCALATE findings → use AskUserQuestion for each one** before ExitPlanMode. Do NOT silently fold them into the Risks section, do NOT rationalize them away, and do NOT batch them into a wall of questions — one AskUserQuestion per finding (or grouped tightly when they share an option set). After the user answers, capture the decision in the plan's Decisions table or, when answers don't fit existing decisions, in a `## User-Confirmed Decisions` section so a fresh session can see the user's sign-off. An **unaccounted request** finding (something the user asked for with no ledger row) is fixed by adding the row and asking where it goes, never by trimming the Requested Scope quote.
 6. **Escalation VERIFY findings → mention briefly in your ExitPlanMode summary** so the user has visibility, but they're not blocking. Don't pre-emptively edit the plan based on them.
 7. **After revisions, re-run BOTH audits ONCE more** (cap at 2 total passes per audit). If the second pass still surfaces CRITICAL or unresolved ESCALATE findings, escalate to the user via AskUserQuestion before ExitPlanMode rather than starting a third pass.
 8. **Partial-failure handling:** If only one audit agent is unavailable (auth error, runtime failure, agent not registered), proceed with the one that ran and record the gap in the outcome line. If both fail, surface to the user and offer to skip with that recorded, rather than retrying indefinitely.
@@ -292,7 +314,7 @@ The two audits answer different questions. Codex asks "is this plan technically 
     check-plan --fix <plan-file-or-directory>
     ```
 
-    `check-plan` is a Nim binary on PATH, built by chezmoi from `scripts/claude/check_plan.nim`. It applies rumdl's safe fixes, lints the plan against the Markdown Style rules and required section order, and fails unless the plan file (or `index.md`) carries a `Phase 4.5 audits:` line.
+    `check-plan` is a Nim binary on PATH, built by chezmoi from `scripts/claude/check_plan.nim`. It applies rumdl's safe fixes, lints the plan against the Markdown Style rules and required section order, fails unless the plan file (or `index.md`) carries a `Phase 4.5 audits:` line, and fails on any Scope Ledger row whose Home isn't allowed (`later`, `follow-up`, `TBD`, a blank cell).
 
     - **Exit 0**: pass.
     - **Exit 1**: fix each remaining finding in the plan file, then rerun. Heading case (MD063) and fence language (MD040) findings are always left for you: add backticks or recase the heading, and name the fence's real language. **Never run `rumdl fmt` or `rumdl check --fix` yourself**, even though rumdl's summary suggests it. Those fixes rewrite identifiers in headings and label every unknown fence `text`. Style fixes need no re-audit; adding a missing section does.
@@ -313,12 +335,18 @@ The two audits answer different questions. Codex asks "is this plan technically 
 
 ## Phase 6: Post-Approval Handoff
 
-**This phase runs AFTER `ExitPlanMode` is approved — you're back in normal mode, same session. Do NOT dive into implementation yet.** This is the management window: file beads, then honor the compaction choice. Barreling straight into code edits here is the specific behavior this phase exists to prevent.
+**This phase runs AFTER `ExitPlanMode` is approved — you're back in normal mode, same session. Do NOT dive into implementation yet.** This is the management window: file every provisional ledger row, then honor the compaction choice. Barreling straight into code edits here is the specific behavior this phase exists to prevent.
 
 > **This is not the `handoff` skill.** Despite the shared name, this phase writes no `.handoff/` doc — the **plan file is the handoff** here, and it already passes the self-containment test below. Reach for the `handoff` skill only once implementation is *underway* and there's execution state (progress against the plan, what broke, what you discovered) that the plan can't hold. Writing a handoff doc for an approved-but-unstarted plan just duplicates it.
 
-1. **File beads (beads repos only).** If a `.beads/` directory exists at the repo root and the plan has a `## Beads to File` section, create the issues now, wire up dependencies, capture IDs, and write them back into the plan's table. Auto-filed, then reported — no extra confirmation. Follow `references/beads-handoff.md` for the exact `bd` procedure. No `.beads/` → skip silently.
-2. **Honor the compaction choice** from Phase 5:
+1. **File every provisional ledger row.** Each `to file:` row becomes a real Home:
+   - **Beads** (`bd where` exits 0): create the issues from `## Beads to File`, wire dependencies, and write the IDs into both that table and the ledger's Home column (`bd <id>`, Status `filed`). Follow `references/beads-handoff.md`. Auto-filed, then reported — no extra confirmation.
+   - **`bd init`** (the user chose it in Phase 3): initialize at the root they chose, then file as above.
+   - **GitHub issue** (only where the user chose it in Phase 3): `gh issue create`, then write `#N` into the Home.
+   - **Handoff doc**: `handoff new <slug>`, write the rows into its `## Scope Ledger`, and put `handoff <file>` in the Home.
+   - **`to file: next plan`**: file it as a bead (an epic when there are several slices), or tell the user you're going straight back into plan mode for that slice once this plan is done.
+2. **Run the filed gate.** `check-plan --filed <plan>` fails on any row still reading `to file:`. Fix and rerun until it passes; the session doesn't end with unfiled rows.
+3. **Honor the compaction choice** from Phase 5:
    - **Continue** → proceed to implement.
    - **/compact first** or **Fresh session** → STOP with a clean handoff message and let the user drive the compaction. Name what was filed and where the plan lives, e.g.: *"Handoff done. Filed bd-a1b2, bd-c3d4, bd-e5f6 (bucket → wiring → tests). Plan at `plans/rate-limiter.md` is self-contained — `/compact` (or open a fresh session), then say go and I'll implement."* Don't touch code until they come back.
 
@@ -329,3 +357,17 @@ Before calling ExitPlanMode, ask yourself:
 > If a fresh session reads ONLY this plan file with zero prior context, can it start implementing immediately without looking anything up?
 
 If the answer is no, the plan is missing context. Either way, run the checklist in `references/common-mistakes.md` now: the common self-containment gaps, plus the exploration, drafting, audit, and handoff mistakes the gate can't catch.
+
+Then a second question:
+
+> Does every quote in Requested Scope map to a ledger row, and does every row have an allowed Home?
+
+If not, the plan has quietly shrunk the request. Add the missing rows and ask the user where they go.
+
+## Host Adapters
+
+The phases above are written for Claude Code. On other hosts:
+
+- **Claude Code:** as written. Plan files live in `~/.claude/plans/<slug>.md`. A blocking `ExitPlanMode` hook runs `check-plan` on single-file plans, so a plan with a bad ledger can't be approved.
+- **Codex:** `/plan` enters Plan mode, and `request_user_input` replaces `AskUserQuestion` (it only works in Plan mode). Codex has no plan file, so **write one yourself** to `<repo>/.plans/<YYYY-MM-DD>-<slug>.md` (gitignore `.plans/` the way `handoff` gitignores `.handoff/`) and put the same content in the `<proposed_plan>` block. Run `check-plan` yourself; nothing runs it for you. The two Phase 4.5 audits become two read-only Codex subagents given the composed prompts. Phase 6 is unchanged.
+- **lu:** loads no skills and can't ask questions. It only executes a finished plan or handoff doc. Never hand it a plan with `to file:` rows.

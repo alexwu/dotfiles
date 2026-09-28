@@ -9,7 +9,7 @@ Phase 4.5 spawns two audits in parallel — Codex (variant-specific) and Opus es
 | Multi-file (agent-teams) | No | `audit-prompt-multifile.md` | `audit-prompt-escalation.md` |
 | Multi-file (agent-teams) | Yes | `audit-prompt-multifile.md` + `audit-prompt-tdd-additions.md` (renumbered to 8-13) | `audit-prompt-escalation.md` |
 
-Both audits always run in parallel. Escalation is variant-agnostic and never skipped except via the user opt-out documented in SKILL.md Phase 4.5.
+Both audits always run in parallel. Escalation is variant-agnostic and never skipped except via the user opt-out documented in SKILL.md Phase 4.5. Its prompt takes the plan's `## Requested Scope` and `## Scope Ledger` pasted verbatim, on top of the two paths (see the header of `audit-prompt-escalation.md`).
 
 ## TDD-additions composition rules
 

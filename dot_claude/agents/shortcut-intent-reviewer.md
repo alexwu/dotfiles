@@ -85,12 +85,13 @@ For each meaningful change in the diff (non-trivial file or non-obvious modifica
 
 **Flag scope drift** when:
 - The diff touches files or modules not implied by the intent
-- The diff implements only part of what the intent describes, without a TODO/follow-up noting the rest
+- The diff implements only part of what the intent describes. A TODO comment doesn't excuse this; only a Scope Ledger row giving the rest a real Home does
+- **Ledger check** (when the intent context includes a plan's `## Scope Ledger`): for every row whose Home is a phase, step, cycle, or section of that plan and whose Status isn't `done` or `dropped`, look for the work in the diff. Missing → `drift_kind: ledger-unaccounted`, with the row as `intent_quote`. For every `dropped` row, confirm the diff doesn't implement it anyway
 - The diff renames/restructures something orthogonal to the stated goal (drive-by refactoring)
 - The diff introduces a behavior change not mentioned in the intent
 
 **Don't flag** when:
-- The intent is genuinely vague ("clean up auth") — drift is undefined
+- The intent is genuinely vague ("clean up auth") — drift is undefined. A plan with a Scope Ledger is never vague; use the ledger
 - The change is mechanical follow-on (a rename that touches many files)
 - The change is necessary plumbing for the stated goal (e.g., adding a method the new feature needs)
 - The intent context is empty (then drift detection isn't your job — do the shortcut pass only)
@@ -141,7 +142,7 @@ drift:
     diff_evidence: "path/to/file.ext:42-50 — quoted snippet"
     intent_source: "PR body | issue #123 | bd:42 | plan: path/to/plan.md"
     intent_quote: "<what the intent said>"
-    drift_kind: scope-expansion | scope-shortfall | orthogonal-refactor | undisclosed-behavior-change
+    drift_kind: scope-expansion | scope-shortfall | ledger-unaccounted | orthogonal-refactor | undisclosed-behavior-change
     confidence: high | medium
 ```
 

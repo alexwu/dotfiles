@@ -15,7 +15,7 @@ This is the default variant. Loaded when the task fits in one session and lives 
 
 If the user asks for TDD on a single-session plan, also load `tdd-cycles.md`. The combination overrides only the Steps section format (flat list → red/green/refactor cycles).
 
-If the task grows mid-planning into something that touches 3+ independent areas, switch to the agent-teams variant (`references/agent-teams.md`). Don't try to stretch single-session past 1-2 focused areas — context exhaustion is real and the multi-file structure of agent-teams exists to prevent it.
+If the task grows mid-planning into something that touches 3+ independent areas, switch to the agent-teams variant (`references/agent-teams.md`). Don't try to stretch single-session past 1-2 focused areas — context exhaustion is real and the multi-file structure of agent-teams exists to prevent it. Don't trim the request to fit one session either: switch variants, or plan this slice and give the rest `to file: next plan` ledger rows.
 
 ## Self-Containment Test (single-file specific)
 

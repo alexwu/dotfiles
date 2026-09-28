@@ -64,7 +64,9 @@ If `bd` is not installed on PATH, skip this source silently — don't error.
 
 ## Plan files
 
-**When:** `plan` in the allowlist AND there's a referenced plan file, OR a `.claude/plans/*.md` file was modified recently in the branch.
+**When:** `plan` in the allowlist AND there's a referenced plan file, a plan-mode plan written for this work, or a plan named by the newest handoff doc.
+
+Claude Code writes plan-mode plans to `~/.claude/plans/` (global, random slugs), never into the repo. Codex plans go to `<repo>/.plans/`. Look in both, or plan files are silently never found.
 
 Detection paths:
 
@@ -75,11 +77,17 @@ rg -o '(plans?/[A-Za-z0-9_./-]+\.md|PLAN\.md|\.claude/plans/[A-Za-z0-9_./-]+\.md
 # 2. Plan files modified in the diff (the author updated/created a plan as part of this change)
 git diff --name-only "$RANGE" | rg '(^|/)(PLAN\.md|plans/.*\.md|\.claude/plans/.*\.md)$'
 
-# 3. Plan files created during plan mode, newest first
-eza -l --sort=modified --reverse .claude/plans 2>/dev/null
+# 3. Plan-mode plans, newest first: Claude Code's global dir, then Codex-style repo-local plans
+eza -l --sort=modified --reverse "$HOME/.claude/plans" 2>/dev/null
+eza -l --sort=modified --reverse .plans .claude/plans 2>/dev/null
+
+# 4. The plan named by the newest handoff doc, if there is one
+handoff latest 2>/dev/null | xargs -r rg -N '^- Plan:' 2>/dev/null
 ```
 
-From the third listing, pick the plans whose dates and names fit this branch; usually that's the newest one or two. Read each candidate plan file in full. They're usually small and full of acceptance criteria.
+From the listings in step 3, pick the plans whose dates, titles, and Goal fit this branch; usually that's the newest one or two. `~/.claude/plans/` holds plans from every repo, so confirm a candidate's Files Affected actually point into this repo before using it. Read each candidate plan file in full. They're full of acceptance criteria.
+
+When a plan has a `## Requested Scope` and a `## Scope Ledger`, carry both into the intent context verbatim. They're the most precise statement of intent available: the user's own words, and where every requested item was supposed to land.
 
 ## Aggregation
 
@@ -102,8 +110,11 @@ body: <body>
 [Beads issue 42]
 <bd show output>
 
-[Plan file: .claude/plans/auth-overhaul.md]
+[Plan file: ~/.claude/plans/auth-overhaul.md]
 <full file contents>
+
+[Scope Ledger from plan: ~/.claude/plans/auth-overhaul.md]
+<the plan's ## Requested Scope blockquotes and ## Scope Ledger table, verbatim>
 
 ==============
 ```

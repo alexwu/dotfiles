@@ -13,6 +13,10 @@ The user is a skilled engineer who brought a real idea — treat them as a peer,
 
 **The deliverable is a settled design**, signed off by the user, handed to `plan-mode-plans` (via `EnterPlanMode`) for implementation planning. **No spec file** — the design lives in the conversation and gets captured by plan mode's Goal / Context / Decisions. Do not write `docs/specs/*` or any standalone design doc.
 
+**The one thing that must outlive the conversation is the Scope Ledger** (`plan-mode-plans/references/scope-ledger.md`; look for it under `~/.claude/skills`, `~/.agents/skills`, or `.claude/skills`). Every item the user asks for and every item this session surfaces gets a row with a Home. The ledger rides the recap into plan mode. If the session ends before plan mode, it goes into a `handoff new` doc, which is gitignored session scratch, not a spec doc.
+
+**Design the whole thing.** The user brought a whole idea. Sequencing it (what gets built first) is your job. Shrinking it is theirs to decide, in their own words.
+
 ## When this fires vs. when to skip
 
 | Signal | Action |
@@ -40,7 +44,9 @@ If a question is "which architecture / what's the source of truth / what do we b
 
 Restate what they want to build in your own words — one or two sentences — so the target is shared and any misread surfaces immediately. If it touches existing code, do a *light* orientation (recent commits, the obvious relevant files) to ask sharper questions. This is not the deep exploration plan mode does.
 
-**Scope gate — decompose before refining.** If the idea spans multiple independent subsystems ("a platform with chat, file storage, billing, and analytics"), flag it now, before any detail questions. Help split it into sub-projects: the independent pieces, how they relate, what order to build them. Then run this process on the first sub-project — each gets its own design → plan cycle. Clarifying rounds spent polishing details of a thing that needs splitting are wasted rounds.
+**Scope gate — decompose before refining.** If the idea spans multiple independent subsystems ("a platform with chat, file storage, billing, and analytics"), flag it now, before any detail questions. Help split it into sub-projects: the independent pieces, how they relate, what order to build them. Give **every** sub-project a Scope Ledger row (`Source: user: "…"`, `Home: to file: next plan`), then run this process on the first one — each gets its own design → plan cycle, and the whole table travels with the first. Clarifying rounds spent polishing details of a thing that needs splitting are wasted rounds. A sub-project that falls out of the table is the more expensive waste.
+
+Quote the user's original ask now, verbatim. It goes into the recap unchanged, because plan mode and its escalation audit measure the plan against those words.
 
 ### 2. Clarify the design-determining forks
 
@@ -48,7 +54,7 @@ Ask focused questions, **one concept per round** (occasionally a tight cluster w
 
 Aim questions at decisions that **change the architecture**, e.g.:
 - **Purpose & use case** — what's the core problem this solves, who uses it, what's the primary workflow? This isn't box-ticking — the answer routinely flips the design (a clipboard tool for fast paste-reuse wants a small ring buffer; one for a searchable audit trail wants a real indexed store). When a "why X over Y" is load-bearing, ask it.
-- **Scope boundaries** — what's in v1 vs. later? (YAGNI — push back on everything not justified for the first working version.)
+- **Scope boundaries** — what goes in the first plan, what goes in the next one, and is the user dropping anything? Ask it neutrally, with those three homes; nothing lands in "later". YAGNI applies to **additions the user didn't ask for** (push back on those), never to what they did ask for.
 - **Hard constraints** — platforms, performance targets, dependencies, deployment, compatibility.
 - **The forks that fan out** — the choices that, once made, determine everything downstream (for a multi-client app: where the source of truth lives and how clients talk to it).
 
@@ -61,7 +67,7 @@ This is the heart of the skill. Actively propose and refine, don't just transcri
 - **Architecture & boundaries** — name the components, what each one owns, how they communicate. Each unit should have one clear responsibility and a well-defined interface — something you can describe, use, and test without reading its internals.
 - **Source of truth & data model** — what the canonical state is, where it lives, its shape. For multi-client / multi-process systems this is usually *the* decision everything hinges on — settle it early.
 - **Interfaces / contracts** — how the pieces talk (API, IPC, schema, events). Define these before internals.
-- **Build sequencing** — what comes first, what unblocks what. Identify the thinnest end-to-end slice that proves the architecture (the MVP spine), then what layers on.
+- **Build sequencing** — what comes first, what unblocks what. Identify the thinnest end-to-end slice that proves the architecture (the MVP spine), then what layers on. The spine is a **build order, not a scope**: everything the user asked for is still in the ledger, sequenced after it.
 - **Per-component responsibilities** — what each piece must be able to do.
 
 Where there's a genuine architectural fork (e.g. socket vs. shared DB vs. message bus for client↔core), present 2-3 options with honest trade-offs and a recommendation grounded in their constraints. Don't manufacture alternatives when one path is clearly right.
@@ -76,13 +82,20 @@ Explicitly part of the value — the user is counting on you to raise what they 
 - **Security & trust boundaries** — who can read/write, sensitive data at rest, IPC authentication.
 - **Edge cases & scale** — empty/huge/malformed inputs, growth over time.
 
-Call these out as you go, not as an afterthought. A raised concern either becomes a decision or an explicit known-risk.
+Call these out as you go, not as an afterthought. A raised concern either becomes a decision, an explicit known-risk, or a ledger row.
 
 ### 5. Converge and hand off
 
-Recap the settled design: the one-line goal, the architecture and component responsibilities, the source-of-truth/data-model decision, the build sequence (what's first), resolved decisions with rationale, and any known open risks. Get the user's nod.
+Recap the settled design: the one-line goal, the user's original ask verbatim, the architecture and component responsibilities, the source-of-truth/data-model decision, the build sequence (what's first), resolved decisions with rationale, any known open risks, and **the full Scope Ledger**: every item the user asked for or that surfaced here, each with a Home. Get the user's nod.
 
-Then **transition to plan mode** — `EnterPlanMode`, which loads `plan-mode-plans` — carrying the recap so its Scope / Decisions / Approach start from the settled design instead of re-deriving it. The recap is the breadcrumb; there's no spec file. Hand off ONLY to `plan-mode-plans`; do not invoke implementation skills or start editing code.
+Then **transition to plan mode** — `EnterPlanMode`, which loads `plan-mode-plans` — carrying the recap so its Requested Scope, Scope Ledger, Decisions, and Approach start from the settled design instead of re-deriving it. The recap is the breadcrumb; there's no spec file. Hand off ONLY to `plan-mode-plans`; do not invoke implementation skills or start editing code.
+
+If the session has to end before plan mode, write the recap (ledger included) with `handoff new <slug>` so `pickup` can carry it into plan mode later.
+
+## Host Adapters
+
+- **Claude Code:** as written — `AskUserQuestion`, then `EnterPlanMode`.
+- **Codex:** run the brainstorm in Plan mode (`/plan`), where `request_user_input` replaces `AskUserQuestion`. Codex has no `EnterPlanMode`, so the hand-off is the recap itself: continue into `plan-mode-plans` in the same Plan-mode session, which writes the plan to `.plans/<YYYY-MM-DD>-<slug>.md`.
 
 ## Anti-patterns
 
@@ -93,8 +106,11 @@ Then **transition to plan mode** — `EnterPlanMode`, which loads `plan-mode-pla
 | Just transcribing what the user says into a design | They came for your architectural judgment | Propose structure, boundaries, sequencing; recommend |
 | Skipping the source-of-truth/data-model decision | For multi-component systems it determines everything | Settle it early in step 3 |
 | Leaving out blind spots to seem agreeable | Surfacing the unconsidered IS the value | Pressure-test concurrency, failure, evolution, security |
-| Designing the whole v2 | Scope creep at design time is the most expensive kind | YAGNI — find the MVP spine first |
-| Refining details of a multi-subsystem idea | Questions asked before decomposition are wasted on a thing that needs splitting | Scope gate in step 1 — split into sub-projects, design the first |
+| Adding features the user didn't ask for | Design-time scope creep is expensive | YAGNI applies to additions — push back on those |
+| Shrinking what the user did ask for to an "MVP" | The cut parts get forgotten, and the vertical slice breaks | Sequence, don't cut: every requested item gets a ledger row; the spine is build order |
+| Recommending that something wait for "v2" or "later" | A recommendation to defer is how features shrink | Ask where it goes (this plan, the next plan, a filed issue); the user decides whether to drop it |
+| Refining details of a multi-subsystem idea | Questions asked before decomposition are wasted on a thing that needs splitting | Scope gate in step 1 — split into sub-projects, ledger all of them, design the first |
+| Ending without `EnterPlanMode` and without a handoff doc | The ledger only existed in the conversation | `EnterPlanMode`, or `handoff new` with the recap and ledger |
 | Firing on a small/clear change | This skill is for buildable ideas with open design | One inline question, or just do it |
 | Asking file-level / code-level questions here | That's `plan-mode-plans` Phase 3 | Decide architecture & order; defer the diff |
 | Writing a `docs/specs/*.md` design file | This setup rejects rogue spec docs | Recap in conversation; let plan mode capture it |

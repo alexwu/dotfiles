@@ -248,7 +248,7 @@ Structured output for CI consumption.
       "file": "path/to/file.ext",
       "line_start": 42,
       "line_end": 58,
-      "type": "logic | type | claude-md | test-thoroughness | shortcut | drift | silent-failure | ...",
+      "type": "logic | type | claude-md | test-thoroughness | shortcut | drift | ledger-unaccounted | silent-failure | ...",
       "description": "<refined description>",
       "evidence": "<quoted line(s)>",
       "discovered_by": ["bug-reviewer", "codex"],

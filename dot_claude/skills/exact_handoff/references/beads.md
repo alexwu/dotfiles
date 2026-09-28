@@ -1,6 +1,7 @@
 # Beads snapshot (read-only)
 
-Load this only when `.beads/` exists at the repo root. Beads (`bd`) is a graph
+Load this only when `bd where` exits 0 (it walks parent directories, so this
+covers `eo` workspaces whose store sits above the repo worktree). Beads (`bd`) is a graph
 issue tracker; open work already lives there, so the handoff **references bead
 IDs** instead of duplicating task text as checkboxes.
 

@@ -6,7 +6,7 @@ Spawn via the `Agent` tool with `subagent_type: "general-purpose"` and `model: "
 
 This audit is **NOT** a code-correctness review (the parallel Codex audit covers that). It is specifically a check on whether the planner buried decisions, accepted regressions silently, or otherwise made calls on the user's behalf without escalating. Keep the two audits scoped — overlap dilutes both signals.
 
-Substitute the two bracketed paths (`<ABSOLUTE_PATH_TO_PLAN_FILE_OR_DIR>`, `<ABSOLUTE_REPO_ROOT>`) with the real values.
+Substitute the four bracketed values: `<ABSOLUTE_PATH_TO_PLAN_FILE_OR_DIR>`, `<ABSOLUTE_REPO_ROOT>`, `<REQUESTED_SCOPE_VERBATIM>` (the plan's `## Requested Scope` blockquotes, pasted, not summarized), and `<SCOPE_LEDGER_TABLE>` (the plan's `## Scope Ledger` table, pasted). The auditor needs the user's own words to catch items that disappeared without a trace; the plan alone only shows what survived.
 
 ---
 
@@ -26,6 +26,14 @@ This is NOT a code-correctness review. Do not flag bad code references, missing 
 Plan: <ABSOLUTE_PATH_TO_PLAN_FILE_OR_DIR>
 Repo root: <ABSOLUTE_REPO_ROOT>
 
+The user's request, verbatim. Treat this, not the plan's Goal, as what was asked for:
+
+<REQUESTED_SCOPE_VERBATIM>
+
+The plan's Scope Ledger:
+
+<SCOPE_LEDGER_TABLE>
+
 If the plan path is a directory, read `index.md` first, then numbered section files in order.
 
 For every section of the plan, check:
@@ -34,7 +42,14 @@ For every section of the plan, check:
 
 2. **Functionality changes**: Does the plan remove, simplify, or change any user-visible or developer-visible behavior? Even if the planner thinks the change is "minor" or "internal." Removing a feature, dropping an edge case, changing default behavior, narrowing input acceptance — all require user sign-off.
 
-3. **Scope reductions**: Did the user ask for X but the plan delivers X-minus-Y? Flag any "we'll skip Y for now" / "Y is out of scope" / "Y is a follow-up" / "leave Y for a future PR" statements that weren't explicitly approved by the user.
+3. **Scope reductions and silent omissions**: Compare the verbatim request against the Scope Ledger item by item.
+   - (a) Anything in the request — a feature, a behavior, an "and also…" — with no ledger row is an **unaccounted request**. ESCALATE, quoting the words that have no row.
+   - (b) A ledger row whose Home isn't a phase, step, cycle, or section of this plan, a filed ID, a `to file:` marker, or `dropped — "<user quote>"` is a bare deferral. ESCALATE.
+   - (c) Any "we'll skip Y for now" / "out of scope" / "follow-up" / "future PR" in the prose that has no matching ledger row. ESCALATE.
+   - (d) A `dropped` row whose quote doesn't read like the user's own words (it reads like the planner's). ESCALATE.
+   - (e) A ledger item that's quietly narrower than what the user's words ask for (the request says "every client", the row says "the CLI client"). ESCALATE.
+
+   Never accept "keep v1 small" or "for simplicity" as a reason. The ledger is allowed to be long.
 
 4. **Assumptions presented as facts**: Read the Assumptions section critically. For each item, ask: was this verified by reading code, fetching docs, OR explicitly confirmed by the user during Phase 3 clarification? Assumptions of the form "I'll assume the user wants Z" or "presumably the intent is W" or "I'm assuming backward compat doesn't matter" are escalation candidates — the planner is making a judgment call on the user's behalf.
 
@@ -43,6 +58,8 @@ For every section of the plan, check:
 6. **Breaking changes**: Any change to API contracts, file formats, database schemas, public interfaces, command names, configuration keys, environment variable names, log formats, or anything user-facing or integration-facing. The user must know — even "internal" interfaces usually have callers.
 
 7. **Buried decisions in prose**: Re-read the Approach and Steps sections looking for sentences that start with "we'll", "I'll", "this should", "presumably", "for simplicity", or "the cleanest way is". Each one is a candidate decision the planner made on the user's behalf and may need surfacing.
+
+8. **Plan-count reductions**: If the request obviously spans more than this plan covers, the ledger must say where the rest lives (`to file: next plan`, a filed bead, or a handoff doc). A plan that covers the first slice with no rows for the others has cut the whole feature. ESCALATE.
 
 Group findings as:
 
@@ -64,5 +81,5 @@ Example:
 
 Cite plan section paths and line ranges exactly. Read-only — do not modify any files.
 
-If you find NO escalation candidates, say so explicitly: "No ESCALATE-level findings. The plan does not appear to contain unflagged regressions, scope reductions, or unverified user-intent assumptions." Don't pad with weak VERIFY / OK items just to look thorough — a clean pass is a useful signal.
+If you find NO escalation candidates, say so explicitly: "No ESCALATE-level findings. The plan does not appear to contain unflagged regressions, scope reductions, or unverified user-intent assumptions, and every item in the verbatim request has a ledger row with an allowed Home." Don't pad with weak VERIFY / OK items just to look thorough — a clean pass is a useful signal.
 ```

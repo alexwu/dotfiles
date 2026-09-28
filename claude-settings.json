@@ -169,6 +169,17 @@
         "hooks": [
           {
             "type": "command",
+            "command": "G=\"$HOME/.claude/plans/.gate-plan.md\"; jaq -r '.tool_input.plan // empty' > \"$G\"; [ -s \"$G\" ] || exit 0; OUT=$(\"$HOME/.local/bin/check-plan\" --fix \"$G\" 2>&1); [ $? -eq 1 ] || exit 0; jaq -n --arg r \"$OUT\" '{hookSpecificOutput: {hookEventName: \"PreToolUse\", permissionDecision: \"deny\", permissionDecisionReason: (\"check-plan failed on the submitted plan. Fix the plan file, rerun check-plan --fix on it, then call ExitPlanMode again.\\n\\n\" + $r)}}'",
+            "timeout": 60,
+            "statusMessage": "Checking plan..."
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
             "command": "PLAN_FILE=\"$HOME/.claude/plans/.current-plan.md\"; jaq -r '.tool_input.plan // empty' > \"$PLAN_FILE\" && [ -s \"$PLAN_FILE\" ] && ( neovide --reuse-instance \"$PLAN_FILE\" >/dev/null 2>&1 & ); true",
             "statusMessage": "Opening plan in Neovide...",
             "async": true

@@ -25,9 +25,11 @@ repo's **current** state, and continue.
      handoff latest
      ```
      Exit 1 means there are none here. Before giving up, check for an approved
-     plan (`plans/`, `.plans/`) — a session that started from plan mode has a
-     self-contained plan file *instead of* a handoff, and that's the right entry
-     point. Otherwise say so; don't invent one.
+     plan — a session that started from plan mode has a self-contained plan
+     file *instead of* a handoff, and that's the right entry point. Claude Code
+     plans live in `~/.claude/plans/` (newest by mtime; confirm the plan's
+     files point into this repo), Codex plans in `.plans/`, hand-written ones in
+     `plans/`. Otherwise say so; don't invent one.
    - **A file path** → read it directly.
    - **A slug or date fragment** ("retry", "2026-07-23") → match against:
      ```bash
@@ -39,8 +41,9 @@ repo's **current** state, and continue.
    sections are what keep you from relitigating settled choices or re-hitting
    known traps.
 
-3. **Rebuild the todo list** from `## Open tasks` using whatever native
-   mechanism you have (a task list, a plan, or just the checklist in-context).
+3. **Rebuild the todo list** from `## Open tasks` and the `## Scope Ledger`
+   rows using whatever native mechanism you have (a task list, a plan, or just
+   the checklist in-context). Ledger rows are owed work, same as tasks.
 
 4. **Rehydrate links against LIVE state** — the doc is a snapshot; the repo has
    moved since.
@@ -62,6 +65,9 @@ repo's **current** state, and continue.
 7. **When the checklist runs dry.** Once the doc's open tasks are done (or the
    session is wrapping up), close the loop — don't just stop:
    - Report what got done vs. what's still open, and why anything was left.
+   - Account for every Scope Ledger row: `done`, filed (a real ID), or
+     `dropped — "<the user's words>"`. A row you couldn't finish goes into the
+     fresh handoff with its Home intact; it never just disappears.
    - Surface uncommitted work (`git status --short`). **Name it; don't commit
      unasked** — committing is the user's call.
    - If real state accumulated (decisions made, things discovered, work left

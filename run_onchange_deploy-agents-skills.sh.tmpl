@@ -31,6 +31,9 @@
 {{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/plan-mode-plans/**/*.md")) -}}
 # {{ . }} {{ include . | sha256sum }}
 {{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/super-brainstorming/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
 {{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/claude-md-improver/**/*.md")) -}}
 # {{ . }} {{ include . | sha256sum }}
 {{ end -}}
@@ -50,6 +53,7 @@ SKILLS=(
   bootstrapping-projects
   super-code-review
   plan-mode-plans
+  super-brainstorming
   claude-md-improver
   decompose-claude-md
   revise-claude-md

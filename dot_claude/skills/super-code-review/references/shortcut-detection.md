@@ -175,8 +175,11 @@ For each substantive change in the diff, ask:
 3. **Does the diff include rename/restructure not mentioned in the intent?** Drive-by refactor.
 4. **Is there an additive new feature in a "fix Y" PR?** Scope expansion.
 5. **Is there a behavior change not mentioned in the intent?** Undisclosed change.
+6. **Does every in-plan Scope Ledger row have a footprint in the diff?** When the intent carries a plan's ledger, each row whose Home is a phase, step, cycle, or section of that plan and whose Status isn't `done` or `dropped` should show up in the diff. A row with no footprint is `ledger-unaccounted`. A `dropped` row that shows up anyway is an `undisclosed-behavior-change`.
 
-If the intent context is empty or vague (e.g., commit message `"wip"`, PR body `"see issue"` with no issue link), skip drift detection — there's no signal to compare against. Surface that gap to the user in the output instead.
+If the intent context is empty or vague (e.g., commit message `"wip"`, PR body `"see issue"` with no issue link), skip drift detection — there's no signal to compare against. Surface that gap to the user in the output instead. A plan with a Scope Ledger is never vague; use the ledger.
+
+A TODO comment doesn't excuse a shortfall. The only thing that does is a Scope Ledger row giving the missing part a real Home.
 
 ## Anti-patterns that are NOT shortcuts
 

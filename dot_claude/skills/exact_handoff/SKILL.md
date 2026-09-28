@@ -41,23 +41,33 @@ calls baked in; the reader rebuilds its own todo list from the doc.
    gh pr view --json number,url,state,title 2>/dev/null   # PR for this branch, if any
    ```
    Record it plus any GitHub issue the session was about, and the path to a plan
-   file if one exists (`plans/` or `.plans/`). Reference plans/PRs — don't
-   re-paste their contents.
+   file if one exists: Claude Code plan-mode plans live in `~/.claude/plans/`
+   (outside the repo), Codex plans in `.plans/`, hand-written ones in `plans/`.
+   Reference plans/PRs — don't re-paste their contents.
 
    If you're partway through a plan, name **which of its steps are done** in
    `## Status`. The plan holds the spec; the handoff holds progress against it.
    That split is the whole reason both documents exist.
 
-4. **Open tasks — beads vs checklist.**
-   - **`.beads/` exists at the repo root** → this repo uses beads. **Read
+4. **Open tasks — beads vs checklist.** Run `bd where` (read-only). Don't look
+   for `.beads/` yourself: `bd` searches parent directories, and in `eo`
+   workspaces the store sits one level above the repo worktree.
+   - **`bd where` exits 0** → this repo uses beads. **Read
      `references/beads.md` and follow it** — you'll snapshot the relevant bead
      IDs read-only, never mutate them.
-   - **No `.beads/`** → list the open tasks as a plain markdown checklist in the
+   - **It fails** → list the open tasks as a plain markdown checklist in the
      doc (see template).
 
-5. **Write the doc** to the path from step 1, using the template below.
+5. **Carry the Scope Ledger.** Every item the user asked for or that came up
+   this session, and that isn't `done` or `dropped` by the user, goes into the
+   doc's `## Scope Ledger` with its Home (format:
+   `plan-mode-plans/references/scope-ledger.md`). If a plan has a ledger, copy
+   its open rows. If there's no plan, build the rows from the session. An item
+   that isn't in this table is an item the next session will never know about.
 
-6. **Gitignore `.handoff/`.** These are local session scratch, not project
+6. **Write the doc** to the path from step 1, using the template below.
+
+7. **Gitignore `.handoff/`.** These are local session scratch, not project
    artifacts. If the repo doesn't already ignore them, add it (the `touch` keeps
    this safe under zsh `noclobber`, where `>>` to a missing file errors):
    ```bash
@@ -65,7 +75,7 @@ calls baked in; the reader rebuilds its own todo list from the doc.
    rg -q '(^|/)\.handoff/?$' .gitignore || printf '.handoff/\n' >> .gitignore
    ```
 
-7. **Tell the user how to resume** — verbatim: `/clear`, then run **pickup** (no
+8. **Tell the user how to resume** — verbatim: `/clear`, then run **pickup** (no
    argument needed; it finds the newest handoff for this repo).
 
 ## Doc template
@@ -93,6 +103,12 @@ repo: <name> · branch: <branch> · <YYYY-MM-DD HH:MM> · agent: <claude-code|co
 <else → a checklist:>
 - [ ] <task, with enough detail to act on cold>
 - [ ] <task>
+
+## Scope Ledger
+<every requested or raised item that isn't done or dropped — the next session owes each one a Home>
+| # | Item | Source | Home | Status |
+|---|---|---|---|---|
+| 1 | <deliverable> | user: "<their words>" | <Phase N of plan / bd id / to file: …> | <planned/provisional/filed> |
 
 ## Linked
 - PR: #<n> (<state>) <url>          # omit if none
@@ -124,6 +140,10 @@ repo: <name> · branch: <branch> · <YYYY-MM-DD HH:MM> · agent: <claude-code|co
   covers the read-only bead commands.)
 - **`handoff new` only prints a path and makes `.handoff/`** — it does not write
   your content. You write the file at that path.
+- **A `to file:` row is a debt you're handing over.** File it first if the
+  session can (a bead, or the tracker the user chose), or name in `## Status`
+  why it couldn't be filed. Never let a requested item drop out of the ledger
+  between sessions.
 - **One handoff per `/clear`.** Don't split a single session into several docs
   unless the user asks to spin a focused task out separately.
 - **Slug is for humans scanning `handoff list`** — keep it short and descriptive
