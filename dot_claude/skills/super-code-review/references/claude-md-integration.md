@@ -74,7 +74,7 @@ Include both user-level files whenever they exist, regardless of which agent run
 Scope is decided by **entry point**. These files are symlinks into a prompts repo on Alex's machine, so the resolved path looks like neither a user file nor a repo file. Anything reached from a user-level entry point, through any symlink or `@` import, is user scope.
 
 - It goes in the local summary's **Personal-rule notes** section (see `output-formats.md`), not in the severity buckets.
-- It is **never** posted as a PR comment or included in any review posted to the PR, and it never affects whether a review approves or blocks.
+- It is **never** posted as a PR comment or included in a `--submit` review, and it never counts toward `--block-on`.
 - It skips Phase 3 validation's severity assignment; the validator only confirms it's real.
 - Phase 4 partitions it into `user_rule_notes` before sorting (see `agent-prompts.md` → "Result merge format").
 

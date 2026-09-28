@@ -64,6 +64,10 @@ If you want our deepest local pass, run --effort=high instead.
 
 Do not attempt to invoke `/code-review` via Bash or any other route.
 
+## `--submit` at any tier
+
+`--submit` adds the Fable validation pass and the approve / request-changes submission (`submit.md`) on top of whichever tier runs. At `low`, where Phase 3 is skipped, the Fable pass is the only validation, so it carries the whole bar alone.
+
 ## Effort selection heuristics (when the user doesn't specify)
 
 These are advisory — the user can always override:

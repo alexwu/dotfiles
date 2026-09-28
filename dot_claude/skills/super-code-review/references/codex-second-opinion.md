@@ -82,17 +82,22 @@ If no findings, return: "No issues found at high confidence."
 
 ## Forwarding flags
 
-Per the `codex-rescue` agent's contract:
+Open the prompt with this exact line. `codex-rescue` reads `--model` and `--effort` as runtime controls and strips them from the task text:
 
-- Include `--read-only` (or equivalent — codex-rescue defaults to write-capable; we override)
-- Include `--fresh` (don't resume prior Codex session; we want clean context)
-- Do not set `--effort` or `--model` — let Codex pick defaults
+```text
+--model gpt-6-astra --effort high --fresh --read-only
+```
 
-The `codex-rescue` agent itself adds `--write` by default unless the user explicitly says read-only. For our use case, **always** signal read-only:
+- **`--model gpt-6-astra`** names the model explicitly. Don't leave it to `codex-config.toml`'s default, and never substitute another model: stale lists elsewhere (the disabled `skill-codex` plugin's menu, for one) have steered subagents to `gpt-5.3-codex`, which this account rejects, and then to older fallbacks. When OpenAI ships a newer model, change this line; it's the only place the model is named.
+- **`--effort high`**: the config default is `medium`, too low for a review.
+- **`--fresh`**: don't resume a prior Codex session.
+- **`--read-only`**: `codex-rescue` defaults to write-capable, so always override it.
 
-> "This is a review-only task. Do not propose or apply edits. Use --read-only."
+Also state it in words right after the flags line, since the agent forwards prompt text intact:
 
-Put that line at the top of the prompt; the codex-rescue agent forwards prompt text intact.
+> "This is a review-only task. Do not propose or apply edits."
+
+**If Codex rejects the model** (an unsupported-model or 400 error), the second opinion is unavailable for this run. Report it that way. Don't retry with a different model.
 
 ## Parsing the response
 

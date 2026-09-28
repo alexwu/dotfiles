@@ -80,7 +80,7 @@ DIFF
 Return your findings as a structured list with file:line, category, evidence, and reasoning. Severity is not yours to assign — just report findings with confidence levels.
 ```
 
-Pass with `--read-only` and `--fresh` to ensure no edits and no resume of prior session.
+Open the prompt with `--model gpt-6-astra --effort high --fresh --read-only`; see `codex-second-opinion.md` → "Forwarding flags".
 
 ## Validator spawn template
 
@@ -148,6 +148,45 @@ CONSTRAINTS
 **Batched-by-file validator** (when 2+ findings target the same file):
 
 Same template, but `FINDING UNDER REVIEW` becomes a numbered list, and the return is an array of `{ finding_id, valid, severity, ... }` objects.
+
+## Fable validator template (`--submit`)
+
+Spawn with `subagent_type: "general-purpose"` and `model: "fable"`, after Phase 4. One agent for up to 15 findings; above that, split by file across parallel agents. See `submit.md` for what happens with the result.
+
+```
+You are the final validator before a pull-request review is submitted under the user's name. The review pipeline produced the findings below. Your job: confirm each one is real, and kill any that isn't. A finding you keep may block a merge, so hold every one to that bar.
+
+PR
+--
+Repo: <owner/repo>
+PR: #<number> — <title>
+Head SHA: <full sha>
+Diff: <path to the diff file>
+Changed files: <list>
+
+FINDINGS
+--------
+<numbered list; for each: id, file, line_start-line_end, severity, type, evidence (quoted), description, rule_source/rule_quote when present>
+
+YOUR JOB
+--------
+For each finding:
+1. Read the cited file in full at the head commit, and follow up to 2 callers or callees when the claim depends on them.
+2. Decide whether it's real, introduced by this diff, and something a senior reviewer would block on or ask to fix. Apply the do-NOT-flag list: pre-existing issues, linter-catchable nits, style preferences, speculative "could race" concerns the diff doesn't introduce, anything silenced by a directive.
+3. Confirm the severity: blocker (breaks the build, crashes, wrong output, violates a hard repo rule), major (fragile or incorrect behavior, a dropped error path, a missing test for new behavior, drift from the stated intent), or suggestion. You may change it; say why.
+4. Check the cited lines against the diff: `inline: true` when every cited line is on the new (right-hand) side of a diff hunk, `inline: false` otherwise.
+
+Return a JSON array, one object per finding:
+{ "id": "<id>", "keep": true|false, "severity": "blocker|major|suggestion",
+  "severity_changed_because": "<reason or null>", "inline": true|false,
+  "file": "<path>", "line_start": N, "line_end": N,
+  "evidence": "<exact quoted line(s)>", "reasoning": "<one or two sentences>" }
+
+CONSTRAINTS
+-----------
+- Read-only. No edits, no writes, no git or gh commands that change anything.
+- When you can't confirm a finding, kill it. A false blocker on someone's PR costs more than a missed nit.
+```
 
 ## Concurrency and read-only enforcement
 

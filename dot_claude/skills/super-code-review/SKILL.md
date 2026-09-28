@@ -1,7 +1,7 @@
 ---
 name: super-code-review
 description: |
-  Multi-agent code review of a GitHub PR, a local commit range, or uncommitted working-tree changes. Parallel reviewers cover bugs, silent failures, CLAUDE.md/AGENTS.md compliance, test thoroughness, and shortcuts/scope drift, plus a Codex second opinion; every finding is validated before it ships. Effort tiers low/medium/high, with domain routing for Swift/iOS. Use for any review request, even without the word "super": "review this PR", "code review", "review #123", "look over my changes", "audit this branch", "review my working tree", "check my staged changes". Supersedes `/code-review`, `pr-review-toolkit:review-pr`, `feature-dev:code-reviewer`, `coderabbit:code-review`, `simplify`, and `security-review`. CodeRabbit runs only with `--coderabbit`.
+  Multi-agent code review of a GitHub PR, a local commit range, or uncommitted working-tree changes. Parallel reviewers cover bugs, silent failures, CLAUDE.md/AGENTS.md compliance, test thoroughness, and shortcuts/scope drift, plus a Codex second opinion; every finding is validated before it ships. With `--submit`, a Fable pass re-validates the findings and the skill approves the PR or requests changes. Effort tiers low/medium/high, with domain routing for Swift/iOS. Use for any review request, even without the word "super": "review this PR", "code review", "review #123", "review and approve", "look over my changes", "audit this branch", "review my working tree", "check my staged changes". Supersedes `/code-review`, `pr-review-toolkit:review-pr`, `feature-dev:code-reviewer`, `coderabbit:code-review`, `simplify`, and `security-review`. CodeRabbit runs only with `--coderabbit`.
 ---
 
 # super-code-review
@@ -25,6 +25,8 @@ When in doubt: it applies. The pushy description above is intentional — this s
 | `--effort <low\|medium\|high\|ultra>` | `high` | Pipeline depth |
 | `--coderabbit` | off | Chain `coderabbit:code-review` after our pass |
 | `--comment` | off | Post inline comments (PR mode only) |
+| `--submit` | off | After the review, a Fable agent re-validates the findings, then the skill approves the PR or requests changes (PR mode only). See `references/submit.md` |
+| `--block-on <major\|all>` | `major` | With `--submit`: which surviving findings trigger request-changes. `major` = blockers and majors; `all` = everything |
 | `--json` | off | Machine-readable output |
 | `--intent <list>` | `auto` | Comma list: `pr,issue,bd,plan,all,none` |
 
@@ -96,6 +98,15 @@ See `references/output-formats.md` for the exact formats. Three modes:
 - **`--comment`** — post inline comments to the PR using the strict SHA / L4-7 / repo-match format. **Only ONE comment per unique issue.**
 - **`--json`** — machine-readable structured output
 
+### Phase 5b — Submit (`--submit`)
+
+Runs after the local output, in PR mode only. Follow `references/submit.md` exactly:
+
+1. A `general-purpose` agent with `model: "fable"` re-validates every merged finding (not the user-rule notes).
+2. Any kept finding at or above `--block-on` → submit `REQUEST_CHANGES` with those findings inline. None → submit `APPROVE`. On the user's own PR, submit `COMMENT` and state the verdict it would have been.
+3. Every posted word is written under the `writing-english` skill; load it before writing.
+4. If the Fable pass can't run, or the PR head moved during the review, don't submit.
+
 ### Phase 6 — Optional CodeRabbit
 
 If `--coderabbit` was passed: after Phases 1-5 finish, invoke `coderabbit:code-review` and append its findings to the output. CodeRabbit is async on PRs — for local diffs it may be a no-op; the user is warned.
@@ -143,6 +154,8 @@ If a finding can't survive this filter after validation, it does not ship.
 
 Inherited verbatim from the prior skill — these details matter because GitHub markdown rendering is unforgiving:
 
+- **Load the `writing-english` skill before writing any comment.** Posted text goes out under the user's name; write it under that skill's rules, and keep pipeline details (reviewer names, local paths) out of it
+
 - Use `mcp__github_inline_comment__create_inline_comment` with `confirmed: true` if the MCP server is available; else fall back to `gh api` per `references/output-formats.md`
 - Code links must use full git SHA: `https://github.com/owner/repo/blob/<full-sha>/path/to/file#L4-L7`
 - `L[start]-L[end]` line range — provide at least 1 line of context before and after
@@ -166,12 +179,13 @@ Load these as needed — they're sized for progressive disclosure:
 - `references/codex-second-opinion.md` — exact `codex:codex-rescue` invocation
 - `references/coderabbit-flag.md` — `--coderabbit` gating + chaining
 - `references/output-formats.md` — terminal / inline / json schemas
+- `references/submit.md` — `--submit` / `--block-on`: Fable validation, the approve / request-changes decision, payload, errors. **Load whenever `--submit` is passed**
 - `references/agent-prompts.md` — validator and reviewer spawn-prompt templates
 - `references/false-positives.md` — extended don't-flag catalog (the inline list above is the abridged version)
 
 ## What this skill does NOT do
 
-- It does not fix issues — it reports. Auto-fix is a separate skill (`/simplify` flow, not part of this one).
+- It does not fix issues — it reports, and with `--submit` it approves or requests changes. Auto-fix is a separate skill (`/simplify` flow, not part of this one).
 - It does not run linters or compilers. CI is the place for that.
 - It does not edit files. The five custom reviewers enforce this with a `git-readonly-guard` frontmatter hook; `general-purpose` validators and plugin domain auditors have write tools available and are held read-only by their prompt.
 - It does not gate on "already reviewed" — the user invokes this skill explicitly; re-runs are intentional, not duplicate.
@@ -182,4 +196,6 @@ Load these as needed — they're sized for progressive disclosure:
 - **`gh` not authenticated** in PR mode — explain and suggest `gh auth login`
 - **Codex unavailable** (returns nothing) — proceed without the second opinion, note it in the output
 - **MCP inline-comment server unavailable** in `--comment` mode — fall back to `gh api` (see `references/output-formats.md`)
+- **`--submit` outside PR mode** — ignore it with a one-line warning; print the review as usual
+- **Fable validation unavailable, or the PR head moved** under `--submit` — print the review, submit nothing, and say why
 - **Domain auditor missing** — skip it, and name the expected-but-unavailable auditor in the output so a disabled plugin doesn't pass for a clean audit

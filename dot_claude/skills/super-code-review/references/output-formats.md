@@ -135,7 +135,7 @@ This shifts with effort tier: at `--effort=low`, **no inline code snippets** —
 
 ## `--comment` — inline PR comments
 
-PR mode only. If invoked in range or working-tree mode, fall back to the markdown summary and warn.
+PR mode only. If invoked in range or working-tree mode, fall back to the markdown summary and warn. With `--submit`, skip this section entirely: the submitted review carries the inline comments (`submit.md`), and posting both would duplicate every one.
 
 Never post a `rule_scope: user` finding. Those stay in the local summary's Personal-rule notes.
 
@@ -280,6 +280,19 @@ Structured output for CI consumption.
   "coderabbit": {
     "ran": false,
     "findings_count": 0
+  },
+  "submission": {
+    "requested": true,
+    "block_on": "major | all",
+    "status": "submitted | skipped | failed",
+    "event": "APPROVE | REQUEST_CHANGES | COMMENT | null",
+    "own_pr": false,
+    "fable_kept": 3,
+    "fable_killed": 1,
+    "inline_comments": 3,
+    "body_findings": 1,
+    "html_url": "https://github.com/owner/repo/pull/123#pullrequestreview-… | null",
+    "reason": "<why skipped or failed, else null>"
   }
 }
 ```
@@ -293,5 +306,7 @@ If the user also passed `--output <path>`, write the JSON to that path and the m
 ## Output mode combinations
 
 - `--comment --json` — post inline AND emit JSON. Both happen.
+- `--submit --comment` — submit one review; `--comment` is ignored, since the review already carries the inline comments
+- `--submit --json` — submit, and fill the `submission` object. Without `--submit`, omit `submission`
 - `--comment` (PR mode missing) — fall back to markdown summary, warn
 - `--json` (no findings) — still emit valid JSON with empty `findings: []` and zero stats
