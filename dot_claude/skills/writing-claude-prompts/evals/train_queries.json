@@ -1,0 +1,50 @@
+[
+  {
+    "query": "opus 5.5 keeps announcing it's going to skip the luna persona when it loads from ~/.claude/CLAUDE.md. what should change in the prompt or where it loads from?",
+    "should_trigger": true
+  },
+  {
+    "query": "rewrite ~/Code/lulu-prompts/Prompts/Agents/persona/work.md so it lands better on fable 5.1, it's the anchor body the SessionStart hook injects",
+    "should_trigger": true
+  },
+  {
+    "query": "update the prompting skill",
+    "should_trigger": true
+  },
+  {
+    "query": "draft a system prompt for a customer support agent running on sonnet 5.5 with a web_search tool; answers need to reflect current pricing and policies",
+    "should_trigger": true
+  },
+  {
+    "query": "our agent loop on fable 5.1 goes quiet for like 10 min between tool calls and users think it hung. what do I add to the system prompt",
+    "should_trigger": true
+  },
+  {
+    "query": "port this CLAUDE.md to opus 5, it's got a bunch of 'ALWAYS double-check your work before responding' and 'after every 3 tool calls summarize progress' lines from the 4.8 days",
+    "should_trigger": true
+  },
+  {
+    "query": "write a SKILL.md for a zk-notes daily-journal workflow with a references dir",
+    "should_trigger": false
+  },
+  {
+    "query": "whats the model string for opus 5.5 in the anthropic python sdk and how do i pass effort=medium",
+    "should_trigger": false
+  },
+  {
+    "query": "my CLAUDE.md is 400 lines, half of it should probably be path-scoped .claude/rules files. split it up",
+    "should_trigger": false
+  },
+  {
+    "query": "tune dot_config/llm/prompts/inline-script-classify.md so qwen3.6 stops over-asking on harmless one-liners",
+    "should_trigger": false
+  },
+  {
+    "query": "add a PreToolUse hook to claude-settings.json that denies rm -rf outside the scratchpad",
+    "should_trigger": false
+  },
+  {
+    "query": "clean up this PR description, it reads like an AI wrote it",
+    "should_trigger": false
+  }
+]

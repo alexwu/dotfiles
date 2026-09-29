@@ -43,6 +43,12 @@
 {{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/exact_revise-claude-md/**/*.md")) -}}
 # {{ . }} {{ include . | sha256sum }}
 {{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/writing-claude-prompts/**/*.md")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
+{{ range (glob (joinPath .chezmoi.sourceDir "dot_claude/skills/writing-claude-prompts/**/*.json")) -}}
+# {{ . }} {{ include . | sha256sum }}
+{{ end -}}
 set -euo pipefail
 SKILLS=(
   writing-clis
@@ -57,6 +63,7 @@ SKILLS=(
   claude-md-improver
   decompose-claude-md
   revise-claude-md
+  writing-claude-prompts
 )
 LOCK="$HOME/.agents/.skill-lock.json"
 mkdir -p "$HOME/.agents/skills"

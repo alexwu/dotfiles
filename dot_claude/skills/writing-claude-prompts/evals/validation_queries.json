@@ -1,0 +1,34 @@
+[
+  {
+    "query": "check whether anthropic published any new model prompting guides since last month",
+    "should_trigger": true
+  },
+  {
+    "query": "the web-explorer subagent in dot_claude/agents keeps spawning more subagents just to double check itself. tighten up its definition",
+    "should_trigger": true
+  },
+  {
+    "query": "why is my code review prompt catching fewer bugs on sonnet 5 than it did on 4.6? it says 'only report high-severity issues, don't nitpick'",
+    "should_trigger": true
+  },
+  {
+    "query": "write the reminder text our harness appends after tool results when the agent hasn't said anything for five steps",
+    "should_trigger": true
+  },
+  {
+    "query": "make a gemini prompt for a cozy lofi apartment illustration, warm lamp light, rain on the window",
+    "should_trigger": false
+  },
+  {
+    "query": "scrape the zmx docs site with firecrawl and save it under .firecrawl",
+    "should_trigger": false
+  },
+  {
+    "query": "write a commit message for the staged changes",
+    "should_trigger": false
+  },
+  {
+    "query": "stream a messages.create call in typescript and print the thinking blocks as they arrive",
+    "should_trigger": false
+  }
+]

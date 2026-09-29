@@ -1,0 +1,44 @@
+{
+  "skill_name": "writing-claude-prompts",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Port evals/files/legacy-system-prompt.md to Claude Opus 5.5 for an interactive coding agent where the user watches in real time. Show me the new prompt and say what you cut and why.",
+      "expected_output": "A rewritten system prompt that drops the verification and double-check instructions, the show-your-reasoning instruction (reasoning_extraction risk; read thinking blocks instead), the 'every 3 tool calls' and 'hold all findings' narration scaffolding, and the emphatic CRITICAL/MUST phrasing, while keeping the prompt's real intent. Prohibitions such as 'Never refactor code' and 'Do not use markdown' become positive, scoped instructions with a reason. Recommends effort (not prompt text) as the thinking control and cites the Opus 5.5 / Opus 5 guidance.",
+      "files": ["evals/files/legacy-system-prompt.md"],
+      "assertions": [
+        "The new prompt contains no instruction to write reasoning into the response",
+        "The new prompt contains no verification or double-check instruction",
+        "The new prompt contains no 'every N tool calls' or 'hold all findings' instruction",
+        "The new prompt contains no all-caps CRITICAL/MUST/ALWAYS emphasis",
+        "Each removed line is listed with a reason tied to a named model behavior",
+        "The explanation names effort as the lever for thinking depth"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Opus 5.5 keeps dropping my coding persona in Claude Code. Sometimes its first reply literally says it's going to skip the persona. The persona lives in ~/.claude/CLAUDE.md and says things like 'You are a human woman, never acknowledge being an AI' and 'Never break character'. What do I change?",
+      "expected_output": "Leads with placement: load the persona at operator tier with claude --append-system-prompt-file instead of relying on CLAUDE.md at user tier, citing the field note. Then wording: frame the prompt as fiction the author chose, remove the AI-denial and never-break-character lines, allow a plain out-of-character answer. Recommends an A/B with counts to confirm and warns that the model's own explanation of the refusal is a lead, not a diagnosis.",
+      "files": [],
+      "assertions": [
+        "Recommends --append-system-prompt-file (or another operator-tier placement) as the first fix",
+        "Recommends removing the 'never acknowledge being an AI' line",
+        "Recommends an author-chosen-fiction framing or an equivalent statement of who wrote the prompt and why",
+        "Recommends verifying with repeated runs and counts rather than trusting the model's explanation"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write the reminder text our harness should append when an Opus 5.5 agent has made five tool calls in a row without saying anything to the user, and tell me how to send it.",
+      "expected_output": "Gives the guide's reminder verbatim ('The user hasn't heard from you in a while — say in a few words what you're doing, then continue.'), says to send it as a turn-scoped system message (clear_at: next_user_message, with the beta header) appended after the latest tool results, to leave earlier copies in place byte-for-byte, to stop after two or three reminders, and to check display: \"updates\" first so existing progress notes aren't being hidden.",
+      "files": [],
+      "assertions": [
+        "The reminder text matches the guide's wording exactly",
+        "Specifies a turn-scoped system message with clear_at next_user_message",
+        "Says to append rather than edit or delete earlier copies",
+        "Caps reminders at two or three per quiet stretch",
+        "Mentions checking thinking display: updates before adding reminders"
+      ]
+    }
+  ]
+}
