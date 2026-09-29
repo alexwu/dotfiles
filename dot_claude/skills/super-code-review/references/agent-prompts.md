@@ -99,7 +99,7 @@ DIFF
 Return your findings as a structured list with file:line, category, evidence, and reasoning. Severity is not yours to assign — just report findings with confidence levels.
 ```
 
-Open the prompt with `--model gpt-6-astra --effort high --fresh --read-only`; see `codex-second-opinion.md` → "Forwarding flags".
+Open the prompt with `--effort high --fresh --read-only` (no `--model` unless the user names one); see `codex-second-opinion.md` → "Forwarding flags".
 
 ## Validator spawn template
 

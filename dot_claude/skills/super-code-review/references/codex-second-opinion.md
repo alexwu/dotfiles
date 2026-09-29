@@ -88,10 +88,10 @@ If no findings, return: "No issues found at high confidence."
 Open the prompt with this exact line. `codex-rescue` reads `--model` and `--effort` as runtime controls and strips them from the task text:
 
 ```text
---model gpt-6-astra --effort high --fresh --read-only
+--effort high --fresh --read-only
 ```
 
-- **`--model gpt-6-astra`** names the model explicitly. Don't leave it to `codex-config.toml`'s default, and never substitute another model: stale lists elsewhere (the disabled `skill-codex` plugin's menu, for one) have steered subagents to `gpt-5.3-codex`, which this account rejects, and then to older fallbacks. When OpenAI ships a newer model, change this line; it's the only place the model is named.
+- **No `--model`**: Codex runs its configured default (`codex-config.toml`). Add `--model <id>` only when the user names a model for this review, and pass their id verbatim. Never pick one yourself: stale lists elsewhere (the disabled `skill-codex` plugin's menu, for one) have steered subagents to `gpt-5.3-codex`, which this account rejects, and then to older fallbacks.
 - **`--effort high`**: the config default is `medium`, too low for a review.
 - **`--fresh`**: don't resume a prior Codex session.
 - **`--read-only`**: `codex-rescue` defaults to write-capable, so always override it.
