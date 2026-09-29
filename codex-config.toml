@@ -1,6 +1,6 @@
 default_permissions = "dev-default"
 approval_policy = "on-request"
-model = "gpt-6-astra"
+model = "gpt-6.1-sol"
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
 model_context_window = 872000
@@ -73,36 +73,32 @@ command = "bunx"
 args = ["-y", "@shopify/dev-mcp@latest"]
 
 [mcp_servers.node_repl]
-args = []
 command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
-startup_timeout_sec = 120
+startup_timeout_sec = 120.0
 
 [mcp_servers.node_repl.env]
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.924.22138"
+BROWSER_USE_TINYSKY_ENABLED = "1"
+CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"
+CODEX_HOME = "/Users/jamesbombeelu/.codex"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = ""
 NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
 NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/jamesbombeelu/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
-CODEX_HOME = "/Users/jamesbombeelu/.codex"
-BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
-BROWSER_USE_TINYSKY_ENABLED = "1"
-NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = ""
-NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = ""
-NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = ""
-BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.917.51856"
-NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/browser/26.917.51856/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/browser/26.924.22138/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
 SKY_CUA_SERVICE_PATH = "/Users/jamesbombeelu/.codex/computer-use/Codex Computer Use.app"
-CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
 [mcp_servers.funes]
 command = "funes"
 args = ["mcp"]
 
-[mcp_servers.funes.tools.recall]
-approval_mode = "approve"
-
-[mcp_servers.funes.tools.get]
-approval_mode = "approve"
+[mcp_servers.funes.env]
+HF_HUB_USER_AGENT_ORIGIN = "funes; agent/codex"
 
 [mcp_servers.computer-use]
 command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
@@ -227,6 +223,9 @@ trust_level = "trusted"
 [projects."/Users/jamesbombeelu/Code/cleverific/ws12"]
 trust_level = "trusted"
 
+[projects."/Users/jamesbombeelu/Code/cleverific/eo-workspace"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled"
@@ -339,6 +338,9 @@ trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd420
 [hooks.state."/Users/jamesbombeelu/Code/lulu-app/.codex/hooks.json:user_prompt_submit:0:0"]
 trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
 
+[hooks.state."funes@huggingface:hooks.json:stop:0:0"]
+trusted_hash = "sha256:13f01a23c98f78ab07fc1c220aa6192f673ff86eb7083a7381d985e7cb511766"
+
 [desktop]
 conversationDetailMode = "STEPS_PROSE"
 followUpQueueMode = "queue"
@@ -374,6 +376,7 @@ screen_reader_detection_done = true
 "gpt-5.5" = 4
 "gpt-5.6-sol" = 4
 gpt-6-astra = 4
+"gpt-6.1-sol" = 1
 
 [shell_environment_policy.set]
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
@@ -382,6 +385,10 @@ NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ec
 [marketplaces.always-further]
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/plugins/marketplaces/always-further"
+
+[marketplaces.huggingface]
+source_type = "local"
+source = "/Users/jamesbombeelu/.funes/agents/codex/codex-plugin"
 
 [plugins."nono@always-further"]
 enabled = true
@@ -408,5 +415,8 @@ enabled = true
 enabled = true
 
 [plugins."build-macos-apps@openai-curated-remote"]
+enabled = true
+
+[plugins."funes@huggingface"]
 enabled = true
 # <<< nono:always-further-codex <<<
