@@ -180,8 +180,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PLAN_FILE=\"$HOME/.claude/plans/.current-plan.md\"; jaq -r '.tool_input.plan // empty' > \"$PLAN_FILE\" && [ -s \"$PLAN_FILE\" ] && ( neovide --reuse-instance \"$PLAN_FILE\" >/dev/null 2>&1 & ); true",
-            "statusMessage": "Opening plan in Neovide...",
+            "command": "PLAN_FILE=\"$HOME/.claude/plans/.current-plan.md\"; jaq -r '.tool_input.plan // empty' > \"$PLAN_FILE\" && [ -s \"$PLAN_FILE\" ] && ( zed \"$PLAN_FILE\" >/dev/null 2>&1 & ); true",
+            "statusMessage": "Opening plan in Zed...",
             "async": true
           }
         ]
