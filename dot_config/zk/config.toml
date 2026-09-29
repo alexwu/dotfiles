@@ -1,0 +1,14 @@
+# zk global config, shared by every notebook.
+#
+# `dir` is only honored *here* — zk ignores it in a notebook's own .zk/config.toml.
+# It's the fallback used whenever zk runs outside a notebook, which covers both
+# capture-from-anywhere and the sendto daemon's script action (which has no meaningful
+# working directory of its own).
+[notebook]
+dir = "~/Sync/Notes"
+
+[alias]
+# Capture a thought without leaving the terminal.
+inbox = 'zk new "$ZK_NOTEBOOK_DIR/inbox" $@'
+# Triage: what's landed in the inbox lately, newest first.
+triage = "zk list inbox --sort created- --format full"
