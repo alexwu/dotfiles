@@ -28,7 +28,7 @@ INTENT CONTEXT
 PASS CONTEXT
 ------------
 
-Pass: <n> of <cap> (<full | incremental | closing>)
+Pass: <n> (<full | incremental>); round <r> of <cap>, or "closing" past it
 Delta since the last reviewed pass (<line | file | whole>): <inline delta, or "See file: <path>">
 
 Findings from the last pass, including threads this review opened
@@ -192,7 +192,7 @@ otherwise `git show <head>:<path>`, or `gh api` when the head isn't local.
 
 FINDINGS FROM THE LAST PASS
 ---------------------------
-<numbered list; for each: id, file, line_start-line_end, severity, title, evidence (quoted) as it was>
+<numbered list; for each: id, file, line_start-line_end, severity, title, evidence (quoted) as it was, first_pass, and `re-grade: true` when it's blocking and first_pass < the last pass's n>
 
 YOUR JOB
 --------
@@ -201,16 +201,23 @@ For each finding:
    quoted evidence and the surrounding function, not the old line numbers.
 2. Decide: `fixed` (the problem is gone), `still-open` (it's still there),
    or `regressed` (the fix broke behavior that worked before).
-3. Return a JSON array, one object per finding:
+3. For a finding marked `re-grade: true` that is still open: it has survived
+   two rounds or more. Grade it again under the closing bar: blocker only
+   when the code is definitely worse than the base (crashes, wrong output, a
+   hard-rule violation, an untested core path); otherwise major or
+   suggestion. Return `severity` and `severity_changed_because`.
+4. Return a JSON array, one object per finding:
    { "id": "<id>", "status": "fixed|still-open|regressed",
      "file": "<path>", "line_start": N, "line_end": N,
      "evidence": "<exact quoted line(s) as they are now>",
+     "severity": "<level>", "severity_changed_because": "<reason or null>",
      "reasoning": "<one or two sentences>" }
+   `severity` and `severity_changed_because` appear only for re-graded findings.
 
 CONSTRAINTS
 -----------
 - Read-only. No edits.
-- Keep the old severity; don't re-grade.
+- Keep the old severity unless the finding is marked `re-grade: true`.
 ```
 
 A `regressed` result goes through normal validation as a new finding with `regression: true` and `origin: "carried"`.
@@ -227,13 +234,13 @@ PR
 Repo: <owner/repo>
 PR: #<number> — <title>
 Head SHA: <full sha>
-Pass: <n> of <cap> (<full | incremental | closing>)
+Pass: <n> (<full | incremental>); round <r> of <cap>, or "closing" past it
 Diff: <path to the diff file>
 Changed files: <list>
 
 FINDINGS
 --------
-<numbered list; for each: id, file, line_start-line_end, severity, type, evidence (quoted), description, in_delta, origin (new | carried), regression, rule_source/rule_quote and matches when present>
+<numbered list; for each: id, file, line_start-line_end, severity, type, evidence (quoted), description, in_delta, origin (new | carried), first_pass, regression, rule_source/rule_quote, matches, and regraded_from when present>
 
 YOUR JOB
 --------

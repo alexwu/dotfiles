@@ -12,8 +12,8 @@ Proper markdown. Readable in terminal, paste-friendly into GitHub / Slack / a do
 2. **Metadata block** — repo, branch, base/head SHA, pass, pipeline (which reviewers ran), findings tally
 3. **Intent sources line** — see below
 4. **One-paragraph framing** — the diff's apparent scope and where the findings cluster (1-3 sentences). Skip if no findings.
-5. **Severity-bucketed findings** — Blockers, Majors, Suggestions, each as an H2 section with emoji icon, only including buckets that have findings. A finding that doesn't block under the pass mode says so under its title (`**Non-blocking** on this pass`)
-5b. **Carried over** (pass 2 and later) — each finding from the last pass: fixed, still open, or regressed
+5. **Severity-bucketed findings** — Blockers, Majors, Suggestions, each as an H2 section with emoji icon, only including buckets that have findings. A finding that doesn't block under the round says so under its title (`**Non-blocking** on this round`)
+5b. **Carried over** (pass 2 and later) — each finding from the last pass: fixed, still open, regressed, or re-graded
 5c. **Already raised on the PR** (when any finding matched prior feedback) — each matched finding with its thread link, and whether it still blocks
 6. **Invalidated findings** (when any were killed at validation) — collapsible-feeling H2 section
 6b. **Personal-rule notes** (when any `rule_scope: user` findings exist) — H2 section of one-line notes to Alex about rules from his user-level files. Local output only; see `claude-md-integration.md` → "User-level rules stay local"
@@ -45,7 +45,7 @@ This isn't decoration. It's the receipt the user needs to spot-check: did we mis
 
 **Repo**: `<owner>/<repo>`
 **Branch**: `<head>` @ `<head-sha-short>` (base `<base>` @ `<base-sha-short>`)
-**Pass**: 2 of 2 (incremental since `9719a72`, line delta)
+**Pass**: 2 (incremental since `9719a72`, line delta; round 2 of 2)
 **Pipeline**: <N> reviewers (<comma-list>) + <M> validators
 **Findings**: <X> blockers, <Y> majors, <Z> suggestions, <K> invalidated
 
@@ -81,6 +81,7 @@ This isn't decoration. It's the receipt the user needs to spot-check: did we mis
 - **Fixed**: <title> — `path/to/file.ext:42-58`
 - **Still open**: <title> — `path/to/file.ext:61-64` *(listed above as [2])*
 - **Regressed**: <title> — `path/to/file.ext:70-75` *(listed above as [1])*
+- **Re-graded**: <title> — `path/to/file.ext:61-64` — major → suggestion: <reason>; possibly miscalibrated *(listed above as [4])*
 
 ## Already raised on the PR
 
@@ -108,12 +109,13 @@ This isn't decoration. It's the receipt the user needs to spot-check: did we mis
 The `**Pass**` line takes one of three shapes:
 
 ```markdown
-**Pass**: 1 of 2 (full)
-**Pass**: 2 of 2 (incremental since `9719a72`, line delta)
-**Pass**: 3 (closing; cap was 2; blockers and regressions only)
+**Pass**: 1 (full; round 1 of 2)
+**Pass**: 2 (incremental since `9719a72`, line delta; round 2 of 2)
+**Pass**: 3 (incremental since `4c1e9d0`, line delta; round 1 of 2, pass 2 was clean)
+**Pass**: 3 (incremental since `9719a72`, line delta; round 3, closing, cap 2)
 ```
 
-On a closing pass, "Recommended action" says the cap was reached, that `--block-on` was narrowed to blockers and regressions, and names what's left for a human to decide. With detached HEAD, the line reads `**Pass**: 1 (full; detached HEAD, no pass tracking)`.
+On a closing round, "Recommended action" says the cap was reached, that only blockers and regressions block, and names what's left for a human to decide, re-graded findings first. With detached HEAD, the line reads `**Pass**: 1 (full; detached HEAD, no pass tracking)`.
 
 ### When there are no findings
 
@@ -248,7 +250,7 @@ Structured output for CI consumption.
 
 ```json
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "source": {
     "mode": "pr | range | working",
     "base_sha": "abc123...",
@@ -259,12 +261,12 @@ Structured output for CI consumption.
   "intent_sources": ["pr_body", "issue:41", "plan:.claude/plans/foo.md"],
   "effort": "low | medium | high",
   "pass": {
-    "number": 2, "cap": 2, "large": false,
-    "mode": "full | incremental | closing",
+    "number": 2, "round": 2, "cap": 2, "closing": false, "large": false,
+    "mode": "full | incremental",
     "series": "2026-09-29T18:04:11Z | null",
     "since_sha": "9719a72… | null",
     "delta": "line | file | whole",
-    "carried": {"fixed": 3, "still_open": 1, "regressed": 0},
+    "carried": {"fixed": 3, "still_open": 1, "regressed": 0, "regraded": 0},
     "matched_prior_feedback": 2
   },
   "stats": {
@@ -295,6 +297,8 @@ Structured output for CI consumption.
       "rule_source": "path/to/CLAUDE.md, AGENTS.md, or .claude/rules/*.md (optional, claude-md type only)",
       "rule_quote": "verbatim rule (optional)",
       "origin": "new | carried",
+      "first_pass": 1,
+      "regraded_from": "blocker | major | null",
       "in_delta": true,
       "regression": false,
       "blocking": true,

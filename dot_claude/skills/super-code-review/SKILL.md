@@ -24,7 +24,7 @@ The bar is enough confidence to merge. Adapted from Google's [Standard of Code R
 - **Block** only when the change leaves the code worse than it found it: broken behavior, a hard-rule violation, an untested core path, generality nobody asked for. "Could be better" is a suggestion.
 - **Facts over preference.** A finding needs evidence: a failing input, a quoted rule, a cited line. Taste isn't a finding.
 - **Design ties go to the author.** When several approaches are valid, the author's choice stands.
-- **Converge.** Re-runs are incremental passes with a cap (`references/passes.md`). After the cap, only definite breakage blocks, and the rest goes to a human.
+- **Converge.** Re-runs are incremental passes; a clean pass approves, and the bar rises with each round that still blocks (`references/passes.md`). Past the cap, only definite breakage blocks, and the rest goes to a human.
 
 ## Args
 
@@ -37,8 +37,8 @@ The bar is enough confidence to merge. Adapted from Google's [Standard of Code R
 | `--skip-codex` | off | Skip the Codex second opinion at `high`; everything else runs as usual |
 | `--comment` | off | Post inline comments (PR mode only) |
 | `--submit` | off | After the review, a Fable agent re-validates the findings, then the skill approves the PR or requests changes (PR mode only). See `references/submit.md` |
-| `--block-on <major\|all>` | `major` | Severity that blocks on a full pass; incremental and closing passes narrow it (see Severity and blocking). `major` = blockers and majors; `all` = everything |
-| `--full` | off | Start a new series and run pass 1 as a full review instead of an incremental one. See `references/passes.md` |
+| `--block-on <major\|all>` | `major` | Severity that blocks at round 1; later rounds narrow it (see Severity and blocking). `major` = blockers and majors; `all` = everything |
+| `--full` | off | Start a new series: pass 1, round 1, full review. See `references/passes.md` |
 | `--json` | off | Machine-readable output |
 | `--intent <list>` | `auto` | Comma list: `pr,issue,bd,plan,all,none` |
 
@@ -61,9 +61,9 @@ In parallel (one message, multiple tool calls):
 1. **Resolve diff source** → unified diff string + changed file list + base SHA
 2. **Gather intent context** — pull PR body, linked GH issues, beads (`bd`) issues, plan files. See `references/intent-sources.md`
 3. **Detect domain profile** — glob for `.xcodeproj`, `Package.swift`, `Cargo.toml`, `*.nimble`, `tsconfig.json`, etc. See `references/domain-routing.md` for the language → skill table
-4. **Resolve the pass**: series, pass number, cap, mode, delta. It runs after item 1 returns, since it needs the head SHA. In PR mode, fetch prior feedback in parallel (`references/prior-feedback.md`). See `references/passes.md`
+4. **Resolve the pass**: series, pass number, round, cap, mode, delta. It runs after item 1 returns, since it needs the head SHA. In PR mode, fetch prior feedback in parallel (`references/prior-feedback.md`). See `references/passes.md`
 
-Past the cap, ask the user whether to run a closing pass, another full pass, or stop before going on to Phase 2 (`references/passes.md` → At the cap, ask the user).
+Two early stops before Phase 2: nothing new since a clean pass ends the run (`references/passes.md` → Nothing new since a clean pass); a round past the cap re-checks the carried findings, then asks the user whether to run the closing round, start round 1 again, or stop (→ Past the cap, ask the user).
 
 ### Phase 2 — Reviewer fan-out (parallel)
 
@@ -99,7 +99,7 @@ Spawn a validator subagent (`general-purpose`, with `model` set explicitly: `opu
 
 Batch validators by file when 2+ findings hit the same file — single read, multiple confirmations. See `references/agent-prompts.md` for the validator template.
 
-On pass 2 and later, re-check every carried finding with the carried-finding template, one agent per file. At `low`, the orchestrator re-reads the cited lines itself.
+On pass 2 and later, re-check every carried finding with the carried-finding template, one agent per file; it re-grades findings that have survived two rounds or more. At `low`, the orchestrator re-reads the cited lines itself. On a run past the cap this already ran in Phase 1; don't run it again.
 
 ### Phase 4 — Merge
 
@@ -152,15 +152,15 @@ See `references/effort-tiers.md` for the exact recipe per tier.
 - **major** — should be fixed: shortcut markers without tracking, scope drift, over-engineering against the stated intent, weak/tautological tests, soft CLAUDE.md/AGENTS.md violations
 - **suggestion** — optional polish, like Google's "Nit:": stylistic things only flagged because a domain auditor caught them; second-opinion-only findings the validator confirmed but didn't promote
 
-Every finding carries `origin` (`new`, or `carried` from the last pass), `in_delta` (it sits in what changed since the last pass), `regression` (the latest changes broke behavior that worked before; set by a reviewer or the carried re-check, confirmed by validation), and `severity`. Whether it blocks depends on the pass mode (`references/passes.md`):
+Every finding carries `origin` (`new`, or `carried` from the last pass), `in_delta` (it sits in what changed since the last pass), `regression` (the latest changes broke behavior that worked before; set by a reviewer or the carried re-check, confirmed by validation), and `severity`. A carried finding also carries `first_pass` and its last `blocking`. Whether it blocks depends on the round (`references/passes.md`):
 
-| Pass mode | Blocks at the `--block-on` threshold | Blocks only as a blocker | Blocks whatever its severity |
+| Round | New finding in the delta | New finding outside the delta | Carried finding |
 |---|---|---|---|
-| `full` (pass 1) | every finding | — | — |
-| `incremental` (2 to cap) | new findings in the delta; carried findings still open | new findings outside the delta | — |
-| `closing` (past the cap) | — | every finding, new or carried | regressions |
+| 1 | at `--block-on` | at `--block-on` | keeps its last `blocking` |
+| 2 up to the cap | at `--block-on` | only as a blocker | keeps its last `blocking` |
+| closing (past the cap) | only as a blocker | only as a blocker | only as a blocker |
 
-Everything is reported in every mode. Validators assign severity; the orchestrator derives `blocking` from severity and the pass mode, and never changes severity. Derive it in Phase 4, and again after the Fable pass with Fable's confirmed severity.
+A regression blocks in every round, whatever its severity. A carried finding whose re-graded severity falls below the threshold stops blocking. Everything is reported in every round. Validators assign severity; the orchestrator derives `blocking` from severity, the round, and the finding's history, and never changes severity. Derive it in Phase 4, and again after the Fable pass with Fable's confirmed severity.
 
 Findings sourced only from a user-level file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`) get no severity. They're local notes to the user and are **never** posted to a PR. See `references/claude-md-integration.md` → "User-level rules stay local".
 
@@ -226,6 +226,7 @@ Load these as needed — they're sized for progressive disclosure:
 ## Failure modes
 
 - **No diff** — return early with a one-line message
+- **Nothing new since a clean pass** — say so and stop; `--full` reviews it again
 - **`gh` not authenticated** in PR mode — explain and suggest `gh auth login`
 - **Codex unavailable** (returns nothing) — proceed without the second opinion, note it in the output
 - **MCP inline-comment server unavailable** in `--comment` mode — fall back to `gh api` (see `references/output-formats.md`)

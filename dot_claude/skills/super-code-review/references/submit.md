@@ -1,6 +1,6 @@
 # Submit (`--submit`, `--block-on`)
 
-`--submit` turns the review into a verdict on the PR. After the normal pipeline (Phases 1-5), a Fable agent re-validates the merged findings. If any surviving finding blocks (SKILL.md → "Severity and blocking"), the skill submits a GitHub review that **requests changes**, with those findings as inline comments. Otherwise it submits an **approval**. Which findings block depends on the `--block-on` threshold and the pass mode (`passes.md`). The submission is automatic: no confirmation step.
+`--submit` turns the review into a verdict on the PR. After the normal pipeline (Phases 1-5), a Fable agent re-validates the merged findings. If any surviving finding blocks (SKILL.md → "Severity and blocking"), the skill submits a GitHub review that **requests changes**, with those findings as inline comments. Otherwise it submits an **approval**. Which findings block depends on the `--block-on` threshold and the round (`passes.md`). The submission is automatic: no confirmation step.
 
 GitHub only. PR mode only. In range or working-tree mode, `--submit` is ignored with a one-line warning, and the review prints as usual.
 
@@ -9,7 +9,7 @@ GitHub only. PR mode only. In range or working-tree mode, `--submit` is ignored 
 | Flag | Default | Meaning |
 |---|---|---|
 | `--submit` | off | Validate with Fable, then approve or request changes on the PR |
-| `--block-on <major\|all>` | `major` | Severity that blocks on a full pass; incremental and closing passes narrow it (SKILL.md → "Severity and blocking"). `major` = blockers and majors; `all` = every surviving finding, suggestions included |
+| `--block-on <major\|all>` | `major` | Severity that blocks at round 1; later rounds narrow it (SKILL.md → "Severity and blocking"). `major` = blockers and majors; `all` = every surviving finding, suggestions included |
 
 `--submit` replaces `--comment`: the review carries its own inline comments, so passing both posts one review, not a review plus loose comments.
 
@@ -43,7 +43,7 @@ When there are more than 15 findings, split them by file across several Fable ag
 ### 3. Decide
 
 - **Threshold:** `major` → `{blocker, major}`. `all` → `{blocker, major, suggestion}`.
-- **Re-derive `blocking`** for every finding Fable kept, from its confirmed severity and `regression`, the threshold, and the pass mode (SKILL.md → "Severity and blocking"). Phase 4's value is stale once Fable changes a severity.
+- **Re-derive `blocking`** for every finding Fable kept, from its confirmed severity and `regression`, the threshold, the round, and the finding's history (SKILL.md → "Severity and blocking"). Phase 4's value is stale once Fable changes a severity.
 - Any finding with `blocking: true` → `REQUEST_CHANGES`. None → `APPROVE`. A finding that matches an open thread counts like any other.
 
 Kept findings at the threshold severity that don't block are non-blocking notes (`passes.md` → "Non-blocking notes"). Findings below the threshold are not posted. They stay in the local summary.
@@ -57,14 +57,17 @@ Kept findings at the threshold severity that don't block are non-blocking notes 
 - **First line of every body:** the hidden pass marker. It doesn't render, and it's how the next pass finds this one (`passes.md` → "Resolving the pass"):
 
   ```markdown
-  <!-- super-code-review series=2026-09-29T18:04:11Z pass=2 effort=high base=main head=9719a729742f0c06220a18bcc164184733b7110f -->
+  <!-- super-code-review series=2026-09-29T18:04:11Z pass=2 round=2 blocked=true effort=high base=main head=9719a729742f0c06220a18bcc164184733b7110f -->
   ```
+
+  `blocked` is the verdict from step 3.
 
 - **Review body, request changes:** one or two sentences naming what blocks the merge, then a count ("3 issues inline"). Findings that can't be inline (step 5) go here, each with a code link in the `output-formats.md` format.
 - **Review body, approve:** two to four sentences on what the review checked and found sound. No pipeline details.
 - **Findings that match an open thread** aren't inline comments. The body lists each with the "Still open" line from `prior-feedback.md` → "Posted text". A resolved thread whose issue is still present is raised again inline, and the comment links that thread.
-- **Non-blocking notes** go in a "Non-blocking:" list in the body, in every pass mode, one line each with a code link.
-- **Closing pass:** the body carries this sentence: "This is the last automated pass on this PR. The notes under "Non-blocking:" are for a human reviewer to weigh; nothing in them blocks the merge."
+- **Non-blocking notes** go in a "Non-blocking:" list in the body, in every round, one line each with a code link.
+- **Closing round:** the body carries this sentence: "This is the last automated pass on this PR. The notes under "Non-blocking:" are for a human reviewer to weigh; nothing in them blocks the merge."
+- **Re-graded findings** are listed under "Non-blocking:" with their new severity in plain words ("was flagged as blocking; on re-check it's a should-fix").
 - **Each inline comment:** what's wrong, the concrete failure (input → wrong result), and the fix direction. Add a committable `suggestion` block only under the rules in `output-formats.md` → "Committable suggestion blocks".
 
 Keep the pipeline out of the posted text: no reviewer names, no "validated by", no "Codex found", no local paths, no scratchpad files, no severity-tier jargon beyond a plain label ("Blocking:", "Should fix:"). The reader is the PR author, not the pipeline.
@@ -119,8 +122,9 @@ gh api --method POST "repos/$OWNER_REPO/pulls/$PR/reviews" --input "$PAYLOAD" \
 Print the normal local summary (Phase 5), then one line that names the pass:
 
 ```text
-Submitted: REQUEST_CHANGES, pass 2 of 2 (incremental; 3 inline, 1 in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
-Submitted: APPROVE, pass 3 (closing; cap 2; 2 non-blocking notes in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
+Submitted: REQUEST_CHANGES, pass 2 (incremental; round 2 of 2; 3 inline, 1 in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
+Submitted: APPROVE, pass 3 (incremental; round 1 of 2; clean) — https://github.com/owner/repo/pull/123#pullrequestreview-…
+Submitted: APPROVE, pass 3 (incremental; round 3, closing, cap 2; 2 non-blocking notes in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
 ```
 
 Then fill in the pass record's `submitted` (`passes.md` → "Writing state"). For `--json`, add the `submission` object from `output-formats.md`.

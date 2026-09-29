@@ -142,7 +142,7 @@ Before a validator returns `valid: true`, it must confirm:
 5. ☐ The reasoning is one sentence and would survive a code-review-of-the-code-review
 6. ☐ The issue would matter to a senior engineer reviewing the diff
 7. ☐ The finding doesn't require speculation about future state or hypothetical inputs
-8. ☐ `in_delta`, `origin`, and `matches` from the reviewer are carried through unchanged
+8. ☐ `in_delta`, `origin`, `first_pass`, and `matches` from the reviewer are carried through unchanged
 
 If any of checkboxes 1-7 fails, return `valid: false` with the reason. Checkbox 8 is about the return shape, not validity: the orchestrator needs those fields to decide what blocks.
 

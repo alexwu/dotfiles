@@ -70,7 +70,7 @@ Do not attempt to invoke `/code-review` via Bash or any other route.
 
 ## Passes at any tier
 
-Pass tracking, the cap, the question past the cap, and (in PR mode) prior-feedback matching run at every tier (`passes.md`, `prior-feedback.md`). At `low`, which spawns no validators, the orchestrator re-checks carried findings itself by reading the cited lines. A pass at a lower tier doesn't count toward a higher tier's pass number.
+Pass tracking, rounds, the cap, the question past it, and (in PR mode) prior-feedback matching run at every tier (`passes.md`, `prior-feedback.md`). At `low`, which spawns no validators, the orchestrator re-checks and re-grades carried findings itself by reading the cited lines. A pass at a lower tier counts toward neither a higher tier's pass number nor its round, and a clean `low` pass doesn't end a `high` run early: the last pass is always read at or above the current effort.
 
 ## Effort selection heuristics (when the user doesn't specify)
 
