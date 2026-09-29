@@ -1,18 +1,22 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mostlygeek/llama-swap/refs/heads/main/config-schema.json
 
 groups:
-  "always-on":
+  "hot-path":
     persistent: true
     swap: false
     exclusive: false
     members:
-      # Dictation-cleanup hot path (run multiple times/hour) — kept resident so
-      # every cleanup is instant, never paying the ~6s cold-load. ~24GB RSS /
-      # ~4GB phys; coexists with workhorse models (always-on is never evicted).
+      # NOTE(alexwu): Renamed from "always-on". Each member has `ttl: 14400`,
+      # so it unloads after 4h idle and cold-loads on the next request.
+      # swap:false keeps members from evicting each other; persistent:true
+      # keeps other groups from evicting them.
+      # Dictation-cleanup hot path (run multiple times/hour) — resident while in
+      # use so cleanups skip the ~6s cold-load. ~24GB RSS / ~4GB phys; coexists
+      # with workhorse models.
       - "Qwen3.6-35B-A3B"
-      # image-sort default classifier (stock 26B MoE) — resident so the sorter
-      # never pays a cold-load swap (a wedged swap once hung a call ~10min;
-      # swap:false here means it never cold-loads again). 14/14 in the bake-off,
+      # image-sort default classifier (stock 26B MoE) — resident while in use so
+      # the sorter skips cold-load swaps (a wedged swap once hung a call ~10min;
+      # the first sort after a 4h idle will cold-load). 14/14 in the bake-off,
       # ~2x faster than the 31B dense.
       - "gemma-4-26B-A4B-it"
 
@@ -20,7 +24,7 @@ groups:
   # you drive a single completion provider at a time (Zed's zeta OR Sweep), so
   # they trade the one slot instead of all sitting resident. `persistent: true`
   # keeps the active one from eviction by default-group one-offs mid-edit;
-  # `exclusive: false` so loading one never disturbs always-on / workhorse.
+  # `exclusive: false` so loading one never disturbs hot-path / workhorse.
   # CAVEAT(alexwu): if you ever run Zed AND a Sweep-backed editor at the SAME
   # time, swap:true makes them thrash (each load evicts the other) — flip this
   # group to swap:false then so all four can co-reside.
@@ -37,7 +41,7 @@ groups:
   # Active-task workhorse tier. One member at a time within the group
   # (`swap: true`), but small default-group churn (one-off / default-group
   # models) cannot evict them (`persistent: true`), and loading a workhorse
-  # does not unload always-on (`exclusive: false`). TTL still applies as
+  # does not unload hot-path (`exclusive: false`). TTL still applies as
   # the idle-eviction backstop — `persistent` only blocks other-group
   # unloads, not the model's own ttl timer. Reserve a separate "heavy"
   # group later for the true heavyweights (122B / Mistral Medium).
@@ -72,9 +76,93 @@ models:
     timeouts:
       responseHeader: 300
 
+  # Qwen3.8-Flash-Next — the Qwen4-preview architecture (`qwen4exp`), NOT the
+  # qwen3_5 family the rest of the 3.6/3.8 entries use. 125B params / 6B active
+  # (512 experts, 10 routed + 1 shared) + 51B n-gram embedding + 4B MTP, hybrid
+  # Gated DeltaNet × Qwen Sparse Attention, 262144 native ctx. Vision included.
+  # QUANT — UD-IQ4_XS (87.2 GiB), NOT a Q4_K_M/_S: this repo ships only unsloth
+  # UD quants and the nearest neighbour UD-Q4_K_XL is 103.7 GiB against a Metal
+  # recommendedMaxWorkingSetSize of 110100 MiB (107.5 GiB) — 3.8 GiB left for
+  # KV + compute buffers + the vision tower, i.e. it will not load usefully.
+  # WARNING(alexwu) — MEASURED 2026-09-21: IQ4_XS does NOT reliably fit either.
+  # It runs well alone (45-46 tok/s decode, faster than the dense 27B), but the
+  # weights are mmap'd and RSS GROWS WITH EXPERT COVERAGE: 62.7 GiB right after
+  # load, climbing monotonically to 66.4 GiB over six requests and still rising
+  # toward the full 87.2 GiB as routing touches more of the 512 experts. Any
+  # additional demand past that tips it into
+  #   kIOGPUCommandBufferCallbackErrorOutOfMemory
+  # which is UNRECOVERABLE in-process ("backend is in error state ... recreate
+  # the backend to recover") — every later request 500s with "Compute error."
+  # until the process is restarted. Two reproductions: (1) the hot-path
+  # Qwen3.6-35B-A3B loading alongside it mid-run, (2) the vision tower loading
+  # on top of 66 GiB of resident experts ("failed to process mtmd chunk").
+  # Budget reality: 107.5 GiB Metal working set, minus ~20-24 GiB for the
+  # hot-path 35B-A3B, minus ~10-14 GiB OS/apps => ~70-75 GiB practical, not 87.
+  # To use this entry as-is you must unload everything first
+  # (POST /api/models/unload) and keep vision off. Ladder if you want it to fit
+  # unattended: UD-Q2_K_XL 73.5 GiB (marginal) / UD-IQ1_M 69.4 / UD-IQ1_S 67.6.
+  # UD-Q3_K_XL (83.8) is only 3.4 GiB smaller than IQ4_XS — it does not help.
+  # VISION — mmproj declares `clip.projector_type: qwen3vl_merger`, which the
+  # installed libmtmd supports (verified: `qwen3vl` present in libmtmd 0.4.1).
+  # The vision tower is qwen3vl even though the text arch is qwen4exp.
+  # MTP — deliberately ABSENT, unlike every other 3.6/3.8 entry here. Mainline
+  # llama.cpp has no MTP graph for `qwen4exp` and no cross-model tensor
+  # borrowing, so the repo's MTP/ heads (incl. the recommended `shared-Q8_0`)
+  # are inert on our build — verified: no `borrow_shared_tensor` symbol in
+  # libllama 0.4.1 (build 11064, a894dae93), which mise tracks as ggml-org
+  # `latest`. Upstream support is ggml-org/llama.cpp#28243; revisit and add
+  # `--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-model <shared-Q8_0>`
+  # once that lands (unsloth measures 1.67x on UD-Q4_K_XL, greedy).
+  # GROUP — default group + ttl 600, matching the Qwen3.5-122B-A10B / Mistral
+  # Medium heavyweight precedent above. Loading this evicts hot-path (default
+  # `exclusive: true`), and the short ttl is what lets hot-path reclaim later.
+  # CAVEAT(alexwu), measured: that protection is ONE-WAY and it is why this OOMs.
+  # llama-swap's `exclusive` governs what a load UNLOADS, not what may load
+  # afterwards — and hot-path is `exclusive: false, swap: false`, so a
+  # dictation request CO-RESIDES a 20+ GiB model next to this one rather than
+  # evicting it. There is no flag that blocks that; `persistent` only prevents
+  # other groups from unloading you. Making `hot-path` exclusive would fix it
+  # but would also let dictation evict the workhorse tier — Alex's call, not a
+  # drive-by change. Still the eventual tenant for the reserved `heavy` group.
+  # CTX — 65536 to start (heavyweight precedent), well under the 262144 native.
+  # Raise once the hybrid arch's real KV footprint is measured; only 12 of 48
+  # layers carry full attention (2 KV heads × 256 dim) so headroom may be large.
+  # Sampling per the model card: instruct temp 0.7 / top_p 0.80 / presence 1.5;
+  # thinking temp 1.0 / top_p 0.95 / presence 0.0. Thinking is ON by default in
+  # 3.8; depth is tunable per-request via chat_template_kwargs reasoning_effort:
+  # xhigh (default) | medium | low. Weights via pueue
+  # (label claude:chezmoi: dl-qwen38-flash-next-iq4xs, task 195).
+  "Qwen3.8-Flash-Next":
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-Flash-Next-GGUF/mmproj-F16.gguf
+    ttl: 600
+    timeouts:
+      responseHeader: 300
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 0.7
+          top_p: 0.8
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 1.5
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: false
+            preserve_thinking: true
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.95
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 0.0
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: true
+            preserve_thinking: true
+
   "Qwen3.6-35B-A3B":
     cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
-    ttl: 6000
+    ttl: 14400
     filters:
       setParamsByID:
         "${MODEL_ID}":
@@ -358,7 +446,7 @@ models:
   # only bites under long-ctx + `-np > 1` — this entry is ctx 32768, parallel 1,
   # so it dodges that. Drop `--spec-draft-*` (vision, no MTP) or `--mmproj`
   # (text-only MTP) if it misbehaves. Default group (experiment) — promote to
-  # always-on if it earns the router job. Drafter via pueue
+  # hot-path if it earns the router job. Drafter via pueue
   # (label claude: dl-gemma4-31b-mtp-drafter).
   "gemma-4-31B-it-mtp":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --spec-type draft-mtp --spec-draft-n-max 4 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mtp-gemma-4-31B-it.gguf --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
@@ -367,7 +455,8 @@ models:
   # Stock (non-heretic) 26B MoE — the "regular 26b": fast (~4B active), accurate,
   # jailbreakable for free-form. Stock template; Q5_K_S + F32 mmproj (downloading).
   "gemma-4-26B-A4B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 131072 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
+    ttl: 14400
     timeouts:
       responseHeader: 120
   # Abliterated dense twin of gemma-4-31B-it (mradermacher heretic, i1-Q4_K_M).
@@ -392,7 +481,7 @@ models:
   # + --jinja (model's own chat template, needed for the multimodal -it template)
   # + Google's gemma sampling. AUDIO via llama-server = the `image_url` content
   # part with a data:audio/wav;base64 URL (NOT OpenAI input_audio), audio placed
-  # BEFORE text, 16kHz, 30s chunks. Default group — promote to always-on if it
+  # BEFORE text, 16kHz, 30s chunks. Default group — promote to hot-path if it
   # earns the router job. (Earlier mradermacher `gemma-4-E4B` was the BASE model —
   # wrong for both classify and audio; replaced with this -it build.)
   "gemma-4-E4B-it":
@@ -414,7 +503,7 @@ models:
   # MONO wav, audio placed AFTER text, 30s max chunk. (Differs from the older E4B
   # recipe — image_url data:audio URL, audio BEFORE text — this newer unified arch
   # uses the OpenAI-style input_audio part instead.) Weights via `pueue` (label
-  # claude: dl-gemma4-12b-it-q6k). Default group — promote to always-on if it earns
+  # claude: dl-gemma4-12b-it-q6k). Default group — promote to hot-path if it earns
   # a router/audio job. Ref: hf.co/unsloth/gemma-4-12b-it-GGUF.
   "gemma-4-12b-it":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q6_K.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/mmproj-F32.gguf
@@ -423,17 +512,17 @@ models:
       responseHeader: 120
   "Dark-Nexus-24B-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/ReadyArt/Dark-Nexus-24B-v2.0-GGUF/Dark-Nexus-24B-v2.0-Q5_K_M.gguf --no-webui
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
   "Magidonia-24B-v4.3":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/TheDrummer/Magidonia-24B-v4.3-GGUF/Cydonia-24B-v4zk-Q5_K_M.gguf
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
   "Broken-Tutu-24B-Unslop-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/mradermacher/Broken-Tutu-24B-Unslop-v2.0-i1-GGUF/Broken-Tutu-24B-Unslop-v2.0.i1-Q5_K_M.gguf
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
   # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt static
@@ -446,7 +535,7 @@ models:
   # / top_p 0.95 / min_p 0.03.
   "Melody1437-26B-A4B-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 0.8 --top-p 0.95 --min-p 0.03 --reasoning off -hfr "ReadyArt/Melody1437-26B-A4B-v2.0-GGUF" -hff Melody1437-26B-A4B-v2.0-HB16-Q5_K_M.gguf --no-webui
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
   # Dense 31B sibling of the 26B-A4B Melody above — ReadyArt gemma-4-31B-it
@@ -461,7 +550,7 @@ models:
   # ~/.cache/huggingface/models/ReadyArt/Melody1437-31B-v2.0-GGUF/.
   "Melody1437-31B-v2.0":
     cmd: llama-server --port ${PORT} --ctx-size 65536 --temp 1.0 --top-p 0.92 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Melody1437-31B-v2.0-GGUF/Melody1437-31B-v2.0-HB16-Q5_K_M.gguf --no-webui
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
   # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt static quant, Q5_K_M
@@ -475,7 +564,7 @@ models:
   # llama.cpp defaults) — matches the Omega-Evolution sibling below.
   "Dark-Scarlett-v1.0-26B-A4B":
     cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Dark-Scarlett-v1.0-26B-A4B-GGUF" -hff Dark-Scarlett-v1.0-26B-A4B-Q5_K_M.gguf --no-webui
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
   # Gemma-4 26B-A4B (MoE, ~4B active) finetune — ReadyArt i1 iMatrix
@@ -486,9 +575,71 @@ models:
   # the card: temp 1.0 / top_p 0.92 (freq/presence pen 0 = llama.cpp defaults).
   "Omega-Evolution-26B-A4B-v3.0":
     cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Omega-Evolution-26B-A4B-v3.0-GGUF" -hff Omega-Evolution-26B-A4B-v3.0.i1-Q5_K_M_hb16.gguf --no-webui
-    ttl: 28800
+    ttl: 7200
     timeouts:
       responseHeader: 120
+  # Dark-Scarlett-27B-v2.0 — ReadyArt's QWEN3.8-27B-based successor to the
+  # gemma Dark-Scarlett-v1.0-26B-A4B above (card: "Qwen3.8 Based", LoRA on the
+  # base). i1-Q5_K_M_hb16 (iMatrix + bf16 embeddings/output — the house flavor
+  # per the Omega-Evolution precedent; card's plain rec is Q5_K_M). Unlike the
+  # gemma ReadyArts this one ships VISION (mmproj BF16) and its MTP head as a
+  # SEPARATE drafter file — gemma-4-31B-style --spec-draft-model attach (Q8
+  # drafter, 3.2GB), n-max 3 per the dense-27B sweep on this Metal build.
+  # Qwen3.8 arch → no --reasoning off here; family convention keeps plain ID
+  # non-thinking, but the CARD recommends enable_thinking:true +
+  # reasoning_effort "low" — that lives on the :thinking variant. Sampling per
+  # the card: temp 1.0 / top_p 0.92 (freq/presence 0 = llama.cpp defaults).
+  # Weights via pueue (label claude:chezmoi: dl-dark-scarlett-27b, task 140).
+  "Dark-Scarlett-27B-v2.0":
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Dark-Scarlett-27B-v2.0-GGUF/MTP-Dark-Scarlett-27B-v2.0-Q8.gguf --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Dark-Scarlett-27B-v2.0-GGUF/Dark-Scarlett-27B-v2.0.i1-Q5_K_M_hb16.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Dark-Scarlett-27B-v2.0-GGUF/MMPROJ-Dark-Scarlett-27B-v2.0-BF16.gguf --no-webui
+    ttl: 7200
+    timeouts:
+      responseHeader: 120
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 1.0
+          top_p: 0.92
+          chat_template_kwargs:
+            enable_thinking: false
+            preserve_thinking: true
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.92
+          chat_template_kwargs:
+            enable_thinking: true
+            reasoning_effort: low
+            preserve_thinking: true
+
+  # Omega-Convergence-27B-v1.0 — ReadyArt QWEN3.8-27B finetune, sibling of the
+  # gemma Omega-Evolution-26B-A4B above. Identical setup to Dark-Scarlett-27B:
+  # i1-Q5_K_M_hb16 weights, BF16 mmproj (vision), separate q8_0 MTP drafter via
+  # --spec-draft-model, n-max 3. Card sampling: temp 1.0 / top_p 0.92
+  # (freq/presence 0). Card recommends enable_thinking:true + reasoning_effort
+  # "medium" (vs Scarlett's "low") — on the :thinking variant, plain ID stays
+  # non-thinking per family convention. Weights via pueue
+  # (label claude:chezmoi: dl-omega-convergence-27b, task 141).
+  "Omega-Convergence-27B-v1.0":
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Omega-Convergence-27B-v1.0-GGUF/mtp-Omega-Convergence-27B-v1.0-q8_0.gguf --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Omega-Convergence-27B-v1.0-GGUF/Omega-Convergence-27B-v1.0.i1-Q5_K_M_hb16.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Omega-Convergence-27B-v1.0-GGUF/mmproj-Omega-Convergence-27B-v1.0-BF16.gguf --no-webui
+    ttl: 7200
+    timeouts:
+      responseHeader: 120
+    filters:
+      setParamsByID:
+        "${MODEL_ID}":
+          temperature: 1.0
+          top_p: 0.92
+          chat_template_kwargs:
+            enable_thinking: false
+            preserve_thinking: true
+        "${MODEL_ID}:thinking":
+          temperature: 1.0
+          top_p: 0.92
+          chat_template_kwargs:
+            enable_thinking: true
+            reasoning_effort: medium
+            preserve_thinking: true
+
   # Gemma-4-Queen-31B-it — aifeifei798 dense 31B gemma-4 finetune (mradermacher just
   # did the static quants). Q4_K_M (the card's "fast,
   # recommended" quant). Text-only here — vision skipped, no --mmproj. gemma-4 arch

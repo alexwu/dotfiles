@@ -28,7 +28,8 @@ shell *had* `~/.local/bin`. Test hazel tools under the real minimal env:
   `heic-ai-rename <input> <context-hint> <dest-folder> [model]`. HEIC/HEIF/JPEG →
   PNG via `sips`; the `<context-hint>` biases the model toward a more specific
   kebab-case filename (~40 chars, 60 max). Default model `Qwen3.6-35B-A3B-heretic`
-  (always-on = no cold-load, uncensored = won't refuse NSFW). Original is trashed
+  (workhorse group = no cold-load while it holds the slot, uncensored = won't
+  refuse NSFW). Original is trashed
   (`trash` CLI) or deleted on success.
 
 - `scripts/hazel/image_sort.nim` (binary `image-sort`) — classify a Downloads image
