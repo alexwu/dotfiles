@@ -25,6 +25,25 @@ INTENT CONTEXT
 
 <paste of the aggregated intent context, or "(empty)">
 
+PASS CONTEXT
+------------
+
+Pass: <n> of <cap> (<full | incremental | closing>)
+Delta since the last reviewed pass (<line | file | whole>): <inline delta, or "See file: <path>">
+
+Findings from the last pass, including threads this review opened
+(being re-checked separately; don't re-report them):
+<numbered list: file:lines — title — severity, or "(none)">
+
+Other feedback on the PR (threads, review bodies, conversation comments):
+<numbered list: kind — file:lines — author — open/resolved — first and last comment excerpts — url, or "(none)">
+
+Review the whole diff and report everything you find. Mark each finding
+`in_delta: true|false`. When the latest changes broke behavior that
+worked before, add `regression: true`. If a finding repeats other
+feedback, report it anyway and add `matches: <url>`; the orchestrator
+decides what to repost.
+
 DIFF
 ----
 
@@ -122,12 +141,18 @@ YOUR JOB
    - major: will cause incorrect or fragile behavior, drop an error path, deviate from intent
    - A missing test for an obscure edge case, or an incidental extra test case, isn't a finding: return valid: false
    - suggestion: real but minor; would improve quality without being a must-fix
+   - The bar: blocker or major only when the change leaves the code worse than the base. A real improvement that could go further is a suggestion. When several designs are valid, the author's choice isn't a finding. Over-engineering against the stated intent is a major.
+   - Set `regression: true` only when the latest changes broke behavior that worked before; confirm or reject the reviewer's claim.
 5. Return:
    ```
    {
      valid: true|false,
      severity: "<level>",              # "none" when rule_scope is user
+     regression: true|false,
      rule_scope: "repo|user",          # carried through unchanged when the finding has one
+     in_delta: true|false,             # carried through unchanged
+     origin: "new|carried",            # carried through unchanged
+     matches: "<url>|null",            # carried through unchanged
      file: "<path>",                   # REQUIRED — confirmed exact file path
      line_start: <N>,                  # REQUIRED — confirmed exact line number(s)
      line_end: <N>,                    # REQUIRED — equals line_start for single-line findings
@@ -150,6 +175,46 @@ CONSTRAINTS
 
 Same template, but `FINDING UNDER REVIEW` becomes a numbered list, and the return is an array of `{ finding_id, valid, severity, ... }` objects.
 
+## Carried-finding re-check template
+
+On pass 2 and later, one agent per file re-checks the last pass's findings (`passes.md` → "Carried-finding re-checks"). Spawn it like a validator (`general-purpose`, `model` set: `opus` when any finding in the batch is a bug or silent-failure finding, `sonnet` otherwise).
+
+```
+You are re-checking findings from an earlier review pass. The code may have
+changed since. For each finding, decide whether it's still there.
+
+SOURCE
+------
+Mode: <pr | range | working>
+Head SHA: <full sha or "working-tree">
+Read the file as the review sees it: in working mode, the file on disk;
+otherwise `git show <head>:<path>`, or `gh api` when the head isn't local.
+
+FINDINGS FROM THE LAST PASS
+---------------------------
+<numbered list; for each: id, file, line_start-line_end, severity, title, evidence (quoted) as it was>
+
+YOUR JOB
+--------
+For each finding:
+1. Find the code it describes. Lines move between passes; search by the
+   quoted evidence and the surrounding function, not the old line numbers.
+2. Decide: `fixed` (the problem is gone), `still-open` (it's still there),
+   or `regressed` (the fix broke behavior that worked before).
+3. Return a JSON array, one object per finding:
+   { "id": "<id>", "status": "fixed|still-open|regressed",
+     "file": "<path>", "line_start": N, "line_end": N,
+     "evidence": "<exact quoted line(s) as they are now>",
+     "reasoning": "<one or two sentences>" }
+
+CONSTRAINTS
+-----------
+- Read-only. No edits.
+- Keep the old severity; don't re-grade.
+```
+
+A `regressed` result goes through normal validation as a new finding with `regression: true` and `origin: "carried"`.
+
 ## Fable validator template (`--submit`)
 
 Spawn with `subagent_type: "general-purpose"` and `model: "fable"`, after Phase 4. One agent for up to 15 findings; above that, split by file across parallel agents. See `submit.md` for what happens with the result.
@@ -162,24 +227,26 @@ PR
 Repo: <owner/repo>
 PR: #<number> — <title>
 Head SHA: <full sha>
+Pass: <n> of <cap> (<full | incremental | closing>)
 Diff: <path to the diff file>
 Changed files: <list>
 
 FINDINGS
 --------
-<numbered list; for each: id, file, line_start-line_end, severity, type, evidence (quoted), description, rule_source/rule_quote when present>
+<numbered list; for each: id, file, line_start-line_end, severity, type, evidence (quoted), description, in_delta, origin (new | carried), regression, rule_source/rule_quote and matches when present>
 
 YOUR JOB
 --------
 For each finding:
 1. Read the cited file in full at the head commit, and follow up to 2 callers or callees when the claim depends on them.
 2. Decide whether it's real, introduced by this diff, and something a senior reviewer would block on or ask to fix. Apply the do-NOT-flag list: pre-existing issues, linter-catchable nits, style preferences, speculative "could race" concerns the diff doesn't introduce, anything silenced by a directive.
-3. Confirm the severity: blocker (breaks the build, crashes, wrong output, violates a hard repo rule, leaves the diff's core behavior or a common edge case untested), major (fragile or incorrect behavior, a dropped error path, drift from the stated intent), or suggestion. You may change it; say why. A missing test for an obscure edge case, or an incidental extra test, isn't a finding: kill it.
+3. Confirm the severity: blocker (breaks the build, crashes, wrong output, violates a hard repo rule, leaves the diff's core behavior or a common edge case untested), major (fragile or incorrect behavior, a dropped error path, drift from the stated intent), or suggestion. You may change it; say why. A missing test for an obscure edge case, or an incidental extra test, isn't a finding: kill it. The bar: blocker or major only when the change leaves the code worse than the base. A real improvement that could go further is a suggestion. When several designs are valid, the author's choice isn't a finding. Over-engineering against the stated intent is a major. Confirm or reject `regression`: true only when the latest changes broke behavior that worked before.
 4. Check the cited lines against the diff: `inline: true` when every cited line is on the new (right-hand) side of a diff hunk, `inline: false` otherwise.
 
 Return a JSON array, one object per finding:
 { "id": "<id>", "keep": true|false, "severity": "blocker|major|suggestion",
-  "severity_changed_because": "<reason or null>", "inline": true|false,
+  "severity_changed_because": "<reason or null>", "regression": true|false,
+  "inline": true|false,
   "file": "<path>", "line_start": N, "line_end": N,
   "evidence": "<exact quoted line(s)>", "reasoning": "<one or two sentences>" }
 
@@ -188,6 +255,8 @@ CONSTRAINTS
 - Read-only. No edits, no writes, no git or gh commands that change anything.
 - When you can't confirm a finding, kill it. A false blocker on someone's PR costs more than a missed nit.
 ```
+
+Fable returns severity and `regression`; the orchestrator, not Fable, derives `blocking` from them (SKILL.md → "Severity and blocking").
 
 ## Concurrency and read-only enforcement
 

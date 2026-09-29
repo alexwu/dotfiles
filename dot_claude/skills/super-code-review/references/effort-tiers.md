@@ -66,7 +66,11 @@ Do not attempt to invoke `/code-review` via Bash or any other route.
 
 ## `--submit` at any tier
 
-`--submit` adds the Fable validation pass and the approve / request-changes submission (`submit.md`) on top of whichever tier runs. At `low`, where Phase 3 is skipped, the Fable pass is the only validation, so it carries the whole bar alone.
+`--submit` adds the Fable validation pass and the approve / request-changes submission (`submit.md`) on top of whichever tier runs; the verdict follows each finding's `blocking` (SKILL.md → "Severity and blocking"). At `low`, where Phase 3 is skipped, the Fable pass is the only validation, so it carries the whole bar alone.
+
+## Passes at any tier
+
+Pass tracking, the cap, the question past the cap, and (in PR mode) prior-feedback matching run at every tier (`passes.md`, `prior-feedback.md`). At `low`, which spawns no validators, the orchestrator re-checks carried findings itself by reading the cited lines. A pass at a lower tier doesn't count toward a higher tier's pass number.
 
 ## Effort selection heuristics (when the user doesn't specify)
 

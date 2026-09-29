@@ -1,6 +1,6 @@
 # Submit (`--submit`, `--block-on`)
 
-`--submit` turns the review into a verdict on the PR. After the normal pipeline (Phases 1-5), a Fable agent re-validates the merged findings. If any surviving finding is at or above the `--block-on` threshold, the skill submits a GitHub review that **requests changes**, with those findings as inline comments. Otherwise it submits an **approval**. The submission is automatic: no confirmation step.
+`--submit` turns the review into a verdict on the PR. After the normal pipeline (Phases 1-5), a Fable agent re-validates the merged findings. If any surviving finding blocks (SKILL.md → "Severity and blocking"), the skill submits a GitHub review that **requests changes**, with those findings as inline comments. Otherwise it submits an **approval**. Which findings block depends on the `--block-on` threshold and the pass mode (`passes.md`). The submission is automatic: no confirmation step.
 
 GitHub only. PR mode only. In range or working-tree mode, `--submit` is ignored with a one-line warning, and the review prints as usual.
 
@@ -9,7 +9,7 @@ GitHub only. PR mode only. In range or working-tree mode, `--submit` is ignored 
 | Flag | Default | Meaning |
 |---|---|---|
 | `--submit` | off | Validate with Fable, then approve or request changes on the PR |
-| `--block-on <major\|all>` | `major` | `major`: blockers and majors trigger request-changes. `all`: every surviving finding does, suggestions included |
+| `--block-on <major\|all>` | `major` | Severity that blocks on a full pass; incremental and closing passes narrow it (SKILL.md → "Severity and blocking"). `major` = blockers and majors; `all` = every surviving finding, suggestions included |
 
 `--submit` replaces `--comment`: the review carries its own inline comments, so passing both posts one review, not a review plus loose comments.
 
@@ -28,7 +28,7 @@ gh repo view --json nameWithOwner --jq .nameWithOwner   # owner/repo
 gh api user --jq .login                                  # who's submitting
 ```
 
-Record the head SHA. It's the `commit_id` of the review, and step 5 checks that it hasn't moved.
+Record the head SHA. It's the `commit_id` of the review, and step 5 checks that it hasn't moved. Reuse the reviews, threads, and comments Phase 1 already fetched (`passes.md`, `prior-feedback.md`); don't fetch them again.
 
 ### 2. Fable validation
 
@@ -43,10 +43,10 @@ When there are more than 15 findings, split them by file across several Fable ag
 ### 3. Decide
 
 - **Threshold:** `major` → `{blocker, major}`. `all` → `{blocker, major, suggestion}`.
-- **Escalated** = findings Fable kept whose confirmed severity is in the threshold.
-- Escalated is non-empty → `REQUEST_CHANGES`. Empty → `APPROVE`.
+- **Re-derive `blocking`** for every finding Fable kept, from its confirmed severity and `regression`, the threshold, and the pass mode (SKILL.md → "Severity and blocking"). Phase 4's value is stale once Fable changes a severity.
+- Any finding with `blocking: true` → `REQUEST_CHANGES`. None → `APPROVE`. A finding that matches an open thread counts like any other.
 
-Findings below the threshold are not posted. They stay in the local summary.
+Kept findings at the threshold severity that don't block are non-blocking notes (`passes.md` → "Non-blocking notes"). Findings below the threshold are not posted. They stay in the local summary.
 
 **Your own PR.** When the PR author and the `gh api user` login match, submit with event `COMMENT` instead, and open the body with the verdict it would have been: `Would request changes:` or `Would approve:`. Say so in the local output.
 
@@ -54,8 +54,17 @@ Findings below the threshold are not posted. They stay in the local summary.
 
 **Load the `writing-english` skill first**, and write every word that gets posted under its rules: the review body and each inline comment. These go out under the user's name.
 
+- **First line of every body:** the hidden pass marker. It doesn't render, and it's how the next pass finds this one (`passes.md` → "Resolving the pass"):
+
+  ```markdown
+  <!-- super-code-review series=2026-09-29T18:04:11Z pass=2 effort=high base=main head=9719a729742f0c06220a18bcc164184733b7110f -->
+  ```
+
 - **Review body, request changes:** one or two sentences naming what blocks the merge, then a count ("3 issues inline"). Findings that can't be inline (step 5) go here, each with a code link in the `output-formats.md` format.
 - **Review body, approve:** two to four sentences on what the review checked and found sound. No pipeline details.
+- **Findings that match an open thread** aren't inline comments. The body lists each with the "Still open" line from `prior-feedback.md` → "Posted text". A resolved thread whose issue is still present is raised again inline, and the comment links that thread.
+- **Non-blocking notes** go in a "Non-blocking:" list in the body, in every pass mode, one line each with a code link.
+- **Closing pass:** the body carries this sentence: "This is the last automated pass on this PR. The notes under "Non-blocking:" are for a human reviewer to weigh; nothing in them blocks the merge."
 - **Each inline comment:** what's wrong, the concrete failure (input → wrong result), and the fix direction. Add a committable `suggestion` block only under the rules in `output-formats.md` → "Committable suggestion blocks".
 
 Keep the pipeline out of the posted text: no reviewer names, no "validated by", no "Codex found", no local paths, no scratchpad files, no severity-tier jargon beyond a plain label ("Blocking:", "Should fix:"). The reader is the PR author, not the pipeline.
@@ -70,7 +79,7 @@ gh pr view "$PR" --json headRefOid --jq .headRefOid
 
 If it changed, the review covers stale code. Don't submit; tell the user the PR moved and that the review needs a rerun.
 
-Build the payload with the Write tool into the scratchpad directory, one comment object per escalated finding with `inline: true`:
+Build the payload with the Write tool into the scratchpad directory, one comment object per blocking finding with `inline: true` that doesn't match an open thread:
 
 ```json
 {
@@ -107,10 +116,11 @@ gh api --method POST "repos/$OWNER_REPO/pulls/$PR/reviews" --input "$PAYLOAD" \
 
 ### 7. Report
 
-Print the normal local summary (Phase 5), then one line:
+Print the normal local summary (Phase 5), then one line that names the pass:
 
 ```text
-Submitted: REQUEST_CHANGES (3 inline, 1 in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
+Submitted: REQUEST_CHANGES, pass 2 of 2 (incremental; 3 inline, 1 in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
+Submitted: APPROVE, pass 3 (closing; cap 2; 2 non-blocking notes in body) — https://github.com/owner/repo/pull/123#pullrequestreview-…
 ```
 
-For `--json`, add the `submission` object from `output-formats.md`.
+Then fill in the pass record's `submitted` (`passes.md` → "Writing state"). For `--json`, add the `submission` object from `output-formats.md`.

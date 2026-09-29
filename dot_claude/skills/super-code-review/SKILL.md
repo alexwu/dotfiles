@@ -1,7 +1,7 @@
 ---
 name: super-code-review
 description: |
-  Multi-agent code review of a GitHub PR, a local commit range, or uncommitted working-tree changes. Parallel reviewers cover bugs, silent failures, CLAUDE.md/AGENTS.md compliance, test thoroughness, and shortcuts/scope drift, plus a Codex second opinion; every finding is validated before it ships. With `--submit`, a Fable pass re-validates the findings and the skill approves the PR or requests changes. Effort tiers low/medium/high, with domain routing for Swift/iOS. Use for any review request, even without the word "super": "review this PR", "code review", "review #123", "review and approve", "look over my changes", "audit this branch", "review my working tree", "check my staged changes". Supersedes `/code-review`, `pr-review-toolkit:review-pr`, `feature-dev:code-reviewer`, `coderabbit:code-review`, `simplify`, and `security-review`. CodeRabbit runs only with `--coderabbit`.
+  Multi-agent code review of a GitHub PR, a local commit range, or uncommitted working-tree changes. Parallel reviewers cover bugs, silent failures, CLAUDE.md/AGENTS.md compliance, test thoroughness, and shortcuts/scope drift, plus a Codex second opinion; every finding is validated before it ships. With `--submit`, a Fable pass re-validates the findings and the skill approves the PR or requests changes. Effort tiers low/medium/high, with domain routing for Swift/iOS. Use for any review request, even without the word "super": "review this PR", "code review", "review #123", "review and approve", "look over my changes", "audit this branch", "review my working tree", "check my staged changes", "review again", "re-review", "second pass", "did they address the review". Supersedes `/code-review`, `pr-review-toolkit:review-pr`, `feature-dev:code-reviewer`, `coderabbit:code-review`, `simplify`, and `security-review`. CodeRabbit runs only with `--coderabbit`.
 ---
 
 # super-code-review
@@ -12,9 +12,19 @@ A high-confidence code reviewer with structured validation. The pipeline is opin
 
 - The user asked for a review of a PR, branch, commit range, or working tree
 - The user wants a deep audit before merging / committing / pushing
-- The user mentioned any reviewer-style flag: `--comment`, `--effort`, `--coderabbit`
+- The user mentioned any reviewer-style flag: `--comment`, `--effort`, `--coderabbit`, `--submit`, `--full`
 
 When in doubt: it applies. The pushy description above is intentional — this skill is meant to be the *only* review entry point.
+
+## Review standard
+
+The bar is enough confidence to merge. Adapted from Google's [Standard of Code Review](https://google.github.io/eng-practices/review/reviewer/standard.html):
+
+- **Approve** once the change definitely improves the code compared with the base branch, even if it isn't perfect.
+- **Block** only when the change leaves the code worse than it found it: broken behavior, a hard-rule violation, an untested core path, generality nobody asked for. "Could be better" is a suggestion.
+- **Facts over preference.** A finding needs evidence: a failing input, a quoted rule, a cited line. Taste isn't a finding.
+- **Design ties go to the author.** When several approaches are valid, the author's choice stands.
+- **Converge.** Re-runs are incremental passes with a cap (`references/passes.md`). After the cap, only definite breakage blocks, and the rest goes to a human.
 
 ## Args
 
@@ -27,7 +37,8 @@ When in doubt: it applies. The pushy description above is intentional — this s
 | `--skip-codex` | off | Skip the Codex second opinion at `high`; everything else runs as usual |
 | `--comment` | off | Post inline comments (PR mode only) |
 | `--submit` | off | After the review, a Fable agent re-validates the findings, then the skill approves the PR or requests changes (PR mode only). See `references/submit.md` |
-| `--block-on <major\|all>` | `major` | With `--submit`: which surviving findings trigger request-changes. `major` = blockers and majors; `all` = everything |
+| `--block-on <major\|all>` | `major` | Severity that blocks on a full pass; incremental and closing passes narrow it (see Severity and blocking). `major` = blockers and majors; `all` = everything |
+| `--full` | off | Start a new series and run pass 1 as a full review instead of an incremental one. See `references/passes.md` |
 | `--json` | off | Machine-readable output |
 | `--intent <list>` | `auto` | Comma list: `pr,issue,bd,plan,all,none` |
 
@@ -41,7 +52,7 @@ See `references/diff-sources.md` for details on each mode and exact commands.
 
 ## Pipeline (canonical: `--effort=high`)
 
-The pipeline runs **read-only**: no edits, no writes, no pushes. The custom reviewers' `Bash` is guarded by `git-readonly-guard`; validators and domain auditors are held to it only by their spawn prompt.
+The pipeline runs **read-only**: no edits, no writes, no pushes. The one exception is the orchestrator writing its pass-state file in the git dir, outside the worktree (`references/passes.md` → State). The custom reviewers' `Bash` is guarded by `git-readonly-guard`; validators and domain auditors are held to it only by their spawn prompt.
 
 ### Phase 1 — Gather
 
@@ -50,6 +61,9 @@ In parallel (one message, multiple tool calls):
 1. **Resolve diff source** → unified diff string + changed file list + base SHA
 2. **Gather intent context** — pull PR body, linked GH issues, beads (`bd`) issues, plan files. See `references/intent-sources.md`
 3. **Detect domain profile** — glob for `.xcodeproj`, `Package.swift`, `Cargo.toml`, `*.nimble`, `tsconfig.json`, etc. See `references/domain-routing.md` for the language → skill table
+4. **Resolve the pass**: series, pass number, cap, mode, delta. It runs after item 1 returns, since it needs the head SHA. In PR mode, fetch prior feedback in parallel (`references/prior-feedback.md`). See `references/passes.md`
+
+Past the cap, ask the user whether to run a closing pass, another full pass, or stop before going on to Phase 2 (`references/passes.md` → At the cap, ask the user).
 
 ### Phase 2 — Reviewer fan-out (parallel)
 
@@ -71,6 +85,7 @@ Each reviewer receives a self-contained spawn prompt with:
 - The intent context (PR body / issue text / bd / plan excerpts)
 - The detected domain profile
 - The source mode and base SHA
+- The pass context: mode, delta, carried findings, prior feedback
 
 ### Phase 3 — Validation
 
@@ -84,11 +99,15 @@ Spawn a validator subagent (`general-purpose`, with `model` set explicitly: `opu
 
 Batch validators by file when 2+ findings hit the same file — single read, multiple confirmations. See `references/agent-prompts.md` for the validator template.
 
+On pass 2 and later, re-check every carried finding with the carried-finding template, one agent per file. At `low`, the orchestrator re-reads the cited lines itself.
+
 ### Phase 4 — Merge
 
 - Drop validators' `valid: false` findings
 - Move `rule_scope: user` findings into `user_rule_notes` — local only, never in `findings[]`, severity counts, or anything posted
 - Dedupe across our reviewers + Codex (often two agents flag the same thing — keep the higher-confidence version)
+- Derive `blocking` (Severity and blocking). Findings that don't block but meet the `--block-on` severity become non-blocking notes
+- In PR mode, match findings to prior feedback (`references/prior-feedback.md`); a match to an open thread suppresses the repost, never the verdict
 - Sort by severity, then file path
 
 ### Phase 5 — Output
@@ -99,12 +118,14 @@ See `references/output-formats.md` for the exact formats. Three modes:
 - **`--comment`** — post inline comments to the PR using the strict SHA / L4-7 / repo-match format. **Only ONE comment per unique issue.**
 - **`--json`** — machine-readable structured output
 
+Then write the pass record (`references/passes.md` → Writing state).
+
 ### Phase 5b — Submit (`--submit`)
 
 Runs after the local output, in PR mode only. Follow `references/submit.md` exactly:
 
 1. A `general-purpose` agent with `model: "fable"` re-validates every merged finding (not the user-rule notes).
-2. Any kept finding at or above `--block-on` → submit `REQUEST_CHANGES` with those findings inline. None → submit `APPROVE`. On the user's own PR, submit `COMMENT` and state the verdict it would have been.
+2. Re-derive `blocking` with Fable's confirmed severities. Any finding with `blocking: true` → submit `REQUEST_CHANGES`; none → `APPROVE`. On the user's own PR, submit `COMMENT` and state the verdict it would have been.
 3. Every posted word is written under the `writing-english` skill; load it before writing.
 4. If the Fable pass can't run, or the PR head moved during the review, don't submit.
 
@@ -125,13 +146,21 @@ See `references/effort-tiers.md` for the exact recipe per tier.
 
 `--effort=ultra` cannot be launched from within this skill (the harness owns it and bills separately). Instead, output: "Effort=ultra delegates to the built-in harness command. Run `/code-review ultra` directly." Then stop.
 
-## Severity tags
+## Severity and blocking
 
-- **blocker** — must be fixed before merge: bugs that will crash/produce wrong output, violations of hard rules in CLAUDE.md/AGENTS.md, dropped error paths, a missing test for the diff's core behavior or a common edge case
-- **major** — should be fixed: shortcut markers without tracking, scope drift, weak/tautological tests, soft CLAUDE.md/AGENTS.md violations
-- **suggestion** — would be nice: stylistic things only flagged because a domain auditor caught them; second-opinion-only findings the validator confirmed but didn't promote
+- **blocker** — leaves the code worse than the base: bugs that will crash/produce wrong output, violations of hard rules in CLAUDE.md/AGENTS.md, dropped error paths, a missing test for the diff's core behavior or a common edge case
+- **major** — should be fixed: shortcut markers without tracking, scope drift, over-engineering against the stated intent, weak/tautological tests, soft CLAUDE.md/AGENTS.md violations
+- **suggestion** — optional polish, like Google's "Nit:": stylistic things only flagged because a domain auditor caught them; second-opinion-only findings the validator confirmed but didn't promote
 
-Validators assign severity; the main agent doesn't override.
+Every finding carries `origin` (`new`, or `carried` from the last pass), `in_delta` (it sits in what changed since the last pass), `regression` (the latest changes broke behavior that worked before; set by a reviewer or the carried re-check, confirmed by validation), and `severity`. Whether it blocks depends on the pass mode (`references/passes.md`):
+
+| Pass mode | Blocks at the `--block-on` threshold | Blocks only as a blocker | Blocks whatever its severity |
+|---|---|---|---|
+| `full` (pass 1) | every finding | — | — |
+| `incremental` (2 to cap) | new findings in the delta; carried findings still open | new findings outside the delta | — |
+| `closing` (past the cap) | — | every finding, new or carried | regressions |
+
+Everything is reported in every mode. Validators assign severity; the orchestrator derives `blocking` from severity and the pass mode, and never changes severity. Derive it in Phase 4, and again after the Fable pass with Fable's confirmed severity.
 
 Findings sourced only from a user-level file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`) get no severity. They're local notes to the user and are **never** posted to a PR. See `references/claude-md-integration.md` → "User-level rules stay local".
 
@@ -171,6 +200,8 @@ Inherited verbatim from the prior skill — these details matter because GitHub 
 
 Load these as needed — they're sized for progressive disclosure:
 
+- `references/passes.md` — passes, series, state, the cap and the question past it, the delta, carried-finding re-checks. **Load in Phase 1, every run**
+- `references/prior-feedback.md` — fetching and matching every existing thread, review, and comment on the PR. **Load in PR mode**
 - `references/diff-sources.md` — exact commands for PR / range / working-tree mode
 - `references/effort-tiers.md` — recipe per tier
 - `references/intent-sources.md` — PR body, gh issue, bd issue, plan file gathering
@@ -189,8 +220,8 @@ Load these as needed — they're sized for progressive disclosure:
 
 - It does not fix issues — it reports, and with `--submit` it approves or requests changes. Auto-fix is a separate skill (`/simplify` flow, not part of this one).
 - It does not run linters or compilers. CI is the place for that.
-- It does not edit files. The five custom reviewers enforce this with a `git-readonly-guard` frontmatter hook; `general-purpose` validators and plugin domain auditors have write tools available and are held read-only by their prompt.
-- It does not gate on "already reviewed" — the user invokes this skill explicitly; re-runs are intentional, not duplicate.
+- It does not edit files. The one write is the orchestrator's pass-state file in the git dir (`references/passes.md` → State). The five custom reviewers enforce this with a `git-readonly-guard` frontmatter hook; `general-purpose` validators and plugin domain auditors have write tools available and are held read-only by their prompt.
+- It does not treat a re-run as a fresh review; see Review standard → Converge.
 
 ## Failure modes
 
@@ -200,4 +231,5 @@ Load these as needed — they're sized for progressive disclosure:
 - **MCP inline-comment server unavailable** in `--comment` mode — fall back to `gh api` (see `references/output-formats.md`)
 - **`--submit` outside PR mode** — ignore it with a one-line warning; print the review as usual
 - **Fable validation unavailable, or the PR head moved** under `--submit` — print the review, submit nothing, and say why
+- **State file unreadable or schema mismatched** — treat the run as a new series, and say so
 - **Domain auditor missing** — skip it, and name the expected-but-unavailable auditor in the output so a disabled plugin doesn't pass for a clean audit

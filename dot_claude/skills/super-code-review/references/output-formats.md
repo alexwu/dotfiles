@@ -9,10 +9,12 @@ Proper markdown. Readable in terminal, paste-friendly into GitHub / Slack / a do
 ### Required structure
 
 1. **H1 title** — `# Code Review — <PR title or "Working Tree" or "Branch: <name>">`
-2. **Metadata block** — repo, branch, base/head SHA, pipeline (which reviewers ran), findings tally
+2. **Metadata block** — repo, branch, base/head SHA, pass, pipeline (which reviewers ran), findings tally
 3. **Intent sources line** — see below
 4. **One-paragraph framing** — the diff's apparent scope and where the findings cluster (1-3 sentences). Skip if no findings.
-5. **Severity-bucketed findings** — Blockers, Majors, Suggestions, each as an H2 section with emoji icon, only including buckets that have findings
+5. **Severity-bucketed findings** — Blockers, Majors, Suggestions, each as an H2 section with emoji icon, only including buckets that have findings. A finding that doesn't block under the pass mode says so under its title (`**Non-blocking** on this pass`)
+5b. **Carried over** (pass 2 and later) — each finding from the last pass: fixed, still open, or regressed
+5c. **Already raised on the PR** (when any finding matched prior feedback) — each matched finding with its thread link, and whether it still blocks
 6. **Invalidated findings** (when any were killed at validation) — collapsible-feeling H2 section
 6b. **Personal-rule notes** (when any `rule_scope: user` findings exist) — H2 section of one-line notes to Alex about rules from his user-level files. Local output only; see `claude-md-integration.md` → "User-level rules stay local"
 7. **"What's well covered" H2 section** — affirmative balance signal (see below for why this is required)
@@ -43,6 +45,7 @@ This isn't decoration. It's the receipt the user needs to spot-check: did we mis
 
 **Repo**: `<owner>/<repo>`
 **Branch**: `<head>` @ `<head-sha-short>` (base `<base>` @ `<base-sha-short>`)
+**Pass**: 2 of 2 (incremental since `9719a72`, line delta)
 **Pipeline**: <N> reviewers (<comma-list>) + <M> validators
 **Findings**: <X> blockers, <Y> majors, <Z> suggestions, <K> invalidated
 
@@ -73,6 +76,18 @@ This isn't decoration. It's the receipt the user needs to spot-check: did we mis
 
 ---
 
+## ↻ Carried over
+
+- **Fixed**: <title> — `path/to/file.ext:42-58`
+- **Still open**: <title> — `path/to/file.ext:61-64` *(listed above as [2])*
+- **Regressed**: <title> — `path/to/file.ext:70-75` *(listed above as [1])*
+
+## Already raised on the PR
+
+- [3] matches <thread link> (open, by @coderabbitai) — still blocks
+
+---
+
 ## ✓ Invalidated findings
 
 **[INVALID] <reviewer's claim>** — <one-sentence why it was killed at validation>
@@ -89,6 +104,16 @@ This isn't decoration. It's the receipt the user needs to spot-check: did we mis
 
 <2-4 sentence summary tying the findings to a fix order. Cluster related findings ("fixing [1]+[2] together..."). Name the tests from the Suggestions section that would lock in the blocker fixes.>
 ```
+
+The `**Pass**` line takes one of three shapes:
+
+```markdown
+**Pass**: 1 of 2 (full)
+**Pass**: 2 of 2 (incremental since `9719a72`, line delta)
+**Pass**: 3 (closing; cap was 2; blockers and regressions only)
+```
+
+On a closing pass, "Recommended action" says the cap was reached, that `--block-on` was narrowed to blockers and regressions, and names what's left for a human to decide. With detached HEAD, the line reads `**Pass**: 1 (full; detached HEAD, no pass tracking)`.
 
 ### When there are no findings
 
@@ -160,6 +185,8 @@ gh api \
 
 ### Comment body format
 
+A non-blocking note (`passes.md` → "Non-blocking notes") replaces the severity label with `**Non-blocking: <one-line description>**`. Findings that match an open thread aren't posted.
+
 ```markdown
 **<severity icon> <severity name>: <one-line description>**
 
@@ -221,7 +248,7 @@ Structured output for CI consumption.
 
 ```json
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "source": {
     "mode": "pr | range | working",
     "base_sha": "abc123...",
@@ -231,6 +258,15 @@ Structured output for CI consumption.
   },
   "intent_sources": ["pr_body", "issue:41", "plan:.claude/plans/foo.md"],
   "effort": "low | medium | high",
+  "pass": {
+    "number": 2, "cap": 2, "large": false,
+    "mode": "full | incremental | closing",
+    "series": "2026-09-29T18:04:11Z | null",
+    "since_sha": "9719a72… | null",
+    "delta": "line | file | whole",
+    "carried": {"fixed": 3, "still_open": 1, "regressed": 0},
+    "matched_prior_feedback": 2
+  },
   "stats": {
     "files_reviewed": 12,
     "lines_added": 234,
@@ -257,7 +293,12 @@ Structured output for CI consumption.
       "fix_direction": "<prose>",
       "fix_snippet": "<code or null>",
       "rule_source": "path/to/CLAUDE.md, AGENTS.md, or .claude/rules/*.md (optional, claude-md type only)",
-      "rule_quote": "verbatim rule (optional)"
+      "rule_quote": "verbatim rule (optional)",
+      "origin": "new | carried",
+      "in_delta": true,
+      "regression": false,
+      "blocking": true,
+      "thread_url": "<matched or opened thread> | null"
     }
   ],
   "invalidated": [

@@ -45,6 +45,8 @@ INTENT CONTEXT
 
 <aggregated intent, or "(empty)">
 
+<PASS CONTEXT block, exactly as in agent-prompts.md → "Reviewer spawn template">
+
 DIFF
 ----
 
@@ -76,6 +78,7 @@ Return findings as a structured list. Each finding:
 - evidence: "<quoted line>"
 - reasoning: "<one sentence why this is wrong>"
 - confidence: <high|medium>
+- in_delta: <true|false>; regression: <true|false>; matches: <url, when set>
 
 If no findings, return: "No issues found at high confidence."
 ```
