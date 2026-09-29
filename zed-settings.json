@@ -117,6 +117,17 @@
   "buffer_font_family": "Fira Code",
   "buffer_font_fallbacks": ["FiraCode Nerd Font"],
   "vim_mode": true,
+  "vim": {
+    "use_smartcase_find": true,
+    "highlight_on_yank_duration": 150
+  },
+  "vertical_scroll_margin": 5,
+  "soft_wrap": "none",
+  "command_aliases": {
+    "W": "w",
+    "Wq": "wq",
+    "Qa": "qa"
+  },
   "preferred_line_length": 100,
   "projects_online_by_default": false,
   "copy_on_select": true
