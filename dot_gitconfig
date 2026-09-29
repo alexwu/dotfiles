@@ -1,6 +1,6 @@
 [user]
-  name = Alex Wu
-  email = adwu@pm.me
+	name = Alex Wu
+	email = adwu@pm.me
 [pager]
   diff = delta
   log = delta
@@ -57,5 +57,18 @@
 	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 [gpg]
 	program = /opt/homebrew/bin/gpg
-[url "git@github.com:"]
-	insteadOf = https://github.com/
+; [url "git@github.com:"]
+; 	insteadOf = https://github.com/
+[coderabbit]
+	machineId = cli/74c5b329c46f404db23dda7596f928df
+[mergetool "juxta"]
+	cmd = juxta _mergetool --base \"${BASE:-/dev/null}\" --local \"$LOCAL\" --remote \"$REMOTE\" --merged \"${MERGED:-/dev/null}\"
+	trustExitCode = true
+[difftool "juxta"]
+	cmd = juxta _difftool --local \"$LOCAL\" --remote \"$REMOTE\" --merged \"$MERGED\"
+	trustExitCode = true
+; Use work identity for everything under ~/Code/cleverific (repos + worktrees;
+; worktree gitdirs live under the main checkout, so they match too). Overrides
+; the personal [user] above for matching dirs. Trailing slash = recursive.
+[includeIf "gitdir:~/Code/cleverific/"]
+	path = ~/.config/git/cleverific.inc
