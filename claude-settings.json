@@ -95,7 +95,7 @@
       "Bash(go install*)"
     ]
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -313,8 +313,8 @@
     "figma@claude-plugins-official": false,
     "clangd@claude-code-lsps": true,
     "shortcuts-playground@shortcuts-playground": true,
-    "funes@huggingface": true,
-    "matrix@claude-code-channel-matrix": true
+    "matrix@claude-code-channel-matrix": true,
+    "funes@huggingface": true
   },
   "extraKnownMarketplaces": {
     "claude-code-lsps": {
@@ -371,16 +371,16 @@
         "url": "https://github.com/viticci/shortcuts-playground-plugin.git"
       }
     },
-    "huggingface": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/jamesbombeelu/.funes/integrations/claude-plugin"
-      }
-    },
     "claude-code-channel-matrix": {
       "source": {
         "source": "github",
         "repo": "zekker6/claude-code-channel-matrix"
+      }
+    },
+    "huggingface": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/jamesbombeelu/.funes/agents/claude/claude-plugin"
       }
     }
   },
