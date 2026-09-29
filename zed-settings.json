@@ -7,6 +7,11 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "terminal": {
+    "copy_on_select": true,
+    "font_size": 14.0
+  },
+  "reveal_if_open": true,
   "markdown_preview": {
     "open_markdown_files_in_preview": true,
     "font_family": "SF Pro Text",
@@ -108,7 +113,11 @@
     },
     "enabled_in_text_threads": false
   },
-  "theme": "Snazzy Theme",
+  "theme": {
+    "mode": "system",
+    "light": "GitHub Light",
+    "dark": "Snazzy Theme"
+  },
   "base_keymap": "VSCode",
   "telemetry": {
     "metrics": false
