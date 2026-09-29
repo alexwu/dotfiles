@@ -176,6 +176,7 @@ For each substantive change in the diff, ask:
 4. **Is there an additive new feature in a "fix Y" PR?** Scope expansion.
 5. **Is there a behavior change not mentioned in the intent?** Undisclosed change.
 6. **Does every in-plan Scope Ledger row have a footprint in the diff?** When the intent carries a plan's ledger, each row whose Home is a phase, step, cycle, or section of that plan and whose Status isn't `done` or `dropped` should show up in the diff. A row with no footprint is `ledger-unaccounted`. A `dropped` row that shows up anyway is an `undisclosed-behavior-change`.
+7. **Does the diff add generality the intent doesn't ask for?** A configuration knob, parameter, abstraction layer, plugin point, or extension hook with one caller and no requirement behind it in the PR body, plan, issue, or Scope Ledger is `over-engineering` (validators grade it a major). Quote the added code and the closest intent line, and name the missing requirement. Generality the intent names (a plan decision, a ledger row, an issue asking for it) isn't drift.
 
 If the intent context is empty or vague (e.g., commit message `"wip"`, PR body `"see issue"` with no issue link), skip drift detection — there's no signal to compare against. Surface that gap to the user in the output instead. A plan with a Scope Ledger is never vague; use the ledger.
 
