@@ -100,7 +100,7 @@ done < <(printf '%s' "$ps_json" | jaq -r '
   | [ (if .clients > 0 then "attached"
        elif .state == "active" then "active"
        else "reap" end),
-      .name, (.age_s | tostring), (.running // ""), .start_dir ]
+      .name, (.age_s | tostring), (.running // ""), .cwd ]
   | join("\u001f")')
 
 echo

@@ -14,11 +14,11 @@
 # the current-session filter is keyed off zmx's own → marker), falling back to
 # a plain `zmx list` parse otherwise.
 #
-# Sessions started in the current directory float to the top; the rest are
-# grouped by directory.
+# Sessions whose shell is in the current directory float to the top; the rest
+# are grouped by directory.
 #
 # Usage: zmx-select [--here]
-#   --here   start filtered to sessions in the current directory ($PWD); the
+#   --here   start filtered to sessions whose shell is in $PWD; the
 #            in-picker Ctrl-S toggle flips this either way at runtime
 #
 #   Bind it to a key, call it manually, or auto-launch outside a session:
@@ -36,7 +36,7 @@ command -v fzf >/dev/null || {
   exit 127
 }
 
-# Format a start_dir for display:
+# Format a session directory for display:
 #   chezmoi source dir → "dotfiles"; the ~/Code dir itself → "Code"; under
 #   ~/Code → path relative to ~/Code (e.g. "lulu-dictate", "cleverific/ws2");
 #   $HOME itself → "Home"; elsewhere under $HOME → path relative to $HOME;
@@ -61,7 +61,7 @@ fmt_rows() {
 }
 
 sort_rows() {
-  # stdin raw TSV: order sessions started in $PWD first, then group by dir, then
+  # stdin raw TSV: order sessions in $PWD first, then group by dir, then
   # active before idle within each dir ("active" < "idle" sorts that way), then
   # by name. Prepend four sort keys, sort, strip them back off.
   local tab
@@ -79,21 +79,37 @@ build_list() {
   local here="${1:-0}" raw="" have_source=0
   if command -v zmx-ps >/dev/null && command -v jaq >/dev/null; then
     raw=$(zmx-ps 2>/dev/null | jaq -r --arg pwd "$PWD" --argjson here "$here" '
-      .[] | select(.current | not) | select($here == 0 or .start_dir == $pwd)
+      .[] | select(.current | not) | select($here == 0 or .cwd == $pwd)
       | [ .name, (.pid|tostring), (.clients|tostring),
-          .state, (.running // "-"), .start_dir ] | @tsv')
+          .state, (.running // "-"), .cwd ] | @tsv')
     have_source=1
   fi
   if ((!have_source)); then
-    raw=$(zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients created dir; do
-      name=${name##*name=}
-      [[ -n "${ZMX_SESSION:-}" && "$name" == "$ZMX_SESSION" ]] && continue
-      pid=${pid#pid=}
-      clients=${clients#clients=}
-      dir=${dir#start_dir=}
-      [[ $here -eq 1 && "$dir" != "$PWD" ]] && continue
-      printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$pid" "$clients" "-" "-" "$dir"
-    done)
+    # Same parse as zmx-ps: fields by position, unreachable sessions skipped,
+    # the cwd URI reduced to a decoded path without a trailing "/".
+    raw=$(zmx list 2>/dev/null | LC_ALL=C awk -F'\t' -v OFS='\t' \
+      -v here="$here" -v pwd="$PWD" -v self="${ZMX_SESSION:-}" '
+      function hex(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+      function unescape(s,   out, i) {
+        out = ""
+        for (i = 1; i <= length(s); i++)
+          if (substr(s, i, 3) ~ /^%[0-9A-Fa-f][0-9A-Fa-f]$/) {
+            out = out sprintf("%c", 16 * hex(substr(s, i + 1, 1)) + hex(substr(s, i + 2, 1)))
+            i += 2
+          } else out = out substr(s, i, 1)
+        return out
+      }
+      $2 !~ /^pid=/ { next }
+      {
+        n = $1; sub(/^[^=]*=/, "", n)
+        p = $2; sub(/^pid=/, "", p)
+        c = $3; sub(/^clients=/, "", c)
+        d = ($5 ~ /^cwd=/) ? substr($5, 5) : ""
+        if (d ~ /^[a-z-]+:\/\//) { sub(/^[a-z-]+:\/\/[^\/]*/, "", d); d = unescape(d) }
+        if (length(d) > 1) sub(/\/$/, "", d)
+      }
+      n == self || (here == 1 && d != pwd) { next }
+      { print n, p, c, "-", "-", d }')
   fi
   [[ -n "$raw" ]] && printf '%s\n' "$raw" | sort_rows | fmt_rows
 }

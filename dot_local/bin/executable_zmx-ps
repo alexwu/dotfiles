@@ -3,7 +3,7 @@
 # and an active/idle verdict. The `zmx list --json` that zmx doesn't have.
 #
 # Schema per session:
-#   { name, pid, clients, created, age_s, start_dir, current,
+#   { name, pid, clients, created, age_s, cwd, current,
 #     state: "active"|"idle", running: <comm>|null,
 #     procs: [ { pid, etime, cpu, rss_kb, command } ] }
 #
@@ -13,7 +13,7 @@
 #
 # Usage: zmx-ps [filters]
 #   --name RE        session name matches RE (case-insensitive)
-#   --dir RE         start_dir matches RE
+#   --dir RE         cwd (the session shell's current directory) matches RE
 #   --hosting RE     any descendant command matches RE (e.g. claude, codex)
 #   --detached       clients == 0          --attached   clients > 0
 #   --active         working procs exist   --idle       infrastructure only
@@ -99,16 +99,32 @@ tagged=$(awk '
     }
   }' \
   <(ps -axo pid=,ppid=,etime=,%cpu=,rss=,command=) \
-  <(zmx list 2>/dev/null | awk -F'\t' '{
-      cur = ($0 ~ /^→/) ? 1 : 0
-      delete a
-      for (i=1; i<=NF; i++) {
-        n = index($i, "="); if (n == 0) continue
-        k = substr($i, 1, n-1); gsub(/^[^a-z_]+/, "", k)
-        a[k] = substr($i, n+1)
-      }
-      if (a["name"] != "")
-        print a["name"] "\t" a["pid"] "\t" a["clients"] "\t" a["created"] "\t" a["start_dir"] "\t" cur
+  <(zmx list 2>/dev/null | LC_ALL=C awk -F'\t' '
+    # Fields are read by position: labels ride on the same line, so a
+    # `hostname=` or `clients=` label would fool a key lookup. Unreachable
+    # sessions have no pid and are skipped.
+    function hex(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+    function unescape(s,   out, i) {
+      out = ""
+      for (i = 1; i <= length(s); i++)
+        if (substr(s, i, 3) ~ /^%[0-9A-Fa-f][0-9A-Fa-f]$/) {
+          out = out sprintf("%c", 16 * hex(substr(s, i + 1, 1)) + hex(substr(s, i + 2, 1)))
+          i += 2
+        } else out = out substr(s, i, 1)
+      return out
+    }
+    $2 !~ /^pid=/ { next }
+    {
+      n = $1; sub(/^[^=]*=/, "", n)
+      p = $2; sub(/^pid=/, "", p)
+      c = $3; sub(/^clients=/, "", c)
+      t = $4; sub(/^created=/, "", t)
+      # cwd is a percent-encoded URI (file://host/path) since 0.8.0, a plain
+      # path from an older daemon, and ends in "/" when the shell reported it.
+      d = ($5 ~ /^cwd=/) ? substr($5, 5) : ""
+      if (d ~ /^[a-z-]+:\/\//) { sub(/^[a-z-]+:\/\/[^\/]*/, "", d); d = unescape(d) }
+      if (length(d) > 1) sub(/\/$/, "", d)
+      print n "\t" p "\t" c "\t" t "\t" d "\t" (($0 ~ /^→/) ? 1 : 0)
     }'))
 
 out=$(printf '%s\n' "$tagged" | jaq -R -s \
@@ -128,7 +144,7 @@ out=$(printf '%s\n' "$tagged" | jaq -R -s \
   | $rows
   | map(select(.[0] == "S")
     | { name: .[1], pid: (.[2] | tonumber), clients: (.[3] | tonumber),
-        created: (.[4] | tonumber), start_dir: .[5], current: (.[6] == "1") }
+        created: (.[4] | tonumber), cwd: .[5], current: (.[6] == "1") }
     | .age_s = (($now | tonumber) - .created)
     | . as $s
     | .procs = ($procs | map(select(.session == $s.name) | del(.session)))
@@ -136,7 +152,7 @@ out=$(printf '%s\n' "$tagged" | jaq -R -s \
     | .state = (if ($work | length) > 0 then "active" else "idle" end)
     | .running = (if ($work | length) > 0 then ($work[0].command | base) else null end))
   | map(select($name == "" or (.name | test($name; "i"))))
-  | map(select($dir == "" or (.start_dir | test($dir; "i"))))
+  | map(select($dir == "" or (.cwd | test($dir; "i"))))
   | map(select($attach == "" or
       (if $attach == "detached" then .clients == 0 else .clients > 0 end)))
   | map(select($state == "" or .state == $state))

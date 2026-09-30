@@ -48,7 +48,7 @@ mag=$'\e[35m'
 cyn=$'\e[36m'
 rst=$'\e[0m'
 
-git_branch() { git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null || true; }
+git_branch() { [[ -n "$1" ]] && git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null || true; }
 zmx_of() { ps eww -p "$1" 2>/dev/null | rg -o -m1 'ZMX_SESSION=[^ ]+' | cut -d= -f2 || true; }
 fmt_idle() {
   local s=$1
@@ -61,6 +61,8 @@ fmt_idle() {
   fi
 }
 
+# Rows are joined on \x1f, not tab: tab is IFS whitespace, so an empty field
+# (a zmx shell's branch) would collapse and shift every column after it.
 collect() {
   local now
   now=$(date +%s)
@@ -73,7 +75,7 @@ collect() {
     zmx=$(zmx_of "$pid")
     [[ -n "$zmx" ]] && hosted+="${zmx}"$'\n'
     case "$status" in waiting) prio=0 ;; busy) prio=1 ;; *) prio=3 ;; esac
-    printf '%d\t%s\tcc\t%s\t%s\t%s\t%s\n' "$prio" "$now" "$cwd" "$(git_branch "$cwd")" "$status" "$zmx"
+    printf '%d\037%s\037cc\037%s\037%s\037%s\037%s\n' "$prio" "$now" "$cwd" "$(git_branch "$cwd")" "$status" "$zmx"
   done < <(claude agents --json 2>/dev/null | jaq -r '.[] | [(.pid|tostring), .status, .cwd] | @tsv')
 
   # Codex — file-based liveness (no live-status CLI).
@@ -84,7 +86,7 @@ collect() {
     meta=$(awk 'NR==1{print; exit}' "$f" | jaq -r '[(.payload.cwd // ""), (.payload.git.branch // "")] | @tsv' 2>/dev/null)
     cwd=${meta%%$'\t'*}
     branch=${meta#*$'\t'}
-    printf '%d\t%s\tcx\t%s\t%s\tidle:%d\t\n' 2 "$m" "$cwd" "$branch" $((now - m))
+    printf '%d\037%s\037cx\037%s\037%s\037idle:%d\037\n' 2 "$m" "$cwd" "$branch" $((now - m))
   done < <(fd -e jsonl . "$HOME/.codex/sessions" --changed-within "${within_min}min" 2>/dev/null)
 
   # Orphan zmx shells — running, not hosting a tracked agent.
@@ -99,11 +101,29 @@ collect() {
       prio=4
       st="shell"
     fi
-    printf '%d\t%s\tzmx\t%s\t\t%s\t%s\n' "$prio" "$now" "$dir" "$st" "$name"
-  done < <(zmx list 2>/dev/null | awk -F'\t' '{
-      delete a; for (i=1;i<=NF;i++){ n=index($i,"="); a[substr($i,1,n-1)]=substr($i,n+1) }
-      if (a["name"] != "") print a["name"] "\t" a["clients"] "\t" a["start_dir"]
-    }')
+    printf '%d\037%s\037zmx\037%s\037\037%s\037%s\n' "$prio" "$now" "$dir" "$st" "$name"
+  done < <(zmx list 2>/dev/null | LC_ALL=C awk -F'\t' '
+      # Same parse as zmx-ps: fields by position, unreachable sessions skipped,
+      # the cwd URI reduced to a decoded path without a trailing "/".
+      function hex(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+      function unescape(s,   out, i) {
+        out = ""
+        for (i = 1; i <= length(s); i++)
+          if (substr(s, i, 3) ~ /^%[0-9A-Fa-f][0-9A-Fa-f]$/) {
+            out = out sprintf("%c", 16 * hex(substr(s, i + 1, 1)) + hex(substr(s, i + 2, 1)))
+            i += 2
+          } else out = out substr(s, i, 1)
+        return out
+      }
+      $2 !~ /^pid=/ { next }
+      {
+        n = $1; sub(/^[^=]*=/, "", n)
+        c = $3; sub(/^clients=/, "", c)
+        d = ($5 ~ /^cwd=/) ? substr($5, 5) : ""
+        if (d ~ /^[a-z-]+:\/\//) { sub(/^[a-z-]+:\/\/[^\/]*/, "", d); d = unescape(d) }
+        if (length(d) > 1) sub(/\/$/, "", d)
+        print n "\t" c "\t" d
+      }')
 }
 
 render() {
@@ -118,19 +138,19 @@ render() {
   done < <(wezterm cli list --format json 2>/dev/null | jaq -r '.[] | "\(.cwd)\t\(.workspace)"' 2>/dev/null)
 
   local rows
-  rows=$(collect | sort -t$'\t' -k1,1n -k2,2nr)
+  rows=$(collect | sort -t$'\x1f' -k1,1n -k2,2nr)
   printf '%s%s mission control%s\n' "$b" "$cyn" "$rst"
   if [[ -z "$rows" ]]; then
     printf '%s   (nothing alive)%s\n' "$dim" "$rst"
     return
   fi
 
-  while IFS=$'\t' read -r prio rec kind cwd branch state host; do
+  while IFS=$'\x1f' read -r prio rec kind cwd branch state host; do
     [[ -z "${kind:-}" ]] && continue
     local dot tag proj st_raw st_col host_col wstag
     proj=$(basename "${cwd:-?}")
     wstag=""
-    [[ -n "${WS[${cwd%/}]:-}" ]] && wstag="${dim} ·${WS[${cwd%/}]}${rst}"
+    [[ -n "$cwd" && -n "${WS[${cwd%/}]:-}" ]] && wstag="${dim} ·${WS[${cwd%/}]}${rst}"
     case "$kind" in
       cc)
         tag="${mag}cc ${rst}"
