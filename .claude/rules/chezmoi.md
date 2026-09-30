@@ -13,6 +13,7 @@
 - Neovim is installed as a **HEAD brew** (`neovim --HEAD`) — targets nightly builds
 - `empty_dot_hushlogin` — creates empty `~/.hushlogin` to suppress macOS login banner
 - `chezmoi destroy <target>` removes from BOTH source state and destination. `chezmoi forget` only drops from source state (leaves deployed file). Use `destroy` to fully retire a managed file.
+- `~/Code/lulu-loadout` owns `~/.claude/{skills,agents,commands}`, `~/.codex/agents`, the guard prompts and hook schemas in `~/.config/llm/`, `~/.config/rumdl/plan.rumdl.toml`, and the agent binaries in `~/.local/bin`. They were retired from here with `forget` on 2026-09-30, so never add them back as sources and never `destroy` them. loadout's lint reads `house.rumdl.toml`, which stays here.
 - `chezmoi apply` runs every changed template — if you only want one target rebuilt while other files are dirty, run the underlying command directly (e.g. `nim c -o:~/.local/bin/X scripts/.../X.nim`) and let the source hash sync on the next full apply.
 
 ## Other Notable Configs

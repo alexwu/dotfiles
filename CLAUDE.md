@@ -12,8 +12,8 @@ Reference docs for this repo are split across `.claude/rules/`:
 | `desktop.md` | AeroSpace, JankyBorders, Sketchybar, Hammerspoon, Yazi |
 | `terminals.md` | Ghostty, WezTerm, Kitty, zmx (zn, zmx-* tools, session-shell chain), Zellij, Petname (DBZ) |
 | `editors.md` | Neovim (both configs), Neovide |
-| `claude-scripts.md` | dictate.py, scripts/claude/ hooks, Nim gotchas |
-| `claude-code.md` | Custom skills, subagents, Claude Code hook mechanics |
 | `hazel.md` | scripts/hazel/ tools (heic-ai-rename, image-sort, gif-mosaic), Hazel PATH gotcha |
 | `macos.md` | scripts/macos/ tools (electron-apps), Electron detection signals, Homebrew cask layout |
 | `caddy.md` | caddy-tailscale custom build, the llama-swap tailnet node, Caddyfile/plist/fnox wiring |
+
+Coding-agent skills, subagents, slash commands, hook binaries, agent CLIs, and guard prompts live in `~/Code/lulu-loadout`, which deploys them with `just install`. This repo keeps the settings that point at them: `claude-settings.json` and `codex-config.toml`.
