@@ -13,7 +13,12 @@
 ##
 ## Schema per agent (`--json`):
 ##   { source, kind, status, pid, session_id, short_id, name, cwd, branch,
-##     zmx_session, association_source, occ, idle_s, started }
+##     zmx_session, association_source, occ, idle_s, started, turn_status,
+##     task_state }
+##
+## `status` is merged: an interactive agent's turn status, any other agent's
+## task state. `turn_status` and `task_state` are Claude's `status` and `state`
+## as sent.
 ##
 ## Built to ~/.local/bin/agent-sessions by run_onchange_build-scripts.sh.tmpl.
 
@@ -21,7 +26,7 @@ import std/[algorithm, os, sequtils]
 import cligen
 import agent_rows
 
-func sessionCells(row: AgentOut): seq[string] =
+func sessionCells(row: AgentOut, now: int64): seq[string] =
   let codex = row.source == apCodex
   let (dot, status) =
     if codex:
@@ -40,9 +45,11 @@ func sessionCells(row: AgentOut): seq[string] =
     (if codex: paint(Cyan, "cx") else: paint(Magenta, "cc")),
     projectOf(row.cwd.get("")),
     paint(Dim, row.branch.get("")),
+    paint(Dim, clip(row.name.get(""), NameWidth)),
     row.zmxSession.get("-"),
     status,
     occ,
+    ageCell(row, now),
     paint(
       Dim,
       if codex:
@@ -52,7 +59,7 @@ func sessionCells(row: AgentOut): seq[string] =
     ),
   ]
 
-func render(rows: openArray[AgentOut]): seq[string] =
+func render(rows: openArray[AgentOut], now: int64): seq[string] =
   result.add Bold & Cyan & " agent sessions" & Reset & "  " &
     paint(Dim, "status=agent " & Middot & " occ=session")
 
@@ -62,7 +69,7 @@ func render(rows: openArray[AgentOut]): seq[string] =
   if sessions.len == 0:
     result.add paint(Dim, "   (no live sessions)")
   else:
-    result.add layout(sessions.map(sessionCells))
+    result.add layout(sessions.mapIt(sessionCells(it, now)))
 
   let tasks =
     rows.filterIt(it.kind == $akBackground).sortedByIt((it.status, it.name.get("~")))
@@ -87,18 +94,22 @@ proc agentSessions(within = 90, watch = 0, json = false): int =
   ##
   ## --json prints, per agent:
   ##   { source, kind, status, pid, session_id, short_id, name, cwd, branch,
-  ##     zmx_session, association_source, occ, idle_s, started }
+  ##     zmx_session, association_source, occ, idle_s, started, turn_status,
+  ##     task_state }
+  ## status is an interactive agent's turn status and any other agent's task
+  ## state; turn_status and task_state are Claude's own two fields.
   pinEnvironment()
   if watch > 0 and not json:
     return handOffToHark("agent-sessions", watch, ["--within", $within])
 
-  let (rows, problems) = collectAgents(within, getTime())
+  let now = getTime()
+  let (rows, problems) = collectAgents(within, now)
   for problem in problems:
     stderr.writeLine "agent-sessions: " & problem
   if json:
     echo ZmxJson.encode(rows, pretty = true)
   else:
-    for line in render(rows):
+    for line in render(rows, now.toUnix):
       echo line
   0
 

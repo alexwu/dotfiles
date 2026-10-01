@@ -63,12 +63,9 @@ func turnStatusOf*(raw: string): AgentStatus =
   of "idle": asIdle
   else: asOther
 
-func whichStatus*(a: AgentSession): Option[string] =
-  ## What `zmx-which` reports: `status`, or a background agent's `state`.
-  if a.status.isSome: a.status else: a.state
-
 func effectiveStatus*(a: AgentSession): string =
-  ## What `agent-sessions` reports: the turn status of an interactive agent
+  ## The merged `status` of `agent-sessions` and `zmx-which`: the turn status
+  ## of an interactive agent
   ## (`idle` when absent), the task state of any other (`?` when absent).
   let (raw, fallback) =
     if kindOf(a) == akInteractive:

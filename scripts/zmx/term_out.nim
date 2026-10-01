@@ -1,8 +1,9 @@
-## Terminal output shared by the zmx tools: colours, the column layout of the
-## coloured views, and a bordered table through `gum` with a plain fallback.
+## Terminal output shared by the zmx tools: colours, glyphs, and the column
+## layout of their views. Everything is drawn in-process: starting `gum` cost
+## about 60 ms a call, and `gum table --print` dropped cell colours.
 
-import std/[os, osproc, sequtils, streams, strutils]
-from std/unicode import runeLenAt
+import std/strutils
+from std/unicode import runeLen, runeLenAt, runeSubStr
 
 const
   Bold* = "\e[1m"
@@ -19,6 +20,8 @@ const
   DotSmall* = "◦"
   Middot* = "·"
   EmDash* = "—"
+  Ellipsis* = "…"
+  NameWidth* = 28 ## an agent's name is clipped to this in every view
 
 func paint*(color, text: string): string =
   ## Empty text stays empty, so a blank cell carries no escapes.
@@ -26,6 +29,17 @@ func paint*(color, text: string): string =
     ""
   else:
     color & text & Reset
+
+func clip*(text: string, width: int): string =
+  ## `text` in at most `width` characters, the last an ellipsis when it was
+  ## longer.
+  if width <= 0:
+    ""
+  elif text.runeLen <= width:
+    text
+  else:
+    # A negative length would count from the end, hence the guard above.
+    text.runeSubStr(0, width - 1) & Ellipsis
 
 func visibleLen*(cell: string): int =
   ## Characters a terminal draws: runes, with SGR sequences not counted.
@@ -60,52 +74,3 @@ func layout*(rows: openArray[seq[string]]): seq[string] =
       if i < row.high:
         line.add spaces(widths[i] - visibleLen(cell))
     result.add line.strip(leading = false)
-
-proc gumTable(columns: openArray[string], rows: seq[seq[string]]): bool =
-  ## Renders through `gum table`. False when gum is missing or rejects the
-  ## rows, and then nothing has been printed.
-  if findExe("gum").len == 0:
-    return false
-  try:
-    let gum = startProcess(
-      "gum",
-      args = [
-        "table",
-        "--print",
-        "--lazy-quotes",
-        "--separator",
-        "\t",
-        "--columns",
-        columns.join(","),
-      ],
-      options = {poUsePath},
-    )
-    defer:
-      gum.close()
-    for row in rows:
-      gum.inputStream.writeLine row.join("\t")
-    gum.inputStream.close()
-    let rendered = gum.outputStream.readAll()
-    if gum.waitForExit() != 0:
-      return false
-    stdout.write rendered
-    true
-  except OSError, IOError:
-    false
-
-proc plainTable(columns: openArray[string], rows: seq[seq[string]]) =
-  var widths = columns.mapIt(it.len)
-  for row in rows:
-    for i, cell in row:
-      widths[i] = max(widths[i], cell.len)
-  for row in @[@columns] & rows:
-    var line = ""
-    for i, cell in row:
-      line.add (if i == row.high: cell else: alignLeft(cell, widths[i] + 2))
-    echo line
-
-proc printTable*(columns: openArray[string], rows: seq[seq[string]]) =
-  ## `gum table --print`; a plain aligned table when gum is missing, rejects
-  ## the rows, or there are none.
-  if rows.len == 0 or not gumTable(columns, rows):
-    plainTable(columns, rows)

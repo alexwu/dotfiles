@@ -256,13 +256,13 @@ suite "decodeAgents":
     check a.status.isNone
     check a.state == some("blocked")
     check a.shortId == some("bg")
-    check whichStatus(a) == some("blocked")
+    check effectiveStatus(a) == "blocked"
 
-  test "status wins over state for zmx-which, unknown keys are skipped":
+  test "a background agent with both reports its state, unknown keys are skipped":
     let a = decodeAgents(fixture).get[2]
     check a.status == some("idle")
     check a.state == some("done")
-    check whichStatus(a) == some("idle")
+    check effectiveStatus(a) == "done"
     check a.sessionId.isNone
 
   test "name, and startedAt from milliseconds to seconds":
@@ -492,6 +492,19 @@ suite "layout":
   test "no rows":
     check layout(newSeq[seq[string]]()).len == 0
 
+  test "clip leaves a text that fits, and ends a longer one in an ellipsis":
+    check clip("abc", 5) == "abc"
+    check clip("abcde", 5) == "abcde"
+    check clip("abcdef", 5) == "abcd" & Ellipsis
+    check visibleLen(clip("abcdef", 5)) == 5
+
+  test "clip counts characters, not bytes":
+    check clip("héllo wörld", 6) == "héllo" & Ellipsis
+
+  test "clip at width one and zero":
+    check clip("abc", 1) == Ellipsis
+    check clip("abc", 0) == ""
+
   test "projectOf":
     check projectOf("/Users/x/proj a") == "proj a"
     check projectOf("") == "?"
@@ -520,7 +533,10 @@ suite "agent rows":
         cwd: some(""),
       ),
       AgentSession(
-        pid: some(ProcessId(222)), kind: some("background"), state: some("running")
+        pid: some(ProcessId(222)),
+        kind: some("background"),
+        status: some("idle"),
+        state: some("running"),
       ),
     ],
     found: @[
@@ -593,9 +609,23 @@ suite "agent rows":
     check row.idleS == some(100'i64)
     check row.started == 900
 
+  test "Claude's status and state ride along raw, beside the merged status":
+    check rows[0].turnStatus == some("busy")
+    check rows[0].taskState.isNone
+    check rows[1].turnStatus.isNone
+    check rows[1].taskState == some("blocked")
+    check rows[2].status == "running"
+    check rows[2].turnStatus == some("idle")
+    check rows[2].taskState == some("running")
+
+  test "ageCell: a Claude agent's age, nothing without a start time or for Codex":
+    check ageCell(rows[0], now = 1000 + 7200) == paint(Dim, "2h")
+    check ageCell(rows[1], now = 5000) == ""
+    check ageCell(codexRows([CodexSession(modified: 5)], now = 9)[0], now = 9000) == ""
+
   test "the --json shape":
     check ZmxJson.encode(codexRows([CodexSession(modified: 5)], now = 9)) ==
-      """[{"source":"codex","kind":"codex","status":"idle","pid":null,"session_id":null,"short_id":null,"name":null,"cwd":null,"branch":null,"zmx_session":null,"association_source":null,"occ":null,"idle_s":4,"started":5}]"""
+      """[{"source":"codex","kind":"codex","status":"idle","pid":null,"session_id":null,"short_id":null,"name":null,"cwd":null,"branch":null,"zmx_session":null,"association_source":null,"occ":null,"idle_s":4,"started":5,"turn_status":null,"task_state":null}]"""
 
 suite "watchArgs":
   test "bare --watch is two seconds":

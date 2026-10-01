@@ -112,7 +112,7 @@ type
   WhichOut* = object
     pid*: int
     kind*: Option[string]
-    status*: Option[string]
+    status*: string ## merged, as in `AgentOut`
     sessionId* {.serializedFieldName("session_id").}: Option[string]
     cwd*: Option[string]
     zmxSession* {.serializedFieldName("zmx_session").}: Option[string]
@@ -120,10 +120,19 @@ type
       Option[AssociationSource]
     clients*: Option[int]
     occ*: Option[SessionOccupancy]
+    turnStatus* {.serializedFieldName("turn_status").}: Option[string]
+      ## Claude's `status`, as sent
+    taskState* {.serializedFieldName("task_state").}: Option[string]
+      ## Claude's `state`, as sent
+    name*: Option[string]
+    shortId* {.serializedFieldName("short_id").}: Option[string]
+    started*: int64
 
   AgentOut* = object ## One `agent-sessions --json` row.
     source*: AgentProvider
-    kind*, status*: string
+    kind*: string
+    status*: string
+      ## merged: an interactive agent's turn status, any other agent's task state
     pid*: Option[int]
     sessionId* {.serializedFieldName("session_id").}: Option[string]
     shortId* {.serializedFieldName("short_id").}: Option[string]
@@ -134,6 +143,10 @@ type
     occ*: Option[SessionOccupancy]
     idleS* {.serializedFieldName("idle_s").}: Option[int64]
     started*: int64
+    turnStatus* {.serializedFieldName("turn_status").}: Option[string]
+      ## Claude's `status`, as sent
+    taskState* {.serializedFieldName("task_state").}: Option[string]
+      ## Claude's `state`, as sent
 
   CodexGitIn* = object
     branch*: Option[string]

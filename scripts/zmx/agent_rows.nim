@@ -48,6 +48,14 @@ func codexCells*(idleS: int64): tuple[dot, text: string] =
   else:
     (paint(Dim, DotHollow), paint(Dim, fmtIdle(idleS)))
 
+func ageCell*(row: AgentOut, now: int64): string =
+  ## How long ago a Claude agent started. Empty when Claude sent no start time,
+  ## and for Codex, whose `started` is its last write.
+  if row.source == apClaude and row.started > 0:
+    paint(Dim, fmtAge(now - row.started))
+  else:
+    ""
+
 func nonEmpty(s: Option[string]): Option[string] =
   if s.isSome and s.get.len > 0:
     result = s
@@ -64,6 +72,8 @@ proc claudeRows*(r: Resolved, branch: BranchLookup): seq[AgentOut] =
       name: nonEmpty(agent.name),
       cwd: nonEmpty(agent.cwd),
       started: agent.startedAt.get(0),
+      turnStatus: nonEmpty(agent.status),
+      taskState: nonEmpty(agent.state),
     )
     if agent.sessionId.isSome and len($agent.sessionId.get) > 0:
       row.sessionId = some($agent.sessionId.get)

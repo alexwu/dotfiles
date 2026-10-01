@@ -130,11 +130,11 @@ printf '%s\n' \
 
 cat >"$fix/agents.json" <<'JSON'
 [
-  {"pid": 111, "kind": "interactive", "sessionId": "sid-a", "status": "busy", "cwd": "/a"},
+  {"pid": 111, "kind": "interactive", "sessionId": "sid-a", "status": "busy", "cwd": "/a", "name": "alpha-work"},
   {"pid": 311, "kind": "interactive", "sessionId": "sid-b", "status": "idle", "cwd": "/b"},
   {"pid": 411, "kind": "interactive", "sessionId": "sid-c", "status": "waiting", "cwd": "/c"},
   {"pid": 999, "kind": "interactive", "sessionId": "sid-d", "status": "idle", "cwd": "/d"},
-  {"id": "bg", "kind": "background", "sessionId": "sid-bg", "state": "blocked", "cwd": "/e"}
+  {"id": "bg", "kind": "background", "sessionId": "sid-bg", "status": "idle", "state": "blocked", "cwd": "/e"}
 ]
 JSON
 
@@ -148,6 +148,7 @@ check() { # name actual expected
   fi
 }
 run() { HOME="$tmp" FIX="$fix" "$@"; }
+plain() { sed $'s/\e\\[[0-9;]*m//g'; }
 
 # --- zmx-ps: labels ---------------------------------------------------------
 ps_json=$(run "$bin/zmx-ps")
@@ -174,6 +175,11 @@ check "which: pid-less agents omitted" "$(jaq length <<<"$which_json")" "4"
 check "which: occupancy and clients ride along" \
   "$(jaq -c '.[] | select(.pid == 411) | [.occ, .clients, .status, .session_id]' <<<"$which_json")" \
   '["active",2,"waiting","sid-c"]'
+check "which: Claude's own fields ride along" \
+  "$(jaq -c '.[] | select(.pid == 111) | [.status, .turn_status, .task_state, .name, .short_id, .started]' <<<"$which_json")" \
+  '["busy","busy",null,"alpha-work",null,0]'
+check "which view: name column" "$(run "$bin/zmx-which" alpha | plain | sed -n 2p | sed 's/  */ /g')" \
+  "111 interactive busy alpha 1 label alpha-work /a"
 check "which: filter by session" "$(run "$bin/zmx-which" --json alpha | jaq -r 'map(.pid) | join(",")')" "111"
 check "which: filter by pid" "$(run "$bin/zmx-which" --json 311 | jaq -r 'map(.zmx_session) | join(",")')" "gamma"
 
@@ -186,7 +192,10 @@ check "agent-sessions: status by kind, short id from id" \
   "$(jaq -c '[.[] | select(.pid == 111 or .pid == null) | [.kind, .status, .short_id, .idle_s]]' <<<"$as_json")" \
   '[["interactive","busy",null,null],["background","blocked","bg",null]]'
 check "agent-sessions: every contract key, in order" "$(jaq -r '.[0] | keys_unsorted | join(",")' <<<"$as_json")" \
-  "source,kind,status,pid,session_id,short_id,name,cwd,branch,zmx_session,association_source,occ,idle_s,started"
+  "source,kind,status,pid,session_id,short_id,name,cwd,branch,zmx_session,association_source,occ,idle_s,started,turn_status,task_state"
+check "agent-sessions: merged status beside Claude's status and state" \
+  "$(jaq -c '[.[] | select(.pid == 111 or .pid == null) | [.status, .turn_status, .task_state]]' <<<"$as_json")" \
+  '[["busy","busy",null],["blocked","idle","blocked"]]'
 check "agent-sessions: --within 0 has no Codex row" "$(jaq '[.[] | select(.source == "codex")] | length' <<<"$as_json")" "0"
 check "agent-sessions: Codex row" \
   "$(run "$bin/agent-sessions" --json --within 60 |
@@ -196,18 +205,18 @@ check "agent-sessions: --json wins over --watch" "$(run "$bin/agent-sessions" --
 run "$bin/agent-sessions" --bogus >/dev/null 2>&1
 check "agent-sessions: an unknown flag exits 2" "$?" "2"
 
-plain() { sed $'s/\e\\[[0-9;]*m//g'; }
 as_view=$(run "$bin/agent-sessions" --within 60 | plain)
 check "agent-sessions view: waiting sorts first" "$(sed -n 2p <<<"$as_view" | sed 's/  */ /g')" "● cc c delta waiting active -"
-check "agent-sessions view: Codex row shows its short id" "$(rg -c '^● cx app feat/y -\s+\d+s\s+-\s+0199aaaa$' <<<"$as_view")" "1"
+check "agent-sessions view: Codex row shows its short id" "$(rg -c '^● cx app feat/y\s+-\s+\d+s\s+-\s+0199aaaa$' <<<"$as_view")" "1"
+check "agent-sessions view: an agent's name follows its branch" "$(rg -c '^● cc a\s+alpha-work alpha\s+busy\s+active\s+-$' <<<"$as_view")" "1"
 check "agent-sessions view: background task" "$(rg -c '^  \(unnamed\) bg blocked$' <<<"$as_view")" "1"
 
 # --- mission-control: view ----------------------------------------------------
 mc_view=$(run "$bin/mission-control" --within 60 | plain)
 check "mission-control: header" "$(sed -n 1p <<<"$mc_view")" " mission control"
 check "mission-control: waiting agent first, with its host" "$(sed -n 2p <<<"$mc_view" | sed 's/  */ /g')" "● cc c waiting delta"
-check "mission-control: busy agent hosted by alpha" "$(rg -c '^● cc  a\s+busy\s+alpha$' <<<"$mc_view")" "1"
-check "mission-control: Codex row between busy and idle" "$(sed -n 4p <<<"$mc_view" | rg -c '^● cx  app feat/y \d+s$')" "1"
+check "mission-control: busy agent hosted by alpha" "$(rg -c '^● cc  a\s+alpha-work busy\s+alpha$' <<<"$mc_view")" "1"
+check "mission-control: Codex row between busy and idle" "$(sed -n 4p <<<"$mc_view" | rg -c '^● cx  app feat/y\s+\d+s$')" "1"
 check "mission-control: pid-less agent is not listed" "$(rg -c ' cc ' <<<"$mc_view")" "4"
 check "mission-control: only the session hosting no agent is an orphan" \
   "$(rg ' zmx ' <<<"$mc_view" | sed 's/  */ /g')" "◦ zmx tmp detached beta"

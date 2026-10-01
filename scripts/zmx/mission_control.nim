@@ -5,7 +5,8 @@
 ## Rows, in order:
 ##
 ## - `cc`: a Claude agent with a live process, waiting, then busy, then the rest.
-##   Its last column is the zmx session it lives in.
+##   Its name follows the branch, and its last column is the zmx session it
+##   lives in.
 ## - `cx`: a Codex session whose rollout file was written recently.
 ## - `zmx`: a session hosting no listed agent, `shell` when a client is
 ##   attached and `detached` otherwise.
@@ -64,7 +65,7 @@ proc workspaces(started: Option[Wezterm]): Table[string, string] =
     discard
 
 func cells(
-    dot, tag, dir, branch, status, host: string, tags: Table[string, string]
+    dot, tag, dir, branch, name, status, host: string, tags: Table[string, string]
 ): seq[string] =
   var key = dir
   if key.len > 1:
@@ -74,6 +75,7 @@ func cells(
     tag,
     projectOf(dir),
     paint(Dim, branch),
+    paint(Dim, clip(name, NameWidth)),
     status,
     paint(Dim, host),
     (if key in tags: paint(Dim, Middot & tags[key]) else: ""),
@@ -102,8 +104,16 @@ proc collect(
       ,
       recency: now.toUnix,
       dir: dir,
-      cells:
-        cells(dot, paint(Magenta, "cc"), dir, branchOf(dir).get(""), text, host, tags),
+      cells: cells(
+        dot,
+        paint(Magenta, "cc"),
+        dir,
+        branchOf(dir).get(""),
+        agent.name.get(""),
+        text,
+        host,
+        tags,
+      ),
     )
 
   for session in recentCodexSessions(getHomeDir() / ".codex/sessions", within, now):
@@ -113,7 +123,8 @@ proc collect(
       priority: 2,
       recency: session.modified,
       dir: dir,
-      cells: cells(dot, paint(Cyan, "cx"), dir, session.branch.get(""), text, "", tags),
+      cells:
+        cells(dot, paint(Cyan, "cx"), dir, session.branch.get(""), "", text, "", tags),
     )
 
   for view in resolved.views:
@@ -129,6 +140,7 @@ proc collect(
         (if detached: paint(Dim, DotSmall) else: paint(Blue, DotFull)),
         paint(Blue, "zmx"),
         view.session.cwd,
+        "",
         "",
         (if detached: paint(Dim, "detached") else: paint(Blue, "shell")),
         name,

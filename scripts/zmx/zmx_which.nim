@@ -1,14 +1,17 @@
 ## zmx-which — which zmx session is each Claude agent running in?
 ##
-## The one place that associates `claude agents --json` entries with zmx
-## sessions; agent-sessions and mission-control read its --json. How an agent
-## is matched is in `zmx_agents`.
+## The agent to zmx session association as a command. agent-sessions and
+## mission-control get the same answer in-process from `resolveAgents()`; how
+## an agent is matched is in `zmx_agents`.
 ##
 ## Schema per agent that has a pid:
 ##   { pid, kind, status, session_id, cwd, zmx_session, association_source,
-##     clients, occ }
+##     clients, occ, turn_status, task_state, name, short_id, started }
 ##
-## `occ` is the session's occupancy, not the agent's turn status.
+## `status` is merged as in agent-sessions: an interactive agent's turn status,
+## any other agent's task state. `turn_status` and `task_state` are Claude's
+## `status` and `state` as sent. `occ` is the session's occupancy, not the
+## agent's turn status.
 ##
 ## Built to ~/.local/bin/zmx-which by run_onchange_build-scripts.sh.tmpl.
 
@@ -16,14 +19,19 @@ import std/sequtils
 import cligen
 import zmx_agents, term_out
 
-const Columns = ["PID", "KIND", "STATUS", "SESSION", "CL", "VIA", "CWD"]
+const Columns = ["PID", "KIND", "STATUS", "SESSION", "CL", "VIA", "NAME", "CWD"]
 
 func toRow(agent: AgentSession, found: Option[Association]): WhichOut =
   result = WhichOut(
     pid: int(agent.pid.get),
     kind: agent.kind,
-    status: whichStatus(agent),
+    status: effectiveStatus(agent),
     cwd: agent.cwd,
+    turnStatus: agent.status,
+    taskState: agent.state,
+    name: agent.name,
+    shortId: agent.shortId,
+    started: agent.startedAt.get(0),
   )
   if agent.sessionId.isSome:
     result.sessionId = some($agent.sessionId.get)
@@ -31,16 +39,29 @@ func toRow(agent: AgentSession, found: Option[Association]): WhichOut =
     result.zmxSession = some($found.get.session)
     result.associationSource = some(found.get.source)
 
+func orDash(cell: Option[string]): string =
+  ## An absent value is a dim `-`.
+  if cell.isSome:
+    cell.get
+  else:
+    paint(Dim, "-")
+
 func cells(row: WhichOut): seq[string] =
+  let color =
+    case turnStatusOf(row.status)
+    of asWaiting: Red
+    of asBusy: Yellow
+    else: Dim
   @[
     $row.pid,
-    row.kind.get("-"),
-    row.status.get("?"),
-    row.zmxSession.get("-"),
-    (if row.clients.isSome: $row.clients.get else: "-"),
+    orDash(row.kind),
+    paint(color, row.status),
+    orDash(row.zmxSession),
+    (if row.clients.isSome: $row.clients.get else: paint(Dim, "-")),
     (if row.associationSource.isSome: $row.associationSource.get
-    else: "-"),
-    row.cwd.get(""),
+    else: paint(Dim, "-")),
+    paint(Dim, clip(row.name.get("-"), NameWidth)),
+    paint(Dim, row.cwd.get("")),
   ]
 
 proc zmxWhich(json = false, target: seq[string]): int =
@@ -53,8 +74,10 @@ proc zmxWhich(json = false, target: seq[string]): int =
   ##
   ## --json prints, per agent that has a pid:
   ##   { pid, kind, status, session_id, cwd, zmx_session, association_source,
-  ##     clients, occ }
-  ## occ is the session's occupancy (active|idle), not the agent's turn status.
+  ##     clients, occ, turn_status, task_state, name, short_id, started }
+  ## status is an interactive agent's turn status and any other agent's task
+  ## state; turn_status and task_state are Claude's own two fields. occ is the
+  ## session's occupancy (active|idle), not the agent's turn status.
   if target.len > 1:
     stderr.writeLine "zmx-which: one session or pid at most (see --help)"
     return 2
@@ -85,7 +108,8 @@ proc zmxWhich(json = false, target: seq[string]): int =
     echo ZmxJson.encode(rows, pretty = true)
     return 0
 
-  printTable(Columns, rows.map(cells))
+  for line in layout(@[Columns.mapIt(paint(Bold, it))] & rows.map(cells)):
+    echo line
   0
 
 when isMainModule:
