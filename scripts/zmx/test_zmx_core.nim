@@ -1,7 +1,7 @@
-import std/[os, sequtils]
+import std/[os, sequtils, strutils]
 from std/posix import getpid, getppid
 import unittest2
-import agent_rows
+import agent_rows, zmx_picker
 
 func pinfo(pid, ppid: int, command: string, argv: seq[string] = @[]): ProcessInfo =
   ProcessInfo(pid: ProcessId(pid), ppid: ProcessId(ppid), command: command, argv: argv)
@@ -74,6 +74,109 @@ suite "readEnvVar":
   test "this process's own environment, natively":
     check readEnvVar(psNative, ProcessId(int(getpid())), "PATH").isSome
     check readEnvVar(psNative, ProcessId(int(getpid())), "NO_SUCH_VAR_ZMX").isNone
+
+suite "parsePsEnv":
+  test "a value with spaces stays with its variable":
+    check parsePsEnv("111 s000 S 0:00 claude A=1 NAME=two words here Z_9=x") ==
+      @["A=1", "NAME=two words here", "Z_9=x"]
+
+  test "arguments before the first variable are not environment":
+    check parsePsEnv("111 s000 S 0:00 claude --resume x TERM=x") == @["TERM=x"]
+
+  test "a word with = that is not an identifier continues the value":
+    check parsePsEnv("1 s0 S 0:00 node OPTS=--a --b=1 9X=no") ==
+      @["OPTS=--a --b=1 9X=no"]
+
+  test "no environment, and the header line":
+    check parsePsEnv("111 s000 S 0:00 claude").len == 0
+    check parsePsEnv("  PID   TT  STAT      TIME COMMAND").len == 0
+    check parsePsEnv("").len == 0
+
+suite "readEnv":
+  test "this process's whole environment, natively":
+    check readEnv(psNative, ProcessId(int(getpid()))).anyIt(it.startsWith("PATH="))
+
+suite "fmtAge":
+  test "largest whole unit":
+    check fmtAge(59) == "0m"
+    check fmtAge(3599) == "59m"
+    check fmtAge(3600) == "1h"
+    check fmtAge(86399) == "23h"
+    check fmtAge(86400) == "1d"
+    check fmtAge(-5) == "0m"
+
+suite "reapVerdict":
+  func view(clients: int, state: SessionOccupancy): SessionView =
+    SessionView(session: ZmxSession(clients: clients), state: state)
+
+  test "a client attached is never reaped, whatever runs":
+    check reapVerdict(view(1, soIdle)) == rvAttached
+    check reapVerdict(view(2, soActive)) == rvAttached
+
+  test "detached with work is active":
+    check reapVerdict(view(0, soActive)) == rvActive
+
+  test "detached and idle is reaped":
+    check reapVerdict(view(0, soIdle)) == rvReap
+
+suite "fmtDir":
+  const
+    Home = "/Users/x"
+    Dots = "/Users/x/.local/share/chezmoi"
+
+  test "named places":
+    check fmtDir(Dots, Home, Dots) == "dotfiles"
+    check fmtDir("/Users/x/Code", Home, Dots) == "Code"
+    check fmtDir(Home, Home, Dots) == "Home"
+
+  test "relative to ~/Code, then to home":
+    check fmtDir("/Users/x/Code/app/ws2", Home, Dots) == "app/ws2"
+    check fmtDir("/Users/x/notes", Home, Dots) == "notes"
+
+  test "elsewhere is the full path, a sibling prefix included":
+    check fmtDir("/tmp", Home, Dots) == "/tmp"
+    check fmtDir("/Users/xavier", Home, Dots) == "/Users/xavier"
+    check fmtDir("", Home, Dots) == ""
+
+suite "pickerRows":
+  func view(
+      name, cwd: string, state = soIdle, current = false, running = none(string)
+  ): SessionView =
+    SessionView(
+      session: ZmxSession(
+        name: ZmxSessionName(name),
+        pid: ProcessId(7),
+        clients: 1,
+        cwd: cwd,
+        current: current,
+      ),
+      state: state,
+      running: running,
+    )
+
+  let views = @[
+    view("zed", "/b"),
+    view("me", "/a", current = true),
+    view("idle-a", "/a"),
+    view("busy-a", "/a", soActive, running = some("nvim")),
+    view("here", "/c"),
+  ]
+  func names(rows: seq[seq[string]]): seq[string] =
+    rows.mapIt(it[0])
+
+  test "current session left out, this directory first, active before idle":
+    check names(pickerRows(views, "/c", false, "/Users/x", "/dots")) ==
+      @["here", "busy-a", "idle-a", "zed"]
+
+  test "hereOnly keeps this directory's sessions":
+    check names(pickerRows(views, "/a", true, "/Users/x", "/dots")) ==
+      @["busy-a", "idle-a"]
+
+  test "columns":
+    check pickerRows(views, "/a", true, "/Users/x", "/dots")[0] ==
+      @["busy-a", "/a", "active", "nvim", "cl:1", "pid:7"]
+    check pickerRows(views, "/b", true, "/b", "/dots")[0] ==
+      @["zed", "Home", "idle", "-", "cl:1", "pid:7"]
 
 suite "descendants":
   let all = @[

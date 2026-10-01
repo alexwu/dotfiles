@@ -215,7 +215,7 @@ if status is-interactive
         if command -q petname
             abbr -a zn 'zmx attach (petname -d ~/.config/petname-dbz)'
         end
-        # zmx-select lives at ~/.local/bin/zmx-select (dot_local/bin/executable_zmx-select)
+        # zmx-select lives at ~/.local/bin/zmx-select (scripts/zmx/zmx_select.nim)
     end
 
     # ----------------------------

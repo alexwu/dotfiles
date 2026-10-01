@@ -70,6 +70,16 @@ func formatEtime*(seconds: int64): string =
   if days > 0:
     result = $days & "-" & result
 
+func fmtAge*(seconds: int64): string =
+  ## A session's age in its largest whole unit: `59m`, `23h`, `3d`.
+  let s = max(seconds, 0)
+  if s < 3600:
+    $(s div 60) & "m"
+  elif s < 86400:
+    $(s div 3600) & "h"
+  else:
+    $(s div 86400) & "d"
+
 func parseEtime*(etime: string): Option[int64] =
   ## Inverse of `formatEtime`.
   try:
@@ -153,6 +163,21 @@ func parseEnvValue*(psLine, key: string): Option[string] =
   let start = at + marker.len
   let stop = psLine.find(' ', start)
   some(psLine[start ..< (if stop < 0: psLine.len else: stop)])
+
+func startsVariable(word: string): bool =
+  ## `NAME=...`, where NAME is a shell identifier.
+  let eq = word.find('=')
+  eq > 0 and word[0] in IdentStartChars and word[0 ..< eq].allCharsInSet(IdentChars)
+
+func parsePsEnv*(psLine: string): seq[string] =
+  ## The `KEY=value` words of a `ps eww` line, from the fifth word on; a word
+  ## that does not start a variable continues the one before it.
+  let words = psLine.splitWhitespace()
+  for i in 4 ..< words.len:
+    if startsVariable(words[i]):
+      result.add words[i]
+    elif result.len > 0:
+      result[^1].add " " & words[i]
 
 func childrenByParent(links: openArray[(int, int)]): Table[int, seq[int]] =
   ## (pid, ppid) pairs to parent -> children, children in ascending pid order.
@@ -270,14 +295,11 @@ when defined(macosx):
 
   var envBuf: seq[char] # ARG_MAX is a megabyte: allocated once, on first use
 
-  proc readEnvNative(pid: ProcessId, key: string): Option[string] =
+  proc readEnvAllNative(pid: ProcessId): seq[string] =
     if envBuf.len == 0:
       envBuf = newSeq[char](argMax())
     let size = readArgsBuf(int(pid), envBuf)
-    for entry in parseProcArgsEnv(envBuf.toOpenArray(0, size - 1)).env:
-      if entry.startsWith(key & "="):
-        return some(entry[key.len + 1 .. ^1])
-    none(string)
+    parseProcArgsEnv(envBuf.toOpenArray(0, size - 1)).env
 
   proc readNative(roots: openArray[ProcessId]): Result[seq[ProcessInfo], ProcError] =
     let estimate = proc_listallpids(nil, 0)
@@ -326,8 +348,32 @@ else:
   proc readNative(roots: openArray[ProcessId]): Result[seq[ProcessInfo], ProcError] =
     err(ProcError(msg: "no native process reader on this platform"))
 
-  proc readEnvNative(pid: ProcessId, key: string): Option[string] =
-    none(string)
+  proc readEnvAllNative(pid: ProcessId): seq[string] =
+    @[]
+
+proc readEnvAllPs(pid: ProcessId): seq[string] =
+  try:
+    let (output, code) = execCmdEx("ps eww -p " & $pid, options = {poUsePath})
+    if code == 0:
+      for line in output.splitLines:
+        result.add parsePsEnv(line)
+  except OSError, IOError:
+    discard
+
+proc readEnv*(source: ProcSource, pid: ProcessId): seq[string] =
+  ## A process's exec-time environment as `KEY=value` strings. Empty when it
+  ## is hidden (Apple platform binaries) or the process is gone.
+  case source
+  of psNative:
+    readEnvAllNative(pid)
+  of psPs:
+    readEnvAllPs(pid)
+
+proc readEnvNative(pid: ProcessId, key: string): Option[string] =
+  for entry in readEnvAllNative(pid):
+    if entry.startsWith(key & "="):
+      return some(entry[key.len + 1 .. ^1])
+  none(string)
 
 proc readEnvPs(pid: ProcessId, key: string): Option[string] =
   try:

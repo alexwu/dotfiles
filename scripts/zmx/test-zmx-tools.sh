@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Tests for the zmx tools: label parsing in zmx-ps, the agent -> session
-# association in zmx-which, the agent-sessions contract and the mission-control
-# view (all Nim, scripts/zmx), and zmx-agent-label's lifecycle.
+# Tests for the zmx tools (all Nim, scripts/zmx): label parsing in zmx-ps, the
+# agent -> session association in zmx-which, the agent-sessions contract, the
+# mission-control view, zmx-reap's verdicts, zmx-env, the rows zmx-select
+# hands to fzf, and zmx-agent-label's lifecycle.
 #
 # Hermetic: the tools pin "$HOME/.local/bin" first on PATH, so a throwaway HOME
-# holds the four freshly built Nim tools, a wrapper for the Bash source, and
-# stub `zmx`, `claude`, `ps`, and `wezterm` that serve fixtures. No live
-# session is read or changed.
+# holds the eight freshly built tools and stub `zmx`, `claude`, `ps`, and
+# `wezterm` that serve fixtures. No live session is read, changed or killed.
 #
 # Usage: scripts/zmx/test-zmx-tools.sh   (or: just test-zmx)
 
@@ -16,7 +16,6 @@ set -uo pipefail
 export ZMX_PS_SOURCE=ps
 
 here="$(cd "$(dirname "$0")" && pwd)"
-src="$(cd "$here/../../dot_local/bin" && pwd)"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 bin="$tmp/.local/bin"
@@ -24,7 +23,7 @@ fix="$tmp/fixtures"
 mkdir -p "$bin" "$fix"
 
 # The Nim tools, side by side when rust-parallel is installed.
-nim_tools=(zmx-ps zmx-which agent-sessions mission-control)
+nim_tools=(zmx-ps zmx-which agent-sessions mission-control zmx-reap zmx-env zmx-select zmx-agent-label)
 if command -v rust-parallel >/dev/null 2>&1; then
   for tool in "${nim_tools[@]}"; do printf '%s:%s\n' "$tool" "${tool//-/_}"; done |
     rust-parallel -r '(?P<tool>.+):(?P<module>.+)' \
@@ -40,9 +39,9 @@ for tool in "${nim_tools[@]}"; do
     exit 1
   }
 done
-printf '#!/bin/sh\nexec /opt/homebrew/bin/bash %s "$@"\n' "$src/executable_zmx-agent-label" >"$bin/zmx-agent-label"
 
-# zmx stub: `list` prints the fixture; get/set keep labels in a k=v file.
+# zmx stub: `list` prints the fixture; get/set keep labels in a k=v file; `kill`
+# records the names it was given.
 cat >"$bin/zmx" <<'STUB'
 #!/opt/homebrew/bin/bash
 labels="$FIX/labels"
@@ -65,6 +64,10 @@ case "$1" in
       mv "$labels.new" "$labels"
       [[ -n "$v" ]] && printf '%s=%s\n' "$k" "$v" >>"$labels"
     done
+    ;;
+  kill)
+    shift
+    printf '%s\n' "$@" >>"$FIX/killed"
     ;;
 esac
 exit 0
@@ -213,6 +216,57 @@ check "mission-control: workspace tag by decoded directory" \
   "● zmx proj a shell alpha ·main"
 run "$bin/mission-control" --json >/dev/null 2>&1
 check "mission-control: an unknown flag exits 2" "$?" "2"
+
+# --- zmx-reap: verdicts -------------------------------------------------------
+# epsilon: detached like beta, but with work in its tree. It joins the fixtures
+# here so the checks above keep the sessions they were written against.
+printf '%s\n' $'  name=epsilon\tpid=500\tclients=0\tcreated=1000\tcwd=/work' >>"$fix/zmx-list"
+printf '%s\n' '501 500 01:00 100 -zsh' '511 501 01:00 100 sleep 60' >>"$fix/ps-table"
+
+table() { plain | sed 's/  */ /g; s/ $//'; }
+sessions() { rg -o '^(alpha|beta|gamma|delta|epsilon)\b' | paste -sd, -; }
+reap_out=$(run "$bin/zmx-reap" 2>/dev/null | table)
+check "reap: detached and idle is reaped" "$(rg -c '^beta \d+d reap /tmp$' <<<"$reap_out")" "1"
+check "reap: detached with work is skipped, and says what runs" "$(rg -c '^epsilon \d+d active:sleep /work$' <<<"$reap_out")" "1"
+check "reap: attached sessions are not listed" "$(sessions <<<"$reap_out")" "beta,epsilon"
+check "reap: bold header" "$(sed -n 1p <<<"$reap_out")" "NAME AGE VERDICT DIR"
+check "reap: dry-run summary" \
+  "$(rg -c '^1 reapable, 1 active \+ 3 attached skipped . dry run\. Re-run with --kill to execute\.$' <<<"$reap_out")" "1"
+check "reap: a dry run kills nothing" "$([[ -e "$fix/killed" ]] && echo killed || echo none)" "none"
+reap_all=$(run "$bin/zmx-reap" --all 2>/dev/null | table)
+check "reap: --all lists attached sessions" "$(sessions <<<"$reap_all")" "alpha,beta,gamma,delta,epsilon"
+check "reap: --all marks them attached" "$(rg -c '^\S+ \d+d attached( |$)' <<<"$reap_all")" "3"
+kill_out=$(run "$bin/zmx-reap" -k 2>/dev/null | table)
+check "reap: --kill reports what it killed" "$(sed -n '$p' <<<"$kill_out")" "killed 1 session(s), 1 active + 3 attached skipped"
+check "reap: --kill kills only the reapable session" "$(cat "$fix/killed" 2>/dev/null)" "beta"
+run "$bin/zmx-reap" --bogus >/dev/null 2>&1
+check "reap: an unknown flag exits 2" "$?" "2"
+
+# --- zmx-env ------------------------------------------------------------------
+env_out=$(run "$bin/zmx-env" alpha | plain)
+check "env: one block per process" "$(rg '^== ' <<<"$env_out" | paste -sd, -)" "== alpha 101 (-zsh),== alpha 111 (claude)"
+check "env: entries sorted" "$(rg '^[A-Z_]+=' <<<"$env_out" | paste -sd, -)" "TERM=x,ZMX_SESSION=beta"
+check "env: a hidden environment says so" "$(rg -c '^\(no env visible' <<<"$env_out")" "1"
+check "env: patterns filter, case-insensitively" \
+  "$(run "$bin/zmx-env" alpha zmx_ | plain | rg '^[A-Z_]+=' | paste -sd, -)" "ZMX_SESSION=beta"
+run "$bin/zmx-env" nope >/dev/null 2>&1
+check "env: an unknown session exits 1" "$?" "1"
+run "$bin/zmx-env" >/dev/null 2>&1
+check "env: no session exits 2" "$?" "2"
+run "$bin/zmx-env" alpha '(' >/dev/null 2>&1
+check "env: a bad pattern exits 2" "$?" "2"
+
+# --- zmx-select: the rows fzf lists -------------------------------------------
+emit=$(run "$bin/zmx-select" --emit)
+check "select: current session hidden, grouped by directory" \
+  "$(awk '{ print $1 }' <<<"$emit" | paste -sd, -)" "delta,gamma,beta,epsilon"
+check "select: row columns" "$(rg '^beta ' <<<"$emit" | sed 's/  */ /g')" "beta /tmp idle - cl:0 pid:200"
+check "select: --here keeps this directory's sessions" \
+  "$(run env PWD=/tmp "$bin/zmx-select" --here --emit | awk '{ print $1 }' | paste -sd, -)" "beta"
+check "select: sessions in this directory come first" \
+  "$(run env PWD=/work "$bin/zmx-select" --emit | awk 'NR == 1 { print $1 }')" "epsilon"
+run "$bin/zmx-select" --bogus >/dev/null 2>&1
+check "select: an unknown flag exits 2" "$?" "2"
 
 # --- zmx-agent-label: lifecycle ---------------------------------------------
 lbl() { printf '{"session_id":"%s"}' "$2" | HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha CLAUDE_PID="${3:-$$}" "$bin/zmx-agent-label" "$1" claude 2>/dev/null; }

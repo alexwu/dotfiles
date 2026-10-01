@@ -140,7 +140,7 @@ then
   alias must="mise run"
 fi
 
-# zmx-select lives at ~/.local/bin/zmx-select (chezmoi: dot_local/bin/executable_zmx-select)
+# zmx-select lives at ~/.local/bin/zmx-select (chezmoi: scripts/zmx/zmx_select.nim)
 if [[ -r $HOME/.zsh/zmx.zsh ]]
 then
   source $HOME/.zsh/zmx.zsh

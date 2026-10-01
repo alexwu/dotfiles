@@ -12,6 +12,15 @@ type SessionView* = object
   state*: SessionOccupancy
   running*: Option[string]
 
+func reapVerdict*(view: SessionView): ReapVerdict =
+  ## Only a detached session with an idle tree is reaped.
+  if view.session.clients > 0:
+    rvAttached
+  elif view.state == soActive:
+    rvActive
+  else:
+    rvReap
+
 proc procSource*(): ProcSource =
   ## libproc, unless `ZMX_PS_SOURCE=ps` asks for the `ps` reader.
   if getEnv("ZMX_PS_SOURCE") == "ps": psPs else: psNative

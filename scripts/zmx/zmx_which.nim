@@ -12,9 +12,9 @@
 ##
 ## Built to ~/.local/bin/zmx-which by run_onchange_build-scripts.sh.tmpl.
 
-import std/[os, osproc, sequtils, streams, strutils]
+import std/sequtils
 import cligen
-import zmx_agents
+import zmx_agents, term_out
 
 const Columns = ["PID", "KIND", "STATUS", "SESSION", "CL", "VIA", "CWD"]
 
@@ -42,49 +42,6 @@ func cells(row: WhichOut): seq[string] =
     else: "-"),
     row.cwd.get(""),
   ]
-
-proc gumTable(table: seq[seq[string]]): bool =
-  ## Renders through `gum table`. False when gum is missing or rejects the
-  ## rows, and then nothing has been printed.
-  if findExe("gum").len == 0:
-    return false
-  try:
-    let gum = startProcess(
-      "gum",
-      args = [
-        "table",
-        "--print",
-        "--lazy-quotes",
-        "--separator",
-        "\t",
-        "--columns",
-        Columns.join(","),
-      ],
-      options = {poUsePath},
-    )
-    defer:
-      gum.close()
-    for row in table:
-      gum.inputStream.writeLine row.join("\t")
-    gum.inputStream.close()
-    let rendered = gum.outputStream.readAll()
-    if gum.waitForExit() != 0:
-      return false
-    stdout.write rendered
-    true
-  except OSError, IOError:
-    false
-
-proc plainTable(table: seq[seq[string]]) =
-  var widths = Columns.mapIt(it.len)
-  for row in table:
-    for i, cell in row:
-      widths[i] = max(widths[i], cell.len)
-  for row in @[@Columns] & table:
-    var line = ""
-    for i, cell in row:
-      line.add (if i == row.high: cell else: alignLeft(cell, widths[i] + 2))
-    echo line
 
 proc zmxWhich(json = false, target: seq[string]): int =
   ## Which zmx session each Claude agent runs in, and how that was found.
@@ -128,9 +85,7 @@ proc zmxWhich(json = false, target: seq[string]): int =
     echo ZmxJson.encode(rows, pretty = true)
     return 0
 
-  let table = rows.map(cells)
-  if table.len == 0 or not gumTable(table):
-    plainTable(table)
+  printTable(Columns, rows.map(cells))
   0
 
 when isMainModule:

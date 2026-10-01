@@ -5,8 +5,8 @@
 ## `ProcOut`, `WhichOut`, `AgentOut`) are the JSON contract the Bash siblings
 ## and `jaq` pipelines read; `ZmxJson` encodes them with absent optionals
 ## written as `null`. The `*In` types are what `ClaudeJson` decodes from other
-## tools' output: `claude agents --json`, a Codex rollout's first line, and
-## `wezterm cli list --format json`.
+## tools' output: `claude agents --json`, a Codex rollout's first line,
+## `wezterm cli list --format json`, and an agent hook's stdin.
 
 import std/[options, tables]
 import json_serialization
@@ -23,6 +23,12 @@ type
     ## agent's turn status.
     soActive = "active"
     soIdle = "idle"
+
+  ReapVerdict* = enum
+    ## What `zmx-reap` does with a session.
+    rvReap = "reap"
+    rvActive = "active"
+    rvAttached = "attached"
 
   ProcessInfo* = object
     pid*, ppid*: ProcessId
@@ -141,6 +147,9 @@ type
 
   WeztermPaneIn* = object
     cwd*, workspace*: Option[string]
+
+  HookIn* = object ## An agent hook's stdin; only the session id is read.
+    sessionId* {.serializedFieldName("session_id").}: Option[string]
 
 createJsonFlavor ZmxJson,
   omitOptionalFields = false, automaticObjectSerialization = true
