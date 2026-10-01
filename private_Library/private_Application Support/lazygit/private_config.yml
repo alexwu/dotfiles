@@ -34,9 +34,10 @@ gui:
   showCommandLog: true
   commandLogSize: 8
 git:
-  pagers:
+  diffRenderers:
     - colorArg: always
       useConfig: false
+      type: rawGit
   commit:
     signOff: false
   merging:
@@ -185,7 +186,7 @@ keybinding:
     pasteCommits: "v"
     tagCommit: "T"
     checkoutCommit: "<space>"
-    resetCherryPick: "<c-R>"
+    resetCherryPick: "<c-r>"
     copyCommitMessageToClipboard: "<c-y>"
     openLogMenu: "<c-l>"
     viewBisectOptions: "b"
