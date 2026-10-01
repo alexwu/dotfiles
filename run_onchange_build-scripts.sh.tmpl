@@ -19,10 +19,16 @@ set -euo pipefail
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/television/claude_session.nim") | sha256sum }}
 # electron-apps
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/macos/electron_apps.nim") | sha256sum }}
-# zmx-ps and zmx-which: the two entry points, then the modules they share.
-# A new module under scripts/zmx/ needs a line here.
+# zmx-ps, zmx-which, agent-sessions and mission-control: the four entry
+# points, then the modules they share. A new module under scripts/zmx/ needs a
+# line here.
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_ps.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_which.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/agent_sessions.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/mission_control.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/agent_rows.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/codex_sessions.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/git_head.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_agents.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_snapshot.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_types.nim") | sha256sum }}
@@ -40,6 +46,8 @@ builds=(
   "tv-claude-session|$SRC/television/claude_session.nim|cligen"
   "zmx-ps|$SRC/zmx/zmx_ps.nim|cligen json_serialization results regex"
   "zmx-which|$SRC/zmx/zmx_which.nim|cligen json_serialization results"
+  "agent-sessions|$SRC/zmx/agent_sessions.nim|cligen json_serialization results"
+  "mission-control|$SRC/zmx/mission_control.nim|cligen json_serialization results"
   "electron-apps|$SRC/macos/electron_apps.nim|cligen"
 )
 

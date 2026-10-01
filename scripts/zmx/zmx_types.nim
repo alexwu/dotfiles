@@ -2,10 +2,11 @@
 ##
 ## Domain types (`ZmxSession`, `ProcessInfo`, `AgentSession`) carry `distinct`
 ## identifiers and whatever the readers learned. Wire types (`SessionOut`,
-## `ProcOut`, `WhichOut`) are the JSON contract the Bash siblings and `jaq`
-## pipelines read; `ZmxJson` encodes them with absent optionals written as
-## `null`. `ClaudeAgentIn` is what `ClaudeJson` decodes from
-## `claude agents --json`.
+## `ProcOut`, `WhichOut`, `AgentOut`) are the JSON contract the Bash siblings
+## and `jaq` pipelines read; `ZmxJson` encodes them with absent optionals
+## written as `null`. The `*In` types are what `ClaudeJson` decodes from other
+## tools' output: `claude agents --json`, a Codex rollout's first line, and
+## `wezterm cli list --format json`.
 
 import std/[options, tables]
 import json_serialization
@@ -66,18 +67,41 @@ type
     asProcessEnv = "process_env"
     asProcessTree = "process_tree"
 
+  CodexSessionId* = distinct string
+
+  AgentProvider* = enum
+    apClaude = "claude"
+    apCodex = "codex"
+
+  AgentKind* = enum
+    akInteractive = "interactive"
+    akBackground = "background"
+    akCodex = "codex"
+    akOther = "other"
+
+  AgentStatus* = enum
+    ## An agent's turn status. The order is the sort order.
+    asWaiting = "waiting"
+    asBusy = "busy"
+    asIdle = "idle"
+    asOther = "other"
+
   AgentSession* = object
-    ## One `claude agents` entry. `kind` and `status` stay strings: Claude owns
-    ## those sets.
+    ## One `claude agents` entry. `kind`, `status` and `state` stay strings:
+    ## Claude owns those sets, and `--json` echoes them back. `kindOf` and
+    ## `turnStatusOf` in `zmx_agents` classify them.
     pid*: Option[ProcessId]
     kind*: Option[string]
-    status*: Option[string] ## `status`, or a background agent's `state`
+    status*: Option[string] ## an interactive agent's turn status
+    state*: Option[string] ## a background agent's task state
     sessionId*: Option[ClaudeSessionId]
-    cwd*: Option[string]
+    shortId*, name*, cwd*: Option[string]
+    startedAt*: Option[int64] ## epoch seconds
 
   ClaudeAgentIn* = object
     pid*: Option[int]
-    kind*, status*, state*, sessionId*, cwd*: Option[string]
+    kind*, status*, state*, sessionId*, id*, name*, cwd*: Option[string]
+    startedAt*: Option[int64] ## epoch milliseconds
 
   WhichOut* = object
     pid*: int
@@ -91,6 +115,33 @@ type
     clients*: Option[int]
     occ*: Option[SessionOccupancy]
 
+  AgentOut* = object ## One `agent-sessions --json` row.
+    source*: AgentProvider
+    kind*, status*: string
+    pid*: Option[int]
+    sessionId* {.serializedFieldName("session_id").}: Option[string]
+    shortId* {.serializedFieldName("short_id").}: Option[string]
+    name*, cwd*, branch*: Option[string]
+    zmxSession* {.serializedFieldName("zmx_session").}: Option[string]
+    associationSource* {.serializedFieldName("association_source").}:
+      Option[AssociationSource]
+    occ*: Option[SessionOccupancy]
+    idleS* {.serializedFieldName("idle_s").}: Option[int64]
+    started*: int64
+
+  CodexGitIn* = object
+    branch*: Option[string]
+
+  CodexPayloadIn* = object
+    id*, cwd*: Option[string]
+    git*: Option[CodexGitIn]
+
+  CodexMetaIn* = object ## Line one of a Codex rollout file.
+    payload*: Option[CodexPayloadIn]
+
+  WeztermPaneIn* = object
+    cwd*, workspace*: Option[string]
+
 createJsonFlavor ZmxJson,
   omitOptionalFields = false, automaticObjectSerialization = true
 
@@ -101,5 +152,7 @@ func `==`*(a, b: ZmxSessionName): bool {.borrow.}
 func `$`*(a: ZmxSessionName): string {.borrow.}
 func `==`*(a, b: ClaudeSessionId): bool {.borrow.}
 func `$`*(a: ClaudeSessionId): string {.borrow.}
+func `==`*(a, b: CodexSessionId): bool {.borrow.}
+func `$`*(a: CodexSessionId): string {.borrow.}
 func `==`*(a, b: ProcessId): bool {.borrow.}
 func `$`*(a: ProcessId): string {.borrow.}

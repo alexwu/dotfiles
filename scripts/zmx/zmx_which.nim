@@ -20,7 +20,10 @@ const Columns = ["PID", "KIND", "STATUS", "SESSION", "CL", "VIA", "CWD"]
 
 func toRow(agent: AgentSession, found: Option[Association]): WhichOut =
   result = WhichOut(
-    pid: int(agent.pid.get), kind: agent.kind, status: agent.status, cwd: agent.cwd
+    pid: int(agent.pid.get),
+    kind: agent.kind,
+    status: whichStatus(agent),
+    cwd: agent.cwd,
   )
   if agent.sessionId.isSome:
     result.sessionId = some($agent.sessionId.get)
@@ -104,33 +107,20 @@ proc zmxWhich(json = false, target: seq[string]): int =
     else:
       ""
 
-  # A failed read is no sessions or no agents, as it was for the Bash version:
-  # the readers treat an empty listing as nothing to show.
-  let views = snapshot().valueOr:
-    stderr.writeLine "zmx-which: " & error
-    newSeq[SessionView]()
-  let agents = listAgents().valueOr:
-    stderr.writeLine "zmx-which: " & error
-    newSeq[AgentSession]()
-
-  let source = procSource()
-  let found = associate(
-    agents,
-    views,
-    proc(pid: ProcessId): Option[string] =
-      readEnvVar(source, pid, "ZMX_SESSION"),
-  )
+  let resolved = resolveAgents()
+  for problem in resolved.problems:
+    stderr.writeLine "zmx-which: " & problem
 
   var rows: seq[WhichOut]
-  for i, agent in agents:
+  for i, agent in resolved.agents:
     if agent.pid.isNone:
       continue
-    var row = toRow(agent, found[i])
-    if found[i].isSome:
-      for view in views:
-        if view.session.name == found[i].get.session:
-          row.clients = some(view.session.clients)
-          row.occ = some(view.state)
+    var row = toRow(agent, resolved.found[i])
+    if resolved.found[i].isSome:
+      let view = resolved.viewOf(resolved.found[i].get.session)
+      if view.isSome:
+        row.clients = some(view.get.session.clients)
+        row.occ = some(view.get.state)
     if filter.len == 0 or row.zmxSession == some(filter) or $row.pid == filter:
       rows.add row
 

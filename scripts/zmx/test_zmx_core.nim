@@ -1,6 +1,7 @@
-import std/[posix, sequtils]
+import std/[os, sequtils]
+from std/posix import getpid, getppid
 import unittest2
-import zmx_agents
+import agent_rows
 
 func pinfo(pid, ppid: int, command: string, argv: seq[string] = @[]): ProcessInfo =
   ProcessInfo(pid: ProcessId(pid), ppid: ProcessId(ppid), command: command, argv: argv)
@@ -146,15 +147,25 @@ suite "decodeAgents":
     check a.sessionId == some(ClaudeSessionId("sid-a"))
     check a.cwd == some("/a")
 
-  test "background entry: no pid, state stands in for status":
+  test "background entry: no pid, state kept apart from status":
     let a = decodeAgents(fixture).get[1]
     check a.pid.isNone
-    check a.status == some("blocked")
+    check a.status.isNone
+    check a.state == some("blocked")
+    check a.shortId == some("bg")
+    check whichStatus(a) == some("blocked")
 
-  test "status wins over state, unknown keys are skipped":
+  test "status wins over state for zmx-which, unknown keys are skipped":
     let a = decodeAgents(fixture).get[2]
     check a.status == some("idle")
+    check a.state == some("done")
+    check whichStatus(a) == some("idle")
     check a.sessionId.isNone
+
+  test "name, and startedAt from milliseconds to seconds":
+    let a = decodeAgents("""[{"name": "n", "startedAt": 1700000000999}]""").get[0]
+    check a.name == some("n")
+    check a.startedAt == some(1_700_000_000'i64)
 
   test "null and absent fields are none":
     let a = decodeAgents(fixture).get[3]
@@ -168,6 +179,32 @@ suite "decodeAgents":
 
   test "anything else is an error":
     check decodeAgents("Error: not logged in").isErr
+
+suite "agent classification":
+  func agent(kind: string, status = none(string), state = none(string)): AgentSession =
+    AgentSession(kind: some(kind), status: status, state: state)
+
+  test "kindOf":
+    check kindOf(agent("interactive")) == akInteractive
+    check kindOf(agent("background")) == akBackground
+    check kindOf(agent("daemon")) == akOther
+    check kindOf(AgentSession()) == akOther
+
+  test "turnStatusOf, in sort order":
+    check turnStatusOf("waiting") == asWaiting
+    check turnStatusOf("busy") == asBusy
+    check turnStatusOf("idle") == asIdle
+    check turnStatusOf("blocked") == asOther
+    check asWaiting < asBusy and asBusy < asIdle and asIdle < asOther
+
+  test "effectiveStatus: an interactive agent's status, idle when absent":
+    check effectiveStatus(agent("interactive", some("busy"), some("x"))) == "busy"
+    check effectiveStatus(agent("interactive")) == "idle"
+    check effectiveStatus(agent("interactive", some(""))) == "idle"
+
+  test "effectiveStatus: any other agent's state, ? when absent":
+    check effectiveStatus(agent("background", some("idle"), some("done"))) == "done"
+    check effectiveStatus(agent("background", some("idle"))) == "?"
 
 suite "associate":
   func view(
@@ -230,6 +267,248 @@ suite "associate":
       views & view("omega", @[], {"agent": "claude", "claude_session": "sid-a"})
     check associate([agent(111, "sid-a")], twice, env)[0].get.session ==
       ZmxSessionName("omega")
+
+suite "parseHead":
+  test "a branch, with slashes kept":
+    check parseHead("ref: refs/heads/feat/x\n") == some("feat/x")
+
+  test "another kind of ref loses only refs/":
+    check parseHead("ref: refs/remotes/origin/x\n") == some("remotes/origin/x")
+
+  test "a detached HEAD is none":
+    check parseHead("3f58a6a0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6\n").isNone
+    check parseHead("").isNone
+
+suite "branchOf":
+  let root = getTempDir() / "zmx-core-test-git-" & $getpid()
+  createDir(root / "repo/.git")
+  createDir(root / "repo/src/deep")
+  writeFile(root / "repo/.git/HEAD", "ref: refs/heads/main\n")
+  createDir(root / "repo/.git/worktrees/wt")
+  writeFile(root / "repo/.git/worktrees/wt/HEAD", "ref: refs/heads/topic\n")
+  createDir(root / "wt")
+  writeFile(root / "wt/.git", "gitdir: ../repo/.git/worktrees/wt\n")
+  createDir(root / "detached/.git")
+  writeFile(root / "detached/.git/HEAD", "3f58a6a0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6\n")
+  createDir(root / "broken")
+  writeFile(root / "broken/.git", "not a gitdir line\n")
+
+  test "a repository's root and a directory below it":
+    check branchOf(root / "repo") == some("main")
+    check branchOf(root / "repo/src/deep") == some("main")
+
+  test "a directory that is gone still finds the repository above it":
+    check branchOf(root / "repo/src/removed") == some("main")
+
+  test "a worktree's .git file with a relative gitdir":
+    check branchOf(root / "wt") == some("topic")
+
+  test "detached HEAD, unreadable .git file, empty dir":
+    check branchOf(root / "detached").isNone
+    check branchOf(root / "broken").isNone
+    check branchOf("").isNone
+
+  test "no repository up to the root":
+    check branchOf("/").isNone
+
+  removeDir(root)
+
+suite "codex sessions":
+  const meta =
+    """{"timestamp":"t","type":"session_meta","payload":{"id":"0199aaaa-bbbb-cccc","cwd":"/work/app","git":{"branch":"feat/y","commit_hash":"abc"},"base_instructions":{"text":"long"}}}"""
+
+  test "decodeCodexMeta: id, cwd and branch":
+    let s = decodeCodexMeta(meta, 42).get
+    check s.id == some(CodexSessionId("0199aaaa-bbbb-cccc"))
+    check s.cwd == some("/work/app")
+    check s.branch == some("feat/y")
+    check s.modified == 42
+
+  test "decodeCodexMeta: no git, no payload, not JSON":
+    let s = decodeCodexMeta("""{"payload":{"id":"x","cwd":"/a"}}""", 1).get
+    check s.branch.isNone
+    check decodeCodexMeta("{}", 1).get.id.isNone
+    check decodeCodexMeta("garbage", 1).isNone
+
+  let root = getTempDir() / "zmx-core-test-codex-" & $getpid()
+  let day = root / "2026/01/01"
+  createDir(day)
+  writeFile(day / "rollout-fresh.jsonl", meta & "\n{\"type\":\"other\"}\n")
+  writeFile(day / "rollout-old.jsonl", """{"payload":{"id":"old"}}""" & "\n")
+  writeFile(day / "rollout-bad.jsonl", "garbage\n")
+  writeFile(day / "notes.txt", meta & "\n")
+  let now = getTime()
+  setLastModificationTime(day / "rollout-fresh.jsonl", now - initDuration(minutes = 5))
+  setLastModificationTime(day / "rollout-old.jsonl", now - initDuration(hours = 5))
+  setLastModificationTime(day / "rollout-bad.jsonl", now - initDuration(minutes = 1))
+
+  test "only rollouts inside the window, undecodable ones skipped":
+    let found = recentCodexSessions(root, 90, now)
+    check found.len == 1
+    check found[0].id == some(CodexSessionId("0199aaaa-bbbb-cccc"))
+    check found[0].modified == (now - initDuration(minutes = 5)).toUnix
+
+  test "newest first":
+    let found = recentCodexSessions(root, 600, now)
+    check found.mapIt($it.id.get) == @["0199aaaa-bbbb-cccc", "old"]
+
+  test "a zero window matches nothing, even a file written this instant":
+    setLastModificationTime(day / "rollout-fresh.jsonl", now)
+    check recentCodexSessions(root, 0, now).len == 0
+
+  test "a missing root is no sessions":
+    check recentCodexSessions(root / "absent", 90, now).len == 0
+
+  removeDir(root)
+
+suite "fmtIdle":
+  test "seconds, minutes, hours and minutes":
+    check fmtIdle(0) == "0s"
+    check fmtIdle(59) == "59s"
+    check fmtIdle(60) == "1m"
+    check fmtIdle(3599) == "59m"
+    check fmtIdle(3600) == "1h0m"
+    check fmtIdle(7384) == "2h3m"
+
+suite "layout":
+  test "visibleLen ignores colour and counts a glyph once":
+    check visibleLen(paint(Red & Bold, "waiting")) == 7
+    check visibleLen(DotFull) == 1
+    check visibleLen("") == 0
+
+  test "paint leaves an empty cell empty":
+    check paint(Dim, "") == ""
+
+  test "columns pad to the widest visible cell, the last is not padded":
+    check layout([@[paint(Red, "ab"), "x", "end"], @["abcd", "yy", "e"]]) ==
+      @[paint(Red, "ab") & "   x  end", "abcd yy e"]
+
+  test "trailing blanks are trimmed and an all-empty column is dropped":
+    check layout([@["a", "", "long"], @["bbb", "", ""]]) == @["a   long", "bbb"]
+
+  test "no rows":
+    check layout(newSeq[seq[string]]()).len == 0
+
+  test "projectOf":
+    check projectOf("/Users/x/proj a") == "proj a"
+    check projectOf("") == "?"
+    check projectOf("/") == "/"
+
+suite "agent rows":
+  let resolved = Resolved(
+    views: @[
+      SessionView(session: ZmxSession(name: ZmxSessionName("alpha")), state: soActive)
+    ],
+    agents: @[
+      AgentSession(
+        pid: some(ProcessId(111)),
+        kind: some("interactive"),
+        status: some("busy"),
+        sessionId: some(ClaudeSessionId("sid-a")),
+        name: some("fix things"),
+        cwd: some("/a"),
+        startedAt: some(1000'i64),
+      ),
+      AgentSession(
+        kind: some("background"),
+        state: some("blocked"),
+        sessionId: some(ClaudeSessionId("sid-bg")),
+        shortId: some("bg"),
+        cwd: some(""),
+      ),
+      AgentSession(
+        pid: some(ProcessId(222)), kind: some("background"), state: some("running")
+      ),
+    ],
+    found: @[
+      some(Association(session: ZmxSessionName("alpha"), source: asLabel)),
+      some(Association(session: ZmxSessionName("alpha"), source: asLabel)),
+      some(Association(session: ZmxSessionName("gone"), source: asProcessEnv)),
+    ],
+  )
+  var asked: seq[string]
+  let rows = claudeRows(
+    resolved,
+    proc(dir: string): Option[string] =
+      asked.add dir
+      some("main"),
+  )
+
+  test "an interactive agent carries its session, occupancy and branch":
+    check rows[0].source == apClaude
+    check rows[0].kind == "interactive"
+    check rows[0].status == "busy"
+    check rows[0].pid == some(111)
+    check rows[0].sessionId == some("sid-a")
+    check rows[0].name == some("fix things")
+    check rows[0].branch == some("main")
+    check rows[0].zmxSession == some("alpha")
+    check rows[0].associationSource == some(asLabel)
+    check rows[0].occ == some(soActive)
+    check rows[0].idleS.isNone
+    check rows[0].started == 1000
+
+  test "a background agent without a pid: state as status, no session":
+    check rows[1].status == "blocked"
+    check rows[1].shortId == some("bg")
+    check rows[1].pid.isNone
+    check rows[1].zmxSession.isNone
+    check rows[1].occ.isNone
+    check rows[1].started == 0
+
+  test "an empty directory is none and is not asked for a branch":
+    check rows[1].cwd.isNone
+    check rows[1].branch.isNone
+    check asked == @["/a"]
+
+  test "a background agent with a pid carries its session":
+    check rows[2].status == "running"
+    check rows[2].zmxSession == some("gone")
+    check rows[2].associationSource == some(asProcessEnv)
+    check rows[2].occ.isNone
+
+  test "codexRows":
+    let row = codexRows(
+      [
+        CodexSession(
+          id: some(CodexSessionId("0199aaaa-bbbb-cccc")),
+          cwd: some("/work/app"),
+          branch: some("feat/y"),
+          modified: 900,
+        )
+      ],
+      now = 1000,
+    )[0]
+    check row.source == apCodex
+    check row.kind == "codex"
+    check row.status == "idle"
+    check row.pid.isNone
+    check row.sessionId == some("0199aaaa-bbbb-cccc")
+    check row.shortId == some("0199aaaa")
+    check row.cwd == some("/work/app")
+    check row.branch == some("feat/y")
+    check row.idleS == some(100'i64)
+    check row.started == 900
+
+  test "the --json shape":
+    check ZmxJson.encode(codexRows([CodexSession(modified: 5)], now = 9)) ==
+      """[{"source":"codex","kind":"codex","status":"idle","pid":null,"session_id":null,"short_id":null,"name":null,"cwd":null,"branch":null,"zmx_session":null,"association_source":null,"occ":null,"idle_s":4,"started":5}]"""
+
+suite "watchArgs":
+  test "bare --watch is two seconds":
+    check watchArgs(["--watch"]) == @["--watch=2"]
+
+  test "--watch with a number":
+    check watchArgs(["--within", "30", "--watch", "5"]) ==
+      @["--within", "30", "--watch=5"]
+
+  test "--watch followed by another flag":
+    check watchArgs(["--watch", "--within", "30"]) == @["--watch=2", "--within", "30"]
+
+  test "absent, or already joined":
+    check watchArgs(["--json"]) == @["--json"]
+    check watchArgs(["--watch=7"]) == @["--watch=7"]
+    check watchArgs(newSeq[string]()).len == 0
 
 suite "decodeCwd":
   test "file URI with host, percent-encoding and trailing slash":

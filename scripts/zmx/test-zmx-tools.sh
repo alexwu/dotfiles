@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# Tests for the zmx tools: label parsing in zmx-ps and the agent -> session
-# association in zmx-which (both Nim, scripts/zmx), and zmx-agent-label's
-# lifecycle.
+# Tests for the zmx tools: label parsing in zmx-ps, the agent -> session
+# association in zmx-which, the agent-sessions contract and the mission-control
+# view (all Nim, scripts/zmx), and zmx-agent-label's lifecycle.
 #
 # Hermetic: the tools pin "$HOME/.local/bin" first on PATH, so a throwaway HOME
-# holds the freshly built zmx-ps and zmx-which, wrappers for the Bash sources,
-# and stub `zmx`, `claude`, and `ps` that serve fixtures. No live session is
-# read or changed.
+# holds the four freshly built Nim tools, a wrapper for the Bash source, and
+# stub `zmx`, `claude`, `ps`, and `wezterm` that serve fixtures. No live
+# session is read or changed.
 #
 # Usage: scripts/zmx/test-zmx-tools.sh   (or: just test-zmx)
 
 set -uo pipefail
 # The Nim tools read the real process table through libproc unless told to use
-# `ps`, which is the reader the stub can stand in for. Exported for the whole
-# file: agent-sessions runs zmx-which without going through `run`.
+# `ps`, which is the reader the stub can stand in for.
 export ZMX_PS_SOURCE=ps
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -24,23 +23,24 @@ bin="$tmp/.local/bin"
 fix="$tmp/fixtures"
 mkdir -p "$bin" "$fix"
 
-# Both Nim tools, side by side when rust-parallel is installed.
+# The Nim tools, side by side when rust-parallel is installed.
+nim_tools=(zmx-ps zmx-which agent-sessions mission-control)
 if command -v rust-parallel >/dev/null 2>&1; then
-  printf '%s\n' zmx-ps:zmx_ps zmx-which:zmx_which |
+  for tool in "${nim_tools[@]}"; do printf '%s:%s\n' "$tool" "${tool//-/_}"; done |
     rust-parallel -r '(?P<tool>.+):(?P<module>.+)' \
       nim c --hints:off "--nimcache:$tmp/nimcache-{tool}" "-o:$bin/{tool}" "$here/{module}.nim" >&2
 else
-  for tool in zmx-ps zmx-which; do
+  for tool in "${nim_tools[@]}"; do
     nim c --hints:off --nimcache:"$tmp/nimcache-$tool" -o:"$bin/$tool" "$here/${tool//-/_}.nim" >&2 || break
   done
 fi
-[[ -x "$bin/zmx-ps" && -x "$bin/zmx-which" ]] || {
-  echo "test-zmx-tools: the Nim tools did not build" >&2
-  exit 1
-}
-for tool in zmx-agent-label agent-sessions; do
-  printf '#!/bin/sh\nexec /opt/homebrew/bin/bash %s "$@"\n' "$src/executable_$tool" >"$bin/$tool"
+for tool in "${nim_tools[@]}"; do
+  [[ -x "$bin/$tool" ]] || {
+    echo "test-zmx-tools: $tool did not build" >&2
+    exit 1
+  }
 done
+printf '#!/bin/sh\nexec /opt/homebrew/bin/bash %s "$@"\n' "$src/executable_zmx-agent-label" >"$bin/zmx-agent-label"
 
 # zmx stub: `list` prints the fixture; get/set keep labels in a k=v file.
 cat >"$bin/zmx" <<'STUB'
@@ -85,7 +85,19 @@ else
   cat "$FIX/ps-table"
 fi
 STUB
+
+# wezterm stub: one pane, so mission-control never reaches the real one.
+cat >"$bin/wezterm" <<'STUB'
+#!/bin/sh
+printf '[{"cwd": "file://host/Users/x/proj%%20a/", "workspace": "main"}]\n'
+STUB
 chmod +x "$bin"/*
+
+# One Codex rollout. Its mtime is now, so any positive --within includes it.
+mkdir -p "$tmp/.codex/sessions/2026/01/01"
+printf '%s\n' \
+  '{"type":"session_meta","payload":{"id":"0199aaaa-bbbb-cccc","cwd":"/work/app","git":{"branch":"feat/y"}}}' \
+  '{"type":"other"}' >"$tmp/.codex/sessions/2026/01/01/rollout-test.jsonl"
 
 # alpha: labelled, plus a foreign label. beta: run-created, no labels.
 # gamma: stale agent label from a crashed session. delta: no optional fields.
@@ -163,10 +175,44 @@ check "which: filter by session" "$(run "$bin/zmx-which" --json alpha | jaq -r '
 check "which: filter by pid" "$(run "$bin/zmx-which" --json 311 | jaq -r 'map(.zmx_session) | join(",")')" "gamma"
 
 # --- agent-sessions: contract ------------------------------------------------
-as_json=$(HOME="$tmp" FIX="$fix" "$bin/agent-sessions" --json --within 0)
+as_json=$(run "$bin/agent-sessions" --json --within 0)
 check "agent-sessions: association carried" \
   "$(jaq -c '[.[] | select(.source == "claude") | [.pid, .zmx_session, .association_source, .occ]]' <<<"$as_json")" \
   '[[111,"alpha","label","active"],[311,"gamma","process_env","active"],[411,"delta","process_tree","active"],[999,null,null,null],[null,null,null,null]]'
+check "agent-sessions: status by kind, short id from id" \
+  "$(jaq -c '[.[] | select(.pid == 111 or .pid == null) | [.kind, .status, .short_id, .idle_s]]' <<<"$as_json")" \
+  '[["interactive","busy",null,null],["background","blocked","bg",null]]'
+check "agent-sessions: every contract key, in order" "$(jaq -r '.[0] | keys_unsorted | join(",")' <<<"$as_json")" \
+  "source,kind,status,pid,session_id,short_id,name,cwd,branch,zmx_session,association_source,occ,idle_s,started"
+check "agent-sessions: --within 0 has no Codex row" "$(jaq '[.[] | select(.source == "codex")] | length' <<<"$as_json")" "0"
+check "agent-sessions: Codex row" \
+  "$(run "$bin/agent-sessions" --json --within 60 |
+    jaq -c '[.[] | select(.source == "codex") | [.kind, .status, .session_id, .short_id, .cwd, .branch, .pid, (.idle_s < 60)]]')" \
+  '[["codex","idle","0199aaaa-bbbb-cccc","0199aaaa","/work/app","feat/y",null,true]]'
+check "agent-sessions: --json wins over --watch" "$(run "$bin/agent-sessions" --watch --json --within 0 | jaq length)" "5"
+run "$bin/agent-sessions" --bogus >/dev/null 2>&1
+check "agent-sessions: an unknown flag exits 2" "$?" "2"
+
+plain() { sed $'s/\e\\[[0-9;]*m//g'; }
+as_view=$(run "$bin/agent-sessions" --within 60 | plain)
+check "agent-sessions view: waiting sorts first" "$(sed -n 2p <<<"$as_view" | sed 's/  */ /g')" "● cc c delta waiting active -"
+check "agent-sessions view: Codex row shows its short id" "$(rg -c '^● cx app feat/y -\s+\d+s\s+-\s+0199aaaa$' <<<"$as_view")" "1"
+check "agent-sessions view: background task" "$(rg -c '^  \(unnamed\) bg blocked$' <<<"$as_view")" "1"
+
+# --- mission-control: view ----------------------------------------------------
+mc_view=$(run "$bin/mission-control" --within 60 | plain)
+check "mission-control: header" "$(sed -n 1p <<<"$mc_view")" " mission control"
+check "mission-control: waiting agent first, with its host" "$(sed -n 2p <<<"$mc_view" | sed 's/  */ /g')" "● cc c waiting delta"
+check "mission-control: busy agent hosted by alpha" "$(rg -c '^● cc  a\s+busy\s+alpha$' <<<"$mc_view")" "1"
+check "mission-control: Codex row between busy and idle" "$(sed -n 4p <<<"$mc_view" | rg -c '^● cx  app feat/y \d+s$')" "1"
+check "mission-control: pid-less agent is not listed" "$(rg -c ' cc ' <<<"$mc_view")" "4"
+check "mission-control: only the session hosting no agent is an orphan" \
+  "$(rg ' zmx ' <<<"$mc_view" | sed 's/  */ /g')" "◦ zmx tmp detached beta"
+check "mission-control: workspace tag by decoded directory" \
+  "$(: >"$fix/agents.json" && run "$bin/mission-control" --within 0 | plain | rg 'alpha' | sed 's/  */ /g')" \
+  "● zmx proj a shell alpha ·main"
+run "$bin/mission-control" --json >/dev/null 2>&1
+check "mission-control: an unknown flag exits 2" "$?" "2"
 
 # --- zmx-agent-label: lifecycle ---------------------------------------------
 lbl() { printf '{"session_id":"%s"}' "$2" | HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha CLAUDE_PID="${3:-$$}" "$bin/zmx-agent-label" "$1" claude 2>/dev/null; }
