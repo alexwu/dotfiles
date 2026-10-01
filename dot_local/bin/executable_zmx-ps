@@ -3,7 +3,7 @@
 # and an active/idle verdict. The `zmx list --json` that zmx doesn't have.
 #
 # Schema per session:
-#   { name, pid, clients, created, age_s, cwd, current,
+#   { name, pid, clients, created, age_s, cwd, current, labels: { key: value },
 #     state: "active"|"idle", running: <comm>|null,
 #     procs: [ { pid, etime, cpu, rss_kb, command } ] }
 #
@@ -11,10 +11,15 @@
 # that isn't shell/atuin-pty-proxy infrastructure. This is SESSION OCCUPANCY,
 # distinct from a Claude agent's own "busy" turn-status (see agent-sessions).
 #
+# "labels" is every zmx label on the session, verbatim (`zmx set`). Agents
+# register their identity there (see zmx-agent-label); it says who lives in the
+# session, never what the session or the agent is doing.
+#
 # Usage: zmx-ps [filters]
 #   --name RE        session name matches RE (case-insensitive)
 #   --dir RE         cwd (the session shell's current directory) matches RE
 #   --hosting RE     any descendant command matches RE (e.g. claude, codex)
+#   --label K[=V]    label K is set (and equals V, when given)
 #   --detached       clients == 0          --attached   clients > 0
 #   --active         working procs exist   --idle       infrastructure only
 #   --names          print matching session names only (for xargs)
@@ -28,7 +33,7 @@ set -uo pipefail
 export TMPDIR="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}")"
 PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 
-f_name="" f_dir="" f_hosting="" f_attach="" f_state="" names_only=0
+f_name="" f_dir="" f_hosting="" f_attach="" f_state="" f_label="" names_only=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --name)
@@ -41,6 +46,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --hosting)
       f_hosting="${2:?--hosting needs a pattern}"
+      shift 2
+      ;;
+    --label)
+      f_label="${2:?--label needs KEY or KEY=VALUE}"
       shift 2
       ;;
     --detached)
@@ -75,7 +84,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # One pass: snapshot (space-split) + parsed sessions (TSV), emitting
-#   S <name> <pid> <clients> <created> <dir> <current>
+#   S <name> <pid> <clients> <created> <dir> <current> <labels: "k=v k=v">
 #   P <session> <pid> <etime> <cpu> <rss> <command>
 tagged=$(awk '
   NR == FNR {
@@ -86,7 +95,7 @@ tagged=$(awk '
     next
   }
   {
-    split($0, f, "\t")  # name pid clients created dir current
+    split($0, f, "\t")  # name pid clients created dir current labels
     print "S\t" $0
     head = tail = 0; delete queue
     n = split(kids[f[2]], q, " ")
@@ -124,18 +133,29 @@ tagged=$(awk '
       d = ($5 ~ /^cwd=/) ? substr($5, 5) : ""
       if (d ~ /^[a-z-]+:\/\//) { sub(/^[a-z-]+:\/\/[^\/]*/, "", d); d = unescape(d) }
       if (length(d) > 1) sub(/\/$/, "", d)
-      print n "\t" p "\t" c "\t" t "\t" d "\t" (($0 ~ /^→/) ? 1 : 0)
+      # zmx emits its own optional fields in this order, then the labels,
+      # key-sorted. Label keys and values hold only [A-Za-z0-9._-], so a
+      # space-joined list is unambiguous.
+      i = 5
+      if ($i ~ /^cwd=/) i++
+      if ($i ~ /^cmd=/) i++
+      if ($i ~ /^ended=/) i++
+      if ($i ~ /^exit_code=/) i++
+      l = ""
+      for (; i <= NF; i++) l = l (l == "" ? "" : " ") $i
+      print n "\t" p "\t" c "\t" t "\t" d "\t" (($0 ~ /^→/) ? 1 : 0) "\t" l
     }'))
 
 out=$(printf '%s\n' "$tagged" | jaq -R -s \
   --arg now "$(date +%s)" \
   --arg name "$f_name" --arg dir "$f_dir" --arg hosting "$f_hosting" \
-  --arg attach "$f_attach" --arg state "$f_state" '
+  --arg attach "$f_attach" --arg state "$f_state" --arg label "$f_label" '
   def base: (split(" ") | .[0]) | (split("/") | .[-1]) | ltrimstr("-");
   def infra: . as $c | ($c | base) as $b
     | (["sh","bash","zsh","fish","dash"] | index($b) != null)
       or ($b == "atuin" and ($c | contains("pty-proxy")));
-  (split("\n") | map(select(length > 0) | split("\t"))) as $rows
+  ($label | index("=")) as $eq
+  | (split("\n") | map(select(length > 0) | split("\t"))) as $rows
   | ($rows | map(select(.[0] == "P") | {
       session: .[1], pid: (.[2] | tonumber), etime: .[3],
       cpu: (.[4] | tonumber), rss_kb: (.[5] | tonumber),
@@ -144,7 +164,10 @@ out=$(printf '%s\n' "$tagged" | jaq -R -s \
   | $rows
   | map(select(.[0] == "S")
     | { name: .[1], pid: (.[2] | tonumber), clients: (.[3] | tonumber),
-        created: (.[4] | tonumber), cwd: .[5], current: (.[6] == "1") }
+        created: (.[4] | tonumber), cwd: .[5], current: (.[6] == "1"),
+        labels: ((.[7] // "") | split(" ")
+          | map(select(length > 0) | index("=") as $i | { key: .[:$i], value: .[$i + 1:] })
+          | from_entries) }
     | .age_s = (($now | tonumber) - .created)
     | . as $s
     | .procs = ($procs | map(select(.session == $s.name) | del(.session)))
@@ -156,6 +179,9 @@ out=$(printf '%s\n' "$tagged" | jaq -R -s \
   | map(select($attach == "" or
       (if $attach == "detached" then .clients == 0 else .clients > 0 end)))
   | map(select($state == "" or .state == $state))
+  | map(select($label == ""
+      or (if $eq == null then .labels | has($label)
+          else .labels[$label[:$eq]] == $label[$eq + 1:] end)))
   | map(select($hosting == "" or (.procs | any(.command | test($hosting; "i")))))
 ')
 

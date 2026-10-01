@@ -219,6 +219,11 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/notify SessionEnd"
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/zmx-agent-label unset claude",
+            "timeout": 5
           }
         ]
       }
@@ -230,6 +235,11 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/persona-anchor session-start --agent claude-code",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/zmx-agent-label set claude",
             "timeout": 5
           }
         ]

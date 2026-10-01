@@ -36,6 +36,10 @@ fmt-toml:
 fmt-fish:
     fd -e fish . -X fish_indent -w
 
+# Test the zmx tools in dot_local/bin against stubbed zmx/claude/ps (no live session is touched).
+test-zmx:
+    bash scripts/zmx/test-zmx-tools.sh
+
 # Check formatting across the main languages without writing (non-zero on drift).
 fmt-check:
     shfmt -d .
