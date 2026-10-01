@@ -1,23 +1,33 @@
 #!/usr/bin/env bash
-# Tests for the zmx tools in dot_local/bin: label parsing in zmx-ps, the
+# Tests for the zmx tools: label parsing in zmx-ps (Nim, scripts/zmx), the
 # agent -> session association in zmx-which, and zmx-agent-label's lifecycle.
 #
 # Hermetic: the tools pin "$HOME/.local/bin" first on PATH, so a throwaway HOME
-# holds wrappers for the source scripts plus stub `zmx`, `claude`, and `ps`
-# that serve fixtures. No live session is read or changed.
+# holds the freshly built zmx-ps, wrappers for the Bash sources, and stub
+# `zmx`, `claude`, and `ps` that serve fixtures. No live session is read or
+# changed.
 #
 # Usage: scripts/zmx/test-zmx-tools.sh   (or: just test-zmx)
 
 set -uo pipefail
+# zmx-ps reads the real process table through libproc unless told to use `ps`,
+# which is the reader the stub can stand in for. Exported for the whole file:
+# agent-sessions reaches zmx-ps through zmx-which.
+export ZMX_PS_SOURCE=ps
 
-src="$(cd "$(dirname "$0")/../../dot_local/bin" && pwd)"
+here="$(cd "$(dirname "$0")" && pwd)"
+src="$(cd "$here/../../dot_local/bin" && pwd)"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 bin="$tmp/.local/bin"
 fix="$tmp/fixtures"
 mkdir -p "$bin" "$fix"
 
-for tool in zmx-ps zmx-which zmx-agent-label agent-sessions; do
+nim c --hints:off --nimcache:"$tmp/nimcache" -o:"$bin/zmx-ps" "$here/zmx_ps.nim" >&2 || {
+  echo "test-zmx-tools: zmx_ps.nim did not build" >&2
+  exit 1
+}
+for tool in zmx-which zmx-agent-label agent-sessions; do
   printf '#!/bin/sh\nexec /opt/homebrew/bin/bash %s "$@"\n' "$src/executable_$tool" >"$bin/$tool"
 done
 
@@ -76,14 +86,14 @@ printf '%s\n' \
   $'  name=dead\terr=ConnectionRefused\tstatus=unreachable' >"$fix/zmx-list"
 
 printf '%s\n' \
-  '101 100 01:00 0.0 100 -zsh' \
-  '111 101 01:00 1.0 100 claude' \
-  '201 200 01:00 0.0 100 -bash' \
-  '301 300 01:00 0.0 100 -zsh' \
-  '311 301 01:00 0.0 100 claude' \
-  '401 400 01:00 0.0 100 -zsh' \
-  '411 401 01:00 0.0 100 claude' \
-  '999 1 01:00 0.0 100 claude' >"$fix/ps-table"
+  '101 100 01:00 100 -zsh' \
+  '111 101 01:00 100 claude' \
+  '201 200 01:00 100 -bash' \
+  '301 300 01:00 100 -zsh' \
+  '311 301 01:00 100 claude' \
+  '401 400 01:00 100 -zsh' \
+  '411 401 01:00 100 claude' \
+  '999 1 01:00 100 claude' >"$fix/ps-table"
 
 # 111's env names the wrong session on purpose: the label has to win.
 printf '%s\n' \

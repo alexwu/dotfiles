@@ -36,8 +36,9 @@ fmt-toml:
 fmt-fish:
     fd -e fish . -X fish_indent -w
 
-# Test the zmx tools in dot_local/bin against stubbed zmx/claude/ps (no live session is touched).
+# Test the zmx tools: the Nim core's unit suite, then every tool against stubbed zmx/claude/ps (no live session is changed).
 test-zmx:
+    nim c -r --hints:off --outdir:"${TMPDIR:-/tmp}/zmx-nim-test" scripts/zmx/test_zmx_core.nim
     bash scripts/zmx/test-zmx-tools.sh
 
 # Check formatting across the main languages without writing (non-zero on drift).
