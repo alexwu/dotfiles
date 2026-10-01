@@ -3,126 +3,136 @@
 # chezmoi re-runs this script whenever the rendered template changes;
 # source-file hashes below are what make the template change on edit.
 # Agent hooks and CLIs build from ~/Code/lulu-loadout (`just install`), not here.
+#
+# Every binary rebuilds on any change, so the builds run side by side through
+# rust-parallel when it is installed (about 4 s against 11 s in a row).
 
 set -euo pipefail
 
-mkdir -p "$HOME/.local/bin"
-
-# ---- heic-ai-rename (Nim) ----
+# heic-ai-rename
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/hazel/heic_ai_rename.nim") | sha256sum }}
-{
-  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/hazel/heic_ai_rename.nim" }}"
-  TARGET="$HOME/.local/bin/heic-ai-rename"
-
-  if ! command -v nim >/dev/null 2>&1; then
-    echo "build-scripts: nim not found on PATH, skipping heic-ai-rename" >&2
-  else
-    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
-    echo "build-scripts: built $TARGET"
-  fi
-}
-
-# ---- image-sort (Nim, requires json_serialization) ----
+# image-sort
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/hazel/image_sort.nim") | sha256sum }}
-{
-  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/hazel/image_sort.nim" }}"
-  TARGET="$HOME/.local/bin/image-sort"
-
-  if ! command -v nim >/dev/null 2>&1; then
-    echo "build-scripts: nim not found on PATH, skipping image-sort" >&2
-  elif ! command -v nimble >/dev/null 2>&1; then
-    echo "build-scripts: nimble not found on PATH, skipping image-sort" >&2
-  else
-    if ! nimble path json_serialization >/dev/null 2>&1; then
-      echo "build-scripts: installing json_serialization for image-sort"
-      nimble install -y json_serialization >/dev/null
-    fi
-    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
-    echo "build-scripts: built $TARGET"
-  fi
-}
-
-# ---- gif-mosaic (Nim, requires cligen) ----
+# gif-mosaic
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/hazel/gif_mosaic.nim") | sha256sum }}
-{
-  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/hazel/gif_mosaic.nim" }}"
-  TARGET="$HOME/.local/bin/gif-mosaic"
-
-  if ! command -v nim >/dev/null 2>&1; then
-    echo "build-scripts: nim not found on PATH, skipping gif-mosaic" >&2
-  elif ! command -v nimble >/dev/null 2>&1; then
-    echo "build-scripts: nimble not found on PATH, skipping gif-mosaic" >&2
-  else
-    if ! nimble path cligen >/dev/null 2>&1; then
-      echo "build-scripts: installing cligen for gif-mosaic"
-      nimble install -y cligen >/dev/null
-    fi
-    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
-    echo "build-scripts: built $TARGET"
-  fi
-}
-
-# ---- tv-claude-session (Nim, requires cligen) ----
+# tv-claude-session
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/television/claude_session.nim") | sha256sum }}
-{
-  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/television/claude_session.nim" }}"
-  TARGET="$HOME/.local/bin/tv-claude-session"
-
-  if ! command -v nim >/dev/null 2>&1; then
-    echo "build-scripts: nim not found on PATH, skipping tv-claude-session" >&2
-  elif ! command -v nimble >/dev/null 2>&1; then
-    echo "build-scripts: nimble not found on PATH, skipping tv-claude-session" >&2
-  else
-    if ! nimble path cligen >/dev/null 2>&1; then
-      echo "build-scripts: installing cligen for tv-claude-session"
-      nimble install -y cligen >/dev/null
-    fi
-    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
-    echo "build-scripts: built $TARGET"
-  fi
-}
-
-# ---- zmx-ps (Nim, requires cligen, json_serialization, results, regex) ----
+# electron-apps
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/macos/electron_apps.nim") | sha256sum }}
+# zmx-ps and zmx-which: the two entry points, then the modules they share.
+# A new module under scripts/zmx/ needs a line here.
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_ps.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_which.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_agents.nim") | sha256sum }}
+# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_snapshot.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_types.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/zmx_sessions.nim") | sha256sum }}
 # source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/zmx/proc_table.nim") | sha256sum }}
-{
-  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/zmx/zmx_ps.nim" }}"
-  TARGET="$HOME/.local/bin/zmx-ps"
 
-  if ! command -v nim >/dev/null 2>&1; then
-    echo "build-scripts: nim not found on PATH, skipping zmx-ps" >&2
-  elif ! command -v nimble >/dev/null 2>&1; then
-    echo "build-scripts: nimble not found on PATH, skipping zmx-ps" >&2
+SRC="{{ joinPath .chezmoi.sourceDir "scripts" }}"
+BIN="$HOME/.local/bin"
+
+# binary|source|nimble packages it imports
+builds=(
+  "heic-ai-rename|$SRC/hazel/heic_ai_rename.nim|"
+  "image-sort|$SRC/hazel/image_sort.nim|json_serialization"
+  "gif-mosaic|$SRC/hazel/gif_mosaic.nim|cligen"
+  "tv-claude-session|$SRC/television/claude_session.nim|cligen"
+  "zmx-ps|$SRC/zmx/zmx_ps.nim|cligen json_serialization results regex"
+  "zmx-which|$SRC/zmx/zmx_which.nim|cligen json_serialization results"
+  "electron-apps|$SRC/macos/electron_apps.nim|cligen"
+)
+
+# Progress, gum's log lines and the summary table are for a terminal only:
+# without one the bar and spinner still write cursor escapes, and plain lines
+# grep better.
+pretty=0
+if [[ -t 1 ]] && command -v gum >/dev/null 2>&1; then
+  pretty=1
+fi
+
+say() { # level message
+  if ((pretty)); then
+    gum log --level "$1" --prefix build-scripts "$2"
+  elif [[ "$1" == info ]]; then
+    echo "build-scripts: $2"
   else
-    for dep in cligen json_serialization results regex; do
-      if ! nimble path "$dep" >/dev/null 2>&1; then
-        echo "build-scripts: installing $dep for zmx-ps"
-        nimble install -y "$dep" >/dev/null
-      fi
-    done
-    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
-    echo "build-scripts: built $TARGET"
+    echo "build-scripts: $2" >&2
   fi
 }
 
-# ---- electron-apps (Nim, requires cligen) ----
-# source hash: {{ include (joinPath .chezmoi.sourceDir "scripts/macos/electron_apps.nim") | sha256sum }}
-{
-  SOURCE="{{ joinPath .chezmoi.sourceDir "scripts/macos/electron_apps.nim" }}"
-  TARGET="$HOME/.local/bin/electron-apps"
+if ! command -v nim >/dev/null 2>&1; then
+  say warn "nim not found on PATH, skipping every build"
+  exit 0
+fi
 
-  if ! command -v nim >/dev/null 2>&1; then
-    echo "build-scripts: nim not found on PATH, skipping electron-apps" >&2
-  elif ! command -v nimble >/dev/null 2>&1; then
-    echo "build-scripts: nimble not found on PATH, skipping electron-apps" >&2
-  else
-    if ! nimble path cligen >/dev/null 2>&1; then
-      echo "build-scripts: installing cligen for electron-apps"
-      nimble install -y cligen >/dev/null
+mkdir -p "$BIN"
+
+# Packages install one at a time, before any build: two nimble installs at once
+# would race on ~/.nimble.
+queue=()
+checked=" "
+for row in "${builds[@]}"; do
+  IFS='|' read -r name source deps <<<"$row"
+  if [[ -n "$deps" ]] && ! command -v nimble >/dev/null 2>&1; then
+    say warn "nimble not found on PATH, skipping $name"
+    continue
+  fi
+  for dep in $deps; do
+    [[ "$checked" == *" $dep "* ]] && continue
+    checked+="$dep "
+    if ! nimble path "$dep" >/dev/null 2>&1; then
+      say info "installing $dep"
+      nimble install -y "$dep" >/dev/null
     fi
-    nim c -d:release --opt:size --hints:off -o:"$TARGET" "$SOURCE"
-    echo "build-scripts: built $TARGET"
-  fi
+  done
+  queue+=("$BIN/$name|$source")
+done
+
+if ((${#queue[@]} == 0)); then
+  exit 0
+fi
+
+# Each entry point has its own nimcache (named after the module), so the
+# compiles share nothing they write.
+build_serial() {
+  local entry
+  for entry in "$@"; do
+    nim c -d:release --opt:size --hints:off -o:"${entry%%|*}" "${entry#*|}"
+  done
 }
+
+if command -v rust-parallel >/dev/null 2>&1; then
+  # On a terminal, rust-parallel's own bar counts the builds as they finish.
+  progress=()
+  if ((pretty)); then
+    progress=(--progress-bar)
+  fi
+  # The ${x[@]+...} form: bash 3.2 treats an empty array as unset under -u.
+  rust-parallel ${progress[@]+"${progress[@]}"} \
+    -r '(?P<target>[^|]+)\|(?P<source>.+)' \
+    nim c -d:release --opt:size --hints:off '-o:{target}' '{source}' \
+    ::: "${queue[@]}"
+  if ((pretty)); then
+    echo # the finished bar leaves the cursor on its line
+  fi
+elif ((pretty)); then
+  # The spinner runs a command, not a function, so build_serial reaches it
+  # through a child bash. Compiler output shows only when a build fails.
+  export -f build_serial
+  gum spin --title "Building ${#queue[@]} Nim binaries" --show-error -- \
+    bash -c 'build_serial "$@"' _ "${queue[@]}"
+else
+  build_serial "${queue[@]}"
+fi
+
+if ((pretty)); then
+  for entry in "${queue[@]}"; do
+    target="${entry%%|*}"
+    printf '%s,%s\n' "$(basename "$target")" "$(du -h "$target" | cut -f1 | tr -d ' ')"
+  done | gum table --print --columns "Built,Size"
+else
+  for entry in "${queue[@]}"; do
+    say info "built ${entry%%|*}"
+  done
+fi
