@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Tests for the zmx tools: label parsing in zmx-ps (Nim, scripts/zmx), the
-# agent -> session association in zmx-which, and zmx-agent-label's lifecycle.
+# Tests for the zmx tools: label parsing in zmx-ps and the agent -> session
+# association in zmx-which (both Nim, scripts/zmx), and zmx-agent-label's
+# lifecycle.
 #
 # Hermetic: the tools pin "$HOME/.local/bin" first on PATH, so a throwaway HOME
-# holds the freshly built zmx-ps, wrappers for the Bash sources, and stub
-# `zmx`, `claude`, and `ps` that serve fixtures. No live session is read or
-# changed.
+# holds the freshly built zmx-ps and zmx-which, wrappers for the Bash sources,
+# and stub `zmx`, `claude`, and `ps` that serve fixtures. No live session is
+# read or changed.
 #
 # Usage: scripts/zmx/test-zmx-tools.sh   (or: just test-zmx)
 
 set -uo pipefail
-# zmx-ps reads the real process table through libproc unless told to use `ps`,
-# which is the reader the stub can stand in for. Exported for the whole file:
-# agent-sessions reaches zmx-ps through zmx-which.
+# The Nim tools read the real process table through libproc unless told to use
+# `ps`, which is the reader the stub can stand in for. Exported for the whole
+# file: agent-sessions runs zmx-which without going through `run`.
 export ZMX_PS_SOURCE=ps
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -23,11 +24,21 @@ bin="$tmp/.local/bin"
 fix="$tmp/fixtures"
 mkdir -p "$bin" "$fix"
 
-nim c --hints:off --nimcache:"$tmp/nimcache" -o:"$bin/zmx-ps" "$here/zmx_ps.nim" >&2 || {
-  echo "test-zmx-tools: zmx_ps.nim did not build" >&2
+# Both Nim tools, side by side when rust-parallel is installed.
+if command -v rust-parallel >/dev/null 2>&1; then
+  printf '%s\n' zmx-ps:zmx_ps zmx-which:zmx_which |
+    rust-parallel -r '(?P<tool>.+):(?P<module>.+)' \
+      nim c --hints:off "--nimcache:$tmp/nimcache-{tool}" "-o:$bin/{tool}" "$here/{module}.nim" >&2
+else
+  for tool in zmx-ps zmx-which; do
+    nim c --hints:off --nimcache:"$tmp/nimcache-$tool" -o:"$bin/$tool" "$here/${tool//-/_}.nim" >&2 || break
+  done
+fi
+[[ -x "$bin/zmx-ps" && -x "$bin/zmx-which" ]] || {
+  echo "test-zmx-tools: the Nim tools did not build" >&2
   exit 1
 }
-for tool in zmx-which zmx-agent-label agent-sessions; do
+for tool in zmx-agent-label agent-sessions; do
   printf '#!/bin/sh\nexec /opt/homebrew/bin/bash %s "$@"\n' "$src/executable_$tool" >"$bin/$tool"
 done
 

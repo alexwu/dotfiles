@@ -110,10 +110,11 @@ func parsePsOutput*(text: string, now: int64): seq[ProcessInfo] =
     except ValueError:
       continue
 
-func parseProcArgs*(buf: openArray[char]): seq[string] =
-  ## argv out of a `KERN_PROCARGS2` buffer: an int32 argc, the exec path, NUL
-  ## padding, then argc NUL-terminated strings. The environment that follows
-  ## is left alone.
+func parseProcArgsEnv*(buf: openArray[char]): tuple[argv, env: seq[string]] =
+  ## argv and environment out of a `KERN_PROCARGS2` buffer: an int32 argc, the
+  ## exec path, NUL padding, argc NUL-terminated strings, then `KEY=value`
+  ## strings up to the first empty one. The kernel leaves the environment out
+  ## for Apple platform binaries.
   if buf.len < 4:
     return
   let argc =
@@ -125,13 +126,33 @@ func parseProcArgs*(buf: openArray[char]): seq[string] =
   while i < buf.len and buf[i] == '\0':
     inc i
   var cur = ""
-  while i < buf.len and result.len < argc:
-    if buf[i] == '\0':
-      result.add cur
-      cur = ""
-    else:
+  while i < buf.len:
+    if buf[i] != '\0':
       cur.add buf[i]
+    elif result.argv.len < argc:
+      result.argv.add cur
+      cur = ""
+    elif cur.len == 0:
+      break
+    else:
+      result.env.add cur
+      cur = ""
     inc i
+
+func parseProcArgs*(buf: openArray[char]): seq[string] =
+  ## argv out of a `KERN_PROCARGS2` buffer.
+  parseProcArgsEnv(buf).argv
+
+func parseEnvValue*(psLine, key: string): Option[string] =
+  ## `key`'s value in a `ps eww` line, where the environment trails the
+  ## command as space-separated `KEY=value` words.
+  let marker = " " & key & "="
+  let at = psLine.find(marker)
+  if at < 0:
+    return none(string)
+  let start = at + marker.len
+  let stop = psLine.find(' ', start)
+  some(psLine[start ..< (if stop < 0: psLine.len else: stop)])
 
 func childrenByParent(links: openArray[(int, int)]): Table[int, seq[int]] =
   ## (pid, ppid) pairs to parent -> children, children in ascending pid order.
@@ -233,13 +254,30 @@ when defined(macosx):
     else:
       1 shl 20
 
-  proc readArgv(pid: int, buf: var seq[char]): seq[string] =
+  proc readArgsBuf(pid: int, buf: var seq[char]): int =
+    ## Fills `buf` with the process's `KERN_PROCARGS2` block and returns its
+    ## length, 0 when the kernel refuses.
     var mib = [CtlKern, KernProcArgs2, cint(pid)]
     var size = csize_t(buf.len)
     if sysctl(addr mib[0], 3, addr buf[0], addr size, nil, 0) == 0:
-      parseProcArgs(buf.toOpenArray(0, int(size) - 1))
+      int(size)
     else:
-      @[]
+      0
+
+  proc readArgv(pid: int, buf: var seq[char]): seq[string] =
+    let size = readArgsBuf(pid, buf)
+    parseProcArgs(buf.toOpenArray(0, size - 1))
+
+  var envBuf: seq[char] # ARG_MAX is a megabyte: allocated once, on first use
+
+  proc readEnvNative(pid: ProcessId, key: string): Option[string] =
+    if envBuf.len == 0:
+      envBuf = newSeq[char](argMax())
+    let size = readArgsBuf(int(pid), envBuf)
+    for entry in parseProcArgsEnv(envBuf.toOpenArray(0, size - 1)).env:
+      if entry.startsWith(key & "="):
+        return some(entry[key.len + 1 .. ^1])
+    none(string)
 
   proc readNative(roots: openArray[ProcessId]): Result[seq[ProcessInfo], ProcError] =
     let estimate = proc_listallpids(nil, 0)
@@ -287,6 +325,31 @@ when defined(macosx):
 else:
   proc readNative(roots: openArray[ProcessId]): Result[seq[ProcessInfo], ProcError] =
     err(ProcError(msg: "no native process reader on this platform"))
+
+  proc readEnvNative(pid: ProcessId, key: string): Option[string] =
+    none(string)
+
+proc readEnvPs(pid: ProcessId, key: string): Option[string] =
+  try:
+    let (output, code) = execCmdEx("ps eww -p " & $pid, options = {poUsePath})
+    if code == 0:
+      for line in output.splitLines:
+        let value = parseEnvValue(line, key)
+        if value.isSome:
+          return value
+  except OSError, IOError:
+    discard
+  none(string)
+
+proc readEnvVar*(source: ProcSource, pid: ProcessId, key: string): Option[string] =
+  ## `key` in a process's exec-time environment. `none` when it is unset, the
+  ## process is gone, or its environment is hidden (Apple platform binaries,
+  ## other users' processes).
+  case source
+  of psNative:
+    readEnvNative(pid, key)
+  of psPs:
+    readEnvPs(pid, key)
 
 proc readProcesses*(
     source: ProcSource, roots: openArray[ProcessId]

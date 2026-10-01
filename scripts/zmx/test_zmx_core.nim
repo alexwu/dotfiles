@@ -1,6 +1,6 @@
 import std/[posix, sequtils]
 import unittest2
-import zmx_types, zmx_sessions, proc_table
+import zmx_agents
 
 func pinfo(pid, ppid: int, command: string, argv: seq[string] = @[]): ProcessInfo =
   ProcessInfo(pid: ProcessId(pid), ppid: ProcessId(ppid), command: command, argv: argv)
@@ -44,6 +44,35 @@ suite "parseProcArgs":
 
   test "short or empty buffer":
     check parseProcArgs("".toOpenArray(0, -1)).len == 0
+
+suite "parseProcArgsEnv":
+  test "env strings follow argv and stop at the first empty one":
+    let raw =
+      "\x02\x00\x00\x00/bin/zsh\x00\x00\x00-zsh\x00-l\x00HOME=/x\x00ZMX_SESSION=a b\x00\x00junk\x00"
+    let (argv, env) = parseProcArgsEnv(raw.toOpenArray(0, raw.high))
+    check argv == @["-zsh", "-l"]
+    check env == @["HOME=/x", "ZMX_SESSION=a b"]
+
+  test "a platform binary's buffer has no env":
+    let raw = "\x01\x00\x00\x00/bin/ls\x00ls\x00\x00\x00"
+    check parseProcArgsEnv(raw.toOpenArray(0, raw.high)).env.len == 0
+
+suite "parseEnvValue":
+  test "value of a key in a ps eww line":
+    check parseEnvValue("111 s000 S 0:00 claude ZMX_SESSION=beta TERM=x", "ZMX_SESSION") ==
+      some("beta")
+
+  test "last word on the line":
+    check parseEnvValue("111 s000 S 0:00 claude TERM=x", "TERM") == some("x")
+
+  test "key absent, or only a longer key present":
+    check parseEnvValue("111 s000 S 0:00 claude TERM=x", "ZMX_SESSION").isNone
+    check parseEnvValue("1 s0 S 0:00 claude OLD_ZMX_SESSION=a", "ZMX_SESSION").isNone
+
+suite "readEnvVar":
+  test "this process's own environment, natively":
+    check readEnvVar(psNative, ProcessId(int(getpid())), "PATH").isSome
+    check readEnvVar(psNative, ProcessId(int(getpid())), "NO_SUCH_VAR_ZMX").isNone
 
 suite "descendants":
   let all = @[
@@ -99,6 +128,108 @@ suite "native reader":
     check me[0].startedAt.isSome
     check me[0].rssKb.isSome
     check me[0].argv.len > 0
+
+suite "decodeAgents":
+  const fixture = """
+    [
+      {"pid": 111, "kind": "interactive", "sessionId": "sid-a", "status": "busy", "cwd": "/a"},
+      {"id": "bg", "kind": "background", "sessionId": "sid-bg", "state": "blocked", "cwd": "/e"},
+      {"pid": 7, "kind": "background", "status": "idle", "state": "done", "extra": {"x": [1]}},
+      {"pid": 8, "status": null}
+    ]"""
+
+  test "interactive entry":
+    let a = decodeAgents(fixture).get[0]
+    check a.pid == some(ProcessId(111))
+    check a.kind == some("interactive")
+    check a.status == some("busy")
+    check a.sessionId == some(ClaudeSessionId("sid-a"))
+    check a.cwd == some("/a")
+
+  test "background entry: no pid, state stands in for status":
+    let a = decodeAgents(fixture).get[1]
+    check a.pid.isNone
+    check a.status == some("blocked")
+
+  test "status wins over state, unknown keys are skipped":
+    let a = decodeAgents(fixture).get[2]
+    check a.status == some("idle")
+    check a.sessionId.isNone
+
+  test "null and absent fields are none":
+    let a = decodeAgents(fixture).get[3]
+    check a.status.isNone
+    check a.kind.isNone
+    check a.cwd.isNone
+
+  test "blank output is no agents":
+    check decodeAgents("").get.len == 0
+    check decodeAgents("\n").get.len == 0
+
+  test "anything else is an error":
+    check decodeAgents("Error: not logged in").isErr
+
+suite "associate":
+  func view(
+      name: string, pids: seq[int], labels: openArray[(string, string)] = []
+  ): SessionView =
+    SessionView(
+      session: ZmxSession(name: ZmxSessionName(name), labels: labels.toOrderedTable),
+      procs: pids.mapIt(pinfo(it, 1, "x")),
+    )
+
+  func agent(pid: int, sid: string): AgentSession =
+    AgentSession(pid: some(ProcessId(pid)), sessionId: some(ClaudeSessionId(sid)))
+
+  let views = @[
+    view("alpha", @[101, 111], {"agent": "claude", "claude_session": "sid-a"}),
+    view("gamma", @[301, 311], {"agent": "claude", "claude_session": "sid-stale"}),
+    view("delta", @[401, 411]),
+  ]
+  var asked: seq[int]
+  let env = proc(pid: ProcessId): Option[string] =
+    asked.add int(pid)
+    case int(pid)
+    of 111:
+      some("beta")
+    of 311:
+      some("gamma")
+    else:
+      none(string)
+
+  let found = associate(
+    [agent(111, "sid-a"), agent(311, "sid-b"), agent(411, "sid-c"), agent(999, "sid-d")],
+    views,
+    env,
+  )
+
+  test "a label beats the process env":
+    check found[0] ==
+      some(Association(session: ZmxSessionName("alpha"), source: asLabel))
+
+  test "a stale label is ignored and the env answers":
+    check found[1] ==
+      some(Association(session: ZmxSessionName("gamma"), source: asProcessEnv))
+
+  test "the process tree is the last resort":
+    check found[2] ==
+      some(Association(session: ZmxSessionName("delta"), source: asProcessTree))
+
+  test "unresolved":
+    check found[3].isNone
+
+  test "the env is not read for a labelled agent":
+    check asked == @[311, 411, 999]
+
+  test "an agent without a pid can still match by label":
+    let noPid = AgentSession(sessionId: some(ClaudeSessionId("sid-a")))
+    check associate([noPid], views, env)[0].get.source == asLabel
+
+  test "the later of two sessions claiming one id wins":
+    let twice =
+      views & view("omega", @[], {"agent": "claude", "claude_session": "sid-a"})
+    check associate([agent(111, "sid-a")], twice, env)[0].get.session ==
+      ZmxSessionName("omega")
 
 suite "decodeCwd":
   test "file URI with host, percent-encoding and trailing slash":

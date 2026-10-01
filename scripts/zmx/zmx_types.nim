@@ -1,9 +1,11 @@
 ## Domain and wire types shared by the zmx tools.
 ##
-## Domain types (`ZmxSession`, `ProcessInfo`) carry `distinct` identifiers and
-## whatever the readers learned. Wire types (`SessionOut`, `ProcOut`) are the
-## JSON contract the Bash siblings and `jaq` pipelines read; `ZmxJson` encodes
-## them with absent optionals written as `null`.
+## Domain types (`ZmxSession`, `ProcessInfo`, `AgentSession`) carry `distinct`
+## identifiers and whatever the readers learned. Wire types (`SessionOut`,
+## `ProcOut`, `WhichOut`) are the JSON contract the Bash siblings and `jaq`
+## pipelines read; `ZmxJson` encodes them with absent optionals written as
+## `null`. `ClaudeAgentIn` is what `ClaudeJson` decodes from
+## `claude agents --json`.
 
 import std/[options, tables]
 import json_serialization
@@ -56,10 +58,48 @@ type
     state*: SessionOccupancy
     running*: Option[string]
 
+  ClaudeSessionId* = distinct string
+
+  AssociationSource* = enum
+    ## How an agent was matched to its zmx session.
+    asLabel = "label"
+    asProcessEnv = "process_env"
+    asProcessTree = "process_tree"
+
+  AgentSession* = object
+    ## One `claude agents` entry. `kind` and `status` stay strings: Claude owns
+    ## those sets.
+    pid*: Option[ProcessId]
+    kind*: Option[string]
+    status*: Option[string] ## `status`, or a background agent's `state`
+    sessionId*: Option[ClaudeSessionId]
+    cwd*: Option[string]
+
+  ClaudeAgentIn* = object
+    pid*: Option[int]
+    kind*, status*, state*, sessionId*, cwd*: Option[string]
+
+  WhichOut* = object
+    pid*: int
+    kind*: Option[string]
+    status*: Option[string]
+    sessionId* {.serializedFieldName("session_id").}: Option[string]
+    cwd*: Option[string]
+    zmxSession* {.serializedFieldName("zmx_session").}: Option[string]
+    associationSource* {.serializedFieldName("association_source").}:
+      Option[AssociationSource]
+    clients*: Option[int]
+    occ*: Option[SessionOccupancy]
+
 createJsonFlavor ZmxJson,
   omitOptionalFields = false, automaticObjectSerialization = true
 
+createJsonFlavor ClaudeJson,
+  allowUnknownFields = true, automaticObjectSerialization = true
+
 func `==`*(a, b: ZmxSessionName): bool {.borrow.}
 func `$`*(a: ZmxSessionName): string {.borrow.}
+func `==`*(a, b: ClaudeSessionId): bool {.borrow.}
+func `$`*(a: ClaudeSessionId): string {.borrow.}
 func `==`*(a, b: ProcessId): bool {.borrow.}
 func `$`*(a: ProcessId): string {.borrow.}

@@ -17,10 +17,10 @@
 ##
 ## Built to ~/.local/bin/zmx-ps by run_onchange_build-scripts.sh.tmpl.
 
-import std/[os, sequtils, strutils, times]
+import std/[sequtils, strutils, times]
 import cligen
 import regex
-import zmx_types, zmx_sessions, proc_table
+import zmx_snapshot
 
 type Filter = object
   active: bool
@@ -89,24 +89,14 @@ proc zmxPs(
       stderr.writeLine "zmx-ps: " & error
       return 2
 
-  let sessions = listSessions().valueOr:
-    stderr.writeLine "zmx-ps: " & error.msg
-    return 1
-
-  let roots = sessions.mapIt(it.pid)
-  let forcePs = getEnv("ZMX_PS_SOURCE") == "ps"
-  var procs = readProcesses(if forcePs: psPs else: psNative, roots)
-  if procs.isErr and not forcePs:
-    procs = readProcesses(psPs, roots)
-  let all = procs.valueOr:
-    stderr.writeLine "zmx-ps: " & error.msg
+  let views = snapshot().valueOr:
+    stderr.writeLine "zmx-ps: " & error
     return 1
 
   let now = getTime().toUnix
   var rows: seq[SessionOut]
-  for s in sessions:
-    let tree = descendants(all, s.pid)
-    let (state, running) = occupancy(tree)
+  for view in views:
+    let (s, tree, state, running) = (view.session, view.procs, view.state, view.running)
     if not filters[0].matches($s.name) or not filters[1].matches(s.cwd):
       continue
     if (detached and s.clients != 0) or (attached and s.clients == 0):
