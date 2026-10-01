@@ -141,6 +141,10 @@ then
 fi
 
 # zmx-select lives at ~/.local/bin/zmx-select (chezmoi: dot_local/bin/executable_zmx-select)
+if [[ -r $HOME/.zsh/zmx.zsh ]]
+then
+  source $HOME/.zsh/zmx.zsh
+fi
 
 if (( $+commands[zellij] ))
 then

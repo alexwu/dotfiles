@@ -50,4 +50,7 @@ n=0
 while ((n++ < tries)) && zmx list --short 2>/dev/null | rg -qxF "$name"; do
   name=$(dbzname)
 done
-exec env -u ZMX_SESSION zmx attach "$name"
+# owner=alex marks a session a person opened from a terminal, set at creation
+# so it is never unlabelled. Agent-launched sessions (zmx run, the review
+# launcher) don't come through zn and carry their own labels instead.
+exec env -u ZMX_SESSION zmx attach --labels "owner=alex" "$name"

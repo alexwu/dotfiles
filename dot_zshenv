@@ -16,3 +16,15 @@ export PATH
 if [[ -z "${SSH_CONNECTION:-}" && -S "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" ]]; then
   export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 fi
+
+# Which of the attaching terminal's variables zmx records per session. The
+# `zmx attach` client reads this (not the daemon), so it lives here, where
+# every zsh that can attach sees it: wezterm's `zsh -c zn` and an interactive
+# zmx-select alike. It replaces zmx's built-in list, so the first line restates
+# those defaults; the second adds the terminal identifiers the session shell
+# should follow (__CFBundleIdentifier names the terminal app itself). PATH,
+# HOME and TERM stay out: they belong to the shell, not to whichever terminal
+# is attached. ~/.zsh/zmx.zsh applies the values per prompt; the notify hook,
+# statusline and wezrun read them live through lulu-loadout's lib/term_env.nim.
+export ZMX_TRACK_ENV="DISPLAY,SSH_AUTH_SOCK,SSH_AGENT_PID,SSH_CONNECTION,WINDOWID,XAUTHORITY,KITTY_LISTEN_ON,KITTY_PID,KITTY_WINDOW_ID\
+,TERM_PROGRAM,__CFBundleIdentifier,WEZTERM_PANE,WEZTERM_UNIX_SOCKET,BTTY_PANE,BTTY_TAB,BTTY_WORKSPACE,BTTY_SOCK,BTTY_DIR"
