@@ -38,7 +38,9 @@
   },
   "agent_ui_font_size": 15.0,
   "agent": {
-    "sidebar_side": "right",
+    "threads_sidebar": {
+      "position": "right"
+    },
     "dock": "left",
     "button": false,
     "favorite_models": [],
@@ -63,6 +65,29 @@
   },
   "document_folding_ranges": "on",
   "semantic_tokens": "combined",
+  // NOTE: Mirrors nvim-snazzy's @lsp.mod.* and @lsp.type.* groups. The style
+  // names only exist in the Snazzy theme, so other themes ignore these rules
+  // (apart from the deprecated strikethrough). Earlier rules win per field.
+  "global_lsp_settings": {
+    "semantic_token_rules": [
+      { "token_modifiers": ["deprecated"], "style": ["lsp.mod.deprecated"], "strikethrough": true },
+      { "token_modifiers": ["readonly"], "style": ["lsp.mod.readonly"] },
+      { "token_modifiers": ["static"], "style": ["lsp.mod.static"] },
+      { "token_modifiers": ["async"], "style": ["lsp.mod.async"] },
+      { "token_modifiers": ["abstract"], "style": ["lsp.mod.abstract"] },
+      { "token_modifiers": ["global"], "style": ["lsp.mod.global"] },
+      { "token_modifiers": ["defaultLibrary"], "style": ["lsp.mod.defaultLibrary"] },
+      { "token_modifiers": ["documentation"], "style": ["lsp.mod.documentation"] },
+      { "token_modifiers": ["modification"], "style": ["lsp.mod.modification"] },
+      { "token_modifiers": ["definition"], "style": ["lsp.mod.definition"] },
+      { "token_type": "class", "style": ["lsp.type.class"] },
+      { "token_type": "enum", "style": ["lsp.type.enum"] },
+      { "token_type": "interface", "style": ["lsp.type.interface"] },
+      { "token_type": "struct", "style": ["lsp.type.struct"] },
+      { "token_type": "typeParameter", "style": ["lsp.type.typeParameter"] },
+      { "token_type": "macro", "style": ["lsp.type.macro"] }
+    ]
+  },
   "colorize_brackets": true,
   "inlay_hints": {
     "enabled": true
@@ -116,7 +141,7 @@
   "theme": {
     "mode": "system",
     "light": "GitHub Light",
-    "dark": "Snazzy Theme"
+    "dark": "Snazzy"
   },
   "base_keymap": "VSCode",
   "telemetry": {
