@@ -1,0 +1,13 @@
+# Staged on the build host by `mise bootstrap remote --source`. Its only job
+# is to leave config.toml behind as that account's global mise config; the
+# staging directory is deleted afterwards, so the file is copied, not linked.
+#
+# Apply from the repository root, then once more on the host itself. The
+# first run skips config.toml's ~/.zshenv PATH line, which the second adds:
+#
+#   mise bootstrap remote --host build@bombeemac-mini \
+#     --source scripts/macos/build-host --install-mise --yes
+#   ssh build@bombeemac-mini '~/.local/bin/mise bootstrap --yes'
+
+[dotfiles]
+"~/.config/mise/config.toml" = { source = "config.toml", mode = "copy" }

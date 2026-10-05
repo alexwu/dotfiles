@@ -1,0 +1,27 @@
+# Global mise config for the unprivileged build account on the build host.
+# Installed as ~/.config/mise/config.toml by the mise.toml next to this file.
+
+[dotfiles]
+# NOTE: ssh runs commands in a non-interactive shell, which reads only
+# ~/.zshenv. The line has to come before the activation block, which calls
+# mise by name.
+"~/.zshenv/path" = { line = 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"', position = "prepend" }
+
+[bootstrap.mise_shell_activate]
+zshenv = "shims"
+
+[tools]
+cargo-binstall = "latest"
+fd = "latest"
+jaq = "latest"
+just = "latest"
+ripgrep = "latest"
+
+# Rust stays with rustup so each repository's rust-toolchain.toml picks its own
+# toolchain. Tools run before the bootstrap task, so cargo-binstall is ready.
+[tasks.bootstrap]
+description = "Install rustup and the cargo tools that are not in the mise registry"
+run = [
+  '''[ -x "$HOME/.cargo/bin/rustup" ] || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable''',
+  '''[ -x "$HOME/.cargo/bin/cargo-nextest" ] || "$HOME/.cargo/bin/cargo" binstall --no-confirm cargo-nextest''',
+]
