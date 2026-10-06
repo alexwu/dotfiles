@@ -6,9 +6,18 @@
 # ~/.zshenv. The line has to come before the activation block, which calls
 # mise by name.
 "~/.zshenv/path" = { line = 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"', position = "prepend" }
+# NOTE: Homebrew belongs to the admin user and has its own mise, just, fd, jaq,
+# rg and rsync. It goes last so it only fills gaps (zmx) and never shadows the
+# tools above, which `brew shellenv` would do by prepending.
+"~/.zshenv/homebrew" = { line = 'export PATH="$PATH:/opt/homebrew/bin:/opt/homebrew/sbin"', position = "append" }
 
 [bootstrap.mise_shell_activate]
 zshenv = "shims"
+
+# NOTE: pueued is not a [bootstrap.services] entry. mise 2026.9.15 and
+# `brew services` both load user services into the gui/<uid> launchd domain,
+# which an account that never logs in at the screen does not have. The plist
+# next to this file is loaded into user/<uid> by the bootstrap task instead.
 
 [tools]
 cargo-binstall = "latest"
@@ -16,6 +25,9 @@ fd = "latest"
 jaq = "latest"
 just = "latest"
 ripgrep = "latest"
+# lulu-tools pins this version in its own mise.toml for the crates that link
+# libghostty-vt. Installing it here keeps a first build from stopping on it.
+zig = "0.16.0"
 
 # Rust stays with rustup so each repository's rust-toolchain.toml picks its own
 # toolchain. Tools run before the bootstrap task, so cargo-binstall is ready.
@@ -24,4 +36,9 @@ description = "Install rustup and the cargo tools that are not in the mise regis
 run = [
   '''[ -x "$HOME/.cargo/bin/rustup" ] || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable''',
   '''[ -x "$HOME/.cargo/bin/cargo-nextest" ] || "$HOME/.cargo/bin/cargo" binstall --no-confirm cargo-nextest''',
+  # pueue queues the builds that lulu-deploy sends, one at a time per workspace.
+  # Homebrew's formula would bring a service, but only the admin user can install it.
+  '''[ -x "$HOME/.cargo/bin/pueued" ] || "$HOME/.cargo/bin/cargo" binstall --no-confirm pueue@4.0.4''',
+  '''mkdir -p "$HOME/Library/Logs"''',
+  '''launchctl print "user/$(id -u)/dev.lulu.pueued" >/dev/null 2>&1 || launchctl bootstrap "user/$(id -u)" "$HOME/Library/LaunchAgents/dev.lulu.pueued.plist"''',
 ]

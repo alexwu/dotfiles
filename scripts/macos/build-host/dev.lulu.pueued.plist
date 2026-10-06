@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  pueued for the build account, which only ever has ssh sessions. The
+  Background session type is what lets launchd load it into user/<uid>;
+  without it the bootstrap fails with "5: Input/output error".
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.lulu.pueued</string>
+	<key>LimitLoadToSessionType</key>
+	<array>
+		<string>Background</string>
+		<string>StandardIO</string>
+		<string>Aqua</string>
+	</array>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/build/.cargo/bin/pueued</string>
+		<string>--verbose</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>WorkingDirectory</key>
+	<string>/Users/build</string>
+	<key>StandardOutPath</key>
+	<string>/Users/build/Library/Logs/pueued.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/build/Library/Logs/pueued.log</string>
+</dict>
+</plist>
