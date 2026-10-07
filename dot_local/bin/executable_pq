@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+# Run a heavy command through pueue so builds and tests from every agent and
+# terminal share one limit, and give back the command's own exit status.
+set -euo pipefail
+
+prog=pq
+group=
+label=
+detach=0
+follow_id=
+
+usage() {
+  cat <<EOF
+Queue a command in pueue, follow its output, and exit with its status.
+
+Usage: $prog [OPTIONS] [--] COMMAND [ARG...]
+       $prog --follow ID
+
+Arguments:
+  COMMAND [ARG...]  Command to run, in the current directory and environment
+
+Options:
+  -g, --group GROUP  pueue group: cpu (builds and full test suites, 2 at once),
+                     checks (lint, typecheck, light tests, 2), net (downloads,
+                     3), or any group that exists. Default: chosen from COMMAND
+  -l, --label LABEL  Label for the task. Default: <directory name>: <COMMAND>
+      --detach       Queue COMMAND, print its task id on stdout and return
+      --follow ID    Follow task ID and exit with its status
+  -h, --help         Print help
+
+The groups are the standing ones from the pueue skill. cpu and checks tasks run
+under 'taskpolicy -c utility', so they give way to whatever you are doing, and
+get NEXTEST_TEST_THREADS=9 unless it is already set. The limits are counts of
+tasks: they bound memory first.
+
+There is no way to run a task at full priority from here: launchd starts
+pueued with light throttling, and every task inherits it.
+
+Exit status is COMMAND's own. 125 means the task could not be queued or its
+result could not be read; 137 that it was killed; 2 a usage error.
+Interrupting $prog kills the task. Time spent waiting for a slot counts
+against any timeout the caller has.
+
+Examples:
+  $prog -- cargo build --release
+  $prog -g cpu -l "claude:eo: rspec-orders" -- bundle exec rspec spec/orders
+  id=\$($prog --detach -- just ci) && $prog --follow "\$id"
+EOF
+}
+
+note() { echo "$prog: $*" >&2; }
+
+usage_error() {
+  note "$*"
+  note "try '$prog --help'"
+  exit 2
+}
+
+setup_error() {
+  note "$*"
+  exit 125
+}
+
+while (($#)); do
+  case $1 in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -g | --group)
+      (($# >= 2)) || usage_error "--group needs a name"
+      group=$2
+      shift
+      ;;
+    --group=*) group=${1#*=} ;;
+    -l | --label)
+      (($# >= 2)) || usage_error "--label needs a value"
+      label=$2
+      shift
+      ;;
+    --label=*) label=${1#*=} ;;
+    --detach) detach=1 ;;
+    --follow)
+      (($# >= 2)) || usage_error "--follow needs a task id"
+      follow_id=$2
+      shift
+      ;;
+    --follow=*) follow_id=${1#*=} ;;
+    --)
+      shift
+      break
+      ;;
+    -*) usage_error "unknown option '$1'" ;;
+    *) break ;;
+  esac
+  shift
+done
+
+[[ -z $follow_id || $follow_id =~ ^[0-9]+$ ]] ||
+  usage_error "--follow needs a numeric task id, got '$follow_id'"
+[[ -z $group || $group =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] ||
+  usage_error "invalid group '$group'"
+
+# Pick a group from the command when none was given. Unknown commands go to
+# cpu, the strictest group.
+group_for() {
+  case "$1 ${2:-}" in
+    "cargo fmt" | "cargo clippy" | "cargo check" | "srb tc") echo checks ;;
+    "just lint"* | "just fmt"* | "just check"*) echo checks ;;
+    "git clone" | "ollama pull") echo net ;;
+    *)
+      case $1 in
+        rubocop | rumdl | shellcheck | nph) echo checks ;;
+        curl | xh | wget | aria2c | hf | huggingface-cli) echo net ;;
+        *) echo cpu ;;
+      esac
+      ;;
+  esac
+}
+
+task_id=
+follow_pid=
+
+# NOTE: bash defers a trap until the foreground command returns, so the follow
+# runs in the background and `wait` is what a signal interrupts.
+# shellcheck disable=SC2329 # invoked from the traps in follow_and_exit
+on_signal() {
+  trap - INT TERM
+  [[ -z $follow_pid ]] || kill "$follow_pid" 2>/dev/null || true
+  if [[ -n $task_id ]]; then
+    pueue kill "$task_id" >/dev/null 2>&1 || true
+    note "interrupted: killed task $task_id"
+  fi
+  exit "$1"
+}
+
+# `pueue follow` and `pueue wait` exit 0 whatever the task did, so the status
+# comes from the JSON.
+follow_and_exit() {
+  local result status
+  trap 'on_signal 130' INT
+  trap 'on_signal 143' TERM
+  pueue wait "$task_id" --status running --quiet >/dev/null 2>&1 &
+  follow_pid=$!
+  wait "$follow_pid" || true
+  pueue follow "$task_id" &
+  follow_pid=$!
+  wait "$follow_pid" || true
+  pueue wait "$task_id" --quiet >/dev/null 2>&1 &
+  follow_pid=$!
+  wait "$follow_pid" || true
+  follow_pid=
+  trap - INT TERM
+
+  # shellcheck disable=SC2016 # $id and $s are jaq variables
+  result=$(pueue status --json | jaq -r --arg id "$task_id" '
+    .tasks[$id].status as $s
+    | if $s == null then "missing"
+      elif ($s | type) != "object" or ($s | has("Done") | not) then "unfinished"
+      else ($s.Done.result | if type == "object" then (to_entries[0] | "\(.key) \(.value)") else . end)
+      end') || setup_error "couldn't read task $task_id's status"
+  case $result in
+    Success) status=0 ;;
+    "Failed "*) status=${result#Failed } ;;
+    Killed) status=137 ;;
+    unfinished) setup_error "task $task_id has not finished; pick it up with --follow $task_id" ;;
+    missing) setup_error "no task $task_id" ;;
+    *) setup_error "task $task_id ended as '$result'" ;;
+  esac
+  ((status == 0)) || note "task $task_id exit $status"
+  exit "$status"
+}
+
+command -v pueue >/dev/null 2>&1 || setup_error "pueue is not installed"
+command -v jaq >/dev/null 2>&1 || setup_error "jaq is not installed"
+pueue status --json >/dev/null 2>&1 || setup_error "the pueue daemon is not running"
+
+if [[ -n $follow_id ]]; then
+  task_id=$follow_id
+  follow_and_exit
+fi
+
+(($# > 0)) || usage_error "expected a COMMAND to run"
+
+[[ -n $group ]] || group=$(group_for "$@")
+
+# Groups live in the daemon's state, not in pueue.yml, so the standing ones
+# from the pueue skill are created on first use, with the skill's limits.
+# shellcheck disable=SC2016 # $g is a jaq variable
+group_known=$(pueue status --json | jaq -r --arg g "$group" '.groups | has($g)')
+if [[ $group_known != true ]]; then
+  case $group in
+    cpu) pueue group add cpu --parallel 2 >/dev/null ;;
+    checks) pueue group add checks --parallel 2 >/dev/null ;;
+    net) pueue group add net --parallel 3 >/dev/null ;;
+    *) usage_error "no pueue group '$group'; create it with 'pueue group add $group'" ;;
+  esac
+fi
+
+# NOTE: the clamp is already in force when launchd runs pueued. It is set here
+# too so it holds for a daemon someone started by hand.
+prefix=()
+if [[ $group == cpu || $group == checks ]]; then
+  prefix+=(taskpolicy -c utility)
+  [[ -n ${NEXTEST_TEST_THREADS:-} ]] || prefix+=(env NEXTEST_TEST_THREADS=9)
+fi
+
+[[ -n $label ]] || label="${PWD##*/}: $*"
+
+task_id=$(pueue add --group "$group" --label "$label" --print-task-id --escape --working-directory "$PWD" -- ${prefix[@]+"${prefix[@]}"} "$@") ||
+  setup_error "couldn't queue the command"
+[[ $task_id =~ ^[0-9]+$ ]] || setup_error "pueue returned '$task_id' instead of a task id"
+
+if ((detach)); then
+  note "task $task_id queued in $group"
+  echo "$task_id"
+  exit 0
+fi
+
+note "task $task_id in $group: $*"
+follow_and_exit
