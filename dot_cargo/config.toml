@@ -1,0 +1,8 @@
+# Global cargo settings. A repository's own .cargo/config.toml overrides these.
+
+[build]
+# NOTE: cargo defaults to one job per core, and several agents build at once on
+# this machine, so each build assumed it had all 18 cores. Half the cores lets
+# two builds run side by side. For one build on a quiet machine, pass -j 18 or
+# set CARGO_BUILD_JOBS=18.
+jobs = 9
