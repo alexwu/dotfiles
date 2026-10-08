@@ -47,11 +47,39 @@ local function read(path)
   return text
 end
 
+---Writes one HTTP request to a Unix socket and hangs up at the first answer.
+---
+---NOTE: `vim.net.request()` runs curl with a fixed set of arguments and has no way to name a
+---Unix socket, which is all the knock mod listens on. libuv opens the socket itself, so no HTTP
+---client has to be on PATH.
+---@param socket string
+---@param request string
+local function post(socket, request)
+  local pipe = vim.uv.new_pipe(false)
+  if not pipe then
+    return
+  end
+  local function close()
+    if not pipe:is_closing() then
+      pipe:close()
+    end
+  end
+  -- A socket whose session has gone refuses the connection, and nothing waits on the answer.
+  pipe:connect(socket, function(err)
+    if err then
+      return close()
+    end
+    pipe:write(request)
+    pipe:read_start(close)
+  end)
+  vim.defer_fn(close, 2000)
+end
+
 ---Keeps the file as it is on disk, just before a save replaces it.
 ---@param buf integer
 function M.remember(buf)
   before[buf] = nil
-  if vim.g.bombeelu_knock == false or vim.fn.executable("xh") ~= 1 or #sockets() == 0 then
+  if vim.g.bombeelu_knock == false or #sockets() == 0 then
     return
   end
   local path = file_of(buf)
@@ -80,20 +108,19 @@ function M.send(buf)
     diff = ("(This save's diff is %d bytes, too long to send. Read the file.)"):format(#diff)
   end
 
+  local request = table.concat({
+    "POST /edited HTTP/1.1",
+    "Host: knock",
+    "Content-Type: text/plain",
+    "X-Knock-Path: " .. vim.uri_encode(path),
+    "Content-Length: " .. #diff,
+    "Connection: close",
+    "",
+    diff,
+  }, "\r\n")
+
   for _, socket in ipairs(sockets()) do
-    -- A socket whose session has gone refuses the connection, and nothing is waiting on the result.
-    vim.system({
-      "xh",
-      "--quiet",
-      "--timeout",
-      "2",
-      "--unix-socket",
-      socket,
-      "POST",
-      "http://knock/edited",
-      "Content-Type:text/plain",
-      "X-Knock-Path:" .. vim.uri_encode(path),
-    }, { stdin = diff, text = true }, function() end)
+    post(socket, request)
   end
 end
 
