@@ -41,6 +41,10 @@ result could not be read; 137 that it was killed; 2 a usage error.
 Interrupting $prog kills the task. Time spent waiting for a slot counts
 against any timeout the caller has.
 
+A task queued with --detach from a Claude Code session running the knock mod
+reports back when it finishes: pueue's callback runs pueue-knock, which sends
+that session the task's id, result and label.
+
 Examples:
   $prog -- cargo build --release
   $prog -g cpu -l "claude:eo: rspec-orders" -- bundle exec rspec spec/orders
@@ -206,6 +210,16 @@ if [[ $group == cpu || $group == checks ]]; then
 fi
 
 [[ -n $label ]] || label="${PWD##*/}: $*"
+
+# pueue keeps the client's environment with the task. pueue-knock, the daemon's
+# callback, reads this mark there and tells the session that queued a detached
+# task when it finishes. It is unset otherwise so a pq run inside a detached
+# task doesn't inherit it.
+if ((detach)); then
+  export PQ_DETACHED=1
+else
+  unset PQ_DETACHED
+fi
 
 task_id=$(pueue add --group "$group" --label "$label" --print-task-id --escape --working-directory "$PWD" -- ${prefix[@]+"${prefix[@]}"} "$@") ||
   setup_error "couldn't queue the command"

@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# Tell the Claude Code session that queued a detached pq task that it finished.
+# pueue's callback runs this for every task; most are not its job and it says
+# nothing about them.
+# NOTE: launchd starts pueued, so this runs under macOS's bash 3.2.
+set -euo pipefail
+
+prog=pueue-knock
+verbose=0
+
+# launchd gives pueued a bare PATH, and jaq and xh are mise shims.
+PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"
+
+usage() {
+  cat <<EOF
+Tell a Claude Code session that a detached pq task it queued has finished.
+
+Usage: $prog [OPTIONS] ID RESULT [EXIT_CODE]
+
+Arguments:
+  ID         pueue task id
+  RESULT     How the task ended, as pueue's callback names it (Success, Failed)
+  EXIT_CODE  The task's exit code, when it has one
+
+Options:
+  -v, --verbose  Say on stderr why a task was skipped
+  -h, --help     Print help
+
+Meant for the callback in pueue.yml:
+  callback: '$prog {{id}} "{{result}}" "{{exit_code}}"'
+
+A task is skipped, with exit status 0, unless 'pq --detach' queued it from a
+Claude Code session that is still running the knock mod. pq marks such a task
+with PQ_DETACHED=1, and pueue keeps the session's CLAUDE_PID with it; the mod
+listens on \$KNOCK_DIR/<pid>.sock (default /tmp/cc-knock).
+
+The session reads one line: the id, the result, the exit code and the task's
+label. It never gets the task's output.
+
+Exit status: 0 told or skipped, 1 the session could not be told, 2 a usage
+error, 125 pueue's state could not be read.
+EOF
+}
+
+note() { echo "$prog: $*" >&2; }
+
+usage_error() {
+  note "$*"
+  note "try '$prog --help'"
+  exit 2
+}
+
+skip() {
+  ((verbose == 0)) || note "skipped task $id: $*"
+  exit 0
+}
+
+while (($#)); do
+  case $1 in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -v | --verbose) verbose=1 ;;
+    --)
+      shift
+      break
+      ;;
+    -*) usage_error "unknown option '$1'" ;;
+    *) break ;;
+  esac
+  shift
+done
+
+(($# >= 2 && $# <= 3)) || usage_error "expected ID RESULT [EXIT_CODE]"
+id=$1
+[[ $id =~ ^[0-9]+$ ]] || usage_error "ID must be a number, got '$id'"
+
+# Both come from pueue's template. They go into a sentence a model reads, so
+# only plain characters pass.
+result=$(printf '%s' "$2" | tr -cd 'A-Za-z0-9 _-' | cut -c 1-40)
+exit_code=$(printf '%s' "${3:-}" | tr -cd '0-9' | cut -c 1-3)
+[[ -n $result ]] || usage_error "RESULT is empty"
+
+for tool in pueue jaq xh; do
+  command -v "$tool" >/dev/null 2>&1 || {
+    note "$tool is not installed"
+    exit 125
+  }
+done
+
+# shellcheck disable=SC2016 # $id is a jaq variable
+task=$(pueue status --json | jaq -c --arg id "$id" '.tasks[$id] // empty') || {
+  note "couldn't read pueue's state"
+  exit 125
+}
+[[ -n $task ]] || skip "no such task"
+
+detached=$(jaq -r '.envs.PQ_DETACHED // ""' <<<"$task")
+[[ $detached == 1 ]] || skip "not queued by 'pq --detach'"
+
+pid=$(jaq -r '.envs.CLAUDE_PID // ""' <<<"$task")
+[[ $pid =~ ^[0-9]+$ ]] || skip "not queued from a Claude Code session"
+
+socket="${KNOCK_DIR:-/tmp/cc-knock}/$pid.sock"
+[[ -S $socket ]] || skip "no knock socket at $socket"
+
+# The label is whatever the caller of pq wrote, so it is cut short and loses
+# its control characters.
+label=$(jaq -r '(.label // "") | gsub("[\\x00-\\x1f\\x7f]+"; " ") | .[0:120]' <<<"$task")
+
+text="Detached pueue task $id finished: $result"
+[[ -z $exit_code ]] || text+=", exit $exit_code"
+[[ -z $label ]] || text+=". Label: $label"
+
+xh --ignore-stdin --quiet --timeout 5 --unix-socket "$socket" POST http://knock/tell Content-Type:text/plain --raw "$text" || {
+  note "couldn't tell the session at $socket about task $id"
+  exit 1
+}

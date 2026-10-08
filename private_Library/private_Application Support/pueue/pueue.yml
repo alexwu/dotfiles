@@ -14,7 +14,7 @@ daemon:
   pause_group_on_failure: false
   pause_all_on_failure: false
   compress_state_file: false
-  callback: '/opt/homebrew/bin/apprise -t "pueue {{id}}: {{result}}" -b "{{command}} (exit {{exit_code}})" -i markdown ; /opt/homebrew/bin/grrr --appId pueue --title "pueue {{id}}: {{result}}" --reactivate "{{command}} (exit {{exit_code}})"'
+  callback: '/opt/homebrew/bin/apprise -t "pueue {{id}}: {{result}}" -b "{{command}} (exit {{exit_code}})" -i markdown ; /opt/homebrew/bin/grrr --appId pueue --title "pueue {{id}}: {{result}}" --reactivate "{{command}} (exit {{exit_code}})" ; "$HOME/.local/bin/pueue-knock" {{id}} "{{result}}" "{{exit_code}}"'
   env_vars: {}
   callback_log_lines: 10
   shell_command: null
