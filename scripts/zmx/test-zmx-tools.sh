@@ -40,38 +40,49 @@ for tool in "${nim_tools[@]}"; do
   }
 done
 
-# zmx stub: `list` prints the fixture; get/set keep labels in a k=v file; `kill`
-# records the names it was given.
-cat >"$bin/zmx" <<'STUB'
+# bmx stub: `list --json` is the fixture's rows as one array; `label NAME` keeps
+# labels in a k=v file, prints them as bmx does, and with `--json` as an object;
+# `kill` records the names it was given. Anything else is a usage error, as it
+# is from bmx, so a call the tools should not make fails here.
+cat >"$bin/bmx" <<'STUB'
 #!/opt/homebrew/bin/bash
 labels="$FIX/labels"
 touch "$labels"
 case "$1" in
-  list) cat "$FIX/zmx-list" ;;
-  get)
-    if [[ -n "${3:-}" ]]; then
-      v=$(awk -F= -v k="$3" '$1 == k { print substr($0, length(k) + 2); f = 1 } END { exit !f }' "$labels") || exit 1
-      printf '%s' "$v"
-    else
-      sort "$labels" | paste -sd' ' - | tr -d '\n'
-    fi
+  list)
+    [[ "${2:-}" == --json ]] || exit 2
+    jaq -s . "$FIX/bmx-rows"
     ;;
-  set)
+  label)
     shift 2
+    json=0
     for kv in "$@"; do
+      if [[ "$kv" == --json ]]; then
+        json=1
+        continue
+      fi
       k=${kv%%=*} v=${kv#*=}
       awk -F= -v k="$k" '$1 != k' "$labels" >"$labels.new"
       mv "$labels.new" "$labels"
       [[ -n "$v" ]] && printf '%s=%s\n' "$k" "$v" >>"$labels"
     done
+    if ((json)); then
+      sort "$labels" | jaq -R -s 'split("\n") | map(select(length > 0) | split("=") | {(.[0]): (.[1:] | join("="))}) | add // {}'
+    else
+      sort "$labels" | paste -sd' ' - | tr -d '\n'
+    fi
     ;;
   kill)
     shift
     printf '%s\n' "$@" >>"$FIX/killed"
     ;;
+  *) exit 2 ;;
 esac
 exit 0
 STUB
+
+# A zmx that fails: no tool may fall back to it.
+printf '#!/bin/sh\nexit 97\n' >"$bin/zmx"
 
 cat >"$bin/claude" <<'STUB'
 #!/bin/sh
@@ -102,14 +113,17 @@ printf '%s\n' \
   '{"type":"session_meta","payload":{"id":"0199aaaa-bbbb-cccc","cwd":"/work/app","git":{"branch":"feat/y"}}}' \
   '{"type":"other"}' >"$tmp/.codex/sessions/2026/01/01/rollout-test.jsonl"
 
-# alpha: labelled, plus a foreign label. beta: run-created, no labels.
-# gamma: stale agent label from a crashed session. delta: no optional fields.
+# One `bmx list --json` row a line. alpha: labelled, plus a foreign label, and
+# the session the tools run in (see `run`). beta: a zmx daemon's run-created
+# session, no labels. gamma: stale agent label from a crashed session. delta:
+# nothing but what every row has. dead: a row with no pid.
+at='"created_at":"1970-01-01T00:16:40Z"'
 printf '%s\n' \
-  $'→ name=alpha\tpid=100\tclients=1\tcreated=1000\tcwd=file://host/Users/x/proj%20a/\tagent=claude\tclaude_pid=111\tclaude_session=sid-a\trole=reviewer' \
-  $'  name=beta\tpid=200\tclients=0\tcreated=1000\tcwd=file://host/tmp\tended=5\texit_code=0' \
-  $'  name=gamma\tpid=300\tclients=1\tcreated=1000\tcwd=/plain\tcmd=sleep 5\tagent=claude\tclaude_session=sid-stale' \
-  $'  name=delta\tpid=400\tclients=2\tcreated=1000' \
-  $'  name=dead\terr=ConnectionRefused\tstatus=unreachable' >"$fix/zmx-list"
+  '{"name":"alpha","kind":"bmx","pid":100,"clients":1,'"$at"',"cwd":"file://host/Users/x/proj%20a/","cmd":"","labels":{"agent":"claude","claude_pid":"111","claude_session":"sid-a","role":"reviewer"},"task":null,"status":"live"}' \
+  '{"name":"beta","kind":"zmx","pid":200,"clients":0,'"$at"',"cwd":"file://host/tmp","cmd":"","labels":{},"task":{"ended_at":"1970-01-01T00:00:05Z","exit_code":0},"status":"live"}' \
+  '{"name":"gamma","kind":"bmx","pid":300,"clients":1,'"$at"',"cwd":"/plain","cmd":"sleep 5","labels":{"agent":"claude","claude_session":"sid-stale"},"task":null,"status":"live"}' \
+  '{"name":"delta","pid":400,"clients":2,'"$at"'}' \
+  '{"name":"dead","pid":null,"clients":0,'"$at"'}' >"$fix/bmx-rows"
 
 printf '%s\n' \
   '101 100 01:00 100 -zsh' \
@@ -147,7 +161,8 @@ check() { # name actual expected
     printf 'FAIL %s\n  expected: %s\n  actual:   %s\n' "$1" "$3" "$2" >&2
   fi
 }
-run() { HOME="$tmp" FIX="$fix" "$@"; }
+# The tools run inside alpha: the session a tool is in is the one ZMX_SESSION names.
+run() { HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha "$@"; }
 plain() { sed $'s/\e\\[[0-9;]*m//g'; }
 
 # --- zmx-ps: labels ---------------------------------------------------------
@@ -229,7 +244,7 @@ check "mission-control: an unknown flag exits 2" "$?" "2"
 # --- zmx-reap: verdicts -------------------------------------------------------
 # epsilon: detached like beta, but with work in its tree. It joins the fixtures
 # here so the checks above keep the sessions they were written against.
-printf '%s\n' $'  name=epsilon\tpid=500\tclients=0\tcreated=1000\tcwd=/work' >>"$fix/zmx-list"
+printf '%s\n' '{"name":"epsilon","kind":"bmx","pid":500,"clients":0,'"$at"',"cwd":"/work","cmd":"","labels":{},"task":null,"status":"live"}' >>"$fix/bmx-rows"
 printf '%s\n' '501 500 01:00 100 -zsh' '511 501 01:00 100 sleep 60' >>"$fix/ps-table"
 
 table() { plain | sed 's/  */ /g; s/ $//'; }
@@ -279,7 +294,7 @@ check "select: an unknown flag exits 2" "$?" "2"
 
 # --- zmx-agent-label: lifecycle ---------------------------------------------
 lbl() { printf '{"session_id":"%s"}' "$2" | HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha CLAUDE_PID="${3:-$$}" "$bin/zmx-agent-label" "$1" claude 2>/dev/null; }
-labels() { run "$bin/zmx" get .; }
+labels() { run "$bin/bmx" label .; }
 
 lbl set s1
 check "label: set" "$(labels)" "agent=claude claude_pid=$$ claude_session=s1"
@@ -289,10 +304,10 @@ lbl unset s1
 check "label: late SessionEnd for the old id is a no-op" "$(labels)" "agent=claude claude_pid=$$ claude_session=s2"
 lbl set nested $PPID
 check "label: nested agent can't take a live owner's session" "$(labels)" "agent=claude claude_pid=$$ claude_session=s2"
-run "$bin/zmx" set . role=reviewer
+run "$bin/bmx" label . role=reviewer >/dev/null
 lbl unset s2
 check "label: exit removes only the agent's keys" "$(labels)" "role=reviewer"
-run "$bin/zmx" set . agent=claude claude_session=crashed claude_pid=999999
+run "$bin/bmx" label . agent=claude claude_session=crashed claude_pid=999999 >/dev/null
 lbl set s3
 check "label: a dead owner's labels are replaced" "$(labels)" "agent=claude claude_pid=$$ claude_session=s3 role=reviewer"
 printf '{}' | HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha "$bin/zmx-agent-label" unset claude 2>/dev/null

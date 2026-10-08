@@ -7,13 +7,32 @@
 # Usage: zn [-t|--tries N]
 #   -t, --tries N   max collision re-rolls before giving up (default 3, or
 #                   $ZN_TRIES; 0 disables the check).
+#   ZN_HOST=zmx     host the session with zmx instead of bmx.
 #
 # Companion to `dbzname`. On PATH so wezterm's split/tab spawn calls
 # can invoke it directly without sourcing zshrc.
 
 # GUI-launched callers (wezterm, etc.) inherit a minimal launchd PATH;
-# dbzname lives in ~/.local/bin, zmx in /opt/homebrew/bin.
-PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+# dbzname lives in ~/.local/bin, bmx in ~/.cargo/bin, zmx in /opt/homebrew/bin.
+PATH="$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+# Which program hosts the new session: bmx (ours, lulu-tools) or zmx. The two
+# speak one wire, and the zmx-* tools, the precmd hook and the agent-label hook
+# all ask through bmx, which reads a zmx daemon's sessions as it reads its own.
+# ZN_HOST=zmx goes back to a zmx daemon without editing this file.
+#
+# A bmx that is missing or cannot run gets zmx instead, so neither costs a new
+# pane its shell. `bmx version` is the check: it starts the binary and touches
+# no session. A bmx that runs but cannot host is `just install-bmx`'s to catch,
+# before it reaches PATH.
+host="${ZN_HOST:-bmx}"
+if [[ $host == bmx ]] && ! env -u ZMX_SESSION -u BMX_SESSION -u BMX_TTY bmx version >/dev/null 2>&1; then
+  if command -v bmx >/dev/null 2>&1; then
+    echo "zn: \`bmx version\` failed; hosting this session with zmx" >&2
+  fi
+  host=zmx
+fi
+command -v "$host" >/dev/null 2>&1 || host=zmx
 
 # Homebrew zsh end-to-end. Two layers each spawn "$SHELL": zmx's daemon
 # (login shell), then atuin's pty-proxy after `exec atuin pty-proxy` in
@@ -43,14 +62,19 @@ done
 
 # Re-roll the name until it doesn't match a live session. petname draws are
 # independent, so nothing otherwise stops two spawns picking the same name —
-# and `zmx attach <existing>` silently joins that session instead of creating a
+# and `attach <existing>` silently joins that session instead of creating a
 # new one. Bounded by $tries so an exhausted pool can't spin forever (0 = off).
+# The host is asked for the names: it lists the other program's sessions too.
 name=$(dbzname)
 n=0
-while ((n++ < tries)) && zmx list --short 2>/dev/null | rg -qxF "$name"; do
+while ((n++ < tries)) && "$host" list --short 2>/dev/null | rg -qxF "$name"; do
   name=$(dbzname)
 done
 # owner=alex marks a session a person opened from a terminal, set at creation
 # so it is never unlabelled. Agent-launched sessions (zmx run, the review
 # launcher) don't come through zn and carry their own labels instead.
-exec env -u ZMX_SESSION zmx attach --labels "owner=alex" "$name"
+#
+# ZMX_SESSION is dropped so a zn typed inside a zmx session opens the new one
+# there, as it always has. BMX_SESSION and BMX_TTY stay: inside a bmx session
+# they let bmx move this terminal to the new session instead of nesting.
+exec env -u ZMX_SESSION "$host" attach --labels "owner=alex" "$name"

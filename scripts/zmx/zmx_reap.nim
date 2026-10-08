@@ -3,7 +3,7 @@
 ## A detached session may still host live work: an agent, an editor with
 ## unsaved buffers, a build. A session is reaped only when no client is
 ## attached and its daemon's descendants are nothing but shells. Anything else
-## is skipped; kill those by hand with `zmx kill <name>`.
+## is skipped; kill those by hand with `bmx kill <name>`.
 ##
 ## `active` is the session's occupancy, not an agent's turn status.
 ##
@@ -16,14 +16,14 @@ import zmx_snapshot, term_out
 const Columns = ["NAME", "AGE", "VERDICT", "DIR"]
 
 proc killSessions(names: seq[string]): int =
-  ## `zmx kill <names...>` on this terminal; its exit code, 1 when it cannot run.
+  ## `bmx kill <names...>` on this terminal; its exit code, 1 when it cannot run.
   try:
-    let zmx = startProcess(
-      "zmx", args = @["kill"] & names, options = {poUsePath, poParentStreams}
+    let bmx = startProcess(
+      "bmx", args = @["kill"] & names, options = {poUsePath, poParentStreams}
     )
     defer:
-      zmx.close()
-    zmx.waitForExit()
+      bmx.close()
+    bmx.waitForExit()
   except OSError:
     1
 
@@ -70,10 +70,10 @@ proc zmxReap(kill = false, all = false): int =
     echo $reap.len & " reapable, " & skipped & " " & EmDash & " dry run. Re-run with " &
       paint(Bold, "--kill") & " to execute."
   else:
-    stdout.flushFile() # `zmx kill` writes to this terminal next
+    stdout.flushFile() # `bmx kill` writes to this terminal next
     let code = killSessions(reap)
     if code != 0:
-      stderr.writeLine "zmx-reap: `zmx kill` exited " & $code
+      stderr.writeLine "zmx-reap: `bmx kill` exited " & $code
       return 1
     echo paint(Green, "killed " & $reap.len & " session(s)") & ", " & skipped
   0

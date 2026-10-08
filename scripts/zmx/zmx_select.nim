@@ -11,7 +11,7 @@
 ## The session you are in is never listed. Sessions in the current directory
 ## come first; the rest are grouped by directory.
 ##
-## This process becomes fzf, and fzf becomes `zmx attach`. fzf builds its list
+## This process becomes fzf, and fzf becomes `bmx attach`. fzf builds its list
 ## by running this binary with `--emit`, and the prompt carries the mode:
 ## `zmx> ` is every session, `zmx cwd> ` is this directory only.
 ##
@@ -27,7 +27,7 @@ const
   PromptHere = "zmx cwd> "
   # The name comes from the highlighted row, else the query; with neither there
   # is nothing to attach to. Ctrl-N asks them in the other order.
-  Attach = "; [ -n \"$n\" ] || exit 130; exec zmx attach \"$n\")"
+  Attach = "; [ -n \"$n\" ] || exit 130; exec bmx attach \"$n\")"
 
 proc emitRows(here: bool): int =
   let views = snapshot().valueOr:
@@ -56,8 +56,8 @@ proc zmxSelect(here = false, emit = false): int =
     return emitRows(here)
 
   pinEnvironment()
-  if findExe("zmx").len == 0:
-    stderr.writeLine "zmx-select: zmx not found"
+  if findExe("bmx").len == 0:
+    stderr.writeLine "zmx-select: bmx not found"
     return 127
   let fzf = findExe("fzf")
   if fzf.len == 0:
@@ -87,7 +87,7 @@ proc zmxSelect(here = false, emit = false): int =
       "Ctrl-C: cancel",
     ].join(" " & Middot & " "),
     "--preview",
-    "zmx history {1} --vt",
+    "bmx history {1} --vt",
     "--preview-window",
     "right:60%:follow",
     "--bind",
@@ -95,7 +95,7 @@ proc zmxSelect(here = false, emit = false): int =
       listHere & ")\" || echo \"change-prompt(" & PromptAll & ")+reload(" & listAll &
       ")\"",
     "--bind",
-    "ctrl-x:execute-silent(zmx kill {1})+transform:" & isAll & " && echo \"reload(" &
+    "ctrl-x:execute-silent(bmx kill {1})+transform:" & isAll & " && echo \"reload(" &
       listAll & ")\" || echo \"reload(" & listHere & ")\"",
     "--bind",
     "enter:become(n={1}; [ -n \"$n\" ] || n={q}" & Attach,

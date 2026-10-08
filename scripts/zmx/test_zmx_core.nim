@@ -653,11 +653,32 @@ suite "decodeCwd":
   test "root keeps its slash":
     check decodeCwd("file://host/") == "/"
 
-suite "parseListLine":
-  test "labelled current session":
-    let s = parseListLine(
-      "→ name=alpha\tpid=100\tclients=1\tcreated=1000\tcwd=file://host/Users/x/proj%20a/\tagent=claude\tclaude_pid=111\tclaude_session=sid-a\trole=reviewer"
-    ).get
+suite "epochOf":
+  test "an RFC 3339 time in UTC":
+    check epochOf("1970-01-01T00:16:40Z") == Opt.some(1000'i64)
+    check epochOf("2026-10-08T16:36:31Z") == Opt.some(1791477391'i64)
+
+  test "a fraction of a second is dropped":
+    check epochOf("1970-01-01T00:16:40.987654Z") == Opt.some(1000'i64)
+
+  test "a leap day":
+    check epochOf("2024-02-29T00:00:00Z") == Opt.some(1709164800'i64)
+
+  test "anything else":
+    check epochOf("").isNone
+    check epochOf("yesterday").isNone
+    check epochOf("2026-13-08T16:36:31Z").isNone
+
+suite "parseList":
+  test "a bmx host's row: labels, cwd, and when it was created":
+    let s = parseList(
+      """[{"name": "alpha", "kind": "bmx", "pid": 100, "clients": 1,
+        "created_at": "1970-01-01T00:16:40Z", "cwd": "file://host/Users/x/proj%20a/",
+        "cmd": "", "labels": {"agent": "claude", "claude_pid": "111",
+        "claude_session": "sid-a", "role": "reviewer"}, "task": null,
+        "status": "live"}]""",
+      current = "alpha",
+    ).get[0]
     check s.name == ZmxSessionName("alpha")
     check s.pid == ProcessId(100)
     check s.clients == 1
@@ -668,44 +689,50 @@ suite "parseListLine":
     check s.labels["claude_session"] == "sid-a"
     check s.labels["role"] == "reviewer"
 
-  test "run-created session: ended and exit_code are not labels":
-    let s = parseListLine(
-      "  name=beta\tpid=200\tclients=0\tcreated=1000\tcwd=file://host/tmp\tended=5\texit_code=0"
-    ).get
+  test "a zmx daemon's row: its task and its command are not labels":
+    let s = parseList(
+      """[{"name": "beta", "kind": "zmx", "pid": 200, "clients": 0,
+        "created_at": "1970-01-01T00:16:40Z", "cwd": "file://host/tmp",
+        "cmd": "sleep 5", "labels": {},
+        "task": {"ended_at": "1970-01-01T00:00:05Z", "exit_code": 0},
+        "status": "live"}]""",
+      current = "alpha",
+    ).get[0]
     check s.name == ZmxSessionName("beta")
     check not s.current
     check s.cwd == "/tmp"
     check s.labels.len == 0
 
-  test "cmd is not a label, later fields are":
-    let s = parseListLine(
-      "  name=gamma\tpid=300\tclients=1\tcreated=1000\tcwd=/plain\tcmd=sleep 5\tagent=claude\tclaude_session=sid-stale"
-    ).get
-    check s.labels.len == 2
-    check s.labels["agent"] == "claude"
+  test "outside every session nothing is current":
+    let rows = """[{"name": "a", "pid": 1, "clients": 0,
+      "created_at": "1970-01-01T00:00:01Z"}]"""
+    check not parseList(rows, current = "").get[0].current
 
-  test "no optional fields":
-    let s = parseListLine("  name=delta\tpid=400\tclients=2\tcreated=1000").get
+  test "a row with only what every row has":
+    let s = parseList(
+      """[{"name": "delta", "pid": 400, "clients": 2,
+        "created_at": "1970-01-01T00:16:40Z"}]""",
+      current = "",
+    ).get[0]
     check s.cwd == ""
     check s.clients == 2
     check s.labels.len == 0
 
-  test "unreachable session is skipped":
-    check parseListLine("  name=dead\terr=ConnectionRefused\tstatus=unreachable").isNone
-
-  test "a field without = is not a label":
-    let s = parseListLine("  name=e\tpid=5\tclients=0\tcreated=1\tstray\tk=v").get
-    check s.labels.len == 1
-    check s.labels["k"] == "v"
-
-  test "a non-numeric pid is skipped":
-    check parseListLine("  name=e\tpid=abc\tclients=0\tcreated=1").isNone
-
-suite "parseList":
-  test "keeps reachable sessions in order":
+  test "a row without a pid, or with a time that cannot be read, is skipped":
     let sessions = parseList(
-      "  name=a\tpid=1\tclients=0\tcreated=1\n  name=dead\terr=X\tstatus=unreachable\n→ name=b\tpid=2\tclients=1\tcreated=2\n"
-    )
+      """[{"name": "a", "pid": 1, "clients": 0, "created_at": "1970-01-01T00:00:01Z"},
+        {"name": "dead", "pid": null, "clients": 0, "created_at": "1970-01-01T00:00:01Z"},
+        {"name": "odd", "pid": 3, "clients": 0, "created_at": "soon"},
+        {"name": "b", "pid": 2, "clients": 1, "created_at": "1970-01-01T00:00:02Z"}]""",
+      current = "b",
+    ).get
     check sessions.len == 2
     check sessions[0].name == ZmxSessionName("a")
     check sessions[1].current
+
+  test "no sessions":
+    check parseList("[]", current = "").get.len == 0
+
+  test "what is not a list of sessions is an error":
+    check parseList("bmx: something went wrong", current = "").isErr
+    check parseList("", current = "").isErr

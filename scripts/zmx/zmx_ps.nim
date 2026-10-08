@@ -1,6 +1,6 @@
 ## zmx-ps — every zmx session as JSON: session info, labels, descendant
-## processes, and an active/idle verdict. The `zmx list --json` that zmx
-## doesn't have.
+## processes, and an active/idle verdict. `bmx list --json`, which it reads,
+## has the sessions; this adds what runs in each.
 ##
 ## Schema per session:
 ##   { name, pid, clients, created, cwd, current, labels: { key: value }, age_s,
@@ -74,7 +74,7 @@ proc zmxPs(
   ## active/idle occupancy verdict.
   ##
   ## Examples:
-  ##   zmx-ps --detached --idle --names | xargs zmx kill
+  ##   zmx-ps --detached --idle --names | xargs bmx kill
   ##   zmx-ps --hosting claude | jaq '.[] | {name, procs: (.procs | length)}'
   ##   zmx-ps --label agent=claude --names
   if detached and attached:

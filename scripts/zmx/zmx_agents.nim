@@ -105,7 +105,7 @@ proc associate*(
   for view in views:
     let labels = view.session.labels
     if labels.getOrDefault("agent") == "claude" and "claude_session" in labels:
-      # Two sessions claiming one id: the later in `zmx list` order wins.
+      # Two sessions claiming one id: the later in `bmx list` order wins.
       byLabel[labels["claude_session"]] = view.session.name
     for p in view.procs:
       byPid[int(p.pid)] = view.session.name

@@ -211,11 +211,14 @@ if status is-interactive
     # ----------------------------
     # zmx (terminal multiplexer)
     # ----------------------------
-    if command -q zmx
-        if command -q petname
+    # bmx (lulu-tools) hosts the sessions; zmx when bmx is not installed.
+    # zmx-select lives at ~/.local/bin/zmx-select (scripts/zmx/zmx_select.nim)
+    if command -q petname
+        if command -q bmx
+            abbr -a zn 'bmx attach (petname -d ~/.config/petname-dbz)'
+        else if command -q zmx
             abbr -a zn 'zmx attach (petname -d ~/.config/petname-dbz)'
         end
-        # zmx-select lives at ~/.local/bin/zmx-select (scripts/zmx/zmx_select.nim)
     end
 
     # ----------------------------

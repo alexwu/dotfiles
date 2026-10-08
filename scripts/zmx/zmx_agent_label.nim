@@ -1,8 +1,8 @@
 ## zmx-agent-label — record a coding agent's identity on its ambient zmx session.
 ##
 ## Runs from the agent's lifecycle hooks with the hook JSON on stdin and labels
-## $ZMX_SESSION, so zmx-ps and zmx-which read the association instead of
-## inferring it from the process environment:
+## $ZMX_SESSION through `bmx label .`, so zmx-ps and zmx-which read the
+## association instead of inferring it from the process environment:
 ##
 ##   agent=<agent>  <agent>_session=<session id>  <agent>_pid=<agent pid>
 ##
@@ -35,11 +35,12 @@ const
   AgentChars = {'a' .. 'z', '0' .. '9'}
   LabelChars = Letters + Digits + {'.', '_', '-'} # all a zmx label value may hold
 
-proc zmx(args: openArray[string]): tuple[output: string, code: int] =
-  ## Runs `zmx` and captures everything it prints. A failure to start is code 1.
+proc bmxLabel(args: openArray[string]): tuple[output: string, code: int] =
+  ## Runs `bmx label . <args>` and captures what it prints on stdout, which is
+  ## the labels after the change. A failure to start is code 1.
   try:
     let process =
-      startProcess("zmx", args = args, options = {poUsePath, poStdErrToStdOut})
+      startProcess("bmx", args = @["label", "."] & @args, options = {poUsePath})
     defer:
       process.close()
     process.inputStream.close()
@@ -50,9 +51,13 @@ proc zmx(args: openArray[string]): tuple[output: string, code: int] =
 
 proc label(key: string): string =
   ## The current session's value for `key`; empty when unset or unreadable.
-  let (output, code) = zmx(["get", ".", key])
-  if code == 0:
-    result = output.strip()
+  let (output, code) = bmxLabel(["--json"])
+  if code != 0:
+    return ""
+  try:
+    result = ClaudeJson.decode(output, Table[string, string]).getOrDefault(key)
+  except SerializationError:
+    result = ""
 
 proc isLive(owner: string): bool =
   try:
@@ -92,12 +97,11 @@ proc main(): int =
       stderr.writeLine "zmx-agent-label: " & session & " is labelled for live pid " &
         owner & ", not relabelling"
       return 0
-    if zmx(
-      ["set", ".", "agent=" & agent, agent & "_session=" & id, agent & "_pid=" & pid]
-    ).code != 0:
+    if bmxLabel(["agent=" & agent, agent & "_session=" & id, agent & "_pid=" & pid]).code !=
+        0:
       stderr.writeLine "zmx-agent-label: could not label " & session
   elif label(agent & "_session") == id:
-    if zmx(["set", ".", "agent=", agent & "_session=", agent & "_pid="]).code != 0:
+    if bmxLabel(["agent=", agent & "_session=", agent & "_pid="]).code != 0:
       stderr.writeLine "zmx-agent-label: could not clear labels on " & session
   0
 

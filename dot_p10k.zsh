@@ -1574,7 +1574,13 @@
 
   function prompt_my_zmx_session() {
     if [[ -n $ZMX_SESSION ]]; then
-      p10k segment -b '%k' -f '%f' -t "[$ZMX_SESSION]"
+      # A bmx host sets BMX_SESSION to the same name; a zmx session nested in
+      # one inherits the variable with another name. Magenta marks bmx.
+      if [[ $BMX_SESSION == $ZMX_SESSION ]]; then
+        p10k segment -b '%k' -f 5 -t "[$ZMX_SESSION]"
+      else
+        p10k segment -b '%k' -f '%f' -t "[$ZMX_SESSION]"
+      fi
     fi
   }
 
