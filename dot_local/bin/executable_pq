@@ -8,6 +8,9 @@ group=
 label=
 detach=0
 follow_id=
+status=0
+all=0
+json=0
 
 usage() {
   cat <<EOF
@@ -15,6 +18,7 @@ Queue a command in pueue, follow its output, and exit with its status.
 
 Usage: $prog [OPTIONS] [--] COMMAND [ARG...]
        $prog --follow ID
+       $prog --status [--all] [--json]
 
 Arguments:
   COMMAND [ARG...]  Command to run, in the current directory and environment
@@ -26,6 +30,9 @@ Options:
   -l, --label LABEL  Label for the task. Default: <directory name>: <COMMAND>
       --detach       Queue COMMAND, print its task id on stdout and return
       --follow ID    Follow task ID and exit with its status
+      --status       List the tasks you queued and how each ended
+      --all          With --status, list every task
+      --json         With --status, print the tasks as a JSON array
   -h, --help         Print help
 
 The groups are the standing ones from the pueue skill. cpu and checks tasks run
@@ -44,6 +51,11 @@ against any timeout the caller has.
 A task queued with --detach from a Claude Code session running the knock mod
 reports back when it finishes: pueue's callback runs pueue-knock, which sends
 that session the task's id, result and label.
+
+--status prints a table on stdout: id, group, state, exit code, label. Inside
+a Claude Code session the tasks are the ones that session queued, matched on
+the CLAUDE_PID pueue stored with each. Anywhere else they are the ones queued
+from the current directory or below it. A line on stderr says which.
 
 Examples:
   $prog -- cargo build --release
@@ -90,6 +102,9 @@ while (($#)); do
       shift
       ;;
     --follow=*) follow_id=${1#*=} ;;
+    --status) status=1 ;;
+    --all) all=1 ;;
+    --json) json=1 ;;
     --)
       shift
       break
@@ -104,6 +119,14 @@ done
   usage_error "--follow needs a numeric task id, got '$follow_id'"
 [[ -z $group || $group =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] ||
   usage_error "invalid group '$group'"
+if ((status)); then
+  if [[ -n $follow_id ]] || ((detach)); then
+    usage_error "--status goes with --all and --json only"
+  fi
+  (($# == 0)) || usage_error "--status takes no COMMAND"
+else
+  ((all == 0 && json == 0)) || usage_error "--all and --json go with --status"
+fi
 
 # Pick a group from the command when none was given. Unknown commands go to
 # cpu, the strictest group.
@@ -175,9 +198,55 @@ follow_and_exit() {
   exit "$status"
 }
 
+# Whose tasks --status lists: every one, this Claude Code session's, or this
+# directory's.
+# NOTE: the session is matched on its process id and not its session id,
+# because /clear gives a running session a new session id.
+show_status() {
+  local mode=all key='' rows
+  if ((all)); then
+    note "every task"
+  elif [[ ${CLAUDE_PID:-} =~ ^[0-9]+$ ]]; then
+    mode=pid key=$CLAUDE_PID
+    note "tasks this Claude Code session queued (pid $key); --all lists every task"
+  else
+    mode=dir key=$PWD
+    note "tasks queued from $PWD or below; --all lists every task"
+  fi
+
+  # shellcheck disable=SC2016 # $mode and $key are jaq variables
+  rows=$(pueue status --json | jaq -c --arg mode "$mode" --arg key "$key" '
+    def state:
+      if type != "object" then ascii_downcase
+      elif has("Done") | not then (keys[0] | ascii_downcase)
+      else (.Done.result | if . == "Success" then "done" elif type == "object" then (keys[0] | ascii_downcase) else ascii_downcase end)
+      end;
+    def exit_code:
+      if type != "object" or (has("Done") | not) then null
+      else (.Done.result | if . == "Success" then 0 elif type == "object" then (to_entries[0].value | if type == "number" then . else null end) else null end)
+      end;
+    [.tasks | to_entries | sort_by(.key | tonumber) | .[] | .value
+      | select($mode == "all"
+          or ($mode == "pid" and (.envs.CLAUDE_PID // "") == $key)
+          or ($mode == "dir" and (.path == $key or (.path | startswith($key + "/")))))
+      | {id, group, state: (.status | state), exit_code: (.status | exit_code), label: (.label // null), path, command}]') ||
+    setup_error "couldn't read pueue's tasks"
+
+  if ((json)); then
+    printf '%s\n' "$rows"
+  else
+    jaq -r '["ID", "GROUP", "STATE", "EXIT", "LABEL"],
+      (.[] | [.id, .group, .state, (.exit_code // "-"), ((.label // .command) | gsub("[\\x00-\\x1f\\x7f]+"; " ") | .[0:80])])
+      | @tsv' <<<"$rows" | column -t -s $'\t'
+  fi
+  exit 0
+}
+
 command -v pueue >/dev/null 2>&1 || setup_error "pueue is not installed"
 command -v jaq >/dev/null 2>&1 || setup_error "jaq is not installed"
 pueue status --json >/dev/null 2>&1 || setup_error "the pueue daemon is not running"
+
+((status == 0)) || show_status
 
 if [[ -n $follow_id ]]; then
   task_id=$follow_id
