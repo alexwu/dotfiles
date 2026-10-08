@@ -30,6 +30,7 @@ dot_config/nvim/
 ├── plugin/                           # Auto-loaded entry points (sourced at startup via rtp)
 │   ├── bombeelu-autocmds.lua
 │   ├── bombeelu-git.lua
+│   ├── bombeelu-knock.lua            # Skipped under vim.g.vscode
 │   ├── bombeelu-lspinfo.lua          # Lazy-registers :LspInfo command
 │   ├── bombeelu-neovide.lua          # Guarded by vim.g.neovide
 │   ├── bombeelu-visual-surround.lua
@@ -39,6 +40,7 @@ dot_config/nvim/
 │   ├── mappings.lua                  # Global keymaps
 │   ├── bombeelu/                     # Custom modules (bombeelu namespace)
 │   │   ├── git.lua                   # Git base branch detection (tiered: PR cache → reflog → merge-base → default)
+│   │   ├── knock.lua                 # Sends each save's diff to Claude Code sessions running the knock mod
 │   │   ├── lspinfo.lua               # :LspInfo floating window implementation
 │   │   ├── neotest.lua               # Neotest command + jump keymaps (currently orphaned)
 │   │   ├── neovide.lua               # Neovide opacity, animations, <D-*> clipboard keymaps
@@ -115,6 +117,7 @@ The `bu` library (`alexwu/bu`) provides `bu.keys` and `bu.nvim.repeatable` used 
 Each module with side effects (autocmds, commands, keymaps) has an auto-loaded entry point in `plugin/bombeelu-<name>.lua` guarded by `vim.g.loaded_bombeelu_<name>`. Lightweight entries (e.g. `:LspInfo`) defer the main module `require` until invocation.
 
 - **`bombeelu.git`**: Tiered base branch detection for diff pickers. Async PR cache on `BufEnter` (5-min TTL), cleared on `DirChanged`. Tiers: PR base → reflog → merge-base scan (top 20) → default branch fallback.
+- **`bombeelu.knock`**: On each save, diffs the file against what was on disk just before (`BufWritePre` reads it, `BufWritePost` diffs with `vim.text.diff`) and posts the diff with `xh` to every socket in `/tmp/cc-knock/`, one per Claude Code session running the knock mod. The path goes percent-encoded in an `X-Knock-Path` header. A session keeps a diff only for a file it works in and shows it to the agent with the next prompt. A diff over 12,000 bytes is replaced by a one-line note, since the listener takes 16 KB at most. Does nothing with no sockets or no `xh`. `vim.g.bombeelu_knock = false` turns it off; `vim.g.bombeelu_knock_dir` points it at another socket directory for a test.
 - **`bombeelu.visual-surround`**: Wraps visual selection in pairs. Keymaps: `(`, `{`, `[`, `q` (double quotes), `'`, `` ` ``, `t` (HTML tag prompt).
 - **`bombeelu.lspinfo`**: Floating-window `:LspInfo` reimplementation (the original command was removed from nvim-lspconfig). Filters servers by current filetype.
 - **`bombeelu.vscode`**: VSCode-embedded-Neovim keymaps. Guarded by `vim.g.vscode`.
