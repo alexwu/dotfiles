@@ -92,6 +92,7 @@ Sections, in order:
 |---|---|
 | `autocmds` | LazyVim-derived autocmds: resize_splits, last_loc, close_with_q, man_unlisted, wrap_spell, json_conceal, auto_create_dir |
 | `git` | Tiered base branch detection (PR cache → reflog → merge-base → default). Async `gh` PR cache on BufEnter |
+| `knock` | On each save, sends a diff of what the save changed to every Claude Code session running the knock mod. Skipped under `vim.g.vscode`; `vim.g.bombeelu_knock = false` turns it off |
 | `lspinfo` | Floating-window `:LspInfo` reimplementation (the original was removed from nvim-lspconfig) |
 | `neotest` | `:Test` command + jump keymaps (wired by `plugin/neotest.lua`) |
 | `neovide` | Neovide GUI options + `<D-*>` clipboard keymaps. Guarded by `vim.g.neovide` |
@@ -104,6 +105,15 @@ Sections, in order:
 Each module with side effects (autocmds, commands, keymaps) has an auto-load entry guarded by `vim.g.loaded_bombeelu_<name>`. Lightweight entries (e.g. `:LspInfo`) defer the main module `require` until invocation.
 
 `bombeelu.neotest` is wired from `plugin/neotest.lua` (after `require("neotest").setup(...)`) rather than from a `plugin/bombeelu-neotest.lua` — since `b` < `n` alphabetically, the bombeelu auto-load would source before neotest is on rtp.
+
+### `bombeelu.knock`
+
+`BufWritePre` reads the file as it is on disk and `BufWritePost` diffs that against what the save wrote, with `vim.text.diff`. The diff goes to every socket in `/tmp/cc-knock/`, one per Claude Code session running the knock mod. A session keeps a diff only for a file it works in and shows it to the agent with the next prompt.
+
+- It opens each socket with `vim.uv.new_pipe` and writes the HTTP request itself, so no HTTP client has to be on `PATH`. `vim.net.request()` can't be used here: it runs `curl` with a fixed set of arguments and has no way to name a Unix socket.
+- The file's path goes percent-encoded in an `X-Knock-Path` header.
+- A diff over 12,000 bytes is replaced by a one-line note, since the listener takes 16 KB at most.
+- With no sockets it does nothing. `vim.g.bombeelu_knock_dir` points it at another socket directory for a test.
 
 ### `after/lsp/` overrides
 
@@ -144,7 +154,7 @@ Each uses a `loaded` flag closure + a `DirChanged` autocmd to (re)check the mark
 init.lua                           # ~480 lines: foundations only
 filetype.lua                       # custom filetype detection (identical to dot_config/nvim/)
 queries/                           # custom treesitter queries (identical to dot_config/nvim/)
-lua/bombeelu/                      # custom modules (autocmds, git, lspinfo, neotest, neovide, utils, visual-surround, vscode)
+lua/bombeelu/                      # custom modules (autocmds, git, knock, lspinfo, neotest, neovide, utils, visual-surround, vscode)
 plugin/                            # plugin specs (one per plugin) + bombeelu-* auto-loads
   00-lush.lua / 01-snazzy.lua / 02-snacks.lua    # numeric prefix for early load
   bombeelu-*.lua                   # auto-loads for lua/bombeelu/ modules
