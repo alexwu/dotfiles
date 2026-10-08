@@ -399,7 +399,7 @@
   "showClearContextOnPlanAccept": false,
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
-  "theme": "auto",
+  "theme": "custom:snazzy",
   "editorMode": "normal",
   "verbose": true,
   "precomputeCompactionEnabled": true,
