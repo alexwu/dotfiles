@@ -36,6 +36,8 @@ paths:
 - Layout: splits, theme: snazzy.conf (included)
 - `macos_option_as_alt yes`
 - Navigation integrated with nvim via `pass_keys.py` kitten (`ctrl+hjkl`)
+- Session files live in `dot_config/kitty/sessions/`. `dashboard` is what `J launch-dashboard` opens: one OS window with a tab each for `gh dash`, `btm` and `mission-control --watch 2`. kitty draws its tabs inside one OS window, so AeroSpace sees a single window; a Ghostty tab is a separate macOS window, and a second tab in a scratchpad Ghostty window left it unusable (2026-10-08, cause not found)
+- The remote-control socket is `/tmp/mykitty-<pid>`, not the bare `/tmp/mykitty` from `listen_on`
 
 ## zmx
 - Session persistence (the keep-alive half of tmux); every wezterm window/tab/split auto-attaches to a fresh DBZ-named session via `zn` (wezterm `default_prog` → `zsh -c "zn; exec zsh -l"`)
