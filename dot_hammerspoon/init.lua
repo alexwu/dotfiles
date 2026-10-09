@@ -1,6 +1,7 @@
 require("hs.ipc")
 
 require("knock").start()
+require("scratch").start()
 
 -- Disabled: the aerospace overview overlay moved to aerospace-manager, bound to
 -- the same ctrl+alt+cmd-space via skhd (~/.config/skhd/skhdrc).
