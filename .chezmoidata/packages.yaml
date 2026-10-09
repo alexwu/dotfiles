@@ -15,6 +15,7 @@ packages:
       - cloudflared
       - cmake
       - coreutils
+      - cristianoliveira/tap/aerospace-scratchpad
       - curl
       - difftastic
       - dotenv-linter

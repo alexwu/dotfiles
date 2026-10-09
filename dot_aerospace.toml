@@ -4,6 +4,14 @@
 # Feel free to omit keys that you don't use in your config.
 # If the key is absent in your config the default value is taken from this config
 
+# See: https://nikitabobko.github.io/AeroSpace/guide#config-version
+config-version = 2
+
+# Workspaces that exist even when empty. In config-version 2 this is no longer
+# inferred from the bindings. 7 and 8 are left out on purpose: their keys are
+# out of reach, so they only exist while something is on them.
+persistent-workspaces = ['0', '1', '2', '3', '4', '5', '6', '.scratchpad.1', '.scratchpad.2']
+
 # You can use it to add commands that run after login to macOS user session.
 # 'start-at-login' needs to be 'true' for 'after-login-command' to work
 # Available commands: https://nikitabobko.github.io/AeroSpace/commands.html
@@ -17,12 +25,14 @@ after-startup-command = [
   # so it won't be run twice on AeroSpace restart
   # 'exec-and-forget /opt/homebrew/bin/sketchybar',
   # 'exec-and-forget /opt/homebrew/bin/borders active_color=0xff5af78e inactive_color=0xff494d64 width=5.0 hidpi=on',
-  # Launch the gh-dash Ghostty and pin it to workspace D (global justfile
-  # recipe; `just` is on PATH via [exec.env-vars] below).
-  'exec-and-forget just -g launch-dash',
 ]
 
 exec-on-workspace-change = [
+  # When something outside AeroSpace focuses a hidden scratchpad window, pull
+  # the window to the workspace you were on instead of landing in .scratchpad.
+  '/bin/bash',
+  '-c',
+  'aerospace-scratchpad hook pull-window $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE',
   # '/bin/zsh',
   # '-c',
   # 'open -g "raycast://extensions/jamesbombeelu/aerospace/focused-workspace?launchType=background&arguments=%7B%22workspace%22%3A%20%22$AEROSPACE_FOCUSED_WORKSPACE%22%7D"',
@@ -71,8 +81,8 @@ gaps.outer.top = 8
 #   4 and more will get 'accordion' layout. 'smart' can change its behavior in future versions
 non-empty-workspaces-root-containers-layout-on-startup = 'smart'
 
-# Environment for exec-and-forget / after-startup-command. Guarantee Homebrew
-# is on PATH so `just` (and the aerospace CLI it calls) resolve at login.
+# Environment for exec-and-forget and callbacks. Guarantee Homebrew is on PATH
+# so aerospace-scratchpad (and the aerospace CLI) resolve at login.
 # See: https://nikitabobko.github.io/AeroSpace/guide#exec-env-vars
 [exec]
 inherit-env-vars = true
@@ -137,6 +147,12 @@ alt-shift-equal = 'resize smart +50'
 
 alt-shift-f = 'fullscreen'
 
+# Tidy the workspace, then cycle columns / rows / stack on repeat presses
+# (global justfile recipe `arrange`).
+alt-t = 'exec-and-forget just -g arrange'
+# Go home: re-run the on-window-detected rules against every open window.
+alt-g = 'run-callback --for-every-window on-window-detected'
+
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
 
@@ -163,8 +179,15 @@ alt-0 = 'workspace 0'
 alt-shift-s = 'move-node-to-workspace 0'
 alt-shift-0 = 'move-node-to-workspace 0'
 
-alt-d = 'workspace D'
-alt-shift-d = 'move-node-to-workspace D'
+# Scratchpad toggles. Always by pattern: aerospace-scratchpad's `next` and
+# `move --all-floating` treat every floating window as a scratchpad window,
+# which would sweep up the floating rules below (CleanShot, Wispr Flow, ...).
+# `show` exits 1 when nothing matches, so the fallback opens the app.
+# alt-d is the dashboard, the only thing kitty is used for (global justfile recipe).
+alt-d = 'exec-and-forget aerospace-scratchpad show "^kitty$" || just -g launch-dashboard'
+alt-shift-d = 'exec-and-forget aerospace-scratchpad show Ghostty || open -a Ghostty'
+alt-z = 'exec-and-forget aerospace-scratchpad show Zed || open -a Zed'
+alt-n = 'exec-and-forget aerospace-scratchpad show "^neovide$" || $HOME/.local/share/mise/shims/neovide'
 
 alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
@@ -227,6 +250,9 @@ if.app-id = 'org.chromium.Chromium'
 run = 'layout floating'
 
 # Main workspace
+[[on-window-detected]]
+if.app-id = 'com.btty.app'
+run = 'move-node-to-workspace 1'
 [[on-window-detected]]
 if.app-id = 'com.github.wez.wezterm'
 # if.during-aerospace-startup = true
@@ -298,22 +324,35 @@ if.app-id = 'com.mimestream.Mimestream'
 # if.during-aerospace-startup = true
 run = 'move-node-to-workspace 4'
 
-# Other?
+# Not-work browser
+[[on-window-detected]]
+if.app-id = 'net.imput.helium'
+run = 'move-node-to-workspace 2'
 
+# AI
+[[on-window-detected]]
+if.app-id = 'com.anthropic.claudefordesktop'
+run = 'move-node-to-workspace 5'
+# The ChatGPT app reports the codex bundle id.
+[[on-window-detected]]
+if.app-id = 'com.openai.codex'
+run = 'move-node-to-workspace 5'
+
+# Remote
 [[on-window-detected]]
 if.app-id = 'tv.parsec.www'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace 5'
+run = 'move-node-to-workspace 6'
 
 [[on-window-detected]]
 if.app-id = 'com.edovia.screens.5'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace 5'
+run = 'move-node-to-workspace 6'
 
 [[on-window-detected]]
 if.app-id = 'com.moonlight-stream.Moonlight'
 # if.during-aerospace-startup = true
-run = 'move-node-to-workspace 5'
+run = 'move-node-to-workspace 6'
 
 [[on-window-detected]]
 if.window-title-regex-substring = 'Fig Autocomplete'
@@ -335,16 +374,24 @@ run = 'layout floating'
 if.app-id = 'dev.warp.Warp-Stable'
 run = 'move-node-to-workspace 3'
 
-# gh dash launches with --title="GitHub Dash"; this title-specific rule must stay
-# above the generic Ghostty rule below (first matching callback wins).
+# Scratchpad apps: every window floats, and a key toggles it (alt-d kitty,
+# alt-shift-d Ghostty, alt-z Zed, alt-n Neovide).
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-if.window-title-regex-substring = 'GitHub Dash'
-run = 'move-node-to-workspace D'
+run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-run = 'move-node-to-workspace 3'
+if.app-id = 'net.kovidgoyal.kitty'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'dev.zed.Zed'
+run = 'layout floating'
+
+# Neovide is a bare mise binary with no bundle id, so match it by app name.
+[[on-window-detected]]
+if.app-name-regex-substring = '^neovide$'
+run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'app.zen-browser.zen'
@@ -368,3 +415,6 @@ run = 'layout floating'
 7 = 'main'     # Case insensitive regex substring
 8 = 'main'     # Case insensitive regex substring
 0 = 'built-in'
+# aerospace-scratchpad keeps one hidden workspace per monitor, named by monitor id.
+'.scratchpad.1' = 1
+'.scratchpad.2' = 2
