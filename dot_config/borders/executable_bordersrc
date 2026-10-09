@@ -5,7 +5,12 @@ options=(
   width=6.0
   active_color="glow(0xffe1e3e4)"
   inactive_color=0x33494d64
-  blacklist="iPhone Mirroring,Dropover"
+  # borders can only exclude whole apps, not floating windows as such, and it
+  # matches the process name exactly (proc_name): the executable name, which
+  # is not always the app name (ghostty, zed).
+  # - ghostty, kitty, zed, neovide: the scratchpad apps (see ~/.aerospace.toml)
+  # - System Settings, CleanShot X, Fantastical: always floated by AeroSpace
+  blacklist="iPhone Mirroring,Dropover,ghostty,kitty,zed,neovide,System Settings,CleanShot X,Fantastical"
   hidpi=on
 )
 
