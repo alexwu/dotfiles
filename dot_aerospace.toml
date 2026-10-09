@@ -28,11 +28,6 @@ after-startup-command = [
 ]
 
 exec-on-workspace-change = [
-  # When something outside AeroSpace focuses a hidden scratchpad window, pull
-  # the window to the workspace you were on instead of landing in .scratchpad.
-  '/bin/bash',
-  '-c',
-  'aerospace-scratchpad hook pull-window $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE',
   # '/bin/zsh',
   # '-c',
   # 'open -g "raycast://extensions/jamesbombeelu/aerospace/focused-workspace?launchType=background&arguments=%7B%22workspace%22%3A%20%22$AEROSPACE_FOCUSED_WORKSPACE%22%7D"',
@@ -82,7 +77,7 @@ gaps.outer.top = 8
 non-empty-workspaces-root-containers-layout-on-startup = 'smart'
 
 # Environment for exec-and-forget and callbacks. Guarantee Homebrew is on PATH
-# so aerospace-scratchpad (and the aerospace CLI) resolve at login.
+# so the launch commands in scratch.json (and the aerospace CLI) resolve at login.
 # See: https://nikitabobko.github.io/AeroSpace/guide#exec-env-vars
 [exec]
 inherit-env-vars = true
@@ -147,11 +142,11 @@ alt-shift-equal = 'resize smart +50'
 
 alt-shift-f = 'fullscreen'
 
-# Tidy the workspace, then cycle columns / rows / stack on repeat presses
-# (global justfile recipe `arrange`).
-alt-t = 'exec-and-forget just -g arrange'
+# Tidy the workspace, then cycle columns / rows / stack on repeat presses.
+# Other presets: aerospace-manager arrange <columns|rows|stack|main-stack>.
+alt-t = 'exec-and-forget $HOME/.local/bin/aerospace-manager arrange tidy'
 # Go home: re-run the on-window-detected rules against every open window.
-alt-g = 'run-callback --for-every-window on-window-detected'
+alt-g = 'exec-and-forget $HOME/.local/bin/aerospace-manager arrange home'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#workspace
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#move-node-to-workspace
@@ -179,15 +174,15 @@ alt-0 = 'workspace 0'
 alt-shift-s = 'move-node-to-workspace 0'
 alt-shift-0 = 'move-node-to-workspace 0'
 
-# Scratchpad toggles. Always by pattern: aerospace-scratchpad's `next` and
-# `move --all-floating` treat every floating window as a scratchpad window,
-# which would sweep up the floating rules below (CleanShot, Wispr Flow, ...).
-# `show` exits 1 when nothing matches, so the fallback opens the app.
-# alt-d is the dashboard, the only thing kitty is used for (global justfile recipe).
-alt-d = 'exec-and-forget aerospace-scratchpad show "^kitty$" || just -g launch-dashboard'
-alt-shift-d = 'exec-and-forget aerospace-scratchpad show Ghostty || open -a Ghostty'
-alt-z = 'exec-and-forget aerospace-scratchpad show Zed || open -a Zed'
-alt-n = 'exec-and-forget aerospace-scratchpad show "^neovide$" || $HOME/.local/share/mise/shims/neovide'
+# Scratch toggles, run by aerospace-manager. Each name is an entry in
+# ~/.config/aerospace-manager/scratch.json, which says how to match the app and
+# what to launch when it has no window. The manager also floats a listed app's
+# new windows, so there are no on-window-detected rules for them here.
+# alt-d is the dashboard, the only thing kitty is used for.
+alt-d = 'exec-and-forget $HOME/.local/bin/aerospace-manager scratch toggle dashboard'
+alt-shift-d = 'exec-and-forget $HOME/.local/bin/aerospace-manager scratch toggle term'
+alt-z = 'exec-and-forget $HOME/.local/bin/aerospace-manager scratch toggle zed'
+alt-n = 'exec-and-forget $HOME/.local/bin/aerospace-manager scratch toggle neovide'
 
 alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
@@ -374,25 +369,6 @@ run = 'layout floating'
 if.app-id = 'dev.warp.Warp-Stable'
 run = 'move-node-to-workspace 3'
 
-# Scratchpad apps: every window floats, and a key toggles it (alt-d kitty,
-# alt-shift-d Ghostty, alt-z Zed, alt-n Neovide).
-[[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-run = 'layout floating'
-
-[[on-window-detected]]
-if.app-id = 'net.kovidgoyal.kitty'
-run = 'layout floating'
-
-[[on-window-detected]]
-if.app-id = 'dev.zed.Zed'
-run = 'layout floating'
-
-# Neovide is a bare mise binary with no bundle id, so match it by app name.
-[[on-window-detected]]
-if.app-name-regex-substring = '^neovide$'
-run = 'layout floating'
-
 [[on-window-detected]]
 if.app-id = 'app.zen-browser.zen'
 run = 'move-node-to-workspace 3'
@@ -415,6 +391,6 @@ run = 'layout floating'
 7 = 'main'     # Case insensitive regex substring
 8 = 'main'     # Case insensitive regex substring
 0 = 'built-in'
-# aerospace-scratchpad keeps one hidden workspace per monitor, named by monitor id.
+# aerospace-manager parks hidden scratch windows on one workspace per monitor, named by monitor id.
 '.scratchpad.1' = 1
 '.scratchpad.2' = 2

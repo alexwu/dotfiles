@@ -1,0 +1,8 @@
+{
+  "apps": [
+    { "name": "dashboard", "appName": "kitty", "launch": "just -g launch-dashboard" },
+    { "name": "term", "bundleID": "com.mitchellh.ghostty", "launch": "open -a Ghostty" },
+    { "name": "zed", "bundleID": "dev.zed.Zed", "launch": "open -a Zed" },
+    { "name": "neovide", "appName": "neovide", "launch": "$HOME/.local/share/mise/shims/neovide" }
+  ]
+}
