@@ -1,0 +1,15 @@
+# The dashboard: one tab per program. Launch with `J launch-dashboard`.
+# Each program runs through a login zsh so it finds ~/.local/bin and Homebrew
+# whatever launched kitty, and `exec` so the tab closes when the program quits.
+os_window_title Dashboard
+
+new_tab GitHub
+launch --title "GitHub" zsh -lc 'exec gh dash'
+
+new_tab System
+launch --title "System" zsh -lc 'exec btm'
+
+new_tab Agents
+launch --title "Agents" zsh -lc 'exec mission-control --watch 2'
+
+focus_tab 0

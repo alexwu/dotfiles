@@ -344,42 +344,15 @@ lumis-regen-snazzy:
         -o "$out"
     chezmoi re-add "$out"
 
-[doc("Launch the gh-dash Ghostty window and pin it to workspace D. Run at login by AeroSpace's after-startup-command, or by hand: J launch-dash")]
+# The dash recipes only launch. AeroSpace floats every Ghostty window
+# (on-window-detected in ~/.aerospace.toml), which makes it a scratchpad window
+# that alt-d toggles, so there is no workspace to pin it to.
+[doc("Launch the gh-dash Ghostty window as a scratchpad window (alt-d toggles it). By hand: J launch-dash")]
 [group("aerospace")]
 launch-dash:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    bundle_id='com.mitchellh.ghostty'
-    title='GitHub Dash'
-    target_ws='D'
-
-    # All Ghostty window-ids currently titled "$title".
-    list_dash() {
-        aerospace list-windows --monitor all --app-bundle-id "$bundle_id" \
-            --format '%{window-id}|%{window-title}' \
-            | awk -F'|' -v t="$title" '$2 ~ t {print $1}' || true
-    }
-
-    # Snapshot existing dash windows so we move the one we launch, not a stray.
-    before=$(list_dash)
-
     open -na Ghostty.app --args \
         --config-file="$HOME/.config/ghostty/dashboard.ghostty" \
-        --title="$title" -e gh dash
-
-    # AeroSpace's on-window-detected title rule is a fast path but races
-    # Ghostty's title-set against the AX observer (~2/3 hit rate); poll for the
-    # newly-created window by id and move it so placement is deterministic.
-    # Idempotent: if the rule already put it on D, the move no-ops.
-    for _ in $(seq 1 50); do
-        new=$(awk 'NR==FNR{seen[$0]=1; next} !($0 in seen){print; exit}' \
-            <(printf '%s\n' "$before") <(list_dash))
-        if [[ -n "$new" ]]; then
-            aerospace move-node-to-workspace "$target_ws" --window-id "$new"
-            break
-        fi
-        sleep 0.1
-    done
+        --title='GitHub Dash' -e gh dash
 
 # duckyPad Pro: edit DuckyScript profiles without the configurator GUI.
 # Each profile dir holds keyN.txt (DuckyScript source) + keyN.dsb (compiled
@@ -457,43 +430,41 @@ duckypad-push PROFILE: (duckypad-build PROFILE)
     [[ $fail -eq 0 ]] || { echo "duckypad-push: verification failed — card may be out of sync" >&2; exit 1; }
     echo "duckypad-push: '$name' synced to $card and verified"
 
-[doc("Launch the zellij dashboard wall (btm + agent-sessions + pueue + gh-dash) and pin it to workspace D. By hand: J launch-dashboard")]
+# kitty, because its tabs are drawn inside one OS window. A Ghostty tab is a
+# separate macOS window, and a second one in a scratchpad Ghostty window left
+# it unusable (2026-10-08, cause not found). The tabs are in the session file.
+[doc("Launch the dashboard: one kitty window with a tab each for gh-dash, btm and mission-control. By hand: J launch-dashboard")]
 [group("aerospace")]
 launch-dashboard:
+    open -na kitty.app --args --session "$HOME/.config/kitty/sessions/dashboard"
+
+# AeroSpace's own `layout a b c` only flips between two layouts (it applies the
+# first one that isn't current), so the cycle reads the root layout and picks
+# the next. A workspace with nested containers is tidied in its current layout
+# first; only an already-flat one moves on.
+[doc("Tidy the focused AeroSpace workspace, then cycle its arrangement on repeat presses: columns, rows, stack. Bound to alt-t.")]
+[group("aerospace")]
+arrange:
     #!/usr/bin/env bash
     set -euo pipefail
-    bundle_id='com.mitchellh.ghostty'
-    title='GitHub Dash'
-    target_ws='D'
+    root=$(aerospace list-workspaces --focused --format '%{workspace-root-container-layout}')
 
-    list_dash() {
-        aerospace list-windows --monitor all --app-bundle-id "$bundle_id" \
-            --format '%{window-id}|%{window-title}' \
-            | awk -F'|' -v t="$title" '$2 ~ t {print $1}' || true
-    }
+    # A tiled window whose container isn't the root layout sits in a nested container.
+    nested=$(aerospace list-windows --workspace focused --format '%{window-layout}' \
+        | rg --invert-match --line-regexp -e floating -e "$root" || true)
 
-    # Snapshot existing dash windows so we move the one we launch, not a stray.
-    before=$(list_dash)
+    next=$root
+    if [[ -z "$nested" ]]; then
+        case "$root" in
+            h_tiles) next=v_tiles ;;
+            v_tiles) next=h_accordion ;;
+            *) next=h_tiles ;;
+        esac
+    fi
 
-    # Login shell (zsh -lc) so the panes inherit a full PATH even when this is
-    # invoked from AeroSpace's minimal-env after-startup-command. `exec` so the
-    # window closes cleanly when zellij exits. Bare `--layout dashboard` resolves
-    # from ~/.config/zellij/layouts/; do NOT add `--session` (it turns --layout
-    # into a tab-add against a non-existent session).
-    open -na Ghostty.app --args \
-        --config-file="$HOME/.config/ghostty/dashboard.ghostty" \
-        --title="$title" \
-        -e zsh -lc 'exec zellij --config "$HOME/.config/zellij/dashboard.config.kdl" --layout dashboard'
-
-    for _ in $(seq 1 50); do
-        new=$(awk 'NR==FNR{seen[$0]=1; next} !($0 in seen){print; exit}' \
-            <(printf '%s\n' "$before") <(list_dash))
-        if [[ -n "$new" ]]; then
-            aerospace move-node-to-workspace "$target_ws" --window-id "$new"
-            break
-        fi
-        sleep 0.1
-    done
+    aerospace flatten-workspace-tree
+    aerospace layout --root "$next"
+    aerospace balance-sizes
 
 # Create GitHub linked branch(es) from an issue, mirroring the website's "Create a
 # branch" button. Cross-repo aware: the issue can live in one repo (default
