@@ -47,9 +47,11 @@ pitchfork = "latest"
 rclone = "latest"
 "github:affromero/gitpane" = "latest"
 "github:konippi/servo-fetch" = "latest"
-"llama.cpp" = { version = "latest", version_prefix = "b" }
 "npm:serve-sim" = "latest"
 "github:neovide/neovide" = "nightly"
+biome = "latest"
+superhtml = "latest"
+"cargo:minhtml" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]
@@ -98,3 +100,16 @@ kickstart = true
 environment = { PATH = "/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
 stdout_path = "~/.config/caddy/caddy-tailscale.log"
 stderr_path = "~/.config/caddy/caddy-tailscale.log"
+
+# session-status (lulu-loadout): watches this host's agent sessions and serves
+# the list on 127.0.0.1:8772. ~/.local/bin is on PATH for codex and claude,
+# which it runs; its log says each time a model was asked, which is money.
+[bootstrap.macos.launchd.agents.session-status]
+program = "/Users/jamesbombeelu/.local/bin/session-status"
+args = ["serve", "--ended-days", "7"]
+run_at_load = true
+keep_alive = true
+kickstart = true
+environment = { PATH = "/Users/jamesbombeelu/.local/bin:/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.local/state/lulu/session-status/serve.log"
+stderr_path = "~/.local/state/lulu/session-status/serve.log"
