@@ -106,7 +106,7 @@ stderr_path = "~/.config/caddy/caddy-tailscale.log"
 # which it runs; its log says each time a model was asked, which is money.
 [bootstrap.macos.launchd.agents.session-status]
 program = "/Users/jamesbombeelu/.local/bin/session-status"
-args = ["serve", "--ended-days", "7"]
+args = ["serve", "--ended-days", "7", "--work-dir", "/Users/jamesbombeelu/Code/cleverific"]
 run_at_load = true
 keep_alive = true
 kickstart = true
