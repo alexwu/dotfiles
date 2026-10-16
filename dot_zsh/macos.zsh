@@ -25,8 +25,6 @@ fi
 
 alias co="git checkout"
 
-eval "$(mise activate zsh)"
-
 alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
 # op plugin aliases (circleci, huggingface-cli, ...) can fire 1Password

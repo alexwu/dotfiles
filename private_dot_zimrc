@@ -2,7 +2,6 @@
 # -------
 # Modules
 # -------
-zmodule joke/zim-mise
 zmodule joke/zim-chezmoi
 zmodule exa
 zmodule environment
@@ -22,6 +21,9 @@ zmodule ohmyzsh/ohmyzsh --root plugins/fancy-ctrl-z
 # completion must be sourced after zsh-users/zsh-completions
 # NOTE: compinit called here
 zmodule completion
+# NOTE: must follow completion — mise hook-env runs its own compinit when compdef
+# isn't defined yet, which trips completion's "already initialized" warning
+zmodule joke/zim-mise
 
 zmodule ohmyzsh/ohmyzsh --root plugins/git
 zmodule Aloxaf/fzf-tab
