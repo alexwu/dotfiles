@@ -30,9 +30,14 @@ Meant for the callback in pueue.yml:
   callback: '$prog {{id}} "{{result}}" "{{exit_code}}"'
 
 A task is skipped, with exit status 0, unless 'pq --detach' queued it from a
-Claude Code session that is still running the knock mod. pq marks such a task
-with PQ_DETACHED=1, and pueue keeps the session's CLAUDE_PID with it; the mod
-listens on \$KNOCK_DIR/<pid>.sock (default /tmp/cc-knock).
+Claude Code session that is still running. pq marks such a task with
+PQ_DETACHED=1, and pueue keeps the session's environment with it.
+
+The message goes to the session's own inbox socket (CLAUDE_CODE_MESSAGING_SOCKET),
+which a running turn reads between tool calls and an idle session takes as a
+new turn. A task with no inbox socket goes to the knock mod instead, at
+\$KNOCK_DIR/<pid>.sock (default /tmp/cc-knock), which waits for the session to
+be idle.
 
 The session reads one line: the id, the result, the exit code and the task's
 label. It never gets the task's output.
@@ -82,7 +87,7 @@ result=$(printf '%s' "$2" | tr -cd 'A-Za-z0-9 _-' | cut -c 1-40)
 exit_code=$(printf '%s' "${3:-}" | tr -cd '0-9' | cut -c 1-3)
 [[ -n $result ]] || usage_error "RESULT is empty"
 
-for tool in pueue jaq xh; do
+for tool in pueue jaq xh nc uuidgen; do
   command -v "$tool" >/dev/null 2>&1 || {
     note "$tool is not installed"
     exit 125
@@ -102,16 +107,38 @@ detached=$(jaq -r '.envs.PQ_DETACHED // ""' <<<"$task")
 pid=$(jaq -r '.envs.CLAUDE_PID // ""' <<<"$task")
 [[ $pid =~ ^[0-9]+$ ]] || skip "not queued from a Claude Code session"
 
-socket="${KNOCK_DIR:-/tmp/cc-knock}/$pid.sock"
-[[ -S $socket ]] || skip "no knock socket at $socket"
-
 # The label is whatever the caller of pq wrote, so it is cut short and loses
 # its control characters.
 label=$(jaq -r '(.label // "") | gsub("[\\x00-\\x1f\\x7f]+"; " ") | .[0:120]' <<<"$task")
 
-text="Detached pueue task $id finished: $result"
+text="pueue-knock: detached pueue task $id finished: $result"
 [[ -z $exit_code ]] || text+=", exit $exit_code"
 [[ -z $label ]] || text+=". Label: $label"
+
+inbox=$(jaq -r '.envs.CLAUDE_CODE_MESSAGING_SOCKET // ""' <<<"$task")
+session=$(jaq -r '.envs.CLAUDE_CODE_SESSION_ID // ""' <<<"$task")
+
+# Posts the message to the session's inbox socket, with no auth line. The
+# socket is documented; the message line's shape is not. It comes from
+# github.com/PeterSR/claude-code-socket-transport, and was tested on Claude
+# Code 2.1.303: a line from a pueue task reached a running turn between tool
+# calls. If notices stop arriving after an update, look here first.
+tell_inbox() {
+  [[ -S $inbox && $session =~ ^[A-Za-z0-9-]+$ ]] || return 1
+  local line
+  # shellcheck disable=SC2016 # $id, $text and $session are jaq variables
+  line=$(jaq -nc --arg id "$(uuidgen | tr '[:upper:]' '[:lower:]')" --arg text "$text" --arg session "$session" \
+    '{msgV: 1, msg_id: $id, type: "user", message: {role: "user", content: $text}, priority: "next", session_id: $session}') || return 1
+  printf '%s\n' "$line" | nc -U -w 5 "$inbox"
+}
+
+if tell_inbox; then
+  exit 0
+fi
+((verbose == 0)) || note "task $id: no inbox socket answered; trying the knock mod"
+
+socket="${KNOCK_DIR:-/tmp/cc-knock}/$pid.sock"
+[[ -S $socket ]] || skip "no inbox socket and no knock socket at $socket"
 
 xh --ignore-stdin --quiet --timeout 5 --unix-socket "$socket" POST http://knock/tell Content-Type:text/plain --raw "$text" || {
   note "couldn't tell the session at $socket about task $id"
