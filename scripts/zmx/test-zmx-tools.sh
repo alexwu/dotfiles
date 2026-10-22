@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Tests for the zmx tools (all Nim, scripts/zmx): label parsing in zmx-ps, the
 # agent -> session association in zmx-which, the agent-sessions contract, the
-# mission-control view, zmx-reap's verdicts, zmx-env, the rows zmx-select
-# hands to fzf, and zmx-agent-label's lifecycle.
+# mission-control view, zmx-reap's verdicts, zmx-env, and zmx-agent-label's
+# lifecycle.
 #
 # Hermetic: the tools pin "$HOME/.local/bin" first on PATH, so a throwaway HOME
-# holds the eight freshly built tools and stub `zmx`, `claude`, `ps`, and
+# holds the seven freshly built tools and stub `zmx`, `claude`, `ps`, and
 # `wezterm` that serve fixtures. No live session is read, changed or killed.
 #
 # Usage: scripts/zmx/test-zmx-tools.sh   (or: just test-zmx)
@@ -23,7 +23,7 @@ fix="$tmp/fixtures"
 mkdir -p "$bin" "$fix"
 
 # The Nim tools, side by side when rust-parallel is installed.
-nim_tools=(zmx-ps zmx-which agent-sessions mission-control zmx-reap zmx-env zmx-select zmx-agent-label)
+nim_tools=(zmx-ps zmx-which agent-sessions mission-control zmx-reap zmx-env zmx-agent-label)
 if command -v rust-parallel >/dev/null 2>&1; then
   for tool in "${nim_tools[@]}"; do printf '%s:%s\n' "$tool" "${tool//-/_}"; done |
     rust-parallel -r '(?P<tool>.+):(?P<module>.+)' \
@@ -291,18 +291,6 @@ run "$bin/zmx-env" >/dev/null 2>&1
 check "env: no session exits 2" "$?" "2"
 run "$bin/zmx-env" alpha '(' >/dev/null 2>&1
 check "env: a bad pattern exits 2" "$?" "2"
-
-# --- zmx-select: the rows fzf lists -------------------------------------------
-emit=$(run "$bin/zmx-select" --emit)
-check "select: current session hidden, grouped by directory" \
-  "$(awk '{ print $1 }' <<<"$emit" | paste -sd, -)" "delta,gamma,beta,epsilon"
-check "select: row columns" "$(rg '^beta ' <<<"$emit" | sed 's/  */ /g')" "beta /tmp idle - cl:0 pid:200"
-check "select: --here keeps this directory's sessions" \
-  "$(run env PWD=/tmp "$bin/zmx-select" --here --emit | awk '{ print $1 }' | paste -sd, -)" "beta"
-check "select: sessions in this directory come first" \
-  "$(run env PWD=/work "$bin/zmx-select" --emit | awk 'NR == 1 { print $1 }')" "epsilon"
-run "$bin/zmx-select" --bogus >/dev/null 2>&1
-check "select: an unknown flag exits 2" "$?" "2"
 
 # --- zmx-agent-label: lifecycle ---------------------------------------------
 lbl() { printf '{"session_id":"%s"}' "$2" | HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha CLAUDE_PID="${3:-$$}" "$bin/zmx-agent-label" "$1" claude 2>/dev/null; }

@@ -1,7 +1,7 @@
 import std/[os, sequtils, strutils]
 from std/posix import getpid, getppid
 import unittest2
-import agent_rows, zmx_picker
+import agent_rows
 
 func pinfo(pid, ppid: int, command: string, argv: seq[string] = @[]): ProcessInfo =
   ProcessInfo(pid: ProcessId(pid), ppid: ProcessId(ppid), command: command, argv: argv)
@@ -118,65 +118,6 @@ suite "reapVerdict":
 
   test "detached and idle is reaped":
     check reapVerdict(view(0, soIdle)) == rvReap
-
-suite "fmtDir":
-  const
-    Home = "/Users/x"
-    Dots = "/Users/x/.local/share/chezmoi"
-
-  test "named places":
-    check fmtDir(Dots, Home, Dots) == "dotfiles"
-    check fmtDir("/Users/x/Code", Home, Dots) == "Code"
-    check fmtDir(Home, Home, Dots) == "Home"
-
-  test "relative to ~/Code, then to home":
-    check fmtDir("/Users/x/Code/app/ws2", Home, Dots) == "app/ws2"
-    check fmtDir("/Users/x/notes", Home, Dots) == "notes"
-
-  test "elsewhere is the full path, a sibling prefix included":
-    check fmtDir("/tmp", Home, Dots) == "/tmp"
-    check fmtDir("/Users/xavier", Home, Dots) == "/Users/xavier"
-    check fmtDir("", Home, Dots) == ""
-
-suite "pickerRows":
-  func view(
-      name, cwd: string, state = soIdle, current = false, running = none(string)
-  ): SessionView =
-    SessionView(
-      session: ZmxSession(
-        name: ZmxSessionName(name),
-        pid: ProcessId(7),
-        clients: 1,
-        cwd: cwd,
-        current: current,
-      ),
-      state: state,
-      running: running,
-    )
-
-  let views = @[
-    view("zed", "/b"),
-    view("me", "/a", current = true),
-    view("idle-a", "/a"),
-    view("busy-a", "/a", soActive, running = some("nvim")),
-    view("here", "/c"),
-  ]
-  func names(rows: seq[seq[string]]): seq[string] =
-    rows.mapIt(it[0])
-
-  test "current session left out, this directory first, active before idle":
-    check names(pickerRows(views, "/c", false, "/Users/x", "/dots")) ==
-      @["here", "busy-a", "idle-a", "zed"]
-
-  test "hereOnly keeps this directory's sessions":
-    check names(pickerRows(views, "/a", true, "/Users/x", "/dots")) ==
-      @["busy-a", "idle-a"]
-
-  test "columns":
-    check pickerRows(views, "/a", true, "/Users/x", "/dots")[0] ==
-      @["busy-a", "/a", "active", "nvim", "cl:1", "pid:7"]
-    check pickerRows(views, "/b", true, "/b", "/dots")[0] ==
-      @["zed", "Home", "idle", "-", "cl:1", "pid:7"]
 
 suite "descendants":
   let all = @[
