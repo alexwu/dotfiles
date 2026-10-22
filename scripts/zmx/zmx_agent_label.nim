@@ -14,7 +14,9 @@
 ##
 ## set    overwrites the labels, unless another live agent process already owns
 ##        them: a nested agent (`claude -p` from a tool call) inherits
-##        ZMX_SESSION and must not take over its parent's session.
+##        ZMX_SESSION and must not take over its parent's session. On a bmx
+##        host the labels are set with `--owner-pid <agent pid>`, so they go
+##        when the agent's process does, however it ends.
 ## unset  removes this agent's three keys, and only while <agent>_session still
 ##        names the ending session. /clear ends one id and starts the next; the
 ##        guard keeps a late SessionEnd from erasing the new id. Other labels
@@ -97,8 +99,18 @@ proc main(): int =
       stderr.writeLine "zmx-agent-label: " & session & " is labelled for live pid " &
         owner & ", not relabelling"
       return 0
-    if bmxLabel(["agent=" & agent, agent & "_session=" & id, agent & "_pid=" & pid]).code !=
-        0:
+    let labels = @["agent=" & agent, agent & "_session=" & id, agent & "_pid=" & pid]
+    # The labels go when the agent's process does. A zmx daemon keeps no owners
+    # and bmx answers exit 2 (unsupported), so it is labelled without one.
+    let ownedBy =
+      if pid.len > 0:
+        @["--owner-pid", pid]
+      else:
+        @[]
+    var code = bmxLabel(ownedBy & labels).code
+    if code == 2 and ownedBy.len > 0:
+      code = bmxLabel(labels).code
+    if code != 0:
       stderr.writeLine "zmx-agent-label: could not label " & session
   elif label(agent & "_session") == id:
     if bmxLabel(["agent=", agent & "_session=", agent & "_pid="]).code != 0:

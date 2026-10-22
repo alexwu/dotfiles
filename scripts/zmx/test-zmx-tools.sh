@@ -56,9 +56,21 @@ case "$1" in
   label)
     shift 2
     json=0
+    owner=0
     for kv in "$@"; do
       if [[ "$kv" == --json ]]; then
         json=1
+        continue
+      fi
+      if [[ "$kv" == --owner-pid ]]; then
+        # A zmx daemon has no owners: bmx answers that with exit 2.
+        [[ -e "$FIX/no-owner" ]] && exit 2
+        owner=1
+        continue
+      fi
+      if ((owner == 1)); then
+        printf '%s\n' "$kv" >"$FIX/owner"
+        owner=0
         continue
       fi
       k=${kv%%=*} v=${kv#*=}
@@ -298,6 +310,7 @@ labels() { run "$bin/bmx" label .; }
 
 lbl set s1
 check "label: set" "$(labels)" "agent=claude claude_pid=$$ claude_session=s1"
+check "label: the agent's process owns them" "$(cat "$fix/owner" 2>/dev/null)" "$$"
 lbl set s2
 check "label: /clear replaces the id" "$(labels)" "agent=claude claude_pid=$$ claude_session=s2"
 lbl unset s1
@@ -312,6 +325,11 @@ lbl set s3
 check "label: a dead owner's labels are replaced" "$(labels)" "agent=claude claude_pid=$$ claude_session=s3 role=reviewer"
 printf '{}' | HOME="$tmp" FIX="$fix" ZMX_SESSION=alpha "$bin/zmx-agent-label" unset claude 2>/dev/null
 check "label: no session_id leaves labels alone" "$(labels)" "agent=claude claude_pid=$$ claude_session=s3 role=reviewer"
+: >"$fix/labels"
+touch "$fix/no-owner"
+lbl set s5
+check "label: a zmx daemon is labelled without an owner" "$(labels)" "agent=claude claude_pid=$$ claude_session=s5"
+rm "$fix/no-owner"
 : >"$fix/labels"
 printf '{"session_id":"s4"}' | HOME="$tmp" FIX="$fix" env -u ZMX_SESSION "$bin/zmx-agent-label" set claude
 check "label: outside zmx does nothing" "$(labels)" ""
