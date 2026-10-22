@@ -17,10 +17,11 @@ if [[ -z "${SSH_CONNECTION:-}" && -S "$HOME/Library/Group Containers/2BUA8C4S2C.
   export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 fi
 
-# Which of the attaching terminal's variables zmx records per session. The
-# `zmx attach` client reads this (not the daemon), so it lives here, where
-# every zsh that can attach sees it: wezterm's `zsh -c zn` and an interactive
-# zmx-select alike. It replaces zmx's built-in list, so the first line restates
+# Which of the attaching terminal's variables the session records. The attach
+# client reads this (not the host): `bmx attach`, when BMX_TRACK_ENV is unset,
+# and `zmx attach`. So it lives here, where every zsh that can attach sees it:
+# wezterm's `zsh -c zn` and an interactive `bmx dash` alike. It replaces the
+# built-in list, so the first line restates
 # those defaults; the second adds the terminal identifiers the session shell
 # should follow (__CFBundleIdentifier names the terminal app itself). PATH,
 # HOME and TERM stay out: they belong to the shell, not to whichever terminal

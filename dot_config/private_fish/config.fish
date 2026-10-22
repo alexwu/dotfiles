@@ -209,17 +209,10 @@ if status is-interactive
     end
 
     # ----------------------------
-    # zmx (terminal multiplexer)
+    # Sessions (bmx, or zmx without it)
     # ----------------------------
-    # bmx (lulu-tools) hosts the sessions; zmx when bmx is not installed.
-    # zmx-select lives at ~/.local/bin/zmx-select (scripts/zmx/zmx_select.nim)
-    if command -q petname
-        if command -q bmx
-            abbr -a zn 'bmx attach (petname -d ~/.config/petname-dbz)'
-        else if command -q zmx
-            abbr -a zn 'zmx attach (petname -d ~/.config/petname-dbz)'
-        end
-    end
+    # `zn` is ~/.local/bin/zn, the same script wezterm runs: a freshly named
+    # session labelled owner=alex. `bmx dash` picks one. Nothing to set here.
 
     # ----------------------------
     # fnox

@@ -140,7 +140,7 @@ then
   alias must="mise run"
 fi
 
-# zmx-select lives at ~/.local/bin/zmx-select (chezmoi: scripts/zmx/zmx_select.nim)
+# A session shell refreshes its terminal's variables before each prompt; `bmx dash` picks sessions
 if [[ -r $HOME/.zsh/zmx.zsh ]]
 then
   source $HOME/.zsh/zmx.zsh
