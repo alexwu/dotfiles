@@ -113,3 +113,17 @@ kickstart = true
 environment = { PATH = "/Users/jamesbombeelu/.local/bin:/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
 stdout_path = "~/.local/state/lulu/session-status/serve.log"
 stderr_path = "~/.local/state/lulu/session-status/serve.log"
+
+# zine (lulu-loadout): serves the pages agents publish on 127.0.0.1:8773,
+# published on the tailnet at /zine, and delivers the notes left on a page
+# through session-status and knock. Browser writes are taken from --login
+# alone. It renders with mmdr and lumis, which PATH has to reach.
+[bootstrap.macos.launchd.agents.zine]
+program = "/Users/jamesbombeelu/.local/bin/zine"
+args = ["serve", "--login", "adwu@pm.me", "--public-url", "https://bombeebook.burro-neon.ts.net/zine"]
+run_at_load = true
+keep_alive = true
+kickstart = true
+environment = { PATH = "/Users/jamesbombeelu/.local/bin:/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.local/state/lulu/zine/serve.log"
+stderr_path = "~/.local/state/lulu/zine/serve.log"
