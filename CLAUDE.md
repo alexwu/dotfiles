@@ -10,7 +10,7 @@ Reference docs for this repo are split across `.claude/rules/`:
 | `mise.md` | mise config, tool backends, Rust toolchain, tool list |
 | `git.md` | Git config (delta/difft/signing/LFS), Lazygit |
 | `desktop.md` | AeroSpace, JankyBorders, Sketchybar, Hammerspoon, Yazi |
-| `terminals.md` | Ghostty, WezTerm, Kitty, zmx (zn, zmx-* tools, session-shell chain), Zellij, Petname (DBZ) |
+| `terminals.md` | Ghostty, WezTerm, Kitty, sessions on bmx/zmx (zn, zmx-* tools, session-shell chain), Zellij, Petname (DBZ) |
 | `editors.md` | Neovim (both configs), Neovide |
 | `hazel.md` | scripts/hazel/ tools (heic-ai-rename, image-sort, gif-mosaic), Hazel PATH gotcha |
 | `macos.md` | scripts/macos/ tools (electron-apps), Electron detection signals, Homebrew cask layout |
