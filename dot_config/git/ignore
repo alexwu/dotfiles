@@ -21,3 +21,7 @@ nucleo.log
 .claude/mind.mv2.lock
 CLAUDE.local.md
 .antigravitycli/
+
+# Per-repo prompts for the lulu-prompts render. A repo that commits its own
+# adds `!.lulu/` to its .gitignore.
+.lulu/
