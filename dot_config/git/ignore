@@ -19,6 +19,7 @@ nucleo.log
 .claude/.mind.mv2.*
 .claude/mind.mv2
 .claude/mind.mv2.lock
+.claude/worktrees/
 CLAUDE.local.md
 .antigravitycli/
 
