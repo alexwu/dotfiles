@@ -1,45 +1,30 @@
 #!/usr/bin/env bash
-# zn — attach to a freshly-named session.
+# zn — attach to a freshly-named bmx session.
 #
-# Rolls a DBZ petname (dbzname), creates the session and attaches, re-rolling
-# when the name is taken so two spawns never land in the same one.
+# Rolls a DBZ petname (dbzname), creates the session with bmx and attaches,
+# re-rolling when the name is taken so two spawns never land in the same one.
 #
 # Usage: zn [-t|--tries N]
 #   -t, --tries N   max re-rolls after a taken name (default 3, or $ZN_TRIES).
-#                   With bmx, 0 gives up on the first taken name; with zmx, 0
-#                   skips the check and joins a session that has the name.
-#   ZN_HOST=zmx     host the session with zmx instead of bmx.
+#                   0 gives up on the first taken name.
 #
-# Companion to `dbzname`. On PATH so wezterm's split/tab spawn calls
-# can invoke it directly without sourcing zshrc.
+# Companion to `dbzname`. On PATH so a terminal's split/tab spawn calls can
+# invoke it directly without sourcing zshrc.
 
-# GUI-launched callers (wezterm, etc.) inherit a minimal launchd PATH;
-# dbzname lives in ~/.local/bin, bmx in ~/.cargo/bin, zmx in /opt/homebrew/bin.
+# GUI-launched callers (btty, wezterm) inherit a minimal launchd PATH; dbzname
+# lives in ~/.local/bin, bmx in ~/.cargo/bin, Homebrew's zsh in /opt/homebrew/bin.
 PATH="$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 
-# Which program hosts the new session: bmx (ours, lulu-tools) or zmx. The two
-# speak one wire, and the zmx-* tools, the precmd hook and the agent-label hook
-# all ask through bmx, which reads a zmx daemon's sessions as it reads its own.
-# ZN_HOST=zmx goes back to a zmx daemon without editing this file.
-#
-# A bmx that is missing or cannot run gets zmx instead, so neither costs a new
-# pane its shell. `bmx version` is the check: it starts the binary and touches
-# no session. A bmx that runs but cannot host is `just install-bmx`'s to catch,
-# before it reaches PATH.
-host="${ZN_HOST:-bmx}"
-if [[ $host == bmx ]] && ! env -u ZMX_SESSION -u BMX_SESSION -u BMX_TTY bmx version >/dev/null 2>&1; then
-  if command -v bmx >/dev/null 2>&1; then
-    echo "zn: \`bmx version\` failed; hosting this session with zmx" >&2
-  fi
-  host=zmx
+if ! command -v bmx >/dev/null 2>&1; then
+  echo "zn: bmx not found on PATH (just install-bmx in lulu-tools)" >&2
+  exit 1
 fi
-command -v "$host" >/dev/null 2>&1 || host=zmx
 
-# Homebrew zsh end-to-end. Two layers each spawn "$SHELL": zmx's daemon
-# (login shell), then atuin's pty-proxy after `exec atuin pty-proxy` in
-# zshrc (portable_pty new_default_prog reads $SHELL). Apple /bin/zsh hides
-# its exec-time env from `ps eww` (KERN_PROCARGS2); homebrew zsh exposes
-# it, so session shells stay inspectable by zmx-env/zmx-ps.
+# Homebrew zsh end-to-end. Two layers each spawn "$SHELL": the bmx host (login
+# shell), then atuin's pty-proxy after `exec atuin pty-proxy` in zshrc
+# (portable_pty new_default_prog reads $SHELL). Apple /bin/zsh hides its
+# exec-time env from `ps eww` (KERN_PROCARGS2); homebrew zsh exposes it, so
+# session shells stay inspectable by zmx-env/zmx-ps.
 export SHELL="/opt/homebrew/bin/zsh"
 
 # Max collision re-rolls: --tries/-t flag, else $ZN_TRIES, else 3.
@@ -61,31 +46,31 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# petname draws are independent, so nothing else stops two spawns picking the
-# same name, and `attach <existing>` would silently join that session. Re-rolls
-# are bounded by $tries so an exhausted pool can't spin forever.
-#
 # owner=alex marks a session a person opened from a terminal, set at creation
 # so it is never unlabelled. Agent-launched sessions (bmx run, the review
 # launcher) don't come through zn and carry their own labels instead.
+#
+# btty_pane names the btty pane this terminal is in, so the btty daemon links
+# the session to that pane (lulu-code-xqt2.10). Outside btty there is none.
+labels=(--label owner=alex)
+if [[ -n ${BTTY_PANE:-} ]]; then
+  labels+=(--label "btty_pane=$BTTY_PANE")
+fi
+
+# petname draws are independent, so nothing else stops two spawns picking the
+# same name. `bmx new` refuses a taken name with exit 5, so there is no window
+# between a check and the creation; any other failure has printed its own
+# message. Re-rolls are bounded by $tries so an exhausted pool can't spin
+# forever.
 #
 # ZMX_SESSION is dropped so a zn typed inside a zmx session opens the new one
 # there, as it always has. BMX_SESSION and BMX_TTY stay: inside a bmx session
 # they let bmx move this terminal to the new session instead of nesting.
 name=$(dbzname)
-if [[ $host == bmx ]]; then
-  # `bmx new` refuses a taken name with exit 5, so there is no window between a
-  # check and the creation; any other failure has printed its own message.
-  n=0
-  until env -u ZMX_SESSION bmx new --detach --label owner=alex "$name" >/dev/null; do
-    rc=$?
-    ((rc == 5 && n++ < tries)) || exit 1
-    name=$(dbzname)
-  done
-  exec env -u ZMX_SESSION bmx attach "$name"
-fi
 n=0
-while ((n++ < tries)) && zmx list --short 2>/dev/null | rg -qxF "$name"; do
+until env -u ZMX_SESSION bmx new --detach "${labels[@]}" "$name" >/dev/null; do
+  rc=$?
+  ((rc == 5 && n++ < tries)) || exit 1
   name=$(dbzname)
 done
-exec env -u ZMX_SESSION zmx attach --labels "owner=alex" "$name"
+exec env -u ZMX_SESSION bmx attach "$name"
