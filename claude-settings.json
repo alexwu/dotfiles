@@ -156,17 +156,6 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/reward-anchor pretooluse --agent claude-code",
-            "timeout": 5,
-            "statusMessage": "Scope check..."
-          }
-        ]
-      },
-      {
         "matcher": "ExitPlanMode",
         "hooks": [
           {
@@ -236,11 +225,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor session-start --agent claude-code",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/zmx-agent-label set claude",
             "timeout": 5
           }
@@ -250,16 +234,6 @@
     "UserPromptSubmit": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/persona-anchor prompt-submit --agent claude-code",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "/Users/jamesbombeelu/.local/bin/reward-anchor reset",
-            "timeout": 5
-          },
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/notify UserPromptSubmit"
