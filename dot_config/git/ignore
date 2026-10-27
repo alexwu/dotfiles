@@ -26,3 +26,6 @@ CLAUDE.local.md
 # Per-repo prompts for the lulu-prompts render. A repo that commits its own
 # adds `!.lulu/` to its .gitignore.
 .lulu/
+
+# Session handoffs and ledgers (lulu-loadout's handoff skill and session-status).
+.handoff/
