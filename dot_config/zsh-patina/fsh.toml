@@ -1,0 +1,15 @@
+# `classic`, adjusted to match how fast-syntax-highlighting actually drew
+# lines here: purple options, cyan `$var` inside double quotes, no underline
+# on existing files (directories keep theirs, as in FSH), and FSH's bold
+# comments and history expansions. Selectors must be at least as specific as
+# classic's own (it sets `variable.other.readwrite.shell`).
+"variable.parameter.option" = "magenta"
+"string variable.other.readwrite.shell" = "cyan"
+"string punctuation.definition.variable" = "cyan"
+"comment" = { foreground = "black", bold = true }
+"meta.group.expansion.history" = { foreground = "blue", bold = true }
+"dynamic.path.file.complete" = { foreground = "magenta" }
+"dynamic.path.file.partial" = { foreground = "magenta" }
+
+[metadata]
+extends = "classic"

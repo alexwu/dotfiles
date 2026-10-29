@@ -107,6 +107,7 @@ packages:
       - zellij
       - zk
       - zoxide
+      - zsh-patina
     head_brews:
       - neovim
     casks:
@@ -140,13 +141,11 @@ packages:
       - proton-drive
       - proton-mail-bridge
       - protonvpn
-      - raycast
       - sf-symbols
       - signal
       - syncthing-app
       - transmission
       - transmit
-      - visual-studio-code
       - wezterm@nightly
       - zen@twilight
       - jackielii/tap/skhd-zig

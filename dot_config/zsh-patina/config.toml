@@ -1,0 +1,4 @@
+[highlighting]
+# fsh.toml extends `classic` (modeled on fast-syntax-highlighting's default,
+# which this setup used before zsh-patina) to match how FSH drew lines here.
+theme = "file:~/.config/zsh-patina/fsh.toml"
