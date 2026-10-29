@@ -199,18 +199,58 @@ then
   source $HOME/.zsh/claude-persona.zsh
 fi
 
+# NOTE: carapace only fills gaps. Over a native completer it breaks fzf-tab:
+# it hands back bare names but leaves the directory in PREFIX, so the query
+# `dir/` matches nothing (0/N), and its `_describe` contexts never match
+# fzf-tab-source's `argument-rest` previews. Native entries are restored after
+# carapace registers everything.
 if (( $+commands[carapace] ))
 then
-  source <(carapace _carapace zsh)
+  () {
+    local -A native=("${(@kv)_comps}")
+    source <(carapace _carapace zsh)
+    local cmd
+    for cmd in ${(k)native}; do _comps[$cmd]=$native[$cmd]; done
+  }
+  compdef _carapace_completer just
 fi
 
-# NOTE: just's clap dynamic completer is deliberately NOT sourced — it emits
+# Tab on any script whose first line is a `usage` shebang
+# (`#!/usr/bin/env -S usage bash`). It claims `-default-`, so it only sees
+# commands with no completer of their own, and falls back to `_files`.
+if (( $+commands[usage] ))
+then
+  source <(usage g completion-init zsh)
+fi
+
+# NOTE: just's clap dynamic completer is deliberately NOT used — it emits
 # recipes and all 66 global flags as one unsorted `_describe -V values` group
 # (~148 flat entries, flags first), so group-order can't reorder it. Carapace
-# already registers `just` above and returns recipes only (tag `recipes`, with
-# doc comments); flags still complete after a `-`. Homebrew's site-functions
-# `_just` is a shim around the same clap completer, but carapace's compdef runs
-# after compinit and wins.
+# returns recipes only (tag `recipes`, with doc comments); flags still complete
+# after a `-`. Homebrew's site-functions `_just` is a shim around the same clap
+# completer, so `just` is handed back to carapace explicitly above.
+
+# Catch-all preview for paths. fzf-tab-source's per-command zstyles are more
+# specific and still win. Files get tree-sitter highlighting from lumis (~12 ms);
+# lumis prints plain text when it has no grammar, so no escape codes means bat.
+# `$realpath` is only set for candidates added as files; completers that add
+# plain strings (usage shebang scripts, for one) leave it empty, so fall back
+# to the candidate text.
+zstyle ':fzf-tab:complete:*:*' fzf-preview '
+  local p=${realpath:-${(Q)word}}
+  if [[ -d $p ]]; then
+    eza -1 --color=always --icons=always $p
+  elif [[ -f $p ]]; then
+    local hl=$(lumis highlight -t snazzy $p 2>/dev/null)
+    if [[ $hl == *$'\''\e['\''* ]]; then
+      print -r -- $hl
+    else
+      bat --color=always --style=plain $p
+    fi
+  fi'
+# fzf-tab sizes the popup to the candidate count (min-height defaults to 0), so
+# a 3-match list left a 3-line preview. fzf-tab still caps it at 2/3 of LINES.
+zstyle ':fzf-tab:*' fzf-min-height 15
 
 if (( $+commands[zellij] ))
 then
@@ -287,3 +327,9 @@ fi
 # startup (macos.zsh, the zim homebrew/mise modules) and reorder PATH, so this
 # has to stay the last PATH edit. typeset -U (zshenv) turns it into a move.
 path=($HOME/.cargo/bin $path)
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/jamesbombeelu/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/jamesbombeelu/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/jamesbombeelu/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/jamesbombeelu/google-cloud-sdk/completion.zsh.inc'; fi

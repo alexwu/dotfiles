@@ -321,12 +321,11 @@ hl FILE:
     set -euo pipefail
     file="{{ FILE }}"
     # lumis emits ANSI when it has a grammar; otherwise prints plaintext.
-    # Detect that and fall back to bat for richer language coverage.
-    tmp=$(mktemp)
-    trap 'rm -f "$tmp"' EXIT
-    lumis highlight -t snazzy "$file" 2>/dev/null > "$tmp" || true
-    if rg -q --max-count=1 $'\x1b\\[' "$tmp"; then
-        cat "$tmp"
+    # Detect that and fall back to bat for richer language coverage. The check
+    # stays in bash so a preview doesn't pay for a temp file and an `rg` spawn.
+    out=$(lumis highlight -t snazzy "$file" 2>/dev/null) || true
+    if [[ $out == *$'\e['* ]]; then
+        printf '%s\n' "$out"
     else
         exec bat --color=always --paging=never --style=plain "$file"
     fi

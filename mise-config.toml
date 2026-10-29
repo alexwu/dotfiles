@@ -48,10 +48,10 @@ rclone = "latest"
 "github:affromero/gitpane" = "latest"
 "github:konippi/servo-fetch" = "latest"
 "npm:serve-sim" = "latest"
-"github:neovide/neovide" = "nightly"
 biome = "latest"
 superhtml = "latest"
 "cargo:minhtml" = "latest"
+"github:hotchpotch/openai-api-server-via-codex" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]
@@ -59,6 +59,24 @@ experimental = true
 disable_tools = []
 # ruby.ruby_build_opts = "--with-openssl-dir=/opt/homebrew/opt/openssl@3.0"
 env_shell_expand = true
+# Interactive shells: `mise activate` puts each active tool's bin dir on PATH,
+# so the shim dir isn't needed there. Left on (the default since #8106), it
+# sits ahead of /opt/homebrew/bin and every call to a tool some project pins
+# pays ~45 ms to fall through. Missing pinned versions need `mise install`.
+activate_shims = false
+
+# Login-only shells (agent tool shells, Neovide, `zsh -lc`) keep the
+# `--shims` entry from .zprofile in front of Homebrew, and mise has no way to
+# move it. These names come from project pins only and Homebrew ships them,
+# so their shims are dropped. Runtimes and globally pinned tools (chromedriver,
+# usage, ruff, heroku, firecrawl) keep their shims so a pin still wins.
+[settings.shims]
+exclude = [
+  "rg", "xh", "jaq", "ast-grep", "sg", "fnox",
+  "age", "age-inspect", "age-keygen", "age-plugin-batchpass",
+  "actionlint", "typos", "taplo", "rumdl", "yq",
+  "swiftlint", "xcbeautify", "prettier",
+]
 
 [settings.pipx]
 uvx = true
@@ -127,3 +145,32 @@ kickstart = true
 environment = { PATH = "/Users/jamesbombeelu/.local/bin:/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
 stdout_path = "~/.local/state/lulu/zine/serve.log"
 stderr_path = "~/.local/state/lulu/zine/serve.log"
+
+# openai-api-server-via-codex: an OpenAI-compatible API on 127.0.0.1:18080,
+# backed by the ChatGPT login in ~/.codex/auth.json. Loopback only; it has
+# no incoming API key, so never bind it wider without --api-key.
+[bootstrap.macos.launchd.agents.openai-api-server-via-codex]
+program = "/Users/jamesbombeelu/.local/share/mise/shims/openai-api-server-via-codex"
+args = ["serve"]
+run_at_load = true
+keep_alive = true
+kickstart = true
+environment = { PATH = "/Users/jamesbombeelu/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.config/openai-api-server-via-codex/run/serve.log"
+stderr_path = "~/.config/openai-api-server-via-codex/run/serve.log"
+
+# beads-dolt: the one dolt sql-server that every beads project in shared-server
+# mode talks to, on 127.0.0.1:3308. bd treats a shared server as externally
+# managed and never starts it itself, so launchd keeps it up. It runs as
+# `bd dolt start` runs it: that config file, from inside the data directory
+# (dolt refuses --data-dir beside a config file).
+[bootstrap.macos.launchd.agents.beads-dolt]
+program = "/opt/homebrew/bin/dolt"
+args = ["sql-server", "--config", "/Users/jamesbombeelu/.beads/shared-server/dolt-server-config.yaml"]
+working_directory = "/Users/jamesbombeelu/.beads/shared-server/dolt"
+run_at_load = true
+keep_alive = true
+kickstart = true
+environment = { PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.beads/shared-server/dolt-server.log"
+stderr_path = "~/.beads/shared-server/dolt-server.log"
