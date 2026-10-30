@@ -713,8 +713,11 @@ models:
   # 11.2 GB resident. Q8_0 because the decision head stays Q8_0 in every quant
   # and a decision model can't take an imatrix. Cloudflare's reference code caps
   # the input at 16k by default; answers past that are untested.
+  # NOTE: --parallel 1 because with 2+ slots a request whose questions share a
+  # prefix can 500 "the question and its options must fit in one batch"
+  # (ggml-org/llama.cpp#30482, open as of 2026-10-29).
   "clef-flash":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --batch-size 32768 --ubatch-size 32768 --model /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/Cloudflare_clef-flash-Q8_0.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/mmproj-Cloudflare_clef-flash-f16.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --batch-size 32768 --ubatch-size 32768 --parallel 1 --model /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/Cloudflare_clef-flash-Q8_0.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/mmproj-Cloudflare_clef-flash-f16.gguf --no-webui
     ttl: 14400
     # `decide models --provider local` lists the models whose out is decisions.
     capabilities:
