@@ -52,6 +52,9 @@ A task queued with --detach from a Claude Code session running the knock mod
 reports back when it finishes: pueue's callback runs pueue-knock, which sends
 that session the task's id, result and label.
 
+Every run removes tasks that finished more than a day ago, so --status lists
+the last day's tasks.
+
 --status prints a table on stdout: id, group, state, exit code, label. Inside
 a Claude Code session the tasks are the ones that session queued, matched on
 the CLAUDE_PID pueue stored with each. Anywhere else they are the ones queued
@@ -242,9 +245,28 @@ show_status() {
   exit 0
 }
 
+# Each task keeps the environment it was queued with, and every pueue call
+# that waits on a task downloads the daemon's whole state, so finished tasks
+# piled up into tens of MB per poll (lulu-loadout-0fa). Tasks that finished
+# more than a day ago are removed; a failure here never stops the run.
+prune_finished() {
+  local ids
+  # shellcheck disable=SC2016 # $cutoff is a jaq variable
+  ids=$(pueue status --json 2>/dev/null | jaq -r --argjson cutoff "$(($(date +%s) - 86400))" '
+    [.tasks[]
+      | select((.status | type) == "object" and (.status | has("Done")))
+      | select(.status.Done.end | sub("\\.[0-9]+"; "") | fromdateiso8601 < $cutoff)
+      | .id | tostring] | join(" ")') || return 0
+  [[ -n $ids ]] || return 0
+  local -a list
+  read -ra list <<<"$ids"
+  pueue remove "${list[@]}" >/dev/null 2>&1 || true
+}
+
 command -v pueue >/dev/null 2>&1 || setup_error "pueue is not installed"
 command -v jaq >/dev/null 2>&1 || setup_error "jaq is not installed"
 pueue status --json >/dev/null 2>&1 || setup_error "the pueue daemon is not running"
+prune_finished
 
 ((status == 0)) || show_status
 
@@ -289,6 +311,10 @@ if ((detach)); then
 else
   unset PQ_DETACHED
 fi
+# LS_COLORS is ~18 KB of each task's ~38 KB of stored environment, and no
+# build reads it. Dropping it keeps a day of tasks under pueue's 20 MiB
+# "large payload" line for longer (lulu-loadout-0fa).
+unset LS_COLORS
 
 task_id=$(pueue add --group "$group" --label "$label" --print-task-id --escape --working-directory "$PWD" -- ${prefix[@]+"${prefix[@]}"} "$@") ||
   setup_error "couldn't queue the command"

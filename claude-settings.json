@@ -367,45 +367,6 @@
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "autoMode": {
-    "allow": [
-      "$defaults",
-      "Bash(bd:*) routine issue-tracking subcommands in this repo (ready, show, update, close, remember) — heavily used (67x) and not a destructive surface",
-      "Bash(eo status:*), Bash(eo list:*), Bash(eo dash:*) read-only eo subcommands in this repo"
-    ],
-    "soft_deny": [
-      "$defaults",
-      "Bash(eo rm:*) with --drop-db — drops per-workspace Postgres databases and flushes Redis, destructive even though scoped to dev data",
-      "Bash(createdb:*) and Bash(psql:*) against template databases (editorder_template_dev/editorder_template_test) — only eo template-db should write these per isolation.md"
-    ],
-    "environment": [
-      "### Org-wide",
-      "**Organization**: None configured",
-      "**Cloud provider(s)**: None configured",
-      "**Repository visibility**: unknown — no remote is configured for this repo (git remotes: none), and the gh visibility check could not run (org/repo not derivable). Assume private unless shown otherwise.",
-      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
-      "**Secrets management**: 1Password holds secrets (per ~/.claude/CLAUDE.md); staging/secrets.toml in this repo is a 1Password-reference manifest, not raw secrets — never read ~/.config/rage/key.txt, ~/.config/fnox, or ~/.local/state/luna/forgejo-token, and never print a decrypted value",
-      "**Default / protected branches**: not queryable via gh (no remote); this repo's CLAUDE.md states commits run a local prek gate (fmt-check, clippy -D warnings, 400-line cap, actionlint) and --no-verify should not be used to bypass it",
-      "**CI/CD deploy targets**: None configured",
-      "**Network posture**: None configured",
-      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine (per host docs: 'bombeebook' M5 Max MacBook Pro, macOS) with open internet access",
-      "**Source control**: The trusted repo (this checkout at /Users/jamesbombeelu/Code/cleverific/eo-workspace) — it has no configured remote, so there is no remote to scope trust to; treat pushes/publication as not applicable until a remote exists",
-      "**Trusted internal domains**: None configured beyond this project's own tailnet/dev hosts seen in usage: editorder.alexwu.dev, embedded-app.alexwu.dev, bombeebook.burro-neon.ts.net",
-      "**Trusted cloud buckets**: None configured",
-      "**Key internal services**: eo's own generated local stack (pitchfork-managed app ports under ~/Code/cleverific workspaces); Alex's dev staging at alex-cleverific-staging.dev (per CLAUDE.md staging/ directory)",
-      "**Internal package registry**: None configured",
-      "**Sensitive data locations & audiences**: staging/secrets.toml (1Password-reference manifest, not raw secrets) — share only with audiences cleared for Cleverific staging ops",
-      "**Data retention / declassification**: None configured",
-      "**Sensitive remote targets**: any namespace, host, or container whose name carries prod or production as a whole word or segment; this repo's own 'staging' environment (alex-cleverific-staging.dev) is explicitly staging, not prod, but treat with care as a real deployed environment",
-      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
-      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries prod or production as a whole word or segment",
-      "### User-specific",
-      "**Primary use of Claude Code**: software development (Rust CLI/TUI tooling for a dev-workspace generator, per CLAUDE.md)",
-      "**Trusted repo**: This repo (/Users/jamesbombeelu/Code/cleverific/eo-workspace) — it currently has no configured git remote, so there is no remote destination to scope pushes to; treat as local-only until a remote is added",
-      "**Org-specific CLIs**: eo (this repo's own generator CLI), bd (beads issue tracker), pitchfork (process supervisor), memo/pq/chain/eza/fd/jaq (lulu-tools, used routinely in this project per usage counts)",
-      "**Routine under this project**: bd, eza, memo, fd, eo, pq, jaq, psql, pitchfork, createdb usage against this repo's workspaces is routine development activity, not sensitive"
-    ]
-  },
   "voiceEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754024913722
