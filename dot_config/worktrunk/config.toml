@@ -1,0 +1,24 @@
+# Worktrunk (`wt`) user config. `wt config show` prints what is in effect.
+
+# Personal repos keep their worktrees out of the checkout, one folder per repo.
+worktree-path = "~/Code/worktrees/{{ repo }}/{{ branch | sanitize }}"
+
+[commit]
+# Commit only what was staged by name. The default, "all", stages everything,
+# which git-add-guard exists to stop.
+stage = "none"
+
+[merge]
+# One squashed commit per branch on main, no rebase.
+squash = true
+rebase = false
+
+# Cleverific: eo owns the multi-repo workspaces (ws*/eo, ws*/embedded, ...) and
+# their databases and ports, so full workspaces come from `eo new` and go with
+# `eo rm`. A single-repo worktree wt makes here stays under ~/Code/cleverific.
+[projects."github.com/cleverific/*"]
+worktree-path = "~/Code/cleverific/worktrees/{{ repo }}/{{ branch | sanitize }}"
+
+[projects."github.com/cleverific/*".pre-remove]
+# `wt remove` on an eo workspace would skip eo's database and port cleanup.
+eo-workspace = '''case "{{ worktree_path }}" in "$HOME"/Code/cleverific/ws*/*) echo "wt: {{ worktree_path }} is part of an eo workspace; remove it with eo rm" >&2; exit 1 ;; esac'''

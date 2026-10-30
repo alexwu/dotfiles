@@ -97,6 +97,7 @@ packages:
       - watchexec
       - wget
       - whisper-cpp
+      - worktrunk
       - xcbeautify
       - xcode-build-server
       - xcodes

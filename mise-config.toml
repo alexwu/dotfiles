@@ -59,6 +59,9 @@ experimental = true
 disable_tools = []
 # ruby.ruby_build_opts = "--with-openssl-dir=/opt/homebrew/opt/openssl@3.0"
 env_shell_expand = true
+# Worktrunk puts personal worktrees here (dot_config/worktrunk/config.toml), and
+# each fresh one carries mise.toml files that would otherwise need `mise trust`.
+trusted_config_paths = ["~/Code/worktrees"]
 # Interactive shells: `mise activate` puts each active tool's bin dir on PATH,
 # so the shim dir isn't needed there. Left on (the default since #8106), it
 # sits ahead of /opt/homebrew/bin and every call to a tool some project pins

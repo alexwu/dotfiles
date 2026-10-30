@@ -34,6 +34,9 @@ extends = ":workspace"
 "~/Library/org.swift.swiftpm" = "write"
 "~/.cargo/registry" = "write"
 "~/.cargo/git" = "write"
+# pq queues builds and tests through pueue: its client reads pueue.yml and the
+# shared secret here, and streams task logs from task_logs/.
+"~/Library/Application Support/pueue" = "read"
 
 [permissions.dev-default.network]
 enabled = true
@@ -44,6 +47,11 @@ allow_local_binding = true
 "localhost" = "allow"
 "127.0.0.1" = "allow"
 "::1" = "allow"
+
+# The pueue daemon's socket, so pq works inside the sandbox. Entries match as a
+# subpath.
+[permissions.dev-default.network.unix_sockets]
+"/Users/jamesbombeelu/Library/Application Support/pueue" = "allow"
 
 [features]
 hooks = true
@@ -74,12 +82,13 @@ args = ["-y", "@shopify/dev-mcp@latest"]
 
 [mcp_servers.node_repl]
 command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+env_vars = ["BROWSER_USE_ACCESS_EXECUTOR_ID", "BROWSER_USE_ACCESS_PIPE_PATH", "BROWSER_USE_ACCESS_VERIFYING_IDENTITY"]
 startup_timeout_sec = 120.0
 
 [mcp_servers.node_repl.env]
-BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab,mcpapps"
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.924.22138"
+BROWSER_USE_CODEX_APP_VERSION = "26.1023.51421"
 BROWSER_USE_TINYSKY_ENABLED = "1"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"
 CODEX_HOME = "/Users/jamesbombeelu/.codex"
@@ -90,7 +99,7 @@ NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
 NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/jamesbombeelu/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
-NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/browser/26.924.22138/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/jamesbombeelu/.codex/plugins/cache/openai-bundled/browser/26.1023.51421/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
 SKY_CUA_SERVICE_PATH = "/Users/jamesbombeelu/.codex/computer-use/Codex Computer Use.app"
 
 [mcp_servers.funes]
@@ -226,6 +235,18 @@ trust_level = "trusted"
 [projects."/Users/jamesbombeelu/Code/cleverific/eo-workspace"]
 trust_level = "trusted"
 
+[projects."/Users/jamesbombeelu/Code/lulu-loadout"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/spikes/minijinja-nim"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/spikes/codex-schema-nim"]
+trust_level = "trusted"
+
+[projects."/Users/jamesbombeelu/Code/spikes/specli-hardening"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
 source_type = "local"
 source = "/Users/jamesbombeelu/.codex/.tmp/bundled-marketplaces/openai-bundled"
@@ -346,6 +367,8 @@ conversationDetailMode = "STEPS_PROSE"
 followUpQueueMode = "queue"
 dock-icon-preference = "codex-system"
 realtimeVoiceScreenContextEnabled = true
+confirm-before-close = "never"
+notifications-turn-mode = "off"
 
 [desktop.open-in-target-preferences]
 global = "ghostty"
@@ -376,10 +399,21 @@ screen_reader_detection_done = true
 "gpt-5.5" = 4
 "gpt-5.6-sol" = 4
 gpt-6-astra = 4
-"gpt-6.1-sol" = 1
+"gpt-6.1-sol" = 4
 
 [shell_environment_policy.set]
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = [
+  "/Users/jamesbombeelu/.cache",
+  "/Users/jamesbombeelu/Library/Caches",
+  "/Users/jamesbombeelu/Library/Developer/Xcode/DerivedData",
+  "/Users/jamesbombeelu/Library/org.swift.swiftpm",
+  "/Users/jamesbombeelu/.cargo/registry",
+  "/Users/jamesbombeelu/.cargo/git",
+]
 
 # >>> nono:always-further-codex >>>
 [marketplaces.always-further]
@@ -389,6 +423,10 @@ source = "/Users/jamesbombeelu/.codex/plugins/marketplaces/always-further"
 [marketplaces.huggingface]
 source_type = "local"
 source = "/Users/jamesbombeelu/.funes/agents/codex/codex-plugin"
+
+[marketplaces.worktrunk]
+source_type = "git"
+source = "https://github.com/max-sixty/worktrunk.git"
 
 [plugins."nono@always-further"]
 enabled = true
@@ -418,5 +456,8 @@ enabled = true
 enabled = true
 
 [plugins."funes@huggingface"]
+enabled = true
+
+[plugins."worktrunk@worktrunk"]
 enabled = true
 # <<< nono:always-further-codex <<<

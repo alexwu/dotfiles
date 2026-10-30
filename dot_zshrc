@@ -189,6 +189,12 @@ then
   eval "$(tv init zsh)"
 fi
 
+# NOTE: worktrunk's wrapper lets `wt switch` cd the shell; its completions need compdef, so it comes after zim
+if (( $+commands[wt] ))
+then
+  eval "$(wt config shell init zsh)"
+fi
+
 if [[ -r $HOME/.zsh/claude-sessions.zsh ]]
 then
   source $HOME/.zsh/claude-sessions.zsh
