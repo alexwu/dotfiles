@@ -32,14 +32,81 @@ secrets-scan:
 secrets-scan-history:
     gitleaks detect --source . --verbose
 
-[doc("Presence-check an EXPORTED env var by name without printing its value — outputs 'set' or 'unset'. Usage: just -g env-isset OPENROUTER_API_KEY")]
+[doc("Presence-check EXPORTED env vars by name without printing values; empty counts as unset. One name prints 'set' or 'unset', several print 'NAME set|unset'. Exits 1 if any is unset. Usage: just -g env-isset OPENROUTER_API_KEY [MORE...]")]
 [group("secrets")]
 [no-cd]
-env-isset name:
+[no-exit-message]
+[positional-arguments]
+env-isset +names:
     #!/usr/bin/env bash
     set -euo pipefail
-    var='{{ name }}'
-    if [ -n "${!var:-}" ]; then echo set; else echo unset; fi
+    missing=0
+    for var in "$@"; do
+      if [[ ! $var =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+        echo "env-isset: '$var' is not a variable name" >&2
+        exit 2
+      fi
+      if [[ -n ${!var:-} ]]; then state=set; else state=unset; missing=1; fi
+      if (($# == 1)); then echo "$state"; else printf '%s\t%s\n' "$var" "$state"; fi
+    done
+    exit "$missing"
+
+[doc("List an env file's key names, each marked 'set' or 'empty', never printing a value. Several files add a FILE column. Exits 1 if any key is empty, 2 if a file is missing. Usage: just -g env-keys .env.local [MORE...]")]
+[group("secrets")]
+[no-cd]
+[no-exit-message]
+[positional-arguments]
+env-keys +files:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    status=0
+    for file in "$@"; do
+      if [[ ! -f $file ]]; then
+        echo "env-keys: no file $file" >&2
+        exit 2
+      fi
+    done
+    for file in "$@"; do
+      # The value is read only to test emptiness; awk prints the key and its
+      # state, and a line it can't parse is reported by number, never content.
+      result=$(awk -v file="$file" -v many="$#" -v q="'" '
+        /^[[:space:]]*(#|$)/ { next }
+        {
+          line = $0
+          sub(/^[[:space:]]*export[[:space:]]+/, "", line)
+          if (!match(line, /^[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=/)) {
+            bad = bad (bad == "" ? "" : ",") NR
+            next
+          }
+          key = substr(line, 1, RLENGTH)
+          sub(/[[:space:]]*=$/, "", key)
+          val = substr(line, RLENGTH + 1)
+          sub(/^[[:space:]]+/, "", val)
+          first = substr(val, 1, 1)
+          if (first == "\"" || first == q) {
+            rest = substr(val, 2)
+            end = index(rest, first)
+            empty = (end == 1 || (end == 0 && rest == ""))
+          } else {
+            sub(/[[:space:]]+#.*$/, "", val)
+            sub(/^#.*$/, "", val)
+            sub(/[[:space:]]+$/, "", val)
+            empty = (val == "")
+          }
+          state = empty ? "empty" : "set"
+          if (empty) nempty++
+          nkeys++
+          if (many > 1) printf "%s\t%s\t%s\n", file, key, state
+          else printf "%s\t%s\n", key, state
+        }
+        END {
+          printf "env-keys: %s: %d %s, %d empty\n", file, nkeys, (nkeys == 1 ? "key" : "keys"), nempty > "/dev/stderr"
+          if (bad != "") printf "env-keys: %s: %s %s not KEY=value\n", file, (index(bad, ",") ? "lines" : "line"), bad (index(bad, ",") ? " are" : " is") > "/dev/stderr"
+          exit (nempty > 0)
+        }' "$file") || status=1
+      printf '%s\n' "$result"
+    done
+    exit "$status"
 
 LLAMA_SWAP := "http://localhost:8000"
 
