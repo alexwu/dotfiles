@@ -8,6 +8,10 @@
     "DISABLE_AUTOUPDATER": "1",
     "ENABLE_CLAUDEAI_MCP_SERVERS": "0",
     "ALLOW_LLM_DECIDE": "1",
+    "NEXTEST_STATUS_LEVEL": "fail",
+    "NEXTEST_FINAL_STATUS_LEVEL": "fail",
+    "NEXTEST_FAILURE_OUTPUT": "final",
+    "PREK_QUIET": "1",
     "CLAUDE_CODE_THRIFTY_SONIC": "0",
     "CLAUDE_CODE_PLUGIN_DIRS": "/Users/jamesbombeelu/.local/share/lulu-loadout/mods/bash-format:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/beads-pane:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/inline-pictures:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/knock:/Users/jamesbombeelu/Code/lulu-prompts/mods/luna-sections"
   },
@@ -220,6 +224,11 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/zmx-agent-label set claude",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -n \"$CLAUDE_ENV_FILE\" ] || exit 0; rg -qF 'mise/shims' \"$CLAUDE_ENV_FILE\" 2>/dev/null || printf 'export PATH=\"%s/.local/share/mise/shims:$PATH\"\\n' \"$HOME\" >> \"$CLAUDE_ENV_FILE\"",
             "timeout": 5
           }
         ]
