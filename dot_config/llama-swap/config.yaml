@@ -19,6 +19,9 @@ groups:
       # the first sort after a 4h idle will cold-load). 14/14 in the bake-off,
       # ~2x faster than the 31B dense.
       - "gemma-4-26B-A4B-it"
+      # Local decision model for `decide --provider local` — resident while in
+      # use so each call skips the ~6s cold load. ~11GB RSS.
+      - "clef-flash"
 
   # Code-completion / next-edit models — one resident at a time (`swap: true`):
   # you drive a single completion provider at a time (Zed's zeta OR Sweep), so
@@ -160,8 +163,13 @@ models:
             enable_thinking: true
             preserve_thinking: true
 
+  # NOTE: --parallel 3 so one long request cannot hold up the guard calls queued
+  # behind it. The 262144 context is split across slots, ~87k each; the largest
+  # guard request seen was 30k. It is not a speedup: replaying 96 captured guard
+  # requests on 2026-10-01, 3 at once finished 1.27x sooner in total while each
+  # request took about twice as long.
   "Qwen3.6-35B-A3B":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 3 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
     ttl: 14400
     filters:
       setParamsByID:
@@ -350,7 +358,7 @@ models:
             preserve_thinking: true
 
   # Abliterated ("heretic") twin of Qwen3.6-35B-A3B — uncensored vision + text.
-  # Mirrors the censored 35B-A3B flags (incl. --parallel 1 --cont-batching).
+  # Mirrors the censored 35B-A3B flags, except that it stays at --parallel 1.
   # Weights via `pueue` (label claude: dl-qwen36-35b-a3b-heretic). Quant is
   # Q4_K_M (the repo has no Q4_K_XL; Q4_K_M is the matching bit-level).
   # MTP: `--spec-type draft-mtp` ENABLED. n-max 3 to match the 27B-heretic,
@@ -694,6 +702,25 @@ models:
     cmd: llama-server --port ${PORT} -hf jsonMartin/voyage-4-nano-gguf -hff voyage-4-nano-f16.gguf --no-webui
     useModelName: "jsonMartin/voyage-4-nano-gguf"
 
+  # Cloudflare clef-flash: a 9B decision model on Qwen3.5-9B. It generates no
+  # text: it answers /v1/systemone (typed questions about a state) in one
+  # forward pass, which llama-swap routes by the body's `model` since v262.
+  # WARNING(alexwu): -b and -ub must be at least the input's token count. A
+  # decision model reads the whole input in one batch, and at the default 512
+  # llama-server answers HTTP 500 "input ... is too large to process".
+  # Measured 2026-10-29 on this entry's flags: 47/50 on the decide comparison
+  # set (hosted clef-flash 46), 467-939 ms a call for 1.1k-1.9k token inputs,
+  # 11.2 GB resident. Q8_0 because the decision head stays Q8_0 in every quant
+  # and a decision model can't take an imatrix. Cloudflare's reference code caps
+  # the input at 16k by default; answers past that are untested.
+  "clef-flash":
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --batch-size 32768 --ubatch-size 32768 --model /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/Cloudflare_clef-flash-Q8_0.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/mmproj-Cloudflare_clef-flash-f16.gguf --no-webui
+    ttl: 14400
+    # `decide models --provider local` lists the models whose out is decisions.
+    capabilities:
+      in: [text, image]
+      out: [decisions]
+
   "zed-industries/zeta-2":
     cmd: llama-server -hfr "bartowski/zed-industries_zeta-2-GGUF" -hff zed-industries_zeta-2-Q6_K_L.gguf --port ${PORT} --no-webui
     useModelName: "bartowski/zed-industries_zeta-2-GGUF"
@@ -827,5 +854,25 @@ peers:
       connect: 30
       keepalive: 30
       responseHeader: 60
+      tlsHandshake: 10
+      idleConn: 90
+
+  # openai-api-server-via-codex (mise LaunchAgent), backed by the ChatGPT
+  # login. responseHeader matches the server's own 300s Codex timeout.
+  chatgpt:
+    proxy: http://127.0.0.1:18080
+    models:
+      - gpt-6.1-sol
+      - gpt-6.1-terra
+      - gpt-6-astra
+      - gpt-6-sol
+      - gpt-6-luna
+      - gpt-5.6-sol
+      - gpt-5.6-terra
+      - gpt-5.6-luna
+    timeouts:
+      connect: 10
+      keepalive: 30
+      responseHeader: 300
       tlsHandshake: 10
       idleConn: 90
