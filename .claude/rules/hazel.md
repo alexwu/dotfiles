@@ -112,8 +112,10 @@ shell *had* `~/.local/bin`. Test hazel tools under the real minimal env:
 
 ## Shared conventions
 - All three run `llm-local` (not the upstream `llm` CLI) for vision — direct POST to
-  llama-swap's OpenAI endpoint, no per-call process spawn. See `claude-scripts.md`
-  for `llm-local`'s flags and `llm-local.md` for structured-output enforcement.
+  llama-swap's OpenAI endpoint, no per-call process spawn. `llm-local` is built from
+  `~/Code/lulu-loadout/tools/llm_local.nim`; its flags are in
+  `~/Code/lulu-loadout/.claude/rules/nim.md`, and `llm-local.md` here covers
+  structured-output enforcement.
 - A `run()` helper closes the child's stdin immediately (EOF) so `llm-local`/`xh`
   don't block reading a body that never arrives in a non-TTY context, and drains
   stderr separately to avoid a full-pipe deadlock.

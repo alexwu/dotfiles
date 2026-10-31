@@ -120,7 +120,7 @@ Each module with side effects (autocmds, commands, keymaps) has an auto-load ent
 Per-server `vim.lsp.config()` overrides. Auto-loaded by Neovim's runtime and deep-merged with nvim-lspconfig's shipped `lsp/<name>.lua`. Add a new server here:
 
 1. Create `after/lsp/<server>.lua` returning the config table
-2. Add the server name to the `servers` list in `plugin/nvim-lspconfig.lua`
+2. Add the server name to the `servers` list in `plugin/03-lsp.lua`
 
 ## Custom Commands
 

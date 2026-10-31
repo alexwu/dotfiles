@@ -13,7 +13,7 @@ paths:
 - `setParamsByID` works for JSON body endpoints (`/v1/audio/speech`) but NOT multipart form endpoints (`/v1/audio/transcriptions`)
 - `checkEndpoint` defaults to `/health` — override to `/v1/models` for mlx-audio entries
 - Listens on `localhost:8000` (set in the LaunchAgent argv). OpenAI-compat endpoints live under `/v1/...`; llama-swap admin endpoints (`/running`, `/health`, `/logs`, `/upstream/:model_id`, `/metrics`) sit at the root.
-- `~/.local/bin/llm-local` is the in-house wrapper for talking to it without going through codex/claude/gemini/pi CLIs — see `claude-scripts.md` for the binary, this file for the server-side facts.
+- `~/.local/bin/llm-local` is the in-house wrapper for talking to it without going through codex/claude/gemini/pi CLIs. It's built from `~/Code/lulu-loadout/tools/llm_local.nim` and documented in `~/Code/lulu-loadout/.claude/rules/nim.md`; this file has the server-side facts.
 
 ## llama-swap management routes
 Route table confirmed against `mostlygeek/llama-swap` `internal/server/server.go` + `api.go` (server v217, build 2026-05-22). Lifecycle-relevant subset:
