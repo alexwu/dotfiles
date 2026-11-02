@@ -136,7 +136,6 @@ packages:
       - kitty
       - localsend
       - moonlight
-      - neovide-app
       - ngrok
       - orbstack
       - proton-drive
