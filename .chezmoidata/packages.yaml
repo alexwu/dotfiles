@@ -96,7 +96,7 @@ packages:
       - vivid
       - watchexec
       - wget
-      - whisper-cpp
+      - whisper.cpp
       - worktrunk
       - xcbeautify
       - xcode-build-server
