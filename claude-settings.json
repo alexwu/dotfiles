@@ -278,7 +278,7 @@
     "gopls-lsp@claude-plugins-official": false,
     "linear@claude-plugins-official": false,
     "mcp-server-dev@claude-plugins-official": false,
-    "notion@claude-plugins-official": true,
+    "notion@claude-plugins-official": false,
     "plugin-dev@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "railway@claude-plugins-official": true,
