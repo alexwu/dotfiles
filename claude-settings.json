@@ -13,7 +13,7 @@
     "NEXTEST_FAILURE_OUTPUT": "final",
     "PREK_QUIET": "1",
     "CLAUDE_CODE_THRIFTY_SONIC": "0",
-    "CLAUDE_CODE_PLUGIN_DIRS": "/Users/jamesbombeelu/.local/share/lulu-loadout/mods/bash-format:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/beads-pane:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/inline-pictures:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/knock:/Users/jamesbombeelu/Code/lulu-prompts/mods/luna-sections"
+    "CLAUDE_CODE_PLUGIN_DIRS": "/Users/jamesbombeelu/.local/share/lulu-loadout/mods/bash-format:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/beads-pane:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/inline-pictures:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/knock:/Users/jamesbombeelu/.local/share/lulu-loadout/mods/thread:/Users/jamesbombeelu/Code/lulu-prompts/mods/luna-sections"
   },
   "attribution": {
     "commit": "",
