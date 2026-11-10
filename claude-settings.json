@@ -298,7 +298,8 @@
     "figma@claude-plugins-official": false,
     "shortcuts-playground@shortcuts-playground": true,
     "funes@huggingface": true,
-    "worktrunk@worktrunk": true
+    "worktrunk@worktrunk": true,
+    "slack@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "claude-code-plugins": {
