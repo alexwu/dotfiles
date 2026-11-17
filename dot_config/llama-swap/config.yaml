@@ -57,9 +57,17 @@ groups:
       - "Qwen3.6-27B-heretic"
       - "Qwen3.6-35B-A3B-heretic"
 
+# Every llama-server model resolves from the standard HF hub cache by repo id
+# (-hfr/-hff, mmproj and mtp- sidecars found beside the model) with --offline,
+# so a load never touches the network; predownload with `hf download`. The few
+# -mm paths left are mmproj files from a sibling repo or with names the sidecar
+# match misses (it is case-sensitive).
+macros:
+  hfhub: /Users/jamesbombeelu/.cache/huggingface/hub
+
 models:
   "Qwen3.5-122B-A10B":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.5-122B-A10B-GGUF/Q4_K_M/Qwen3.5-122B-A10B-Q4_K_M-00001-of-00003.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.5-122B-A10B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek -hfr unsloth/Qwen3.5-122B-A10B-GGUF -hff Q4_K_M/Qwen3.5-122B-A10B-Q4_K_M-00001-of-00003.gguf --offline
     ttl: 600
     timeouts:
       responseHeader: 300
@@ -74,7 +82,7 @@ models:
   "Mistral-Medium-3.5-128B":
     # NOTE(alexwu): files live in the HF hub cache (no --local-dir on download).
     # Snapshot hash c8f5b14... is the current main rev — update if re-downloaded.
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --model /Users/jamesbombeelu/.cache/huggingface/hub/models--unsloth--Mistral-Medium-3.5-128B-GGUF/snapshots/c8f5b1477e1b22cd2d819157d450f001f7047298/UD-Q4_K_XL/Mistral-Medium-3.5-128B-UD-Q4_K_XL-00001-of-00003.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/hub/models--unsloth--Mistral-Medium-3.5-128B-GGUF/snapshots/c8f5b1477e1b22cd2d819157d450f001f7047298/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja -hfr unsloth/Mistral-Medium-3.5-128B-GGUF -hff UD-Q4_K_XL/Mistral-Medium-3.5-128B-UD-Q4_K_XL-00001-of-00003.gguf --offline
     ttl: 600
     timeouts:
       responseHeader: 300
@@ -136,7 +144,7 @@ models:
   # xhigh (default) | medium | low. Weights via pueue
   # (label claude:chezmoi: dl-qwen38-flash-next-iq4xs, task 195).
   "Qwen3.8-Flash-Next":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-Flash-Next-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek -hfr unsloth/Qwen3.8-Flash-Next-GGUF -hff UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --offline
     ttl: 600
     timeouts:
       responseHeader: 300
@@ -169,7 +177,7 @@ models:
   # requests on 2026-10-01, 3 at once finished 1.27x sooner in total while each
   # request took about twice as long.
   "Qwen3.6-35B-A3B":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 3 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-35B-A3B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --parallel 3 --cont-batching --jinja --reasoning-format deepseek -hfr unsloth/Qwen3.6-35B-A3B-GGUF -hff Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --offline
     ttl: 14400
     filters:
       setParamsByID:
@@ -198,7 +206,7 @@ models:
             preserve_thinking: true
 
   "Qwen3.6-27B":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek -hfr unsloth/Qwen3.6-27B-GGUF -hff Qwen3.6-27B-UD-Q5_K_XL.gguf --offline
     ttl: 6000
     filters:
       setParamsByID:
@@ -239,9 +247,9 @@ models:
   # drop `--mmproj` (text-only MTP) or the two `--spec-*` flags (vision, no MTP).
   # Left in the DEFAULT group (not workhorse) while it's an experiment — promote
   # into `workhorse` if it earns a permanent slot. Weights via pueue
-  # (label claude: dl-qwen36-27b-mtp) → ~/.cache/huggingface/models/unsloth/.
+  # (label claude: dl-qwen36-27b-mtp), now in the hub cache.
   "Qwen3.6-27B-mtp":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.6-27B-MTP-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek -hfr unsloth/Qwen3.6-27B-MTP-GGUF -hff Qwen3.6-27B-UD-Q5_K_XL.gguf --offline
     ttl: 6000
     filters:
       setParamsByID:
@@ -285,7 +293,7 @@ models:
   # workhorse if it displaces the 3.6-27B daily. Weights via pueue
   # (label claude:chezmoi: dl-qwen38-27b, task 139).
   "Qwen3.8-27B":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q5_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.8-27B-GGUF/mmproj-F16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek -hfr unsloth/Qwen3.8-27B-GGUF -hff Qwen3.8-27B-UD-Q5_K_XL.gguf --offline
     ttl: 6000
     filters:
       setParamsByID:
@@ -326,10 +334,10 @@ models:
   # CAVEAT (ggml-org/llama.cpp#23636): acceptance can collapse near KV-slot
   # boundaries at large ctx — verified only at short ctx; drop the flag if
   # long-fill captions stall. Ref: unsloth.ai/docs/models/qwen3.6 (MTP Guide).
-  # Weights downloaded via `pueue` (label claude: dl-qwen36-27b-heretic-v2)
-  # to ~/.cache/huggingface/models/llmfan46/.
+  # Weights downloaded via `pueue` (label claude: dl-qwen36-27b-heretic-v2),
+  # now in the hub cache.
   "Qwen3.6-27B-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF/Qwen3.6-27B-mmproj-BF16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --jinja --reasoning-format deepseek -hfr llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GGUF -hff Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-Q5_K_M.gguf --offline
     ttl: 6000
     filters:
       setParamsByID:
@@ -371,7 +379,7 @@ models:
   # matches. Free anyway (~1GB MTP heads load to VRAM regardless). #23636
   # large-ctx caveat applies at 262144. Ref: unsloth.ai/docs/models/qwen3.6.
   "Qwen3.6-35B-A3B-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-mmproj-BF16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --cache-type-k q8_0 --cache-type-v q8_0 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 2048 --ubatch-size 512 --parallel 1 --cont-batching --jinja --reasoning-format deepseek -hfr llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GGUF -hff Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-Q4_K_M.gguf --offline
     ttl: 6000
     filters:
       setParamsByID:
@@ -411,17 +419,7 @@ models:
       responseHeader: 300
 
   "Qwen3.5-9B":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.5-9B-GGUF/Qwen3.5-9B-UD-Q6_K_XL.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/Qwen3.5-9B-GGUF/mmproj-F16.gguf
-    filters:
-      setParamsByID:
-        "${MODEL_ID}":
-          chat_template_kwargs:
-            enable_thinking: false
-        "${MODEL_ID}:thinking":
-          chat_template_kwargs:
-            enable_thinking: true
-  "Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 0.8 --top-p 0.95 --top-k 40 --repeat-penalty 1.02 -n 4096 --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5-GGUF/Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5.Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Crow-9B-Opus-4.6-Distill-Heretic_Qwen3.5-GGUF/Qwen3.5-9B-heretic-v2.BF16-mmproj.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 65536 -hfr unsloth/Qwen3.5-9B-GGUF -hff Qwen3.5-9B-UD-Q6_K_XL.gguf --offline
     filters:
       setParamsByID:
         "${MODEL_ID}":
@@ -431,7 +429,7 @@ models:
           chat_template_kwargs:
             enable_thinking: true
   "gemma-4-31B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off -hfr unsloth/gemma-4-31B-it-GGUF -hff gemma-4-31B-it-Q5_K_M.gguf --offline
     timeouts:
       responseHeader: 120
     # NOTE(alexwu): --reasoning off is THE fix for gemma-4's peg-gemma4 thought-
@@ -457,26 +455,26 @@ models:
   # hot-path if it earns the router job. Drafter via pueue
   # (label claude: dl-gemma4-31b-mtp-drafter).
   "gemma-4-31B-it-mtp":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --spec-type draft-mtp --spec-draft-n-max 4 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mtp-gemma-4-31B-it.gguf --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-31B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --spec-type draft-mtp --spec-draft-n-max 4 -hfr unsloth/gemma-4-31B-it-GGUF -hff gemma-4-31B-it-Q5_K_M.gguf --offline
     timeouts:
       responseHeader: 120
   # Stock (non-heretic) 26B MoE — the "regular 26b": fast (~4B active), accurate,
   # jailbreakable for free-form. Stock template; Q5_K_S + F32 mmproj (downloading).
   "gemma-4-26B-A4B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 262144 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-26B-A4B-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 262144 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off -hfr unsloth/gemma-4-26B-A4B-it-GGUF -hff gemma-4-26B-A4B-it-UD-Q5_K_S.gguf --offline
     ttl: 14400
     timeouts:
       responseHeader: 120
   # Abliterated dense twin of gemma-4-31B-it (mradermacher heretic, i1-Q4_K_M).
   # Candidate image-sort classifier — see the MoE-vs-dense × abliteration bake-off.
   "gemma-4-31B-it-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-31B-it-uncensored-heretic/gemma-4-31B-it-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-31B-it-uncensored-heretic/gemma-4-31B-it-uncensored-heretic.mmproj-f16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off -hfr mradermacher/gemma-4-31B-it-uncensored-heretic-i1-GGUF -hff gemma-4-31B-it-uncensored-heretic.i1-Q4_K_M.gguf --offline -mm ${hfhub}/models--mradermacher--gemma-4-31B-it-uncensored-heretic-GGUF/snapshots/6db694315b634233f54328e7ef7cef758d994d9a/gemma-4-31B-it-uncensored-heretic.mmproj-f16.gguf
     timeouts:
       responseHeader: 120
   # MoE twin (A4B ≈ 4B active, 26B total), "ultra" abliteration. The "worst
   # corner" prediction — MoE *and* heavy abliteration — for the same bake-off.
   "gemma-4-26B-A4B-it-heretic":
-    cmd: llama-server --port ${PORT} --ctx-size 131072 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic/gemma-4-26B-A4B-it-ultra-uncensored-heretic.mmproj-f16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 131072 --reasoning off -hfr mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic-i1-GGUF -hff gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf --offline -mm ${hfhub}/models--mradermacher--gemma-4-26B-A4B-it-ultra-uncensored-heretic-GGUF/snapshots/8842483d589b4add67223d1d8c3fff81a3d5260e/gemma-4-26B-A4B-it-ultra-uncensored-heretic.mmproj-f16.gguf
     timeouts:
       responseHeader: 120
   # gemma-4 E4B-it — instruction-tuned "edge" variant (Per-Layer-Embeddings /
@@ -493,7 +491,7 @@ models:
   # earns the router job. (Earlier mradermacher `gemma-4-E4B` was the BASE model —
   # wrong for both classify and audio; replaced with this -it build.)
   "gemma-4-E4B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/ggml-org/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ggml-org/gemma-4-E4B-it-GGUF/mmproj-gemma-4-E4B-it-bf16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja -hfr ggml-org/gemma-4-E4B-it-GGUF -hff gemma-4-E4B-it-Q4_K_M.gguf --offline
     timeouts:
       responseHeader: 120
   # Dense 12B "Unified" omni GGUF — text + image + AUDIO from ONE file set. The
@@ -514,22 +512,22 @@ models:
   # claude: dl-gemma4-12b-it-q6k). Default group — promote to hot-path if it earns
   # a router/audio job. Ref: hf.co/unsloth/gemma-4-12b-it-GGUF.
   "gemma-4-12b-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q6_K.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/unsloth/gemma-4-12b-it-GGUF/mmproj-F32.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --jinja -hfr unsloth/gemma-4-12b-it-GGUF -hff gemma-4-12b-it-Q6_K.gguf --offline
     ttl: 12000
     timeouts:
       responseHeader: 120
   "Dark-Nexus-24B-v2.0":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/ReadyArt/Dark-Nexus-24B-v2.0-GGUF/Dark-Nexus-24B-v2.0-Q5_K_M.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off -hfr ReadyArt/Dark-Nexus-24B-v2.0-GGUF -hff Dark-Nexus-24B-v2.0-Q5_K_M.gguf --offline --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
   "Magidonia-24B-v4.3":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/TheDrummer/Magidonia-24B-v4.3-GGUF/Cydonia-24B-v4zk-Q5_K_M.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off -hfr TheDrummer/Magidonia-24B-v4.3-GGUF -hff Cydonia-24B-v4zk-Q5_K_M.gguf --offline
     ttl: 7200
     timeouts:
       responseHeader: 120
   "Broken-Tutu-24B-Unslop-v2.0":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off --model /Users/jamesbombeelu/.lmstudio/models/mradermacher/Broken-Tutu-24B-Unslop-v2.0-i1-GGUF/Broken-Tutu-24B-Unslop-v2.0.i1-Q5_K_M.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --reasoning off -hfr mradermacher/Broken-Tutu-24B-Unslop-v2.0-i1-GGUF -hff Broken-Tutu-24B-Unslop-v2.0.i1-Q5_K_M.gguf --offline
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -542,7 +540,7 @@ models:
   # the finetune also strips reasoning tags itself. Sampling per the card: temp 0.8
   # / top_p 0.95 / min_p 0.03.
   "Melody1437-26B-A4B-v2.0":
-    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 0.8 --top-p 0.95 --min-p 0.03 --reasoning off -hfr "ReadyArt/Melody1437-26B-A4B-v2.0-GGUF" -hff Melody1437-26B-A4B-v2.0-HB16-Q5_K_M.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 0.8 --top-p 0.95 --min-p 0.03 --reasoning off -hfr "ReadyArt/Melody1437-26B-A4B-v2.0-GGUF" -hff Melody1437-26B-A4B-v2.0-HB16-Q5_K_M.gguf --offline --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -554,10 +552,9 @@ models:
   # gemma-4-31B-it NOTE); the finetune also strips reasoning tags itself. 64k ctx
   # (lower than the 26B's 128k — dense 31B is heavier per token). Sampling per the
   # card: temp 1.0 / top_p 0.92 (rep/presence pen 0 = llama.cpp defaults). Manual
-  # weights via `pueue` (label claude: dl-melody1437-31b) to
-  # ~/.cache/huggingface/models/ReadyArt/Melody1437-31B-v2.0-GGUF/.
+  # weights via `pueue` (label claude: dl-melody1437-31b), now in the hub cache.
   "Melody1437-31B-v2.0":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --temp 1.0 --top-p 0.92 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Melody1437-31B-v2.0-GGUF/Melody1437-31B-v2.0-HB16-Q5_K_M.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --temp 1.0 --top-p 0.92 --reasoning off -hfr ReadyArt/Melody1437-31B-v2.0-GGUF -hff Melody1437-31B-v2.0-HB16-Q5_K_M.gguf --offline --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -571,7 +568,7 @@ models:
   # --mmproj. Sampling per the card: temp 1.0 / top_p 0.92 (freq/presence pen 0 =
   # llama.cpp defaults) — matches the Omega-Evolution sibling below.
   "Dark-Scarlett-v1.0-26B-A4B":
-    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Dark-Scarlett-v1.0-26B-A4B-GGUF" -hff Dark-Scarlett-v1.0-26B-A4B-Q5_K_M.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Dark-Scarlett-v1.0-26B-A4B-GGUF" -hff Dark-Scarlett-v1.0-26B-A4B-Q5_K_M.gguf --offline --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -582,7 +579,7 @@ models:
   # Auto-downloads into llama.cpp's HF cache via -hfr/-hff. Text-only. Sampling per
   # the card: temp 1.0 / top_p 0.92 (freq/presence pen 0 = llama.cpp defaults).
   "Omega-Evolution-26B-A4B-v3.0":
-    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Omega-Evolution-26B-A4B-v3.0-GGUF" -hff Omega-Evolution-26B-A4B-v3.0.i1-Q5_K_M_hb16.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 128000 --temp 1.0 --top-p 0.92 --reasoning off -hfr "ReadyArt/Omega-Evolution-26B-A4B-v3.0-GGUF" -hff Omega-Evolution-26B-A4B-v3.0.i1-Q5_K_M_hb16.gguf --offline --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -599,7 +596,7 @@ models:
   # the card: temp 1.0 / top_p 0.92 (freq/presence 0 = llama.cpp defaults).
   # Weights via pueue (label claude:chezmoi: dl-dark-scarlett-27b, task 140).
   "Dark-Scarlett-27B-v2.0":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Dark-Scarlett-27B-v2.0-GGUF/MTP-Dark-Scarlett-27B-v2.0-Q8.gguf --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Dark-Scarlett-27B-v2.0-GGUF/Dark-Scarlett-27B-v2.0.i1-Q5_K_M_hb16.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Dark-Scarlett-27B-v2.0-GGUF/MMPROJ-Dark-Scarlett-27B-v2.0-BF16.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 -hfd ReadyArt/Dark-Scarlett-27B-v2.0-GGUF -md MTP-Dark-Scarlett-27B-v2.0-Q8.gguf --jinja --reasoning-format deepseek -hfr ReadyArt/Dark-Scarlett-27B-v2.0-GGUF -hff Dark-Scarlett-27B-v2.0.i1-Q5_K_M_hb16.gguf --offline -mm ${hfhub}/models--ReadyArt--Dark-Scarlett-27B-v2.0-GGUF/snapshots/993fe5febc6acca34ad86599a313c6e9c33918f0/MMPROJ-Dark-Scarlett-27B-v2.0-BF16.gguf --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -628,7 +625,7 @@ models:
   # non-thinking per family convention. Weights via pueue
   # (label claude:chezmoi: dl-omega-convergence-27b, task 141).
   "Omega-Convergence-27B-v1.0":
-    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Omega-Convergence-27B-v1.0-GGUF/mtp-Omega-Convergence-27B-v1.0-q8_0.gguf --jinja --reasoning-format deepseek --model /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Omega-Convergence-27B-v1.0-GGUF/Omega-Convergence-27B-v1.0.i1-Q5_K_M_hb16.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/ReadyArt/Omega-Convergence-27B-v1.0-GGUF/mmproj-Omega-Convergence-27B-v1.0-BF16.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 65536 --cache-reuse 256 -ngl 99 --flash-attn auto --spec-type draft-mtp --spec-draft-n-max 3 --jinja --reasoning-format deepseek -hfr ReadyArt/Omega-Convergence-27B-v1.0-GGUF -hff Omega-Convergence-27B-v1.0.i1-Q5_K_M_hb16.gguf --offline --no-webui
     ttl: 7200
     timeouts:
       responseHeader: 120
@@ -653,15 +650,15 @@ models:
   # recommended" quant). Text-only here — vision skipped, no --mmproj. gemma-4 arch
   # → --reasoning off mandatory (peg-gemma4 thought-channel wedge fix, see
   # gemma-4-31B-it NOTE). Sampling = Google's gemma-4 defaults (the quant card gives
-  # no model-specific rec). Weights via `pueue` (label claude: dl-gemma-4-queen-31b)
-  # to ~/.cache/huggingface/models/mradermacher/Gemma-4-Queen-31B-it/.
+  # no model-specific rec). Weights via `pueue` (label claude: dl-gemma-4-queen-31b),
+  # now in the hub cache.
   "Gemma-4-Queen-31B-it":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Gemma-4-Queen-31B-it/Gemma-4-Queen-31B-it.Q4_K_M.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --temp 1.0 --top-p 0.95 --top-k 64 --reasoning off -hfr mradermacher/Gemma-4-Queen-31B-it-GGUF -hff Gemma-4-Queen-31B-it.Q4_K_M.gguf --offline --no-webui
     ttl: 28800
     timeouts:
       responseHeader: 120
   "Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking-GGUF/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking.Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking-GGUF/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking.mmproj-f16.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 -hfr mradermacher/Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking-GGUF -hff Qwen3.5-27B-Deckard-PKD-Heretic-Uncensored-Thinking.Q5_K_M.gguf --offline
     filters:
       setParamsByID:
         "${MODEL_ID}":
@@ -675,7 +672,7 @@ models:
     # parallel slots → KV cache OOM (kIOGPUCommandBufferCallbackErrorOutOfMemory)
     # the moment an image hit the compute buffer. Pin ctx + parallel 1 +
     # quantized KV + flash-attn to match the other vision entries.
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja -hfr mradermacher/Qwen3-VL-32B-Instruct-heretic-v2-i1-GGUF -hff Qwen3-VL-32B-Instruct-heretic-v2.i1-Q5_K_M.gguf --offline -mm ${hfhub}/models--mradermacher--Qwen3-VL-32B-Instruct-heretic-v2-GGUF/snapshots/9d3dd3b410f92fcd478bfade3251774c90410a60/Qwen3-VL-32B-Instruct-heretic-v2.mmproj-Q8_0.gguf
     ttl: 6000
   # JoyCaption Beta One — fancyfeast's image captioner (LLaVA arch: SigLIP2
   # vision + Llama 3.1 8B), built for dense, minimally-filtered training captions
@@ -687,19 +684,19 @@ models:
   # long descriptive caption for this image in a formal tone." Vision-entry flags
   # (ctx pin + parallel 1 + quantized KV + flash-attn) mirror Qwen3-VL above to
   # avoid the image-on-compute-buffer KV OOM. --jinja uses the GGUF's embedded
-  # Llama 3.1 template. Weights via `pueue` (label claude: dl-joycaption-q8) to
-  # ~/.cache/huggingface/models/concedo/. Default group.
+  # Llama 3.1 template. Weights via `pueue` (label claude: dl-joycaption-q8),
+  # now in the hub cache. Default group.
   "JoyCaption-Beta-One":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja --model /Users/jamesbombeelu/.cache/huggingface/models/concedo/llama-joycaption-beta-one-hf-llava-mmproj-gguf/Llama-Joycaption-Beta-One-Hf-Llava-Q8_0.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/concedo/llama-joycaption-beta-one-hf-llava-mmproj-gguf/llama-joycaption-beta-one-llava-mmproj-model-f16.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 -ngl 99 --flash-attn auto --parallel 1 --jinja -hfr concedo/llama-joycaption-beta-one-hf-llava-mmproj-gguf -hff Llama-Joycaption-Beta-One-Hf-Llava-Q8_0.gguf --offline --no-webui
     ttl: 600
     timeouts:
       responseHeader: 120
   "sweepai/sweep-next-edit-1.5b":
-    cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --port ${PORT} --no-webui
+    cmd: llama-server -hf sweepai/sweep-next-edit-1.5b --offline --port ${PORT} --no-webui
   "henrik3/sweep-next-edit-v2-7B":
-    cmd: llama-server --port ${PORT} --model /Users/jamesbombeelu/.cache/huggingface/models/henrik3/sweep-next-edit-v2-7B-GGUF/q5_k_m.gguf --no-webui
+    cmd: llama-server --port ${PORT} -hfr henrik3/sweep-next-edit-v2-7B-GGUF -hff q5_k_m.gguf --offline --no-webui
   "voyageai/voyage-4-nano":
-    cmd: llama-server --port ${PORT} -hf jsonMartin/voyage-4-nano-gguf -hff voyage-4-nano-f16.gguf --no-webui
+    cmd: llama-server --port ${PORT} -hf jsonMartin/voyage-4-nano-gguf -hff voyage-4-nano-f16.gguf --offline --no-webui
     useModelName: "jsonMartin/voyage-4-nano-gguf"
 
   # Cloudflare clef-flash: a 9B decision model on Qwen3.5-9B. It generates no
@@ -717,7 +714,7 @@ models:
   # prefix can 500 "the question and its options must fit in one batch"
   # (ggml-org/llama.cpp#30482, open as of 2026-10-29).
   "clef-flash":
-    cmd: llama-server --port ${PORT} --ctx-size 32768 --batch-size 32768 --ubatch-size 32768 --parallel 1 --model /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/Cloudflare_clef-flash-Q8_0.gguf --mmproj /Users/jamesbombeelu/.cache/huggingface/models/bartowski/Cloudflare_clef-flash-GGUF/mmproj-Cloudflare_clef-flash-f16.gguf --no-webui
+    cmd: llama-server --port ${PORT} --ctx-size 32768 --batch-size 32768 --ubatch-size 32768 --parallel 1 -hfr bartowski/Cloudflare_clef-flash-GGUF -hff Cloudflare_clef-flash-Q8_0.gguf --offline --no-webui
     ttl: 14400
     # `decide models --provider local` lists the models whose out is decisions.
     capabilities:
@@ -725,11 +722,11 @@ models:
       out: [decisions]
 
   "zed-industries/zeta-2":
-    cmd: llama-server -hfr "bartowski/zed-industries_zeta-2-GGUF" -hff zed-industries_zeta-2-Q6_K_L.gguf --port ${PORT} --no-webui
+    cmd: llama-server -hfr "bartowski/zed-industries_zeta-2-GGUF" -hff zed-industries_zeta-2-Q6_K_L.gguf --offline --port ${PORT} --no-webui
     useModelName: "bartowski/zed-industries_zeta-2-GGUF"
 
   "zed-industries/zeta-2.1":
-    cmd: llama-server -hfr "mradermacher/zeta-2.1-GGUF" -hff zeta-2.1.Q6_K.gguf --port ${PORT} --no-webui
+    cmd: llama-server -hfr "mradermacher/zeta-2.1-GGUF" -hff zeta-2.1.Q6_K.gguf --offline --port ${PORT} --no-webui
     useModelName: "mradermacher/zeta-2.1-GGUF"
 
   "Qwen3.5-9B-MLX-4bit":
@@ -798,10 +795,7 @@ peers:
     proxy: http://127.0.0.1:8001
     apiKey: ${env.OMLX_API_KEY}
     models:
-      - gemma-4-26B-A4B-it-oQ6
-      - gemma-4-31b-it-4bit
-      - Qwen3.6-27B-oQ4e-mtp
-      - Qwen3.6-35B-A3B-oQ4e-mtp
+      - mlx-community--gemma-4-31b-it-4bit
     timeouts:
       connect: 30
       keepalive: 30
