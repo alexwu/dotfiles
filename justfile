@@ -41,6 +41,13 @@ test-zmx:
     nim c -r --hints:off --outdir:"${TMPDIR:-/tmp}/zmx-nim-test" scripts/zmx/test_zmx_core.nim
     bash scripts/zmx/test-zmx-tools.sh
 
+# Write zsh's completion for shape to ~/.zfunc/_shape. It asks the installed `shape --usage-spec` on each Tab, so a change to shape never makes it stale; it needs usage on PATH.
+completions:
+    mkdir -p ~/.zfunc
+    usage generate completion zsh shape --usage-cmd "shape --usage-spec" >~/.zfunc/_shape.tmp
+    mv -f ~/.zfunc/_shape.tmp ~/.zfunc/_shape
+    @echo "Wrote ~/.zfunc/_shape; a new zsh completes shape."
+
 # Check formatting across the main languages without writing (non-zero on drift).
 fmt-check:
     shfmt -d .

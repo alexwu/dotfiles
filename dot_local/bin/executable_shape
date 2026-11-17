@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+# Prints the shape of a file, a directory or stdin: what kind of thing it is,
+# how big, how many tokens it costs, and its structure (keys and types for
+# JSON/YAML/TOML, columns for CSV, headings for Markdown, symbols for code,
+# languages for a directory). Leans on jaq, yq, qsv, ast-grep, tokei and tokens.
+set -euo pipefail
+
+prog=shape
+
+usage() {
+  cat <<EOF
+Print the shape of a file, directory or stdin.
+
+Usage: $prog [OPTIONS] [PATH|-]
+
+Arguments:
+  PATH  A file or directory; '-' or no PATH reads stdin
+
+Options:
+  -t, --type TYPE       Treat the input as TYPE instead of detecting it:
+                        json, jsonl, yaml, toml, csv, tsv, markdown, code, text
+  -d, --depth N         Stop descending into data after N levels [default: 8]
+      --all-keys        Spell out every key; don't fold map-like objects
+      --map-min N       Fold an object into one "<key>" entry when it has N or
+                        more keys whose values share a type [default: 8]
+      --no-tokens       Skip the token count
+  -p, --provider NAME   Token counting provider: anthropic, openai, local
+                        [default: anthropic]
+  -m, --model MODEL     Model for the token count [default: claude-opus-5-5
+                        for anthropic, none for local]
+  -h, --help            Print help
+
+In data, every value becomes its type name. An array shows one merged element:
+a key missing from some elements ends in "?", and mixed types show as
+{"<one of>": [...]}. Maps keyed by ids or names fold to a single "<key>" entry.
+
+Token counts send the whole input to the provider's counting endpoint (no
+generation, no spend), so inputs over 2 MB are skipped there; '-p local'
+counts offline. The key comes from the environment as tokens resolves it.
+Don't count anything holding secrets with a cloud provider.
+
+Examples:
+  pueue status --json | $prog
+  $prog mise-config.toml
+  $prog --type jsonl --no-tokens events.log
+  $prog src/
+EOF
+}
+
+# The spec usage (jdx/usage) reads for tab completion, printed by the hidden
+# --usage-spec; the loop below parses the arguments. A new flag goes in both.
+# `just completions` writes ~/.zfunc/_shape from it.
+usage_spec() {
+  cat <<'EOF'
+name "shape"
+bin "shape"
+about "Print the shape of a file, directory or stdin"
+arg "[path]" help="A file or directory; - or nothing reads stdin"
+flag "-t --type <type>" help="Treat the input as this type instead of detecting it" {
+  choices "json" "jsonl" "yaml" "toml" "csv" "tsv" "markdown" "code" "text"
+}
+flag "-d --depth <n>" help="Stop descending into data after N levels" default="8"
+flag "--all-keys" help="Spell out every key; don't fold map-like objects"
+flag "--map-min <n>" help="Fold an object into one <key> entry at N or more same-typed keys" default="8"
+flag "--no-tokens" help="Skip the token count"
+flag "-p --provider <provider>" help="Token counting provider" default="anthropic" {
+  choices "anthropic" "openai" "local"
+}
+flag "-m --model <model>" help="Model for the token count"
+complete "path" type="path"
+EOF
+}
+
+note() { echo "$prog: $*" >&2; }
+
+usage_error() {
+  note "$*"
+  note "try '$prog --help'"
+  exit 2
+}
+
+# Same filter as a jaq module would hold, inline so the script stays one file.
+read -r -d '' shape_jq <<'JQ' || true
+def merge_shapes:
+  unique as $u
+  | if ($u | length) == 0 then "empty"
+    elif ($u | length) == 1 then $u[0]
+    elif all($u[]; type == "object") then
+      ([$u[] | keys[]] | unique) as $ks
+      | reduce $ks[] as $k ({};
+          . + {(if all($u[]; has($k)) then $k else "\($k)?" end):
+               ([$u[] | select(has($k)) | .[$k]] | merge_shapes)})
+    elif all($u[]; type == "array") then [[$u[][]] | merge_shapes]
+    else {"<one of>": $u}
+    end;
+def shape($depth; $min_map):
+  if $depth <= 0 and (type == "object" or type == "array") then "…"
+  elif type == "object" then
+    if $min_map > 0 and length >= $min_map
+       and ([.[] | type] | unique | length) == 1
+    then {"<key>": ([.[] | shape($depth - 1; $min_map)] | merge_shapes)}
+    else with_entries(.value |= shape($depth - 1; $min_map))
+    end
+  elif type == "array" then
+    if length == 0 then [] else [map(shape($depth - 1; $min_map)) | merge_shapes] end
+  else type
+  end;
+def top:
+  if type == "object" then
+    "object, \(length) keys" + (if length > 0 then ": " + (keys_unsorted | .[:8] | join(", ")) + (if length > 8 then ", …" else "" end) else "" end)
+  elif type == "array" then "array, \(length) items"
+  else type
+  end;
+JQ
+
+type=""
+depth=8
+map_min=8
+tokens=1
+provider=anthropic
+model=""
+paths=()
+# The whole input goes to the provider's counting endpoint, so big inputs
+# (logs, dumps) stay local unless counted with -p local.
+remote_token_limit=$((2 * 1024 * 1024))
+
+while (($#)); do
+  case $1 in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -t | --type | -d | --depth | --map-min | -p | --provider | -m | --model)
+      (($# >= 2)) || usage_error "'$1' needs a value"
+      case $1 in
+        -t | --type) type=$2 ;;
+        -d | --depth) depth=$2 ;;
+        --map-min) map_min=$2 ;;
+        -p | --provider) provider=$2 ;;
+        -m | --model) model=$2 ;;
+      esac
+      shift
+      ;;
+    --usage-spec)
+      usage_spec
+      exit 0
+      ;;
+    --all-keys) map_min=0 ;;
+    --no-tokens) tokens=0 ;;
+    --)
+      shift
+      paths+=("$@")
+      break
+      ;;
+    -) paths+=("$1") ;;
+    -*) usage_error "unknown option '$1'" ;;
+    *) paths+=("$1") ;;
+  esac
+  shift
+done
+
+((${#paths[@]} <= 1)) || usage_error "expected at most one PATH"
+path=${paths[0]:--}
+
+[[ $depth =~ ^[0-9]+$ && $depth -gt 0 ]] || usage_error "--depth must be a positive number"
+[[ $map_min =~ ^[0-9]+$ ]] || usage_error "--map-min must be a number"
+case $provider in
+  anthropic | openai | local) ;;
+  *) usage_error "--provider must be anthropic, openai or local" ;;
+esac
+case $type in
+  "" | json | jsonl | yaml | toml | csv | tsv | markdown | code | text) ;;
+  *) usage_error "--type must be one of json, jsonl, yaml, toml, csv, tsv, markdown, code, text" ;;
+esac
+if [[ -z $model && $provider == anthropic ]]; then model=claude-opus-5-5; fi
+if [[ -z $model && $provider == openai ]]; then usage_error "--provider openai needs --model"; fi
+
+if [[ $path == - ]]; then
+  if [[ -t 0 ]]; then
+    usage >&2
+    exit 2
+  fi
+  tmp=$(mktemp "${TMPDIR:-/tmp}/shape.XXXXXX")
+  trap 'rm -f "$tmp"' EXIT
+  cat >"$tmp"
+  file=$tmp
+  label="<stdin>"
+else
+  [[ -e $path ]] || usage_error "no such file or directory: $path"
+  file=$path
+  label=$path
+fi
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    note "$1 is not installed (needed for $2)"
+    exit 1
+  }
+}
+need jaq "reading data"
+
+# --- detection ---------------------------------------------------------------
+
+detect() {
+  if [[ -d $file ]]; then
+    echo dir
+    return
+  fi
+  case $(tr '[:upper:]' '[:lower:]' <<<"$label") in
+    *.json)
+      echo json
+      return
+      ;;
+    *.jsonl | *.ndjson)
+      echo jsonl
+      return
+      ;;
+    *.yaml | *.yml)
+      echo yaml
+      return
+      ;;
+    *.toml)
+      echo toml
+      return
+      ;;
+    *.csv)
+      echo csv
+      return
+      ;;
+    *.tsv)
+      echo tsv
+      return
+      ;;
+    *.md | *.markdown)
+      echo markdown
+      return
+      ;;
+  esac
+  local n
+  if n=$(jaq -n '[inputs] | length' <"$file" 2>/dev/null); then
+    if ((n == 1)); then echo json; elif ((n > 1)); then echo jsonl; else echo text; fi
+    return
+  fi
+  if [[ $label != "<stdin>" ]] && [[ -n $(code_language) ]]; then
+    echo code
+    return
+  fi
+  echo text
+}
+
+# The programming language tokei sees in the file, or nothing for prose and
+# data formats.
+code_language() {
+  command -v tokei >/dev/null 2>&1 || return 0
+  tokei --output json "$file" 2>/dev/null |
+    jaq -r 'del(.Total) | to_entries | map(select(.value.reports | length > 0)) | .[0].key // empty' |
+    rg -v -x -e 'Plain Text' -e 'Text' -e 'Markdown' -e 'JSON' -e 'YAML' -e 'TOML' -e 'CSV' || true
+}
+
+# ast-grep's outline when it knows the language, else tokei's line counts.
+code_outline() {
+  local out=""
+  if command -v ast-grep >/dev/null 2>&1; then
+    out=$(ast-grep outline --color never "$file" 2>/dev/null || true)
+  fi
+  if [[ -n $out && $out != "nothing found" ]]; then
+    printf '%s\n' "$out"
+  else
+    need tokei "code without an ast-grep outline"
+    tokei --compact "$file"
+  fi
+}
+
+kind=${type:-$(detect)}
+
+# --- summary lines -----------------------------------------------------------
+
+human_bytes() {
+  local b=$1
+  if ((b < 1024)); then
+    echo "$b B"
+  elif ((b < 1048576)); then
+    echo "$((b / 1024)).$(((b % 1024) * 10 / 1024)) KB"
+  else
+    echo "$((b / 1048576)).$(((b % 1048576) * 10 / 1048576)) MB"
+  fi
+}
+
+printf '%-8s %s\n' path "$label" type "$kind"
+
+if [[ $kind != dir ]]; then
+  bytes=$(stat -f %z "$file")
+  lines=$(wc -l <"$file" | tr -d ' ')
+  printf '%-8s %s, %s lines\n' size "$(human_bytes "$bytes")" "$lines"
+
+  if ((tokens)) && [[ $provider != local ]] && ((bytes > remote_token_limit)); then
+    note "skipping the $provider token count: input is over $(human_bytes "$remote_token_limit")"
+    note "use '-p local' for an offline estimate, or '--no-tokens'"
+    printf '%-8s %s\n' tokens skipped
+  elif ((tokens)); then
+    need tokens "the token count"
+    targs=(-p "$provider" --format json --prompt-file "$file")
+    [[ -n $model ]] && targs+=(-m "$model")
+    if count=$(tokens "${targs[@]}" </dev/null 2>/dev/null | jaq -r '.input_tokens'); then
+      printf '%-8s %s (%s%s)\n' tokens "$count" "$provider" "${model:+ $model}"
+    else
+      note "token count failed; run 'tokens ${targs[*]}' to see why"
+      printf '%-8s %s\n' tokens unavailable
+    fi
+  fi
+fi
+
+# --- structure ---------------------------------------------------------------
+
+data_shape() {
+  # stdin: one JSON value per document. -r prints the summary strings raw and
+  # the shape as indented JSON.
+  # shellcheck disable=SC2016 # $docs, $depth and $min_map are jaq variables
+  jaq -r -n --argjson depth "$depth" --argjson min_map "$map_min" "$shape_jq"'
+    [inputs] as $docs
+    | if ($docs | length) == 1 then
+        "top      \($docs[0] | top)", "", ($docs[0] | shape($depth; $min_map))
+      else
+        "top      \($docs | length) documents", "", ($docs | map(shape($depth; $min_map)) | merge_shapes)
+      end'
+}
+
+case $kind in
+  json | jsonl)
+    data_shape <"$file" || {
+      note "input does not parse as JSON"
+      exit 1
+    }
+    ;;
+  yaml)
+    need yq "YAML"
+    yq -o json -I 0 '.' "$file" | data_shape
+    ;;
+  toml)
+    need yq "TOML"
+    yq -p toml -o json -I 0 '.' "$file" | data_shape
+    ;;
+  csv | tsv)
+    need qsv "CSV"
+    delim=,
+    [[ $kind == tsv ]] && delim=$'\t'
+    printf '%-8s %s rows\n\n' top "$(qsv count -d "$delim" "$file")"
+    qsv stats -d "$delim" --cardinality "$file" | qsv select field,type,nullcount,cardinality | qsv table
+    ;;
+  markdown)
+    printf '%-8s %s headings\n\n' top "$( (rg -c '^#{1,6} ' "$file" || echo 0) | tr -d ' ')"
+    rg --no-filename '^#{1,6} ' "$file" | sed -E 's/^(#+) /\1\t/' |
+      while IFS=$'\t' read -r hashes title; do
+        printf '%*s%s\n' $(((${#hashes} - 1) * 2)) '' "$title"
+      done || true
+    ;;
+  code)
+    lang=$(code_language)
+    printf '%-8s %s\n\n' top "${lang:-unknown language}"
+    code_outline
+    ;;
+  dir)
+    need tokei "directories"
+    echo
+    tokei --compact "$file"
+    ;;
+  text)
+    words=$(wc -w <"$file" | tr -d ' ')
+    printf '%-8s %s words\n' top "$words"
+    ;;
+esac
