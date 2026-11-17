@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Start Claude Code on the work account (the Cleverific Max subscription): the
+# same claude binary, with its login, settings and sessions under
+# ~/.claude-work instead of ~/.claude. Every argument goes to claude unchanged,
+# so `claude-work --resume` and `claude-work -p "…"` work as claude does.
+#
+# NOTE: only CLAUDE_CONFIG_DIR changes. Never point it at ~/.claude for the
+# personal account: Claude Code keys its keychain entry on the config dir, and
+# an explicit ~/.claude may stop it finding the existing login.
+set -euo pipefail
+
+export CLAUDE_CONFIG_DIR="$HOME/.claude-work"
+exec claude "$@"
