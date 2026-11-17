@@ -34,10 +34,13 @@ In data, every value becomes its type name. An array shows one merged element:
 a key missing from some elements ends in "?", and mixed types show as
 {"<one of>": [...]}. Maps keyed by ids or names fold to a single "<key>" entry.
 
-Token counts send the whole input to the provider's counting endpoint (no
-generation, no spend), so inputs over 2 MB are skipped there; '-p local'
-counts offline. The key comes from the environment as tokens resolves it.
-Don't count anything holding secrets with a cloud provider.
+Token counts send the input to the provider's counting endpoint (no
+generation, no spend). Before that, betterleaks scans it with gitleaks' rules
+and every secret it finds becomes [REDACTED]; without betterleaks, or when the
+scan fails, the cloud count is skipped. Detection is best effort, so a secret
+with no recognizable shape can still get through. Inputs over 2 MB skip the
+cloud count; '-p local' counts offline with no redaction. The key comes from
+the environment as tokens resolves it.
 
 Examples:
   pueue status --json | $prog
@@ -124,6 +127,18 @@ paths=()
 # (logs, dumps) stay local unless counted with -p local.
 remote_token_limit=$((2 * 1024 * 1024))
 
+# Every temp file goes in this list and is removed on exit; the redaction
+# step's list of found secrets is one of them.
+scratch=()
+cleanup() { if ((${#scratch[@]})); then rm -f "${scratch[@]}"; fi; }
+trap cleanup EXIT
+# Sets REPLY to a new temp file; called directly, not in $(), so the list
+# keeps it.
+scratch_file() {
+  REPLY=$(mktemp "${TMPDIR:-/tmp}/shape.XXXXXX")
+  scratch+=("$REPLY")
+}
+
 while (($#)); do
   case $1 in
     -h | --help)
@@ -180,8 +195,8 @@ if [[ $path == - ]]; then
     usage >&2
     exit 2
   fi
-  tmp=$(mktemp "${TMPDIR:-/tmp}/shape.XXXXXX")
-  trap 'rm -f "$tmp"' EXIT
+  scratch_file
+  tmp=$REPLY
   cat >"$tmp"
   file=$tmp
   label="<stdin>"
@@ -286,6 +301,41 @@ human_bytes() {
   fi
 }
 
+# Writes a copy of the input with every secret betterleaks finds replaced by
+# [REDACTED], sets REPLY to it and `found` to the number of distinct secrets.
+# Fails closed: a missing scanner or a failed scan returns 1 and nothing goes
+# to a cloud provider. The secrets list is a 0600 temp file, removed on exit.
+redact_secrets() {
+  found=0
+  if ! command -v betterleaks >/dev/null 2>&1; then
+    note "skipping the $provider token count: betterleaks isn't installed to redact secrets first"
+    note "install it, or use '-p local' for an offline estimate"
+    return 1
+  fi
+  local secrets out
+  scratch_file
+  secrets=$REPLY
+  scratch_file
+  out=$REPLY
+  if ! betterleaks stdin --no-banner --exit-code 0 -l error -f json -r - <"$file" |
+    jaq -r '[.[].Secret | select(length > 0)] | unique | .[]' >"$secrets"; then
+    note "skipping the $provider token count: the secret scan failed"
+    return 1
+  fi
+  found=$(wc -l <"$secrets" | tr -d ' ')
+  if ((found == 0)); then
+    REPLY=$file
+    return 0
+  fi
+  # -F -f: every secret is a literal, matched in one aho-corasick pass.
+  rg --no-config -a -F -f "$secrets" --passthru --no-line-number --no-filename \
+    --color never -r '[REDACTED]' "$file" >"$out" || {
+    note "skipping the $provider token count: redaction failed"
+    return 1
+  }
+  REPLY=$out
+}
+
 printf '%-8s %s\n' path "$label" type "$kind"
 
 if [[ $kind != dir ]]; then
@@ -299,13 +349,27 @@ if [[ $kind != dir ]]; then
     printf '%-8s %s\n' tokens skipped
   elif ((tokens)); then
     need tokens "the token count"
-    targs=(-p "$provider" --format json --prompt-file "$file")
-    [[ -n $model ]] && targs+=(-m "$model")
-    if count=$(tokens "${targs[@]}" </dev/null 2>/dev/null | jaq -r '.input_tokens'); then
-      printf '%-8s %s (%s%s)\n' tokens "$count" "$provider" "${model:+ $model}"
+    count_file=$file
+    redacted=""
+    if [[ $provider != local ]]; then
+      if redact_secrets; then
+        count_file=$REPLY
+        ((found)) && redacted=", $found secrets redacted"
+      else
+        count_file=""
+      fi
+    fi
+    if [[ -z $count_file ]]; then
+      printf '%-8s %s\n' tokens skipped
     else
-      note "token count failed; run 'tokens ${targs[*]}' to see why"
-      printf '%-8s %s\n' tokens unavailable
+      targs=(-p "$provider" --format json --prompt-file "$count_file")
+      [[ -n $model ]] && targs+=(-m "$model")
+      if count=$(tokens "${targs[@]}" </dev/null 2>/dev/null | jaq -r '.input_tokens'); then
+        printf '%-8s %s (%s%s%s)\n' tokens "$count" "$provider" "${model:+ $model}" "$redacted"
+      else
+        note "token count failed; run 'tokens' with -p $provider on the input to see why"
+        printf '%-8s %s\n' tokens unavailable
+      fi
     fi
   fi
 fi
