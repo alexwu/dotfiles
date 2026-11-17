@@ -240,6 +240,11 @@
           {
             "type": "command",
             "command": "/Users/jamesbombeelu/.local/bin/notify UserPromptSubmit"
+          },
+          {
+            "type": "command",
+            "command": "/Users/jamesbombeelu/.local/bin/zine hook prompt-submit",
+            "timeout": 5
           }
         ]
       }
