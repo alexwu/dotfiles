@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Post a one-line message into a running Claude Code session's inbox, for
+# watchers (hark actions, cron jobs) that run outside the session.
+# NOTE: may run under launchd, so this stays bash 3.2 compatible.
+set -euo pipefail
+
+prog=claude-tell
+
+# A daemon's PATH can be bare, and jaq is a mise shim.
+PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"
+
+usage() {
+  cat <<EOF
+Post a message into a running Claude Code session's inbox.
+
+Usage: $prog [OPTIONS] SOCKET SESSION_ID
+
+Arguments:
+  SOCKET      The session's inbox socket (its CLAUDE_CODE_MESSAGING_SOCKET)
+  SESSION_ID  The session's id (its CLAUDE_CODE_SESSION_ID)
+
+Options:
+  -p, --prefix TEXT  Put TEXT and ': ' before the message
+  -h, --help         Print help
+
+The message is read from stdin. Control characters become spaces, runs of
+whitespace collapse, and it is cut to 1500 characters, since a model reads it.
+A hark action gets its match on stdin, so it can be used directly:
+  hark add ... --run '$prog -p "hark ci" /path/to.sock <session-id>' -- <check>
+
+The line goes to the socket the way pueue-knock sends it. The socket is
+documented; the message shape is not (see pueue-knock). If messages stop
+arriving after a Claude Code update, look there first.
+
+Exit status: 0 sent, 1 the session could not be told, 2 a usage error.
+EOF
+}
+
+note() { echo "$prog: $*" >&2; }
+
+usage_error() {
+  note "$*"
+  note "try '$prog --help'"
+  exit 2
+}
+
+prefix=""
+while (($#)); do
+  case $1 in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -p | --prefix)
+      (($# >= 2)) || usage_error "'$1' needs a value"
+      prefix=$2
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*) usage_error "unknown option '$1'" ;;
+    *) break ;;
+  esac
+  shift
+done
+
+(($# == 2)) || usage_error "expected SOCKET SESSION_ID"
+socket=$1
+session=$2
+[[ -S $socket ]] || {
+  note "no socket at $socket (has the session ended?)"
+  exit 1
+}
+[[ $session =~ ^[A-Za-z0-9-]+$ ]] || usage_error "SESSION_ID must be letters, digits and dashes"
+
+for tool in jaq nc uuidgen; do
+  command -v "$tool" >/dev/null 2>&1 || {
+    note "$tool is not installed"
+    exit 1
+  }
+done
+
+body=$(cat)
+text=$(printf '%s%s' "${prefix:+$prefix: }" "$body" | LC_ALL=C tr '\000-\037\177' ' ' | tr -s ' ' | cut -c 1-1500)
+[[ -n ${text// /} ]] || usage_error "the message on stdin is empty"
+
+# shellcheck disable=SC2016 # $id, $text and $session are jaq variables
+line=$(jaq -nc --arg id "$(uuidgen | tr '[:upper:]' '[:lower:]')" --arg text "$text" --arg session "$session" \
+  '{msgV: 1, msg_id: $id, type: "user", message: {role: "user", content: $text}, priority: "next", session_id: $session}')
+
+printf '%s\n' "$line" | nc -U -w 5 "$socket" || {
+  note "couldn't reach the session at $socket"
+  exit 1
+}
