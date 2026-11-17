@@ -261,6 +261,19 @@
           }
         ]
       }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/jaq -c --arg home \"$HOME\" '(.tool_input.file_path // \"\") as $p | ($home + \"/.claude-work/\") as $w | select((.tool_name == \"Write\" or .tool_name == \"Edit\") and ($p | test(\"/\\\\.\\\\.(/|$)\") | not) and (($p | startswith($w + \"agent-memory/\")) or (($p | startswith($w + \"projects/\")) and ($p[($w + \"projects/\" | length):] | test(\"^[^/]+/memory/\"))))) | {hookSpecificOutput: {hookEventName: \"PermissionRequest\", decision: {behavior: \"allow\"}}}'",
+            "timeout": 5,
+            "statusMessage": "claude-work memory write"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -304,6 +317,7 @@
     "shortcuts-playground@shortcuts-playground": true,
     "funes@huggingface": true,
     "worktrunk@worktrunk": true,
+    "cc-plugin-telemetry@builtin": false,
     "slack@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
