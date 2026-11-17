@@ -792,16 +792,6 @@ models:
     checkEndpoint: /v1/models
     timeouts:
       responseHeader: 300
-  "mlx-community/Voxtral-4B-TTS-2603-mlx-bf16":
-    cmd: mlx_audio.server --host 127.0.0.1 --port ${PORT} --log-dir /Users/jamesbombeelu/.cache/mlx-audio/logs
-    ttl: 7200
-    checkEndpoint: /v1/models
-    filters:
-      setParamsByID:
-        "${MODEL_ID}":
-          voice: neutral_female
-    timeouts:
-      responseHeader: 300
 
 peers:
   omlx:
