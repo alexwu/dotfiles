@@ -84,8 +84,13 @@ usage_error() {
 
 # Same filter as a jaq module would hold, inline so the script stays one file.
 read -r -d '' shape_jq <<'JQ' || true
+# A union already in the list is opened into its members first, so merging
+# never nests "<one of>" inside "<one of>". In a mixed list, every object
+# variant merges into one object and every array into one array; only what
+# stays different (null beside an object, say) remains a union.
 def merge_shapes:
-  unique as $u
+  [.[] | if type == "object" and keys == ["<one of>"] then .["<one of>"][] else . end]
+  | unique as $u
   | if ($u | length) == 0 then "empty"
     elif ($u | length) == 1 then $u[0]
     elif all($u[]; type == "object") then
@@ -94,7 +99,13 @@ def merge_shapes:
           . + {(if all($u[]; has($k)) then $k else "\($k)?" end):
                ([$u[] | select(has($k)) | .[$k]] | merge_shapes)})
     elif all($u[]; type == "array") then [[$u[][]] | merge_shapes]
-    else {"<one of>": $u}
+    else
+      ([$u[] | select(type == "object")]) as $objects
+      | ([$u[] | select(type == "array")]) as $arrays
+      | ([$u[] | select(type != "object" and type != "array")]
+         + (if ($objects | length) > 0 then [$objects | merge_shapes] else [] end)
+         + (if ($arrays | length) > 0 then [$arrays | merge_shapes] else [] end)) as $parts
+      | if ($parts | length) == 1 then $parts[0] else {"<one of>": $parts} end
     end;
 def shape($depth; $min_map):
   if $depth <= 0 and (type == "object" or type == "array") then "…"
