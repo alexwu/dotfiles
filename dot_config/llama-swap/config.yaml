@@ -862,6 +862,8 @@ peers:
   chatgpt:
     proxy: http://127.0.0.1:18080
     models:
+      - gpt-6.2-astra
+      - gpt-6.2-sol
       - gpt-6.1-sol
       - gpt-6.1-terra
       - gpt-6-astra
