@@ -27,7 +27,6 @@ cargo-binstall = "latest"
 "npm:claude-code-rust" = "latest"
 "github:bodaay/HuggingFaceModelDownloader" = "latest"
 "npm:firecrawl-cli" = "latest"
-"github:leejet/stable-diffusion.cpp" = "master-552-87ecb95"
 "cargo:petname" = "latest"
 "cargo:pokemonsay" = "latest"
 heroku = "10"
@@ -52,6 +51,7 @@ biome = "latest"
 superhtml = "latest"
 "cargo:minhtml" = "latest"
 "github:hotchpotch/openai-api-server-via-codex" = "latest"
+jouet = { version = "latest", workflow = "release.yml@refs/heads/main" }
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]
